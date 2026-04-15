@@ -7,6 +7,7 @@
  */
 
 import { useState, useEffect, useRef } from "react";
+import { useAuth } from "@/lib/AuthContext";
 
 // ── Scene durations (ms). 0 = user must click to advance ──
 const SCENE_DURATIONS = [3800, 3200, 3200, 4000, 4500, 0];
@@ -28,7 +29,7 @@ const CONFETTI_PIECES = Array.from({ length: 22 }, (_, i) => ({
 }));
 
 export default function CinematicEntry() {
-  const [scene, setScene] = useState(0); // 0-5 cinema, 6 = landing
+  const [scene, setScene] = useState(0);
   const [exiting, setExiting] = useState(false);
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -49,7 +50,6 @@ export default function CinematicEntry() {
     return () => { if (timerRef.current) clearTimeout(timerRef.current); };
   }, [scene]);
 
-  // Scroll-reveal observer for landing
   useEffect(() => {
     if (scene !== 6) return;
     const timer = setTimeout(() => {
@@ -63,7 +63,6 @@ export default function CinematicEntry() {
     return () => clearTimeout(timer);
   }, [scene]);
 
-  // Nav solid on scroll
   useEffect(() => {
     if (scene !== 6) return;
     const onScroll = () => {
@@ -81,53 +80,27 @@ export default function CinematicEntry() {
       <style>{CINEMA_CSS}</style>
       <div id="cinema" className={exiting ? "fade-out" : ""}>
         {scene < 6 && (
-  <button
-    onClick={() => {
-      // Skip directly to landing page
-      const landingEl = document.getElementById("landing");
-      if (landingEl) {
-        landingEl.scrollIntoView({ behavior: "smooth" });
-      }
-      setScene(6);
-    }}
-    style={{
-      position: "fixed",
-      top: 24,
-      right: 24,
-      zIndex: 9999,
-      display: "flex",
-      alignItems: "center",
-      gap: 8,
-      padding: "10px 20px",
-      background: "rgba(10,6,8,0.6)",
-      border: "1px solid rgba(255,255,255,0.15)",
-      borderRadius: 8,
-      color: "rgba(255,255,255,0.7)",
-      fontFamily: "'Jost', sans-serif",
-      fontSize: 12,
-      fontWeight: 400,
-      letterSpacing: "2px",
-      textTransform: "uppercase",
-      cursor: "pointer",
-      backdropFilter: "blur(12px)",
-      transition: "all 0.2s",
-      animation: "fadeInSkip 0.5s ease-out 0.8s both",
-    }}
-    onMouseOver={e => {
-      e.currentTarget.style.background = "rgba(10,6,8,0.85)";
-      e.currentTarget.style.borderColor = "rgba(255,255,255,0.3)";
-      e.currentTarget.style.color = "#ffffff";
-    }}
-    onMouseOut={e => {
-      e.currentTarget.style.background = "rgba(10,6,8,0.6)";
-      e.currentTarget.style.borderColor = "rgba(255,255,255,0.15)";
-      e.currentTarget.style.color = "rgba(255,255,255,0.7)";
-    }}
-  >
-    Skip intro
-    <span style={{ fontSize: 14, lineHeight: 1 }}>→</span>
-  </button>
-)}
+          <button
+            onClick={() => { setExiting(true); setTimeout(() => setScene(6), 600); }}
+            style={{
+              position:"fixed",top:24,right:24,zIndex:9999,
+              display:"flex",alignItems:"center",gap:8,
+              padding:"10px 20px",
+              background:"rgba(10,6,8,0.6)",
+              border:"1px solid rgba(255,255,255,0.15)",
+              borderRadius:8,color:"rgba(255,255,255,0.7)",
+              fontFamily:"'Plus Jakarta Sans',sans-serif",
+              fontSize:12,fontWeight:400,letterSpacing:"2px",
+              textTransform:"uppercase",cursor:"pointer",
+              backdropFilter:"blur(12px)",transition:"all 0.2s",
+              animation:"fadeInSkip 0.5s ease-out 0.8s both",
+            }}
+            onMouseOver={e=>{e.currentTarget.style.background="rgba(10,6,8,0.85)";e.currentTarget.style.borderColor="rgba(255,255,255,0.3)";e.currentTarget.style.color="#ffffff";}}
+            onMouseOut={e=>{e.currentTarget.style.background="rgba(10,6,8,0.6)";e.currentTarget.style.borderColor="rgba(255,255,255,0.15)";e.currentTarget.style.color="rgba(255,255,255,0.7)";}}
+          >
+            Skip intro <span style={{fontSize:14,lineHeight:1}}>→</span>
+          </button>
+        )}
 
         {/* Scene 1 */}
         {scene === 0 && (
@@ -144,7 +117,7 @@ export default function CinematicEntry() {
               </svg>
             </div>
             <div className="cin-text" style={{ marginTop: "60px" }}>
-              <p>"From a place far beyond…<br />a new journey begins."</p>
+              <p>&ldquo;From a place far beyond…<br />a new journey begins.&rdquo;</p>
               <div className="dot-row">◆ &nbsp; ◆ &nbsp; ◆</div>
             </div>
             <SceneProgress current={scene} />
@@ -175,7 +148,7 @@ export default function CinematicEntry() {
                 <div className="bundle-label">Girl</div>
               </div>
             </div>
-            <div className="cin-text"><p>"Two possibilities.<br /><em>One beautiful destiny.</em>"</p></div>
+            <div className="cin-text"><p>&ldquo;Two possibilities.<br /><em>One beautiful destiny.</em>&rdquo;</p></div>
             <SceneProgress current={scene} />
           </div>
         )}
@@ -197,7 +170,7 @@ export default function CinematicEntry() {
                 <div className="horse-arrive">🐎 🔵 + 🩷</div>
               </div>
             </div>
-            <div className="cin-text" style={{ marginTop: "1.5rem" }}><p><em>"The stage is set. The arena awaits."</em></p></div>
+            <div className="cin-text" style={{ marginTop: "1.5rem" }}><p><em>&ldquo;The stage is set. The arena awaits.&rdquo;</em></p></div>
             <SceneProgress current={scene} />
           </div>
         )}
@@ -236,7 +209,6 @@ export default function CinematicEntry() {
         {scene === 4 && (
           <div className="scene active" style={{ flexDirection: "row" }}>
             <div style={{ position: "absolute", inset: 0, display: "flex" }}>
-              {/* Blue */}
               <div className="s5-half s5-blue" style={{ "--hs": "0.1s" } as React.CSSProperties}>
                 <div style={{ position: "absolute", inset: 0, overflow: "hidden", pointerEvents: "none" }}>
                   {CONFETTI_PIECES.filter((_, i) => i % 2 === 0).map((c, i) => (
@@ -248,7 +220,6 @@ export default function CinematicEntry() {
                 <div style={{ fontSize: "3rem", marginTop: "0.6rem", animation: "wordPop 0.6s ease 1.3s both", display: "block" }}>💙</div>
               </div>
               <div className="s5-divider" />
-              {/* Pink */}
               <div className="s5-half s5-pink" style={{ "--hs": "0.25s" } as React.CSSProperties}>
                 <div style={{ position: "absolute", inset: 0, overflow: "hidden", pointerEvents: "none" }}>
                   {CONFETTI_PIECES.filter((_, i) => i % 2 !== 0).map((c, i) => (
@@ -300,11 +271,96 @@ function SceneProgress({ current }: { current: number }) {
   );
 }
 
-// ── Landing Page ────────────────────────────────────────────
+// ── Confirmation Dialog ──────────────────────────────────────
+type PlanInfo = { name: string; price: number; priceLabel: string; color: string; id: string };
+
+function ConfirmDialog({ plan, onConfirm, onCancel }: { plan: PlanInfo; onConfirm: () => void; onCancel: () => void }) {
+  return (
+    <div style={{
+      position:"fixed",inset:0,zIndex:10000,display:"flex",alignItems:"center",justifyContent:"center",
+      background:"rgba(5,3,5,0.88)",backdropFilter:"blur(14px)",
+      animation:"fadeInOverlay 0.2s ease-out",fontFamily:"'Plus Jakarta Sans',sans-serif",
+    }}>
+      <div style={{
+        background:"linear-gradient(145deg,#140e14,#0e1218)",
+        border:"1px solid rgba(255,255,255,0.1)",borderRadius:20,
+        padding:"40px 36px",maxWidth:420,width:"90%",
+        boxShadow:"0 30px 80px rgba(0,0,0,0.7)",
+        animation:"slideUpDialog 0.3s ease-out",
+      }}>
+        <div style={{width:10,height:10,borderRadius:"50%",background:plan.color,boxShadow:`0 0 16px ${plan.color}80`,marginBottom:20}} />
+        <p style={{fontFamily:"'Playfair Display',serif",fontSize:12,letterSpacing:3,textTransform:"uppercase",color:"rgba(245,239,245,0.4)",marginBottom:12}}>Confirm Your Plan</p>
+        <h2 style={{fontFamily:"'Playfair Display',serif",fontSize:30,fontWeight:300,color:"#f5eff5",marginBottom:8,lineHeight:1.2}}>
+          {plan.name} — <em style={{fontStyle:"italic",color:plan.color}}>{plan.priceLabel}</em>
+        </h2>
+        <p style={{fontSize:13,fontWeight:300,color:"rgba(245,239,245,0.45)",lineHeight:1.7,marginBottom:32}}>
+          {plan.price === 0
+            ? "You're choosing the free plan. You can upgrade anytime from your dashboard."
+            : `You're about to proceed with the ${plan.name} plan at ${plan.priceLabel} (one-time payment). Are you sure?`}
+        </p>
+        <div style={{display:"flex",gap:12}}>
+          <button onClick={onCancel} style={{flex:1,padding:"13px 20px",background:"rgba(255,255,255,0.04)",border:"1px solid rgba(255,255,255,0.09)",borderRadius:10,color:"rgba(245,239,245,0.45)",fontFamily:"'Plus Jakarta Sans',sans-serif",fontSize:12,fontWeight:400,letterSpacing:1.5,textTransform:"uppercase",cursor:"pointer",transition:"all 0.2s"}}
+            onMouseOver={e=>e.currentTarget.style.background="rgba(255,255,255,0.08)"}
+            onMouseOut={e=>e.currentTarget.style.background="rgba(255,255,255,0.04)"}
+          >Go Back</button>
+          <button onClick={onConfirm} style={{flex:1,padding:"13px 20px",background:`linear-gradient(135deg,${plan.color}e0,${plan.color}a0)`,border:"none",borderRadius:10,color:"#0a0608",fontFamily:"'Plus Jakarta Sans',sans-serif",fontSize:12,fontWeight:600,letterSpacing:2,textTransform:"uppercase",cursor:"pointer",transition:"all 0.25s"}}
+            onMouseOver={e=>{e.currentTarget.style.transform="translateY(-1px)";e.currentTarget.style.boxShadow=`0 8px 25px ${plan.color}40`;}}
+            onMouseOut={e=>{e.currentTarget.style.transform="none";e.currentTarget.style.boxShadow="none";}}
+          >{plan.price === 0 ? "Activate Free" : "Proceed to Payment"}</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ── Landing Page ─────────────────────────────────────────────
 function LandingPage() {
+  // ✅ FIX: useAuth() works here because CinematicEntry is wrapped in AuthProvider via layout.tsx
+  const { user, loading } = useAuth();
+  const [confirmPlan, setConfirmPlan] = useState<PlanInfo | null>(null);
+
+  const PLANS_DATA: PlanInfo[] = [
+    { id: "free", name: "Free Plan", price: 0, priceLabel: "Free", color: "#a4b4c8" },
+    { id: "premium", name: "Premium", price: 199, priceLabel: "$199", color: "#c8a4c4" },
+    { id: "custom", name: "Custom", price: 650, priceLabel: "$650", color: "#c8b4a4" },
+  ];
+
+  function handlePlanClick(planId: string) {
+    if (loading) return;
+
+    // ✅ FIX: If not logged in → go to sign up page first, store intended plan
+    if (!user) {
+      sessionStorage.setItem("intended_plan", planId);
+      window.location.href = "/auth?mode=signup&plan=" + planId;
+      return;
+    }
+
+    // ✅ If logged in → show confirmation dialog
+    const plan = PLANS_DATA.find(p => p.id === planId);
+    if (plan) setConfirmPlan(plan);
+  }
+
+  function handleConfirm() {
+    if (!confirmPlan) return;
+    setConfirmPlan(null);
+    if (confirmPlan.price === 0) {
+      window.location.href = "/dashboard";
+    } else {
+      window.location.href = `/payment-pending?plan=${confirmPlan.id}&price=${confirmPlan.price}&name=${encodeURIComponent(confirmPlan.name)}`;
+    }
+  }
+
   return (
     <>
       <style>{LANDING_CSS}</style>
+      {confirmPlan && (
+        <ConfirmDialog
+          plan={confirmPlan}
+          onConfirm={handleConfirm}
+          onCancel={() => setConfirmPlan(null)}
+        />
+      )}
+
       <nav id="main-nav">
         <a href="#" className="nav-logo">
           Virtual Gender Reveal
@@ -314,8 +370,13 @@ function LandingPage() {
           <a href="#how">How It Works</a>
           <a href="#pricing">Pricing</a>
           <a href="#contact">Contact</a>
-          <a href="/auth" style={{color:"inherit",textDecoration:"none"}}>Log In</a>
-          <a href="/auth" className="nav-cta-btn">Start Your Reveal</a>
+          {/* ✅ FIX: Show Dashboard if logged in, Log In if not */}
+          {!loading && (
+            user
+              ? <a href="/dashboard" style={{color:"inherit",textDecoration:"none",fontWeight:500}}>Dashboard</a>
+              : <a href="/auth" style={{color:"inherit",textDecoration:"none"}}>Log In</a>
+          )}
+          <a href="/auth?mode=signup" className="nav-cta-btn">Start Your Reveal</a>
         </div>
       </nav>
 
@@ -331,7 +392,7 @@ function LandingPage() {
           </h1>
           <p className="hero-sub">Create a cinematic gender reveal and share the moment live with everyone you love — wherever they are.</p>
           <div style={{ display: "flex", gap: "1rem", justifyContent: "center", flexWrap: "wrap" }}>
-            <a href="/auth" className="btn-main">✦ Start Your Reveal</a>
+            <button className="btn-main" onClick={() => handlePlanClick("free")} style={{border:"none",cursor:"pointer"}}>✦ Start Your Reveal</button>
             <a href="#pricing" className="btn-ghost">View Plans →</a>
           </div>
         </div>
@@ -403,9 +464,9 @@ function LandingPage() {
           </div>
           <div className="price-grid fade-up">
             {[
-              { cls: "pc-free", badge: "Free", bc: "bc-free", name: "Free Plan", desc: "Basic reveal setup to get started.", price: "0", pCls: "", dc: "d-light", divCls: "dv-light", feats: ["Basic reveal page", "Doctor secure link", "Up to 20 guests", "Email invitations", "7-day replay"], fCls: "fl", ckCls: "ck-b", btnCls: "btn-bp", btnLabel: "Start Free" },
-              { cls: "pc-prem", badge: "Most Popular", bc: "bc-pop", name: "Premium", desc: "Full cinematic + live experience.", price: "199", pCls: "pc-price-dark", dc: "d-dark", divCls: "dv-dark", feats: ["Cinematic reveal video — made by us", "Live virtual party room", "Up to 200 guests", "Live chat & Boy/Girl polls", "Personalized guest invitations", "30-day replay window", "Custom overlay"], fCls: "fd", ckCls: "ck-w", btnCls: "btn-wg", btnLabel: "Go Premium" },
-              { cls: "pc-cust", badge: "White Glove", bc: "bc-gold", name: "Custom", desc: "Fully personalized story reveal.", price: "650", pCls: "pc-price-gold", dc: "d-gold", divCls: "dv-gold", feats: ["Bespoke reveal video story", "Unlimited guests", "Dedicated concierge", "Custom soundtrack", "Live on-call support", "Permanent family archive"], fCls: "fg", ckCls: "ck-g", btnCls: "btn-gd", btnLabel: "Create Custom Reveal" },
+              { cls: "pc-free", badge: "Free", bc: "bc-free", name: "Free Plan", desc: "Basic reveal setup to get started.", price: "0", planId: "free", pCls: "", dc: "d-light", divCls: "dv-light", feats: ["Basic reveal page", "Doctor secure link", "Up to 20 guests", "Email invitations", "7-day replay"], fCls: "fl", ckCls: "ck-b", btnCls: "btn-bp", btnLabel: "Start Free" },
+              { cls: "pc-prem", badge: "Most Popular", bc: "bc-pop", name: "Premium", desc: "Full cinematic + live experience.", price: "199", planId: "premium", pCls: "pc-price-dark", dc: "d-dark", divCls: "dv-dark", feats: ["Cinematic reveal video — made by us", "Live virtual party room", "Up to 200 guests", "Live chat & Boy/Girl polls", "Personalized guest invitations", "30-day replay window", "Custom overlay"], fCls: "fd", ckCls: "ck-w", btnCls: "btn-wg", btnLabel: "Go Premium" },
+              { cls: "pc-cust", badge: "White Glove", bc: "bc-gold", name: "Custom", desc: "Fully personalized story reveal.", price: "650", planId: "custom", pCls: "pc-price-gold", dc: "d-gold", divCls: "dv-gold", feats: ["Bespoke reveal video story", "Unlimited guests", "Dedicated concierge", "Custom soundtrack", "Live on-call support", "Permanent family archive"], fCls: "fg", ckCls: "ck-g", btnCls: "btn-gd", btnLabel: "Create Custom Reveal" },
             ].map((p, i) => (
               <div className={`pc ${p.cls}`} key={i}>
                 <span className={`pc-badge ${p.bc}`}>{p.badge}</span>
@@ -422,7 +483,10 @@ function LandingPage() {
                     <li key={j} className={p.fCls}><span className={p.ckCls}>✓</span>{f}</li>
                   ))}
                 </ul>
-                <button className={`pc-btn ${p.btnCls}`}>{p.btnLabel}</button>
+                {/* ✅ FIX: Pricing buttons now have auth-aware onClick */}
+                <button className={`pc-btn ${p.btnCls}`} onClick={() => handlePlanClick(p.planId)}>
+                  {loading ? "..." : p.btnLabel}
+                </button>
               </div>
             ))}
           </div>
@@ -438,9 +502,9 @@ function LandingPage() {
           </div>
           <div className="testi-grid fade-up">
             {[
-              { q: '"We had family in three different states watching. Everyone found out at the exact same second. My mom ugly-cried in Florida and I watched it happen live. I will never forget that."', name: "Sarah M.", loc: "Texas", av: "#2E7DD1" },
-              { q: '"The doctor link was so easy. She submitted in under a minute. I genuinely had no idea. When the video played and it said girl — I couldn\'t breathe."', name: "Jessica & Tom K.", loc: "New York", av: "#E07FAA" },
-              { q: '"My parents are in their 70s. They couldn\'t travel. For the first time they had the actual front-row seat. Not a text an hour later. They were there."', name: "Amanda R.", loc: "California", av: "#B8962E" },
+              { q: "\u201cWe had family in three different states watching. Everyone found out at the exact same second. My mom ugly-cried in Florida and I watched it happen live. I will never forget that.\u201d", name: "Sarah M.", loc: "Texas", av: "#2E7DD1" },
+              { q: "\u201cThe doctor link was so easy. She submitted in under a minute. I genuinely had no idea. When the video played and it said girl \u2014 I couldn\u2019t breathe.\u201d", name: "Jessica & Tom K.", loc: "New York", av: "#E07FAA" },
+              { q: "\u201cMy parents are in their 70s. They couldn\u2019t travel. For the first time they had the actual front-row seat. Not a text an hour later. They were there.\u201d", name: "Amanda R.", loc: "California", av: "#B8962E" },
             ].map((t, i) => (
               <div className="testi-card" key={i}>
                 <div className="testi-stars">★★★★★</div>
@@ -464,7 +528,7 @@ function LandingPage() {
           <h2 className="cta-title">Your family is waiting<br /><em>to find out together.</em></h2>
           <p className="cta-sub">Book your reveal today and your doctor link will be ready within the hour.</p>
           <p className="cta-sub2">Grandma in Florida and your best friend in New York will both be there.</p>
-          <a href="#pricing" className="cta-btn">✦ Start Your Reveal</a>
+          <button className="cta-btn" onClick={() => handlePlanClick("free")} style={{border:"none",cursor:"pointer"}}>✦ Start Your Reveal</button>
           <div className="cta-box">
             <p>Virtual Baby Reveal is designed to make your special moment joyful, seamless, and completely stress-free. Whether your loved ones are nearby or across the world, everyone can be part of your celebration — together, in real time.</p>
             <br />
@@ -501,16 +565,17 @@ function LandingPage() {
   );
 }
 
-// ── Inline CSS blocks (kept here to avoid flash-of-unstyled during Next.js hydration) ──
 const CINEMA_CSS = `
 @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,300;0,400;1,300;1,400&family=Plus+Jakarta+Sans:wght@300;400;500;600&display=swap');
-@keyframes fadeInSkip { from { opacity: 0; transform: translateY(-8px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes fadeInSkip{from{opacity:0;transform:translateY(-8px)}to{opacity:1;transform:translateY(0)}}
+@keyframes fadeInOverlay{from{opacity:0}to{opacity:1}}
+@keyframes slideUpDialog{from{opacity:0;transform:translateY(30px)}to{opacity:1;transform:translateY(0)}}
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
 :root{--gold-light:#E8D18A;}
 body{font-family:'Plus Jakarta Sans',sans-serif;overflow-x:hidden;}
 #cinema{position:fixed;inset:0;z-index:9999;background:#0a0a14;display:flex;flex-direction:column;align-items:center;justify-content:center;overflow:hidden;}
-#cinema.fade-out{animation:cinemaExit 1.1s cubic-bezier(0.4,0,0.2,1) forwards;}
-@keyframes cinemaExit{0%{opacity:1;transform:scale(1);}100%{opacity:0;transform:scale(1.06);}}
+#cinema.fade-out{animation:cinemaExit 0.7s cubic-bezier(0.4,0,0.2,1) forwards;}
+@keyframes cinemaExit{0%{opacity:1;transform:scale(1);}100%{opacity:0;transform:scale(1.04);}}
 .scene{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;opacity:0;pointer-events:none;}
 .scene.active{pointer-events:auto;animation:sceneIn 0.7s ease forwards;}
 @keyframes sceneIn{from{opacity:0;transform:translateY(16px);}to{opacity:1;transform:translateY(0);}}
@@ -586,7 +651,7 @@ nav.solid{background:rgba(255,255,255,0.92);backdrop-filter:blur(20px);box-shado
 .nav-links{display:flex;gap:1.8rem;align-items:center;}
 .nav-links a{font-size:0.82rem;text-decoration:none;color:#6B7280;transition:color 0.2s;}
 .nav-links a:hover{color:#111827;}
-.nav-cta-btn{font-size:0.78rem;font-weight:500;letter-spacing:0.1em;text-transform:uppercase;padding:0.6rem 1.4rem;border-radius:3px;text-decoration:none;background:linear-gradient(135deg,#2E7DD1,#C2527A);color:white;}
+.nav-cta-btn{font-size:0.78rem;font-weight:500;letter-spacing:0.1em;text-transform:uppercase;padding:0.6rem 1.4rem;border-radius:3px;text-decoration:none;background:linear-gradient(135deg,#2E7DD1,#C2527A);color:white !important;}
 .hero-section{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:7rem 2rem 5rem;position:relative;overflow:hidden;background:#fff;}
 .hero-mesh{position:absolute;inset:0;background:radial-gradient(ellipse 70% 60% at 12% 15%,rgba(130,184,232,0.18) 0%,transparent 55%),radial-gradient(ellipse 65% 55% at 88% 10%,rgba(242,184,207,0.2) 0%,transparent 52%);}
 .hero-grid-bg{position:absolute;inset:0;background-image:linear-gradient(rgba(27,79,140,0.04) 1px,transparent 1px),linear-gradient(90deg,rgba(27,79,140,0.04) 1px,transparent 1px);background-size:64px 64px;mask-image:radial-gradient(ellipse 90% 90% at 50% 50%,black 20%,transparent 75%);-webkit-mask-image:radial-gradient(ellipse 90% 90% at 50% 50%,black 20%,transparent 75%);}
@@ -661,7 +726,7 @@ nav.solid{background:rgba(255,255,255,0.92);backdrop-filter:blur(20px);box-shado
 .cta-title em{font-style:italic;}
 .cta-sub{font-size:0.95rem;font-weight:300;color:rgba(255,255,255,0.55);margin-bottom:0.4rem;line-height:1.8;}
 .cta-sub2{font-size:0.85rem;color:rgba(255,255,255,0.35);margin-bottom:2.4rem;font-style:italic;}
-.cta-btn{display:inline-flex;align-items:center;gap:0.5rem;padding:1.1rem 2.8rem;border-radius:3px;text-decoration:none;font-size:0.82rem;font-weight:600;letter-spacing:0.12em;text-transform:uppercase;background:white;color:#1B4F8C;box-shadow:0 8px 28px rgba(0,0,0,0.2);transition:transform 0.22s;}
+.cta-btn{display:inline-flex;align-items:center;gap:0.5rem;padding:1.1rem 2.8rem;border-radius:3px;font-size:0.82rem;font-weight:600;letter-spacing:0.12em;text-transform:uppercase;background:white;color:#1B4F8C;box-shadow:0 8px 28px rgba(0,0,0,0.2);transition:transform 0.22s;}
 .cta-btn:hover{transform:translateY(-2px);}
 .cta-box{margin:3rem auto 0;max-width:680px;padding:2rem;background:rgba(255,255,255,0.06);border-radius:8px;border:1px solid rgba(255,255,255,0.1);}
 .cta-box p{font-size:0.88rem;color:rgba(255,255,255,0.55);line-height:1.9;font-weight:300;}
