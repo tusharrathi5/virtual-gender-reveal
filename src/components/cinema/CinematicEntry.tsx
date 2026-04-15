@@ -80,6 +80,55 @@ export default function CinematicEntry() {
     <>
       <style>{CINEMA_CSS}</style>
       <div id="cinema" className={exiting ? "fade-out" : ""}>
+        {scene < 6 && (
+  <button
+    onClick={() => {
+      // Skip directly to landing page
+      const landingEl = document.getElementById("landing");
+      if (landingEl) {
+        landingEl.scrollIntoView({ behavior: "smooth" });
+      }
+      setScene(6);
+    }}
+    style={{
+      position: "fixed",
+      top: 24,
+      right: 24,
+      zIndex: 9999,
+      display: "flex",
+      alignItems: "center",
+      gap: 8,
+      padding: "10px 20px",
+      background: "rgba(10,6,8,0.6)",
+      border: "1px solid rgba(255,255,255,0.15)",
+      borderRadius: 8,
+      color: "rgba(255,255,255,0.7)",
+      fontFamily: "'Jost', sans-serif",
+      fontSize: 12,
+      fontWeight: 400,
+      letterSpacing: "2px",
+      textTransform: "uppercase",
+      cursor: "pointer",
+      backdropFilter: "blur(12px)",
+      transition: "all 0.2s",
+      animation: "fadeInSkip 0.5s ease-out 0.8s both",
+    }}
+    onMouseOver={e => {
+      e.currentTarget.style.background = "rgba(10,6,8,0.85)";
+      e.currentTarget.style.borderColor = "rgba(255,255,255,0.3)";
+      e.currentTarget.style.color = "#ffffff";
+    }}
+    onMouseOut={e => {
+      e.currentTarget.style.background = "rgba(10,6,8,0.6)";
+      e.currentTarget.style.borderColor = "rgba(255,255,255,0.15)";
+      e.currentTarget.style.color = "rgba(255,255,255,0.7)";
+    }}
+  >
+    Skip intro
+    <span style={{ fontSize: 14, lineHeight: 1 }}>→</span>
+  </button>
+)}
+
         {/* Scene 1 */}
         {scene === 0 && (
           <div className="scene active">
@@ -455,6 +504,7 @@ function LandingPage() {
 // ── Inline CSS blocks (kept here to avoid flash-of-unstyled during Next.js hydration) ──
 const CINEMA_CSS = `
 @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,300;0,400;1,300;1,400&family=Plus+Jakarta+Sans:wght@300;400;500;600&display=swap');
+@keyframes fadeInSkip { from { opacity: 0; transform: translateY(-8px); } to { opacity: 1; transform: translateY(0); } }
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
 :root{--gold-light:#E8D18A;}
 body{font-family:'Plus Jakarta Sans',sans-serif;overflow-x:hidden;}
