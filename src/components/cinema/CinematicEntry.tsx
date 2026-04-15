@@ -265,8 +265,8 @@ function LandingPage() {
           <a href="#how">How It Works</a>
           <a href="#pricing">Pricing</a>
           <a href="#contact">Contact</a>
-          <a href="#">Log In</a>
-          <a href="#pricing" className="nav-cta-btn">Start Your Reveal</a>
+          <a href="/auth" style={{color:"inherit",textDecoration:"none"}}>Log In</a>
+          <a href="/auth" className="nav-cta-btn">Start Your Reveal</a>
         </div>
       </nav>
 
@@ -282,7 +282,7 @@ function LandingPage() {
           </h1>
           <p className="hero-sub">Create a cinematic gender reveal and share the moment live with everyone you love — wherever they are.</p>
           <div style={{ display: "flex", gap: "1rem", justifyContent: "center", flexWrap: "wrap" }}>
-            <a href="#pricing" className="btn-main">✦ Start Your Reveal</a>
+            <a href="/auth" className="btn-main">✦ Start Your Reveal</a>
             <a href="#pricing" className="btn-ghost">View Plans →</a>
           </div>
         </div>
