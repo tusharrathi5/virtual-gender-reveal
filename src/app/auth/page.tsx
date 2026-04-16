@@ -64,7 +64,7 @@ function AuthContent() {
   const [loading, setLoading] = useState(false);
   const [toast, setToast] = useState<{ message: string; type: ToastType } | null>(null);
 
-  const { loginWithEmail, registerWithEmail, loginWithGoogle } = useAuth();
+  const { signInWithEmail, signUpWithEmail, signInWithGoogle } = useAuth();
   const router = useRouter();
 
   function showToast(message: string, type: ToastType) {
@@ -97,7 +97,7 @@ function AuthContent() {
     }
     setLoading(true);
     try {
-      await loginWithEmail(email.trim(), password);
+      await signInWithEmail(email.trim(), password);
       showToast("Welcome back! Taking you to your dashboard...", "success");
       setTimeout(() => redirectAfterAuth(), 1500);
     } catch (err) {
@@ -128,7 +128,7 @@ function AuthContent() {
     if (otp !== "123456") { showToast("Incorrect code. Hint: use 123456", "error"); return; }
     setLoading(true);
     try {
-      await registerWithEmail(email.trim(), password);
+      await signUpWithEmail(email.trim(), password, displayName.trim(), phone);
       const firstName = displayName.trim().split(" ")[0];
       showToast(`🎉 Welcome, ${firstName}! Account created successfully.`, "success");
       setTimeout(() => redirectAfterAuth(), 2000);
@@ -143,7 +143,7 @@ function AuthContent() {
   async function handleGoogle() {
     setLoading(true);
     try {
-      await loginWithGoogle();
+      await signInWithGoogle();
       showToast("Signed in with Google!", "success");
       setTimeout(() => redirectAfterAuth(), 1500);
     } catch (err) {

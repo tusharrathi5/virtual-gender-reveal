@@ -296,6 +296,14 @@ function ConfirmDialog({ plan, onConfirm, onCancel }: { plan: PlanMeta; onConfir
 function LandingPage() {
   const { user, loading } = useAuth();
   const router = useRouter();
+  const [toast, setToast] = useState<{ message: string; type: "success" | "error" | "info" } | null>(null);
+  const [confirmPlan, setConfirmPlan] = useState<PlanMeta | null>(null);
+
+  function handleConfirm() {
+    if (!confirmPlan) return;
+    setConfirmPlan(null);
+    routeToReveal(confirmPlan.id);
+  }
 
   const routeToReveal = (plan?: string) => {
     if (!user) {
