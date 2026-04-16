@@ -7,6 +7,8 @@
  */
 
 import { useState, useEffect, useRef } from "react";
+import { useRouter } from "next/navigation";
+import { useAuth } from "@/lib/AuthContext";
 
 // ── Scene durations (ms). 0 = user must click to advance ──
 const SCENE_DURATIONS = [3800, 3200, 3200, 4000, 4500, 0];
@@ -32,8 +34,16 @@ export default function CinematicEntry() {
   const [exiting, setExiting] = useState(false);
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+  useEffect(() => {
+    const hasSeenIntro = sessionStorage.getItem("vgr-cinematic-seen");
+    if (hasSeenIntro === "true") {
+      setScene(6);
+    }
+  }, []);
+
   const advance = () => {
     if (scene + 1 >= 6) {
+      sessionStorage.setItem("vgr-cinematic-seen", "true");
       setExiting(true);
       setTimeout(() => setScene(6), 1000);
     } else {
@@ -253,6 +263,20 @@ function SceneProgress({ current }: { current: number }) {
 
 // ── Landing Page ────────────────────────────────────────────
 function LandingPage() {
+  const { user, loading } = useAuth();
+  const router = useRouter();
+
+  const routeToReveal = (plan?: string) => {
+    if (!user) {
+      router.push("/auth?redirect=/new-reveal&message=login_required");
+      return;
+    }
+    const confirmed = window.confirm("Continue to payment setup?");
+    if (!confirmed) return;
+    const target = plan ? `/new-reveal?plan=${plan}` : "/new-reveal";
+    router.push(target);
+  };
+
   return (
     <>
       <style>{LANDING_CSS}</style>
@@ -265,8 +289,12 @@ function LandingPage() {
           <a href="#how">How It Works</a>
           <a href="#pricing">Pricing</a>
           <a href="#contact">Contact</a>
-          <a href="#">Log In</a>
-          <a href="#pricing" className="nav-cta-btn">Start Your Reveal</a>
+          {loading ? null : user ? (
+            <a href="/dashboard" className="nav-user-link">Logged in as {user.displayName || user.email || "Account"}</a>
+          ) : (
+            <a href="/auth">Log In</a>
+          )}
+          <button type="button" className="nav-cta-btn" onClick={() => routeToReveal()}>Start Your Reveal</button>
         </div>
       </nav>
 
@@ -281,8 +309,9 @@ function LandingPage() {
             <em style={{ color: "#E07FAA" }}>A Big Reveal.</em>
           </h1>
           <p className="hero-sub">Create a cinematic gender reveal and share the moment live with everyone you love — wherever they are.</p>
+          <p className="hero-auth-note">Mobile OTP verification is being prepared. For now, any phone number can be used as a placeholder during sign up.</p>
           <div style={{ display: "flex", gap: "1rem", justifyContent: "center", flexWrap: "wrap" }}>
-            <a href="#pricing" className="btn-main">✦ Start Your Reveal</a>
+            <button type="button" className="btn-main" onClick={() => routeToReveal()}>✦ Start Your Reveal</button>
             <a href="#pricing" className="btn-ghost">View Plans →</a>
           </div>
         </div>
@@ -373,7 +402,7 @@ function LandingPage() {
                     <li key={j} className={p.fCls}><span className={p.ckCls}>✓</span>{f}</li>
                   ))}
                 </ul>
-                <button className={`pc-btn ${p.btnCls}`}>{p.btnLabel}</button>
+                <button className={`pc-btn ${p.btnCls}`} onClick={() => routeToReveal(p.name.toLowerCase())}>{p.btnLabel}</button>
               </div>
             ))}
           </div>
@@ -415,7 +444,7 @@ function LandingPage() {
           <h2 className="cta-title">Your family is waiting<br /><em>to find out together.</em></h2>
           <p className="cta-sub">Book your reveal today and your doctor link will be ready within the hour.</p>
           <p className="cta-sub2">Grandma in Florida and your best friend in New York will both be there.</p>
-          <a href="#pricing" className="cta-btn">✦ Start Your Reveal</a>
+          <button type="button" className="cta-btn" onClick={() => routeToReveal()}>✦ Start Your Reveal</button>
           <div className="cta-box">
             <p>Virtual Baby Reveal is designed to make your special moment joyful, seamless, and completely stress-free. Whether your loved ones are nearby or across the world, everyone can be part of your celebration — together, in real time.</p>
             <br />
@@ -536,7 +565,11 @@ nav.solid{background:rgba(255,255,255,0.92);backdrop-filter:blur(20px);box-shado
 .nav-links{display:flex;gap:1.8rem;align-items:center;}
 .nav-links a{font-size:0.82rem;text-decoration:none;color:#6B7280;transition:color 0.2s;}
 .nav-links a:hover{color:#111827;}
+.nav-user{font-size:0.75rem;color:#1B4F8C;max-width:220px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.nav-user-link{font-size:0.78rem !important;color:#1B4F8C !important;font-weight:500;max-width:260px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.nav-user-link:hover{text-decoration:underline;}
 .nav-cta-btn{font-size:0.78rem;font-weight:500;letter-spacing:0.1em;text-transform:uppercase;padding:0.6rem 1.4rem;border-radius:3px;text-decoration:none;background:linear-gradient(135deg,#2E7DD1,#C2527A);color:white;}
+.nav-cta-btn{border:none;cursor:pointer;}
 .hero-section{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:7rem 2rem 5rem;position:relative;overflow:hidden;background:#fff;}
 .hero-mesh{position:absolute;inset:0;background:radial-gradient(ellipse 70% 60% at 12% 15%,rgba(130,184,232,0.18) 0%,transparent 55%),radial-gradient(ellipse 65% 55% at 88% 10%,rgba(242,184,207,0.2) 0%,transparent 52%);}
 .hero-grid-bg{position:absolute;inset:0;background-image:linear-gradient(rgba(27,79,140,0.04) 1px,transparent 1px),linear-gradient(90deg,rgba(27,79,140,0.04) 1px,transparent 1px);background-size:64px 64px;mask-image:radial-gradient(ellipse 90% 90% at 50% 50%,black 20%,transparent 75%);-webkit-mask-image:radial-gradient(ellipse 90% 90% at 50% 50%,black 20%,transparent 75%);}
@@ -545,7 +578,9 @@ nav.solid{background:rgba(255,255,255,0.92);backdrop-filter:blur(20px);box-shado
 .hero-title{font-family:'Playfair Display',serif;font-size:clamp(3rem,8vw,6rem);font-weight:300;line-height:1.06;margin-bottom:1.5rem;}
 .hero-title em{font-style:italic;}
 .hero-sub{font-size:clamp(1rem,2vw,1.15rem);font-weight:300;line-height:1.8;color:#6B7280;max-width:560px;margin:0 auto 2.8rem;}
+.hero-auth-note{font-size:0.8rem;color:#1B4F8C;background:rgba(214,234,254,0.7);border:1px solid rgba(46,125,209,0.25);display:inline-block;padding:0.5rem 0.9rem;border-radius:999px;margin-bottom:1.4rem;}
 .btn-main{display:inline-flex;align-items:center;gap:0.4rem;padding:1rem 2.2rem;border-radius:3px;text-decoration:none;font-size:0.84rem;font-weight:500;letter-spacing:0.1em;text-transform:uppercase;background:linear-gradient(135deg,#2E7DD1,#C2527A);color:white;box-shadow:0 6px 24px rgba(46,125,209,0.25);transition:transform 0.22s,box-shadow 0.22s;}
+.btn-main{border:none;cursor:pointer;}
 .btn-main:hover{transform:translateY(-2px);box-shadow:0 12px 36px rgba(46,125,209,0.32);}
 .btn-ghost{display:inline-flex;align-items:center;gap:0.4rem;padding:1rem 2.2rem;border-radius:3px;text-decoration:none;font-size:0.84rem;font-weight:400;letter-spacing:0.08em;text-transform:uppercase;border:1px solid rgba(27,79,140,0.2);color:#111827;background:rgba(255,255,255,0.8);backdrop-filter:blur(8px);transition:border-color 0.2s,transform 0.2s;}
 .btn-ghost:hover{border-color:#2E7DD1;transform:translateY(-2px);}
@@ -612,6 +647,7 @@ nav.solid{background:rgba(255,255,255,0.92);backdrop-filter:blur(20px);box-shado
 .cta-sub{font-size:0.95rem;font-weight:300;color:rgba(255,255,255,0.55);margin-bottom:0.4rem;line-height:1.8;}
 .cta-sub2{font-size:0.85rem;color:rgba(255,255,255,0.35);margin-bottom:2.4rem;font-style:italic;}
 .cta-btn{display:inline-flex;align-items:center;gap:0.5rem;padding:1.1rem 2.8rem;border-radius:3px;text-decoration:none;font-size:0.82rem;font-weight:600;letter-spacing:0.12em;text-transform:uppercase;background:white;color:#1B4F8C;box-shadow:0 8px 28px rgba(0,0,0,0.2);transition:transform 0.22s;}
+.cta-btn{border:none;cursor:pointer;}
 .cta-btn:hover{transform:translateY(-2px);}
 .cta-box{margin:3rem auto 0;max-width:680px;padding:2rem;background:rgba(255,255,255,0.06);border-radius:8px;border:1px solid rgba(255,255,255,0.1);}
 .cta-box p{font-size:0.88rem;color:rgba(255,255,255,0.55);line-height:1.9;font-weight:300;}

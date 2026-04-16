@@ -26,7 +26,7 @@ export async function POST(req: NextRequest) {
   }
 
   if (event.type === "checkout.session.completed") {
-    const session = event.data.object as Stripe.CheckoutSession;
+    const session = event.data.object as Stripe.Checkout.Session;
     const { userId, plan } = session.metadata ?? {};
     const db = getFirebaseDb();
     await setDoc(doc(db, "enquiries", session.id), {

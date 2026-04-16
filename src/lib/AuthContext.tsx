@@ -3,6 +3,10 @@ import { createContext, useContext, useEffect, useState, ReactNode } from "react
 import {
   User,
   onAuthStateChanged,
+  setPersistence,
+  browserLocalPersistence,
+  browserSessionPersistence,
+  inMemoryPersistence,
   signInWithEmailAndPassword,
   createUserWithEmailAndPassword,
   signInWithPopup,
@@ -31,11 +35,32 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     const auth = getFirebaseAuth();
-    const unsub = onAuthStateChanged(auth, (u) => {
-      setUser(u);
-      setLoading(false);
-    });
-    return unsub;
+    let isMounted = true;
+    let unsub = () => {};
+
+    const initAuth = async () => {
+      try {
+        await setPersistence(auth, browserLocalPersistence);
+      } catch {
+        try {
+          await setPersistence(auth, browserSessionPersistence);
+        } catch {
+          await setPersistence(auth, inMemoryPersistence);
+        }
+      }
+
+      if (!isMounted) return;
+      unsub = onAuthStateChanged(auth, (u) => {
+        setUser(u);
+        setLoading(false);
+      });
+    };
+
+    initAuth();
+    return () => {
+      isMounted = false;
+      unsub();
+    };
   }, []);
 
   const loginWithEmail = async (email: string, password: string) => {
