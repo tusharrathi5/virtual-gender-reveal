@@ -1,7 +1,6 @@
 "use client";
-
-import { useState, useEffect, Suspense } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import { useAuth } from "@/lib/AuthContext";
 
 type ToastType = "success" | "error" | "info";
@@ -49,23 +48,33 @@ function getFirebaseError(err: unknown): string {
   return msg.replace("Firebase: ", "").replace(/\s*\(auth\/.*?\)\.?/, "").trim();
 }
 
-function AuthContent() {
-  const params = useSearchParams();
-  const initialMode = params.get("mode") === "signup" ? "signup" : "signin";
-  const intendedPlan = params.get("plan") || "";
-
-  const [mode, setMode] = useState<"signin" | "signup">(initialMode);
-  const [signupStep, setSignupStep] = useState<1 | 2>(1);
+export default function AuthPage() {
+  const router = useRouter();
+  const [redirectPath, setRedirectPath] = useState("/dashboard");
+  const [loginMessage, setLoginMessage] = useState("");
+  const [tab, setTab] = useState<"login" | "register">("login");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [displayName, setDisplayName] = useState("");
-  const [phone, setPhone] = useState("");
-  const [otp, setOtp] = useState("");
+  const [mobile, setMobile] = useState("");
+  const [otpSent, setOtpSent] = useState(false);
   const [loading, setLoading] = useState(false);
   const [toast, setToast] = useState<{ message: string; type: ToastType } | null>(null);
 
-  const { loginWithEmail, registerWithEmail, loginWithGoogle } = useAuth();
-  const router = useRouter();
+  const { user, loading: authLoading, loginWithEmail, registerWithEmail, loginWithGoogle, resetPassword, logout } = useAuth();
+  const isValidEmail = (value: string) => /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(value);
+  const isValidPhone = (value: string) => {
+    const digits = value.replace(/\D/g, "");
+    return digits.length >= 10 && digits.length <= 15;
+  };
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const params = new URLSearchParams(window.location.search);
+    const redirect = params.get("redirect");
+    const message = params.get("message");
+    if (redirect) setRedirectPath(redirect);
+    if (message) setLoginMessage(message);
+  }, []);
 
   function showToast(message: string, type: ToastType) {
     setToast({ message, type });
@@ -97,11 +106,24 @@ function AuthContent() {
     }
     setLoading(true);
     try {
-      await loginWithEmail(email.trim(), password);
-      showToast("Welcome back! Taking you to your dashboard...", "success");
-      setTimeout(() => redirectAfterAuth(), 1500);
-    } catch (err) {
-      showToast(getFirebaseError(err), "error");
+      if (!isValidEmail(email.trim().toLowerCase())) {
+        throw new Error("Please enter a valid email address.");
+      }
+
+      if (tab === "login") {
+        await loginWithEmail(email.trim().toLowerCase(), password);
+        router.push(redirectPath);
+      } else {
+        if (!isValidPhone(mobile)) {
+          throw new Error("Please enter a valid mobile number.");
+        }
+        await registerWithEmail(email.trim().toLowerCase(), password);
+        setSuccess("Account created! Please verify your email before logging in.");
+        setTab("login");
+      }
+    } catch (err: unknown) {
+      const msg = (err as { message?: string })?.message || "Something went wrong";
+      setError(friendlyError(msg));
     } finally {
       setLoading(false);
     }
@@ -128,26 +150,25 @@ function AuthContent() {
     if (otp !== "123456") { showToast("Incorrect code. Hint: use 123456", "error"); return; }
     setLoading(true);
     try {
-      await registerWithEmail(email.trim(), password);
-      const firstName = displayName.trim().split(" ")[0];
-      showToast(`🎉 Welcome, ${firstName}! Account created successfully.`, "success");
-      setTimeout(() => redirectAfterAuth(), 2000);
-    } catch (err) {
-      showToast(getFirebaseError(err), "error");
+      await loginWithGoogle();
+      router.push(redirectPath);
+    } catch (err: unknown) {
+      setError((err as { message?: string })?.message || "Google sign-in failed");
     } finally {
       setLoading(false);
     }
   }
 
-  // ── Google Sign In ──
-  async function handleGoogle() {
-    setLoading(true);
+  const handleReset = async () => {
+    if (!email) { setError("Please enter your email address first."); return; }
+    if (!isValidEmail(email.trim().toLowerCase())) { setError("Please enter a valid email address first."); return; }
+    setError(""); setLoading(true);
     try {
-      await loginWithGoogle();
-      showToast("Signed in with Google!", "success");
-      setTimeout(() => redirectAfterAuth(), 1500);
-    } catch (err) {
-      showToast(getFirebaseError(err), "error");
+      await resetPassword(email.trim().toLowerCase());
+      setSuccess("Password reset email sent! Check your inbox.");
+      setShowReset(false);
+    } catch {
+      setError("Failed to send reset email. Check the address and try again.");
     } finally {
       setLoading(false);
     }
@@ -287,108 +308,76 @@ function AuthContent() {
               </div>
             )}
 
-            {/* ── SIGN IN ── */}
-            {mode === "signin" && (
-              <>
-                <h2 className="form-heading">Welcome<br /><em>back.</em></h2>
-                <p className="form-sub">Sign in to manage your reveal and check your baby&apos;s secret.</p>
-                <button className="google-btn" onClick={handleGoogle} disabled={loading}>
-                  <GoogleIcon />Continue with Google
-                </button>
-                <div className="divider"><div className="divider-line" /><span className="divider-text">or</span><div className="divider-line" /></div>
-                <form onSubmit={handleSignin}>
-                  <div className="fields">
-                    <div className="field">
-                      <label>Email Address</label>
-                      <input type="text" placeholder="name@example.com" value={email} onChange={e => setEmail(e.target.value)} required />
-                    </div>
-                    <div className="field">
-                      <label>Password</label>
-                      <input type="password" placeholder="Your password" value={password} onChange={e => setPassword(e.target.value)} required />
-                    </div>
-                  </div>
-                  <button className="submit-btn" type="submit" disabled={loading}>
-                    {loading && <span className="spinner" />}{loading ? "Signing in..." : "Sign In"}
-                  </button>
-                </form>
-                <div className="switch-mode">Don&apos;t have an account?<button onClick={() => switchMode("signup")}>Sign up free</button></div>
-              </>
+            {!authLoading && user && (
+              <div className="verify-banner">
+                You are logged in as <strong>{user.displayName || user.email}</strong>.{" "}
+                <a href="/dashboard" style={{ color: "#1B4F8C", fontWeight: 600 }}>Go to dashboard</a>
+                {" "}or{" "}
+                <button
+                  type="button"
+                  onClick={async () => {
+                    await logout();
+                    setSuccess("You have been logged out.");
+                  }}
+                  style={{ border: "none", background: "none", color: "#1B4F8C", fontWeight: 600, cursor: "pointer", textDecoration: "underline" }}
+                >
+                  switch account
+                </button>.
+              </div>
             )}
 
-            {/* ── SIGNUP STEP 1 ── */}
-            {mode === "signup" && signupStep === 1 && (
-              <>
-                <h2 className="form-heading">Begin your<br /><em>journey.</em></h2>
-                <p className="form-sub">Create your account. We&apos;ll verify your phone with a one-time code.</p>
-                <div className="step-dots">
-                  <div className="step-dot active" />
-                  <div style={{ width: 24, height: 1, background: "rgba(255,255,255,.1)" }} />
-                  <div className="step-dot" />
-                  <span style={{ fontSize: 10, color: "rgba(245,239,245,.25)", letterSpacing: 1, marginLeft: 4 }}>STEP 1 OF 2</span>
-                </div>
-                <button className="google-btn" onClick={handleGoogle} disabled={loading}>
-                  <GoogleIcon />Continue with Google
-                </button>
-                <div className="divider"><div className="divider-line" /><span className="divider-text">or</span><div className="divider-line" /></div>
-                <form onSubmit={handleSignupStep1}>
-                  <div className="fields">
-                    <div className="field">
-                      <label>Full Name</label>
-                      <input type="text" placeholder="e.g. Sarah & James" value={displayName} onChange={e => setDisplayName(e.target.value)} required />
-                    </div>
-                    <div className="field">
-                      <label>Email Address</label>
-                      <input type="text" placeholder="name@example.com" value={email} onChange={e => setEmail(e.target.value)} required />
-                    </div>
-                    <div className="field">
-                      <label>Phone Number — for OTP verification</label>
-                      <div className="phone-row">
-                        <div className="phone-prefix">+1</div>
-                        <input className="phone-input" type="tel" placeholder="555 000 0000" value={phone} onChange={e => setPhone(e.target.value)} required />
-                      </div>
-                    </div>
-                    <div className="field">
-                      <label>Password</label>
-                      <input type="password" placeholder="Min. 6 characters" value={password} onChange={e => setPassword(e.target.value)} required minLength={6} />
-                    </div>
-                  </div>
-                  <button className="submit-btn" type="submit" disabled={loading}>
-                    {loading && <span className="spinner" />}{loading ? "Sending code..." : "Continue →"}
-                  </button>
-                </form>
-                <div className="switch-mode">Already have an account?<button onClick={() => switchMode("signin")}>Sign in</button></div>
-              </>
-            )}
+            <div className="tab-row">
+              <button className={`tab-btn${tab === "login" ? " active" : ""}`} onClick={() => { setTab("login"); setError(""); setSuccess(""); }}>Log In</button>
+              <button className={`tab-btn${tab === "register" ? " active" : ""}`} onClick={() => { setTab("register"); setError(""); setSuccess(""); }}>Register</button>
+            </div>
 
-            {/* ── SIGNUP STEP 2 — OTP ── */}
-            {mode === "signup" && signupStep === 2 && (
-              <div className="otp-wrap">
-                <h2 className="form-heading">Verify your<br /><em>phone.</em></h2>
-                <p className="form-sub">Enter the 6-digit code sent to your number.</p>
-                <div className="step-dots">
-                  <div className="step-dot done" />
-                  <div style={{ width: 24, height: 1, background: "rgba(34,197,94,.3)" }} />
-                  <div className="step-dot active" />
-                  <span style={{ fontSize: 10, color: "rgba(245,239,245,.25)", letterSpacing: 1, marginLeft: 4 }}>STEP 2 OF 2</span>
-                </div>
-                <div className="otp-info">
-                  📱 Code sent to <strong style={{ color: "rgba(245,239,245,.7)" }}>{phone}</strong><br />
-                  <span style={{ color: "rgba(200,164,196,.7)" }}>SMS coming soon — use <strong>123456</strong> for now.</span>
-                </div>
-                <button className="back-step" onClick={() => setSignupStep(1)}>← Change details</button>
-                <form onSubmit={handleSignupStep2}>
+            {loginMessage === "login_required" && (
+              <div className="verify-banner">Please login to continue.</div>
+            )}
+            {success && <div className="verify-banner">✓ {success}</div>}
+
+            <form onSubmit={handleSubmit}>
+              <div className="form-group">
+                <label className="form-label">Email Address</label>
+                <input className="form-input" type="email" placeholder="you@example.com" value={email} onChange={e => setEmail(e.target.value)} required />
+              </div>
+              <div className="form-group">
+                <label className="form-label">Password</label>
+                <input className="form-input" type="password" placeholder="••••••••" value={password} onChange={e => setPassword(e.target.value)} required minLength={8} />
+                {tab === "login" && (
+                  <span className="forgot-link" onClick={() => setShowReset(true)}>Forgot password?</span>
+                )}
+              </div>
+              {tab === "register" && (
+                <div className="form-group">
+                  <label className="form-label">Mobile Number (OTP placeholder)</label>
                   <input
-                    className="otp-input"
-                    type="text"
-                    inputMode="numeric"
-                    maxLength={6}
-                    placeholder="• • • • • •"
-                    value={otp}
-                    onChange={e => setOtp(e.target.value.replace(/\D/g, "").slice(0, 6))}
-                    autoFocus
+                    className="form-input"
+                    type="tel"
+                    placeholder="+1 555 123 4567"
+                    value={mobile}
+                    onChange={e => setMobile(e.target.value)}
+                    required={tab === "register"}
                   />
-                  <button className="submit-btn" type="submit" disabled={loading || otp.length !== 6}>
-                    {loading && <span className="spinner" />}{loading ? "Creating account..." : "Verify & Create Account"}
+                  <button
+                    type="button"
+                    className="btn-submit"
+                    style={{ marginTop: "0.6rem", background: "rgba(46,125,209,0.1)", color: "#1B4F8C", boxShadow: "none" }}
+                    onClick={() => {
+                      if (!mobile.trim()) { setError("Please enter a mobile number first."); return; }
+                      setError("");
+                      setOtpSent(true);
+                    }}
+                  >
+                    Send OTP (Placeholder)
+                  </button>
+                  {otpSent && <div className="success-msg">OTP placeholder sent. For now, any number is accepted.</div>}
+                </div>
+              )}
+              {showReset && (
+                <div style={{ marginBottom: "1rem" }}>
+                  <button type="button" className="btn-submit" style={{ background: "rgba(46,125,209,0.1)", color: "#1B4F8C", boxShadow: "none" }} onClick={handleReset} disabled={loading}>
+                    Send Reset Email
                   </button>
                 </form>
                 <div className="switch-mode" style={{ color: "rgba(245,239,245,.2)" }}>
