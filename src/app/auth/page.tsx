@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/lib/AuthContext";
 
@@ -87,27 +87,52 @@ body{font-family:'Plus Jakarta Sans',sans-serif;background:#F9F8F6;color:#111827
 `;
 
 export default function AuthPage() {
+  const router = useRouter();
+  const [redirectPath, setRedirectPath] = useState("/dashboard");
+  const [loginMessage, setLoginMessage] = useState("");
   const [tab, setTab] = useState<"login" | "register">("login");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [mobile, setMobile] = useState("");
+  const [otpSent, setOtpSent] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const [showReset, setShowReset] = useState(false);
 
-  const { loginWithEmail, registerWithEmail, loginWithGoogle, resetPassword } = useAuth();
-  const router = useRouter();
+  const { user, loading: authLoading, loginWithEmail, registerWithEmail, loginWithGoogle, resetPassword, logout } = useAuth();
+  const isValidEmail = (value: string) => /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(value);
+  const isValidPhone = (value: string) => {
+    const digits = value.replace(/\D/g, "");
+    return digits.length >= 10 && digits.length <= 15;
+  };
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const params = new URLSearchParams(window.location.search);
+    const redirect = params.get("redirect");
+    const message = params.get("message");
+    if (redirect) setRedirectPath(redirect);
+    if (message) setLoginMessage(message);
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(""); setSuccess(""); setLoading(true);
     try {
+      if (!isValidEmail(email.trim().toLowerCase())) {
+        throw new Error("Please enter a valid email address.");
+      }
+
       if (tab === "login") {
-        await loginWithEmail(email, password);
-        router.push("/dashboard");
+        await loginWithEmail(email.trim().toLowerCase(), password);
+        router.push(redirectPath);
       } else {
-        await registerWithEmail(email, password);
-        setSuccess("Account created! Please check your email to verify before logging in.");
+        if (!isValidPhone(mobile)) {
+          throw new Error("Please enter a valid mobile number.");
+        }
+        await registerWithEmail(email.trim().toLowerCase(), password);
+        setSuccess("Account created! Please verify your email before logging in.");
         setTab("login");
       }
     } catch (err: unknown) {
@@ -122,7 +147,7 @@ export default function AuthPage() {
     setError(""); setLoading(true);
     try {
       await loginWithGoogle();
-      router.push("/dashboard");
+      router.push(redirectPath);
     } catch (err: unknown) {
       setError((err as { message?: string })?.message || "Google sign-in failed");
     } finally {
@@ -132,9 +157,10 @@ export default function AuthPage() {
 
   const handleReset = async () => {
     if (!email) { setError("Please enter your email address first."); return; }
+    if (!isValidEmail(email.trim().toLowerCase())) { setError("Please enter a valid email address first."); return; }
     setError(""); setLoading(true);
     try {
-      await resetPassword(email);
+      await resetPassword(email.trim().toLowerCase());
       setSuccess("Password reset email sent! Check your inbox.");
       setShowReset(false);
     } catch {
@@ -178,11 +204,32 @@ export default function AuthPage() {
               </div>
             </div>
 
+            {!authLoading && user && (
+              <div className="verify-banner">
+                You are logged in as <strong>{user.displayName || user.email}</strong>.{" "}
+                <a href="/dashboard" style={{ color: "#1B4F8C", fontWeight: 600 }}>Go to dashboard</a>
+                {" "}or{" "}
+                <button
+                  type="button"
+                  onClick={async () => {
+                    await logout();
+                    setSuccess("You have been logged out.");
+                  }}
+                  style={{ border: "none", background: "none", color: "#1B4F8C", fontWeight: 600, cursor: "pointer", textDecoration: "underline" }}
+                >
+                  switch account
+                </button>.
+              </div>
+            )}
+
             <div className="tab-row">
               <button className={`tab-btn${tab === "login" ? " active" : ""}`} onClick={() => { setTab("login"); setError(""); setSuccess(""); }}>Log In</button>
               <button className={`tab-btn${tab === "register" ? " active" : ""}`} onClick={() => { setTab("register"); setError(""); setSuccess(""); }}>Register</button>
             </div>
 
+            {loginMessage === "login_required" && (
+              <div className="verify-banner">Please login to continue.</div>
+            )}
             {success && <div className="verify-banner">✓ {success}</div>}
 
             <form onSubmit={handleSubmit}>
@@ -197,6 +244,32 @@ export default function AuthPage() {
                   <span className="forgot-link" onClick={() => setShowReset(true)}>Forgot password?</span>
                 )}
               </div>
+              {tab === "register" && (
+                <div className="form-group">
+                  <label className="form-label">Mobile Number (OTP placeholder)</label>
+                  <input
+                    className="form-input"
+                    type="tel"
+                    placeholder="+1 555 123 4567"
+                    value={mobile}
+                    onChange={e => setMobile(e.target.value)}
+                    required={tab === "register"}
+                  />
+                  <button
+                    type="button"
+                    className="btn-submit"
+                    style={{ marginTop: "0.6rem", background: "rgba(46,125,209,0.1)", color: "#1B4F8C", boxShadow: "none" }}
+                    onClick={() => {
+                      if (!mobile.trim()) { setError("Please enter a mobile number first."); return; }
+                      setError("");
+                      setOtpSent(true);
+                    }}
+                  >
+                    Send OTP (Placeholder)
+                  </button>
+                  {otpSent && <div className="success-msg">OTP placeholder sent. For now, any number is accepted.</div>}
+                </div>
+              )}
               {showReset && (
                 <div style={{ marginBottom: "1rem" }}>
                   <button type="button" className="btn-submit" style={{ background: "rgba(46,125,209,0.1)", color: "#1B4F8C", boxShadow: "none" }} onClick={handleReset} disabled={loading}>
