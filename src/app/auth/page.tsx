@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useState, Suspense } from "react";
+import { useState, Suspense } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/lib/AuthContext";
 
@@ -49,7 +49,7 @@ function AuthContent() {
         await loginWithEmail(email, password);
         router.push("/dashboard");
       } else {
-        showToast("Registration is currently handled via Sign In for this demo.", "info");
+        showToast("Registration is currently handled via Sign In.", "info");
       }
     } catch (err: any) {
       showToast(err.message || "Authentication failed", "error");
@@ -75,16 +75,15 @@ function AuthContent() {
   return (
     <div className="auth-root">
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Jost:wght@300;400;500&display=swap');
-        .auth-root{min-height:100vh;display:flex;align-items:center;justify-content:center;font-family:'Jost',sans-serif;background:#0a0608;color:#f5eff5}
-        .form-card{width:100%;max-width:400px;background:rgba(255,255,255,0.02);padding:40px;border-radius:20px;border:1px solid rgba(255,255,255,0.05);backdrop-filter:blur(10px)}
-        .field{margin-bottom:20px}
-        .field label{display:block;font-size:11px;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;color:rgba(245,239,245,0.5)}
-        .field input{width:100%;padding:12px;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:8px;color:#fff;outline:none}
-        .submit-btn{width:100%;padding:14px;background:#c8a4c4;border:none;border-radius:8px;color:#0a0608;font-weight:600;cursor:pointer}
-        .mode-toggle{display:flex;gap:10px;margin-bottom:30px}
-        .mode-btn{flex:1;padding:10px;background:none;border:1px solid rgba(255,255,255,0.1);color:rgba(255,255,255,0.4);border-radius:8px;cursor:pointer}
-        .mode-btn.active{border-color:#c8a4c4;color:#c8a4c4;background:rgba(200,164,196,0.1)}
+        .auth-root { min-height: 100vh; display: flex; align-items: center; justify-content: center; font-family: 'Jost', sans-serif; background: #0a0608; color: #f5eff5; }
+        .form-card { width: 100%; max-width: 400px; background: rgba(255, 255, 255, 0.02); padding: 40px; border-radius: 20px; border: 1px solid rgba(255, 255, 255, 0.05); backdrop-filter: blur(10px); }
+        .field { margin-bottom: 20px; }
+        .field label { display: block; font-size: 11px; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px; color: rgba(245, 239, 245, 0.5); }
+        .field input { width: 100%; padding: 12px; background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 8px; color: #fff; outline: none; }
+        .submit-btn { width: 100%; padding: 14px; background: #c8a4c4; border: none; border-radius: 8px; color: #0a0608; font-weight: 600; cursor: pointer; }
+        .mode-toggle { display: flex; gap: 10px; margin-bottom: 30px; }
+        .mode-btn { flex: 1; padding: 10px; background: none; border: 1px solid rgba(255, 255, 255, 0.1); color: rgba(255, 255, 255, 0.4); border-radius: 8px; cursor: pointer; }
+        .mode-btn.active { border-color: #c8a4c4; color: #c8a4c4; background: rgba(200, 164, 196, 0.1); }
       `}</style>
 
       {toast && <Toast message={toast.message} type={toast.type} onClose={() => setToast(null)} />}
