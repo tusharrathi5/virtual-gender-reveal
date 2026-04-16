@@ -25,61 +25,35 @@ function Toast({ message, type, onClose }: { message: string; type: ToastType; o
   );
 }
 
-function isValidEmail(email: string): boolean {
-  return /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/.test(email.trim());
-}
-
-function isValidPhone(phone: string): boolean {
-  return /^\+?[\d\s-().]{7,20}$/.test(phone.trim()) && phone.replace(/\D/g, "").length >= 7;
-}
-
 function AuthContent() {
   const router = useRouter();
-  const { user, loading: authLoading, loginWithEmail, registerWithEmail, logout, resetPassword } = useAuth();
+  const { loginWithEmail, resetPassword } = useAuth();
 
-  // State Definitions
   const [mode, setMode] = useState<"signin" | "signup">("signin");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [displayName, setDisplayName] = useState("");
-  const [phone, setPhone] = useState("");
-  const [mobile, setMobile] = useState("");
-  const [otp, setOtp] = useState("");
-  const [signupStep, setSignupStep] = useState(1);
   const [loading, setLoading] = useState(false);
   const [showReset, setShowReset] = useState(false);
-  const [error, setError] = useState("");
-  const [success, setSuccess] = useState("");
   const [toast, setToast] = useState<{ message: string; type: ToastType } | null>(null);
-  const [intendedPlan, setIntendedPlan] = useState("");
-  const [redirectPath, setRedirectPath] = useState("/dashboard");
-
-  useEffect(() => {
-    if (typeof window === "undefined") return;
-    const params = new URLSearchParams(window.location.search);
-    const redirect = params.get("redirect");
-    if (redirect) setRedirectPath(redirect);
-    
-    const plan = sessionStorage.getItem("vgr_intended_plan");
-    if (plan) setIntendedPlan(plan);
-  }, []);
 
   function showToast(message: string, type: ToastType) {
     setToast({ message, type });
     setTimeout(() => setToast(null), 5000);
   }
 
-  const handleSignin = async (e: React.FormEvent) => {
+  const handleAuth = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError("");
-    if (!isValidEmail(email)) return showToast("Invalid email address", "error");
-    
     setLoading(true);
     try {
-      await loginWithEmail(email, password);
-      router.push(redirectPath);
+      if (mode === "signin") {
+        await loginWithEmail(email, password);
+        router.push("/dashboard");
+      } else {
+        // Placeholder for signup logic
+        showToast("Registration is currently handled via Sign In for this demo.", "info");
+      }
     } catch (err: any) {
-      showToast(err.message || "Login failed", "error");
+      showToast(err.message || "Authentication failed", "error");
     } finally {
       setLoading(false);
     }
@@ -90,7 +64,7 @@ function AuthContent() {
     setLoading(true);
     try {
       await resetPassword(email);
-      showToast("Reset link sent to your email", "success");
+      showToast("Reset link sent!", "success");
       setShowReset(false);
     } catch (err: any) {
       showToast("Failed to send reset link", "error");
@@ -99,64 +73,51 @@ function AuthContent() {
     }
   };
 
-  function switchMode(m: "signin" | "signup") {
-    setMode(m);
-    setSignupStep(1);
-    setEmail(""); setPassword(""); setDisplayName(""); setPhone(""); setOtp("");
-  }
-
   return (
     <div className="auth-root">
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=Jost:wght@300;400;500&display=swap');
-        .auth-root{min-height:100vh;display:flex;font-family:'Jost',sans-serif;background:#0a0608;position:relative;overflow:hidden;color:#f5eff5}
-        .form-panel{flex:1;display:flex;align-items:center;justify-content:center;padding:24px;z-index:1}
+        @import url('https://fonts.googleapis.com/css2?family=Jost:wght@300;400;500&display=swap');
+        .auth-root{min-height:100vh;display:flex;align-items:center;justify-content:center;font-family:'Jost',sans-serif;background:#0a0608;color:#f5eff5}
         .form-card{width:100%;max-width:400px;background:rgba(255,255,255,0.02);padding:40px;border-radius:20px;border:1px solid rgba(255,255,255,0.05);backdrop-filter:blur(10px)}
         .field{margin-bottom:20px}
         .field label{display:block;font-size:11px;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;color:rgba(245,239,245,0.5)}
         .field input{width:100%;padding:12px;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:8px;color:#fff;outline:none}
-        .submit-btn{width:100%;padding:14px;background:#c8a4c4;border:none;border-radius:8px;color:#0a0608;font-weight:600;cursor:pointer;margin-top:10px}
+        .submit-btn{width:100%;padding:14px;background:#c8a4c4;border:none;border-radius:8px;color:#0a0608;font-weight:600;cursor:pointer}
         .mode-toggle{display:flex;gap:10px;margin-bottom:30px}
         .mode-btn{flex:1;padding:10px;background:none;border:1px solid rgba(255,255,255,0.1);color:rgba(255,255,255,0.4);border-radius:8px;cursor:pointer}
         .mode-btn.active{border-color:#c8a4c4;color:#c8a4c4;background:rgba(200,164,196,0.1)}
-        .switch-mode{text-align:center;margin-top:20px;font-size:13px;color:rgba(255,255,255,0.3)}
       `}</style>
 
       {toast && <Toast message={toast.message} type={toast.type} onClose={() => setToast(null)} />}
 
-      <div className="form-panel">
-        <div className="form-card">
-          <div className="mode-toggle">
-            <button className={`mode-btn ${mode === "signin" ? "active" : ""}`} onClick={() => switchMode("signin")}>Sign In</button>
-            <button className={`mode-btn ${mode === "signup" ? "active" : ""}`} onClick={() => switchMode("signup")}>Register</button>
+      <div className="form-card">
+        <div className="mode-toggle">
+          <button className={`mode-btn ${mode === "signin" ? "active" : ""}`} onClick={() => setMode("signin")}>Sign In</button>
+          <button className={`mode-btn ${mode === "signup" ? "active" : ""}`} onClick={() => setMode("signup")}>Register</button>
+        </div>
+
+        <form onSubmit={handleAuth}>
+          <div className="field">
+            <label>Email</label>
+            <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
           </div>
+          <div className="field">
+            <label>Password</label>
+            <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} required />
+          </div>
+          <button type="submit" className="submit-btn" disabled={loading}>
+            {loading ? "Processing..." : mode === "signin" ? "Sign In" : "Create Account"}
+          </button>
+        </form>
 
-          <form onSubmit={handleSignin}>
-            <div className="field">
-              <label>Email Address</label>
-              <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} required placeholder="name@example.com" />
-            </div>
-            <div className="field">
-              <label>Password</label>
-              <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} required placeholder="••••••••" />
-            </div>
-            
-            <button type="submit" className="submit-btn" disabled={loading}>
-              {loading ? "Processing..." : mode === "signin" ? "Sign In" : "Create Account"}
+        <div style={{ textAlign: "center", marginTop: "20px" }}>
+          <span onClick={() => setShowReset(!showReset)} style={{ cursor: "pointer", fontSize: "12px", textDecoration: "underline", color: "rgba(255,255,255,0.3)" }}>
+            {showReset ? "Back to Login" : "Forgot Password?"}
+          </span>
+          {showReset && (
+            <button onClick={handleReset} className="submit-btn" style={{ marginTop: '15px', background: 'rgba(255,255,255,0.1)', color: '#fff' }}>
+              Send Reset Link
             </button>
-          </form>
-
-          {mode === "signin" && (
-            <div className="switch-mode">
-              <span onClick={() => setShowReset(!showReset)} style={{ cursor: "pointer", textDecoration: "underline" }}>
-                {showReset ? "Back to Login" : "Forgot Password?"}
-              </span>
-              {showReset && (
-                <button onClick={handleReset} className="submit-btn" style={{ marginTop: '15px', background: 'rgba(255,255,255,0.1)', color: '#fff' }}>
-                  Send Reset Link
-                </button>
-              )}
-            </div>
           )}
         </div>
       </div>
