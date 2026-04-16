@@ -1,18 +1,9 @@
 "use client";
-/**
- * CinematicEntry.tsx
- * Step 1 — 6-scene cinematic intro + full landing page
- * Brand: Virtual Gender Reveal
- * Tagline: "Crafted for Moments That Matter"
- */
-
 import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/lib/AuthContext";
 
-// ── Scene durations (ms). 0 = user must click to advance ──
 const SCENE_DURATIONS = [3800, 3200, 3200, 4000, 4500, 0];
-
 const CLOUDS_S1 = [
   { w: 260, h: 90, top: "12%", left: "5%", blur: "28px" },
   { w: 180, h: 70, top: "18%", left: "62%", blur: "22px" },
@@ -20,7 +11,6 @@ const CLOUDS_S1 = [
   { w: 140, h: 55, top: "8%", left: "80%", blur: "18px" },
   { w: 200, h: 75, top: "38%", left: "15%", blur: "25px" },
 ];
-
 const CONFETTI_PIECES = Array.from({ length: 22 }, (_, i) => ({
   left: `${Math.random() * 100}%`,
   color: i % 2 === 0 ? "#82B8E8" : "#F2B8CF",
@@ -30,7 +20,11 @@ const CONFETTI_PIECES = Array.from({ length: 22 }, (_, i) => ({
 }));
 
 export default function CinematicEntry() {
-  const [scene, setScene] = useState(0); // 0-5 cinema, 6 = landing
+  // ✅ Issue 3 fix: check sessionStorage FIRST — if already seen, skip intro
+  const [scene, setScene] = useState<number>(() => {
+    if (typeof window !== "undefined" && sessionStorage.getItem("vgr_intro_seen")) return 6;
+    return 0;
+  });
   const [exiting, setExiting] = useState(false);
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -45,11 +39,19 @@ export default function CinematicEntry() {
     if (scene + 1 >= 6) {
       sessionStorage.setItem("vgr-cinematic-seen", "true");
       setExiting(true);
-      setTimeout(() => setScene(6), 1000);
+      // ✅ Mark intro as seen for this session
+      sessionStorage.setItem("vgr_intro_seen", "1");
+      setTimeout(() => setScene(6), 700);
     } else {
-      setScene((s) => s + 1);
+      setScene(s => s + 1);
     }
   };
+
+  function skipIntro() {
+    sessionStorage.setItem("vgr_intro_seen", "1");
+    setExiting(true);
+    setTimeout(() => setScene(6), 600);
+  }
 
   useEffect(() => {
     if (scene >= 6) return;
@@ -59,21 +61,19 @@ export default function CinematicEntry() {
     return () => { if (timerRef.current) clearTimeout(timerRef.current); };
   }, [scene]);
 
-  // Scroll-reveal observer for landing
   useEffect(() => {
     if (scene !== 6) return;
     const timer = setTimeout(() => {
       const obs = new IntersectionObserver(
-        (entries) => entries.forEach((e) => { if (e.isIntersecting) e.target.classList.add("visible"); }),
+        entries => entries.forEach(e => { if (e.isIntersecting) e.target.classList.add("visible"); }),
         { threshold: 0.12 }
       );
-      document.querySelectorAll(".fade-up").forEach((el) => obs.observe(el));
+      document.querySelectorAll(".fade-up").forEach(el => obs.observe(el));
       return () => obs.disconnect();
     }, 200);
     return () => clearTimeout(timer);
   }, [scene]);
 
-  // Nav solid on scroll
   useEffect(() => {
     if (scene !== 6) return;
     const onScroll = () => {
@@ -90,160 +90,129 @@ export default function CinematicEntry() {
     <>
       <style>{CINEMA_CSS}</style>
       <div id="cinema" className={exiting ? "fade-out" : ""}>
-        {/* Scene 1 */}
+        <button className="skip-btn" onClick={skipIntro}>Skip intro →</button>
         {scene === 0 && (
           <div className="scene active">
-            <div className="s1-sky" />
-            {CLOUDS_S1.map((c, i) => (
-              <div key={i} className="cloud" style={{ width: c.w, height: c.h, top: c.top, left: c.left, "--blur": c.blur } as React.CSSProperties} />
-            ))}
+            <div className="s1-sky"/>
+            {CLOUDS_S1.map((c,i) => <div key={i} className="cloud" style={{width:c.w,height:c.h,top:c.top,left:c.left,"--blur":c.blur} as React.CSSProperties}/>)}
             <div className="bird-wrap">
               <svg width="120" height="80" viewBox="0 0 120 80" fill="none">
-                <ellipse cx="60" cy="52" rx="22" ry="12" fill="white" opacity="0.95" />
-                <path d="M10 45 Q35 20 60 52 Q85 20 110 45" stroke="white" strokeWidth="3" fill="none" strokeLinecap="round" />
-                <ellipse cx="60" cy="50" rx="8" ry="6" fill="rgba(130,184,232,0.4)" />
+                <ellipse cx="60" cy="52" rx="22" ry="12" fill="white" opacity="0.95"/>
+                <path d="M10 45 Q35 20 60 52 Q85 20 110 45" stroke="white" strokeWidth="3" fill="none" strokeLinecap="round"/>
+                <ellipse cx="60" cy="50" rx="8" ry="6" fill="rgba(130,184,232,0.4)"/>
               </svg>
             </div>
-            <div className="cin-text" style={{ marginTop: "60px" }}>
-              <p>"From a place far beyond…<br />a new journey begins."</p>
+            <div className="cin-text" style={{marginTop:"60px"}}>
+              <p>&ldquo;From a place far beyond…<br/>a new journey begins.&rdquo;</p>
               <div className="dot-row">◆ &nbsp; ◆ &nbsp; ◆</div>
             </div>
-            <SceneProgress current={scene} />
+            <SceneProgress current={scene}/>
           </div>
         )}
-
-        {/* Scene 2 */}
         {scene === 1 && (
           <div className="scene active">
-            <div className="s2-bg" />
-            {[{ w: 200, h: 70, top: "8%", left: "5%" }, { w: 160, h: 60, top: "14%", left: "70%" }, { w: 240, h: 80, top: "22%", left: "38%" }].map((c, i) => (
-              <div key={i} className="cloud" style={{ width: c.w, height: c.h, top: c.top, left: c.left, "--blur": "24px" } as React.CSSProperties} />
+            <div className="s2-bg"/>
+            {[{w:200,h:70,top:"8%",left:"5%"},{w:160,h:60,top:"14%",left:"70%"},{w:240,h:80,top:"22%",left:"38%"}].map((c,i)=>(
+              <div key={i} className="cloud" style={{width:c.w,height:c.h,top:c.top,left:c.left,"--blur":"24px"} as React.CSSProperties}/>
             ))}
-            <div style={{ zIndex: 5, marginBottom: "1.5rem" }}>
-              <svg width="140" height="90" viewBox="0 0 140 90" fill="none" style={{ filter: "drop-shadow(0 8px 24px rgba(0,80,180,0.25))", display: "block" }}>
-                <ellipse cx="70" cy="62" rx="25" ry="13" fill="white" opacity="0.95" />
-                <path d="M8 52 Q39 22 70 62 Q101 22 132 52" stroke="white" strokeWidth="3.5" fill="none" strokeLinecap="round" />
+            <div style={{zIndex:5,marginBottom:"1.5rem"}}>
+              <svg width="140" height="90" viewBox="0 0 140 90" fill="none" style={{filter:"drop-shadow(0 8px 24px rgba(0,80,180,0.25))",display:"block"}}>
+                <ellipse cx="70" cy="62" rx="25" ry="13" fill="white" opacity="0.95"/>
+                <path d="M8 52 Q39 22 70 62 Q101 22 132 52" stroke="white" strokeWidth="3.5" fill="none" strokeLinecap="round"/>
               </svg>
             </div>
-            <div style={{ display: "flex", gap: "4rem", alignItems: "center", zIndex: 5, marginBottom: "1.5rem", animation: "bundleFloat 3s ease-in-out infinite alternate" }}>
-              <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "0.6rem" }}>
-                <div className="bundle-orb bundle-blue">🔵</div>
-                <div className="bundle-label">Boy</div>
+            <div style={{display:"flex",gap:"4rem",alignItems:"center",zIndex:5,marginBottom:"1.5rem",animation:"bundleFloat 3s ease-in-out infinite alternate"}}>
+              <div style={{display:"flex",flexDirection:"column",alignItems:"center",gap:"0.6rem"}}>
+                <div className="bundle-orb bundle-blue">🔵</div><div className="bundle-label">Boy</div>
               </div>
-              <div style={{ width: 2, height: 60, background: "linear-gradient(to bottom,transparent,rgba(255,255,255,0.4),transparent)" }} />
-              <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "0.6rem" }}>
-                <div className="bundle-orb bundle-pink">🩷</div>
-                <div className="bundle-label">Girl</div>
+              <div style={{width:2,height:60,background:"linear-gradient(to bottom,transparent,rgba(255,255,255,0.4),transparent)"}}/>
+              <div style={{display:"flex",flexDirection:"column",alignItems:"center",gap:"0.6rem"}}>
+                <div className="bundle-orb bundle-pink">🩷</div><div className="bundle-label">Girl</div>
               </div>
             </div>
-            <div className="cin-text"><p>"Two possibilities.<br /><em>One beautiful destiny.</em>"</p></div>
-            <SceneProgress current={scene} />
+            <div className="cin-text"><p>&ldquo;Two possibilities.<br/><em>One beautiful destiny.</em>&rdquo;</p></div>
+            <SceneProgress current={scene}/>
           </div>
         )}
-
-        {/* Scene 3 */}
         {scene === 2 && (
           <div className="scene active">
-            <div className="s3-bg" />
-            {Array.from({ length: 14 }, (_, i) => (
-              <div key={i} className="arena-light" style={{ animationDelay: `${i * 0.2}s` }} />
-            ))}
-            <div style={{ position: "relative", zIndex: 5, width: "90%", maxWidth: 700, animation: "fadeUp 0.8s ease 0.2s both" }}>
-              <div style={{ textAlign: "center", marginBottom: "1rem" }}>
-                <span style={{ fontSize: "0.7rem", letterSpacing: "0.3em", textTransform: "uppercase", color: "rgba(255,220,150,0.6)" }}>⬡ Grand Reveal Arena ⬡</span>
-              </div>
+            <div className="s3-bg"/>
+            {Array.from({length:14},(_,i)=><div key={i} className="arena-light" style={{animationDelay:`${i*0.2}s`}}/>)}
+            <div style={{position:"relative",zIndex:5,width:"90%",maxWidth:700,animation:"fadeUp 0.8s ease 0.2s both"}}>
+              <div style={{textAlign:"center",marginBottom:"1rem"}}><span style={{fontSize:"0.7rem",letterSpacing:"0.3em",textTransform:"uppercase",color:"rgba(255,220,150,0.6)"}}>⬡ Grand Reveal Arena ⬡</span></div>
               <div className="track-surface">
-                <div className="track-lane" style={{ top: "30%" }} />
-                <div className="track-lane" style={{ top: "70%" }} />
+                <div className="track-lane" style={{top:"30%"}}/><div className="track-lane" style={{top:"70%"}}/>
                 <div className="horse-arrive">🐎 🔵 + 🩷</div>
               </div>
             </div>
-            <div className="cin-text" style={{ marginTop: "1.5rem" }}><p><em>"The stage is set. The arena awaits."</em></p></div>
-            <SceneProgress current={scene} />
+            <div className="cin-text" style={{marginTop:"1.5rem"}}><p><em>&ldquo;The stage is set. The arena awaits.&rdquo;</em></p></div>
+            <SceneProgress current={scene}/>
           </div>
         )}
-
-        {/* Scene 4 */}
         {scene === 3 && (
           <div className="scene active">
-            <div className="s4-bg" />
-            <div className="crowd-dots" />
-            <div style={{ position: "relative", zIndex: 5, width: "92%", maxWidth: 760 }}>
+            <div className="s4-bg"/><div className="crowd-dots"/>
+            <div style={{position:"relative",zIndex:5,width:"92%",maxWidth:760}}>
               {[
-                { cls: "lane-blue", label: "Team Boy", labelCls: "label-blue", stop: "58%", delay: "0.2s", emoji: "🔵", obstacles: [{ left: "35%", oa: "1.2s", icon: "🌊" }, { left: "60%", oa: "1.8s", icon: "⭐" }] },
-                { cls: "lane-pink", label: "Team Girl", labelCls: "label-pink", stop: "52%", delay: "0.4s", emoji: "🩷", obstacles: [{ left: "28%", oa: "1s", icon: "🌸" }, { left: "55%", oa: "1.6s", icon: "💫" }] },
-              ].map((lane, i) => (
-                <div key={i} className={`race-lane ${lane.cls}`} style={{ marginBottom: i === 0 ? 8 : 0 }}>
+                {cls:"lane-blue",label:"Team Boy",labelCls:"label-blue",stop:"58%",delay:"0.2s",emoji:"🔵",obstacles:[{left:"35%",oa:"1.2s",icon:"🌊"},{left:"60%",oa:"1.8s",icon:"⭐"}]},
+                {cls:"lane-pink",label:"Team Girl",labelCls:"label-pink",stop:"52%",delay:"0.4s",emoji:"🩷",obstacles:[{left:"28%",oa:"1s",icon:"🌸"},{left:"55%",oa:"1.6s",icon:"💫"}]},
+              ].map((lane,i)=>(
+                <div key={i} className={`race-lane ${lane.cls}`} style={{marginBottom:i===0?8:0}}>
                   <div className={`race-label ${lane.labelCls}`}>{lane.label}</div>
-                  <div className="racer" style={{ "--stop": lane.stop, "--rd": lane.delay } as React.CSSProperties}>
-                    <span style={{ fontSize: "2.2rem", animation: "horseGallop 0.3s linear infinite" }}>🐎</span>
-                    <span style={{ fontSize: "1.2rem" }}>{lane.emoji}</span>
+                  <div className="racer" style={{"--stop":lane.stop,"--rd":lane.delay} as React.CSSProperties}>
+                    <span style={{fontSize:"2.2rem",animation:"horseGallop 0.3s linear infinite"}}>🐎</span>
+                    <span style={{fontSize:"1.2rem"}}>{lane.emoji}</span>
                   </div>
-                  {lane.obstacles.map((o, j) => (
-                    <div key={j} className="obstacle" style={{ left: o.left, "--oa": o.oa } as React.CSSProperties}>{o.icon}</div>
-                  ))}
+                  {lane.obstacles.map((o,j)=><div key={j} className="obstacle" style={{left:o.left,"--oa":o.oa} as React.CSSProperties}>{o.icon}</div>)}
                 </div>
               ))}
             </div>
-            <div className="cin-text" style={{ marginTop: "1.5rem" }}>
+            <div className="cin-text" style={{marginTop:"1.5rem"}}>
               <p><em>The race has begun...</em></p>
-              <div style={{ fontFamily: "Plus Jakarta Sans", fontSize: "clamp(1.8rem,4vw,2.8rem)", fontWeight: 600, color: "var(--gold-light)", letterSpacing: "0.08em", marginTop: "0.4rem" }}>🏁 AND THEY&apos;RE OFF!</div>
+              <div style={{fontFamily:"Plus Jakarta Sans",fontSize:"clamp(1.8rem,4vw,2.8rem)",fontWeight:600,color:"var(--gold-light)",letterSpacing:"0.08em",marginTop:"0.4rem"}}>🏁 AND THEY&apos;RE OFF!</div>
             </div>
-            <SceneProgress current={scene} />
+            <SceneProgress current={scene}/>
           </div>
         )}
-
-        {/* Scene 5 — Split Reveal */}
         {scene === 4 && (
-          <div className="scene active" style={{ flexDirection: "row" }}>
-            <div style={{ position: "absolute", inset: 0, display: "flex" }}>
-              {/* Blue */}
-              <div className="s5-half s5-blue" style={{ "--hs": "0.1s" } as React.CSSProperties}>
-                <div style={{ position: "absolute", inset: 0, overflow: "hidden", pointerEvents: "none" }}>
-                  {CONFETTI_PIECES.filter((_, i) => i % 2 === 0).map((c, i) => (
-                    <div key={i} className="confetto" style={{ left: c.left, background: c.color, "--cf-dur": c.dur, "--cf-del": c.del, width: c.size, height: c.size } as React.CSSProperties} />
+          <div className="scene active" style={{flexDirection:"row"}}>
+            <div style={{position:"absolute",inset:0,display:"flex"}}>
+              <div className="s5-half s5-blue" style={{"--hs":"0.1s"} as React.CSSProperties}>
+                <div style={{position:"absolute",inset:0,overflow:"hidden",pointerEvents:"none"}}>
+                  {CONFETTI_PIECES.filter((_,i)=>i%2===0).map((c,i)=>(
+                    <div key={i} className="confetto" style={{left:c.left,background:c.color,"--cf-dur":c.dur,"--cf-del":c.del,width:c.size,height:c.size} as React.CSSProperties}/>
                   ))}
                 </div>
-                <span style={{ fontSize: "clamp(2rem,5vw,4rem)", animation: "wordPop 0.6s cubic-bezier(0.34,1.56,0.64,1) 0.6s both", display: "block" }}>👶</span>
-                <div className="reveal-big" style={{ "--wp": "0.8s" } as React.CSSProperties}>It&apos;s a<br /><strong>Boy</strong></div>
-                <div style={{ fontSize: "3rem", marginTop: "0.6rem", animation: "wordPop 0.6s ease 1.3s both", display: "block" }}>💙</div>
+                <span style={{fontSize:"clamp(2rem,5vw,4rem)",animation:"wordPop 0.6s cubic-bezier(0.34,1.56,0.64,1) 0.6s both",display:"block"}}>👶</span>
+                <div className="reveal-big" style={{"--wp":"0.8s"} as React.CSSProperties}>It&apos;s a<br/><strong>Boy</strong></div>
+                <div style={{fontSize:"3rem",marginTop:"0.6rem",animation:"wordPop 0.6s ease 1.3s both",display:"block"}}>💙</div>
               </div>
-              <div className="s5-divider" />
-              {/* Pink */}
-              <div className="s5-half s5-pink" style={{ "--hs": "0.25s" } as React.CSSProperties}>
-                <div style={{ position: "absolute", inset: 0, overflow: "hidden", pointerEvents: "none" }}>
-                  {CONFETTI_PIECES.filter((_, i) => i % 2 !== 0).map((c, i) => (
-                    <div key={i} className="confetto" style={{ left: c.left, background: c.color, "--cf-dur": c.dur, "--cf-del": c.del, width: c.size, height: c.size } as React.CSSProperties} />
+              <div className="s5-divider"/>
+              <div className="s5-half s5-pink" style={{"--hs":"0.25s"} as React.CSSProperties}>
+                <div style={{position:"absolute",inset:0,overflow:"hidden",pointerEvents:"none"}}>
+                  {CONFETTI_PIECES.filter((_,i)=>i%2!==0).map((c,i)=>(
+                    <div key={i} className="confetto" style={{left:c.left,background:c.color,"--cf-dur":c.dur,"--cf-del":c.del,width:c.size,height:c.size} as React.CSSProperties}/>
                   ))}
                 </div>
-                <span style={{ fontSize: "clamp(2rem,5vw,4rem)", animation: "wordPop 0.6s cubic-bezier(0.34,1.56,0.64,1) 0.7s both", display: "block" }}>👶</span>
-                <div className="reveal-big" style={{ "--wp": "1s" } as React.CSSProperties}>It&apos;s a<br /><strong>Girl</strong></div>
-                <div style={{ fontSize: "3rem", marginTop: "0.6rem", animation: "wordPop 0.6s ease 1.5s both", display: "block" }}>🩷</div>
+                <span style={{fontSize:"clamp(2rem,5vw,4rem)",animation:"wordPop 0.6s cubic-bezier(0.34,1.56,0.64,1) 0.7s both",display:"block"}}>👶</span>
+                <div className="reveal-big" style={{"--wp":"1s"} as React.CSSProperties}>It&apos;s a<br/><strong>Girl</strong></div>
+                <div style={{fontSize:"3rem",marginTop:"0.6rem",animation:"wordPop 0.6s ease 1.5s both",display:"block"}}>🩷</div>
               </div>
             </div>
-            <SceneProgress current={scene} />
+            <SceneProgress current={scene}/>
           </div>
         )}
-
-        {/* Scene 6 — Brand */}
         {scene === 5 && (
           <div className="scene active">
-            <div className="s1-sky" />
-            {CLOUDS_S1.map((c, i) => (
-              <div key={i} className="cloud" style={{ width: c.w, height: c.h, top: c.top, left: c.left, "--blur": c.blur } as React.CSSProperties} />
-            ))}
+            <div className="s1-sky"/>
+            {CLOUDS_S1.map((c,i)=><div key={i} className="cloud" style={{width:c.w,height:c.h,top:c.top,left:c.left,"--blur":c.blur} as React.CSSProperties}/>)}
             <div className="brand-box">
-              <div style={{ fontSize: "3.5rem", marginBottom: "0.8rem", animation: "wordPop 0.7s ease 0.3s both", display: "block" }}>🎀</div>
-              <div className="brand-name">
-                <span style={{ color: "#1B4F8C" }}>Virtual</span>{" "}
-                <span style={{ color: "#E07FAA" }}>Gender</span> Reveal
-              </div>
+              <div style={{fontSize:"3.5rem",marginBottom:"0.8rem",animation:"wordPop 0.7s ease 0.3s both",display:"block"}}>🎀</div>
+              <div className="brand-name"><span style={{color:"#1B4F8C"}}>Virtual</span> <span style={{color:"#E07FAA"}}>Gender</span> Reveal</div>
               <div className="brand-tag">Crafted for Moments That Matter</div>
-              <button className="enter-btn" onClick={advance}>
-                ✦ &nbsp; Enter the Experience
-              </button>
+              <button className="enter-btn" onClick={advance}>✦ &nbsp; Enter the Experience</button>
             </div>
-            <SceneProgress current={scene} />
+            <SceneProgress current={scene}/>
           </div>
         )}
       </div>
@@ -254,14 +223,53 @@ export default function CinematicEntry() {
 function SceneProgress({ current }: { current: number }) {
   return (
     <div className="scene-progress">
-      {[0, 1, 2, 3, 4, 5].map((i) => (
-        <div key={i} className={`sp-dot${i === current ? " active" : ""}`} />
-      ))}
+      {[0,1,2,3,4,5].map(i=><div key={i} className={`sp-dot${i===current?" active":""}`}/>)}
     </div>
   );
 }
 
-// ── Landing Page ────────────────────────────────────────────
+// ── Toast for landing page ───────────────────────────────────
+function LandingToast({ message, type, onClose }: { message: string; type: "success"|"error"|"info"; onClose: () => void }) {
+  const c = { success:"#22c55e", error:"#ef4444", info:"#2E7DD1" }[type];
+  const icon = { success:"✓", error:"✕", info:"ℹ" }[type];
+  useEffect(() => { const t = setTimeout(onClose, 4000); return ()=>clearTimeout(t); }, []);
+  return (
+    <div style={{position:"fixed",top:20,right:20,zIndex:9999,display:"flex",alignItems:"flex-start",gap:10,background:"rgba(17,24,39,0.97)",border:`1px solid ${c}40`,borderLeft:`3px solid ${c}`,borderRadius:10,padding:"14px 18px",maxWidth:360,boxShadow:"0 8px 30px rgba(0,0,0,0.4)",fontFamily:"'Plus Jakarta Sans',sans-serif",animation:"toastIn .3s ease-out"}}>
+      <span style={{color:c,fontSize:15,fontWeight:700,flexShrink:0,marginTop:1}}>{icon}</span>
+      <span style={{color:"#f9fafb",fontSize:13,fontWeight:400,lineHeight:1.5,flex:1}}>{message}</span>
+      <button onClick={onClose} style={{background:"none",border:"none",color:"rgba(255,255,255,.3)",cursor:"pointer",fontSize:16,padding:0,marginLeft:6}}>×</button>
+    </div>
+  );
+}
+
+// ── Confirm Dialog ───────────────────────────────────────────
+type PlanMeta = { id: string; name: string; price: number; priceLabel: string; color: string };
+function ConfirmDialog({ plan, onConfirm, onCancel }: { plan: PlanMeta; onConfirm: ()=>void; onCancel: ()=>void }) {
+  return (
+    <div style={{position:"fixed",inset:0,zIndex:10000,display:"flex",alignItems:"center",justifyContent:"center",background:"rgba(5,3,5,0.88)",backdropFilter:"blur(14px)",fontFamily:"'Plus Jakarta Sans',sans-serif",animation:"fadeOverlay .2s ease-out"}}>
+      <div style={{background:"linear-gradient(145deg,#140e14,#0e1218)",border:"1px solid rgba(255,255,255,0.1)",borderRadius:20,padding:"40px 36px",maxWidth:420,width:"90%",boxShadow:"0 30px 80px rgba(0,0,0,0.7)",animation:"slideUpDlg .3s ease-out"}}>
+        <div style={{width:10,height:10,borderRadius:"50%",background:plan.color,boxShadow:`0 0 16px ${plan.color}80`,marginBottom:20}}/>
+        <p style={{fontSize:11,letterSpacing:3,textTransform:"uppercase",color:"rgba(245,239,245,0.4)",marginBottom:12,fontFamily:"'Playfair Display',serif"}}>Confirm Your Plan</p>
+        <h2 style={{fontFamily:"'Playfair Display',serif",fontSize:28,fontWeight:300,color:"#f5eff5",marginBottom:8,lineHeight:1.2}}>
+          {plan.name} — <em style={{fontStyle:"italic",color:plan.color}}>{plan.priceLabel}</em>
+        </h2>
+        <p style={{fontSize:13,fontWeight:300,color:"rgba(245,239,245,0.45)",lineHeight:1.7,marginBottom:32}}>
+          {plan.price===0
+            ?"You're choosing the free plan. You can upgrade anytime from your dashboard."
+            :`You're about to proceed with the ${plan.name} plan at ${plan.priceLabel} (one-time payment). Continue?`}
+        </p>
+        <div style={{display:"flex",gap:12}}>
+          <button onClick={onCancel} style={{flex:1,padding:"13px",background:"rgba(255,255,255,0.04)",border:"1px solid rgba(255,255,255,0.09)",borderRadius:10,color:"rgba(245,239,245,0.45)",fontFamily:"'Plus Jakarta Sans',sans-serif",fontSize:11,fontWeight:400,letterSpacing:1.5,textTransform:"uppercase",cursor:"pointer"}}>Go Back</button>
+          <button onClick={onConfirm} style={{flex:1,padding:"13px",background:`linear-gradient(135deg,${plan.color}e0,${plan.color}90)`,border:"none",borderRadius:10,color:"#0a0608",fontFamily:"'Plus Jakarta Sans',sans-serif",fontSize:11,fontWeight:600,letterSpacing:2,textTransform:"uppercase",cursor:"pointer"}}>
+            {plan.price===0?"Activate Free":"Go to Payment"}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ── Landing Page ─────────────────────────────────────────────
 function LandingPage() {
   const { user, loading } = useAuth();
   const router = useRouter();
@@ -280,11 +288,11 @@ function LandingPage() {
   return (
     <>
       <style>{LANDING_CSS}</style>
+      {toast && <LandingToast message={toast.message} type={toast.type} onClose={()=>setToast(null)}/>}
+      {confirmPlan && <ConfirmDialog plan={confirmPlan} onConfirm={handleConfirm} onCancel={()=>setConfirmPlan(null)}/>}
+
       <nav id="main-nav">
-        <a href="#" className="nav-logo">
-          Virtual Gender Reveal
-          <strong>Crafted for Moments That Matter</strong>
-        </a>
+        <a href="/" className="nav-logo">Virtual Gender Reveal<strong>Crafted for Moments That Matter</strong></a>
         <div className="nav-links">
           <a href="#how">How It Works</a>
           <a href="#pricing">Pricing</a>
@@ -303,13 +311,12 @@ function LandingPage() {
 
       {/* Hero */}
       <section className="hero-section">
-        <div className="hero-mesh" />
-        <div className="hero-grid-bg" />
+        <div className="hero-mesh"/><div className="hero-grid-bg"/>
         <div className="hero-inner">
           <div className="hero-pill">✦ A Little Magic. A Big Reveal.</div>
           <h1 className="hero-title">
-            <em style={{ color: "#1B4F8C" }}>A Little Magic.</em><br />
-            <em style={{ color: "#E07FAA" }}>A Big Reveal.</em>
+            <em style={{color:"#1B4F8C"}}>A Little Magic.</em><br/>
+            <em style={{color:"#E07FAA"}}>A Big Reveal.</em>
           </h1>
           <p className="hero-sub">Create a cinematic gender reveal and share the moment live with everyone you love — wherever they are.</p>
           <p className="hero-auth-note">Mobile OTP verification is being prepared. For now, any phone number can be used as a placeholder during sign up.</p>
@@ -325,18 +332,18 @@ function LandingPage() {
         <div className="linner">
           <div className="fade-up">
             <div className="ltag">How It Works</div>
-            <h2 className="ltitle">Four steps.<br /><em>One perfect moment.</em></h2>
+            <h2 className="ltitle">Four steps.<br/><em>One perfect moment.</em></h2>
           </div>
           <div className="hiw-grid fade-up">
             {[
-              { who: "You", wc: "wc-you", title: "You book. We get to work.", desc: "Tell us your due date, your baby's nickname, and how you want the reveal to feel. That's all we need. Your doctor link goes out within the hour." },
-              { who: "Your Doctor", wc: "wc-doc", title: "The secret goes in. It doesn't come out.", desc: "Your doctor or relative clicks a private, one-time secure link. They submit the gender. It's encrypted instantly. You have zero access — not even a hint — until the reveal plays." },
-              { who: "Us", wc: "wc-us", title: "We make your reveal video.", desc: "Our team creates a personalized reveal video for your family — your baby's nickname, your names, your story. Cinematic. Emotional. Made for the biggest reaction." },
-              { who: "Everyone", wc: "wc-all", title: "Every person. One second. Zero exceptions.", desc: "Your guests get a beautiful personal invitation, join a live virtual party room, and at the exact second you chose — the reveal plays. Phone in New York. Laptop in Texas. TV in Florida." },
-            ].map((s, i) => (
+              {who:"You",wc:"wc-you",title:"You book. We get to work.",desc:"Tell us your due date, your baby's nickname, and how you want the reveal to feel. That's all we need. Your doctor link goes out within the hour."},
+              {who:"Your Doctor",wc:"wc-doc",title:"The secret goes in. It doesn't come out.",desc:"Your doctor or relative clicks a private, one-time secure link. They submit the gender. It's encrypted instantly. You have zero access — not even a hint — until the reveal plays."},
+              {who:"Us",wc:"wc-us",title:"We make your reveal video.",desc:"Our team creates a personalized reveal video for your family — your baby's nickname, your names, your story. Cinematic. Emotional. Made for the biggest reaction."},
+              {who:"Everyone",wc:"wc-all",title:"Every person. One second. Zero exceptions.",desc:"Your guests get a beautiful personal invitation, join a live virtual party room, and at the exact second you chose — the reveal plays. Phone in New York. Laptop in Texas. TV in Florida."},
+            ].map((s,i)=>(
               <div className="hiw-card" key={i}>
                 <span className={`hiw-who ${s.wc}`}>{s.who}</span>
-                <div className="hiw-num">0{i + 1}</div>
+                <div className="hiw-num">0{i+1}</div>
                 <div className="hiw-title">{s.title}</div>
                 <div className="hiw-desc">{s.desc}</div>
               </div>
@@ -350,29 +357,26 @@ function LandingPage() {
         <div className="linner">
           <div className="fade-up">
             <div className="ltag">What Sets Us Apart</div>
-            <h2 className="ltitle">Everything your reveal needs.<br /><em>Built in, not bolted on.</em></h2>
-            <p className="lsub">Every feature is included in every plan. No add-ons. No surprise charges. No app downloads required.</p>
+            <h2 className="ltitle">Everything your reveal needs.<br/><em>Built in, not bolted on.</em></h2>
+            <p className="lsub">Every feature is included in every plan. No add-ons. No surprise charges.</p>
           </div>
           <div className="feat-grid fade-up">
             {[
-              { icon: "🔐", title: "Doctor-Secured Gender Submission", desc: "A private, one-time secure link via email. One click. A simple form. The link deactivates immediately and expires in 7 days." },
-              { icon: "📡", title: "Live Broadcast to Every Guest at Once", desc: "At the exact time you set, your reveal streams live to every guest simultaneously — same second, no delay." },
-              { icon: "🎉", title: "Virtual Party Room with Live Chat & Polls", desc: "Guests join before the reveal, vote in the Boy or Girl poll, and chat in real time. The party starts early." },
-              { icon: "💌", title: "Beautiful Personalized Invitations", desc: "Upload a CSV or add emails manually. We send personalized invitations with a unique secure watch link." },
-              { icon: "📅", title: "30-Day Replay Window", desc: "Your reveal stays available for 30 days. A reminder goes out at day 25. On day 30 it's permanently deleted." },
-              { icon: "🎬", title: "Personalized Videos — Made by Humans", desc: "Your baby's nickname. Your names. Your chosen style. A video made for this moment." },
-              { icon: "📱", title: "Works on Every Device — Zero Downloads", desc: "iPhone, Android, Windows, Mac, iPad, smart TV. If it can open a browser, it can join the reveal." },
-              { icon: "🔒", title: "Encrypted & CCPA Compliant", desc: "All data encrypted in transit and at rest. Complete deletion on request. We never sell your data." },
-            ].map((f, i) => (
+              {icon:"🔐",title:"Doctor-Secured Gender Submission",desc:"A private, one-time secure link via email. One click. A simple form. The link deactivates immediately and expires in 7 days."},
+              {icon:"📡",title:"Live Broadcast to Every Guest at Once",desc:"At the exact time you set, your reveal streams live to every guest simultaneously — same second, no delay."},
+              {icon:"🎉",title:"Virtual Party Room with Live Chat & Polls",desc:"Guests join before the reveal, vote in the Boy or Girl poll, and chat in real time. The party starts early."},
+              {icon:"💌",title:"Beautiful Personalized Invitations",desc:"Upload a CSV or add emails manually. We send personalized invitations with a unique secure watch link."},
+              {icon:"📅",title:"30-Day Replay Window",desc:"Your reveal stays available for 30 days. A reminder goes out at day 25. On day 30 it's permanently deleted."},
+              {icon:"🎬",title:"Personalized Videos — Made by Humans",desc:"Your baby's nickname. Your names. Your chosen style. A video made for this moment."},
+              {icon:"📱",title:"Works on Every Device — Zero Downloads",desc:"iPhone, Android, Windows, Mac, iPad, smart TV. If it can open a browser, it can join the reveal."},
+              {icon:"🔒",title:"Encrypted & CCPA Compliant",desc:"All data encrypted in transit and at rest. Complete deletion on request. We never sell your data."},
+            ].map((f,i)=>(
               <div className="feat-card" key={i}>
-                <span style={{ fontSize: "1.6rem", marginBottom: "1rem", display: "block" }}>{f.icon}</span>
+                <span style={{fontSize:"1.6rem",marginBottom:"1rem",display:"block"}}>{f.icon}</span>
                 <div className="feat-title">{f.title}</div>
                 <div className="feat-desc">{f.desc}</div>
               </div>
             ))}
-          </div>
-          <div style={{ textAlign: "center", marginTop: "2.5rem" }}>
-            <a href="#" className="btn-ghost">▶ &nbsp; See Sample Videos</a>
           </div>
         </div>
       </section>
@@ -380,30 +384,27 @@ function LandingPage() {
       {/* Pricing */}
       <section className="lsection" id="pricing">
         <div className="linner">
-          <div className="fade-up" style={{ textAlign: "center" }}>
+          <div className="fade-up" style={{textAlign:"center"}}>
             <div className="ltag">Pricing</div>
-            <h2 className="ltitle">One payment. One reveal.<br /><em>No surprises.</em></h2>
+            <h2 className="ltitle">One payment. One reveal.<br/><em>No surprises.</em></h2>
+            {!loading && !user && (
+              <p style={{fontSize:13,color:"#C2527A",marginTop:8,fontStyle:"italic"}}>Sign in or create an account to choose a plan ✦</p>
+            )}
           </div>
           <div className="price-grid fade-up">
             {[
-              { cls: "pc-free", badge: "Free", bc: "bc-free", name: "Free Plan", desc: "Basic reveal setup to get started.", price: "0", pCls: "", dc: "d-light", divCls: "dv-light", feats: ["Basic reveal page", "Doctor secure link", "Up to 20 guests", "Email invitations", "7-day replay"], fCls: "fl", ckCls: "ck-b", btnCls: "btn-bp", btnLabel: "Start Free" },
-              { cls: "pc-prem", badge: "Most Popular", bc: "bc-pop", name: "Premium", desc: "Full cinematic + live experience.", price: "199", pCls: "pc-price-dark", dc: "d-dark", divCls: "dv-dark", feats: ["Cinematic reveal video — made by us", "Live virtual party room", "Up to 200 guests", "Live chat & Boy/Girl polls", "Personalized guest invitations", "30-day replay window", "Custom overlay"], fCls: "fd", ckCls: "ck-w", btnCls: "btn-wg", btnLabel: "Go Premium" },
-              { cls: "pc-cust", badge: "White Glove", bc: "bc-gold", name: "Custom", desc: "Fully personalized story reveal.", price: "650", pCls: "pc-price-gold", dc: "d-gold", divCls: "dv-gold", feats: ["Bespoke reveal video story", "Unlimited guests", "Dedicated concierge", "Custom soundtrack", "Live on-call support", "Permanent family archive"], fCls: "fg", ckCls: "ck-g", btnCls: "btn-gd", btnLabel: "Create Custom Reveal" },
-            ].map((p, i) => (
+              {cls:"pc-free",badge:"Free",bc:"bc-free",name:"Free Plan",desc:"Basic reveal setup to get started.",price:"0",planId:"free",pCls:"",dc:"d-light",divCls:"dv-light",feats:["Basic reveal page","Doctor secure link","Up to 20 guests","Email invitations","7-day replay"],fCls:"fl",ckCls:"ck-b",btnCls:"btn-bp",btnLabel:"Start Free"},
+              {cls:"pc-prem",badge:"Most Popular",bc:"bc-pop",name:"Premium",desc:"Full cinematic + live experience.",price:"199",planId:"premium",pCls:"pc-price-dark",dc:"d-dark",divCls:"dv-dark",feats:["Cinematic reveal video — made by us","Live virtual party room","Up to 200 guests","Live chat & Boy/Girl polls","Personalized guest invitations","30-day replay window","Custom overlay"],fCls:"fd",ckCls:"ck-w",btnCls:"btn-wg",btnLabel:"Go Premium"},
+              {cls:"pc-cust",badge:"White Glove",bc:"bc-gold",name:"Custom",desc:"Fully personalized story reveal.",price:"650",planId:"custom",pCls:"pc-price-gold",dc:"d-gold",divCls:"dv-gold",feats:["Bespoke reveal video story","Unlimited guests","Dedicated concierge","Custom soundtrack","Live on-call support","Permanent family archive"],fCls:"fg",ckCls:"ck-g",btnCls:"btn-gd",btnLabel:"Create Custom Reveal"},
+            ].map((p,i)=>(
               <div className={`pc ${p.cls}`} key={i}>
                 <span className={`pc-badge ${p.bc}`}>{p.badge}</span>
-                <div className={`pc-name${p.pCls ? " pn-dark" : ""}`}>{p.name}</div>
+                <div className={`pc-name${p.pCls?" pn-dark":""}`}>{p.name}</div>
                 <div className={`pc-desc ${p.dc}`}>{p.desc}</div>
-                <div className={`pc-price ${p.pCls}`}>
-                  <span className="pc-curr">$</span>
-                  <span className="pc-amount">{p.price}</span>
-                  <span className="pc-per"> / reveal</span>
-                </div>
-                <div className={`pc-div ${p.divCls}`} />
+                <div className={`pc-price ${p.pCls}`}><span className="pc-curr">$</span><span className="pc-amount">{p.price}</span><span className="pc-per"> / reveal</span></div>
+                <div className={`pc-div ${p.divCls}`}/>
                 <ul className="pc-feats">
-                  {p.feats.map((f, j) => (
-                    <li key={j} className={p.fCls}><span className={p.ckCls}>✓</span>{f}</li>
-                  ))}
+                  {p.feats.map((f,j)=><li key={j} className={p.fCls}><span className={p.ckCls}>✓</span>{f}</li>)}
                 </ul>
                 <button className={`pc-btn ${p.btnCls}`} onClick={() => routeToReveal(p.name.toLowerCase())}>{p.btnLabel}</button>
               </div>
@@ -415,25 +416,22 @@ function LandingPage() {
       {/* Testimonials */}
       <section className="testi-bg">
         <div className="linner">
-          <div className="fade-up" style={{ textAlign: "center" }}>
+          <div className="fade-up" style={{textAlign:"center"}}>
             <div className="ltag">Testimonials</div>
             <h2 className="ltitle">Moments That <em>Stay Forever</em></h2>
           </div>
           <div className="testi-grid fade-up">
             {[
-              { q: '"We had family in three different states watching. Everyone found out at the exact same second. My mom ugly-cried in Florida and I watched it happen live. I will never forget that."', name: "Sarah M.", loc: "Texas", av: "#2E7DD1" },
-              { q: '"The doctor link was so easy. She submitted in under a minute. I genuinely had no idea. When the video played and it said girl — I couldn\'t breathe."', name: "Jessica & Tom K.", loc: "New York", av: "#E07FAA" },
-              { q: '"My parents are in their 70s. They couldn\'t travel. For the first time they had the actual front-row seat. Not a text an hour later. They were there."', name: "Amanda R.", loc: "California", av: "#B8962E" },
-            ].map((t, i) => (
+              {q:"\u201cWe had family in three different states watching. Everyone found out at the exact same second. My mom ugly-cried in Florida and I watched it happen live. I will never forget that.\u201d",name:"Sarah M.",loc:"Texas",av:"#2E7DD1"},
+              {q:"\u201cThe doctor link was so easy. She submitted in under a minute. I genuinely had no idea. When the video played and it said girl \u2014 I couldn\u2019t breathe.\u201d",name:"Jessica & Tom K.",loc:"New York",av:"#E07FAA"},
+              {q:"\u201cMy parents are in their 70s. They couldn\u2019t travel. For the first time they had the actual front-row seat. Not a text an hour later. They were there.\u201d",name:"Amanda R.",loc:"California",av:"#B8962E"},
+            ].map((t,i)=>(
               <div className="testi-card" key={i}>
                 <div className="testi-stars">★★★★★</div>
                 <div className="testi-q">{t.q}</div>
-                <div style={{ display: "flex", alignItems: "center", gap: "0.7rem" }}>
-                  <div style={{ width: 36, height: 36, borderRadius: "50%", background: t.av, display: "flex", alignItems: "center", justifyContent: "center", color: "white", fontSize: "0.85rem", fontWeight: 500, flexShrink: 0 }}>{t.name[0]}</div>
-                  <div>
-                    <div style={{ fontSize: "0.85rem", fontWeight: 500 }}>{t.name}</div>
-                    <div style={{ fontSize: "0.74rem", color: "#6B7280" }}>{t.loc}</div>
-                  </div>
+                <div style={{display:"flex",alignItems:"center",gap:"0.7rem"}}>
+                  <div style={{width:36,height:36,borderRadius:"50%",background:t.av,display:"flex",alignItems:"center",justifyContent:"center",color:"white",fontSize:"0.85rem",fontWeight:500,flexShrink:0}}>{t.name[0]}</div>
+                  <div><div style={{fontSize:"0.85rem",fontWeight:500}}>{t.name}</div><div style={{fontSize:"0.74rem",color:"#6B7280"}}>{t.loc}</div></div>
                 </div>
               </div>
             ))}
@@ -444,14 +442,13 @@ function LandingPage() {
       {/* CTA */}
       <section className="cta-section" id="contact">
         <div className="cta-inner">
-          <h2 className="cta-title">Your family is waiting<br /><em>to find out together.</em></h2>
+          <h2 className="cta-title">Your family is waiting<br/><em>to find out together.</em></h2>
           <p className="cta-sub">Book your reveal today and your doctor link will be ready within the hour.</p>
           <p className="cta-sub2">Grandma in Florida and your best friend in New York will both be there.</p>
           <button type="button" className="cta-btn" onClick={() => routeToReveal()}>✦ Start Your Reveal</button>
           <div className="cta-box">
-            <p>Virtual Baby Reveal is designed to make your special moment joyful, seamless, and completely stress-free. Whether your loved ones are nearby or across the world, everyone can be part of your celebration — together, in real time.</p>
-            <br />
-            <p><em>Because moments like these deserve to be felt together.</em></p>
+            <p>Virtual Baby Reveal is designed to make your special moment joyful, seamless, and completely stress-free.</p>
+            <br/><p><em>Because moments like these deserve to be felt together.</em></p>
           </div>
         </div>
       </section>
@@ -465,13 +462,13 @@ function LandingPage() {
             <div className="footer-copy">The world&apos;s most heartfelt virtual gender reveal platform.</div>
           </div>
           {[
-            { title: "Platform", links: ["How It Works", "Features", "Pricing", "Sample Videos"] },
-            { title: "Support", links: ["Help Centre", "Contact Us", "Doctor Guide", "Privacy Policy"] },
-            { title: "Company", links: ["About", "Blog", "Terms of Service", "CCPA / Privacy"] },
-          ].map((col, i) => (
+            {title:"Platform",links:["How It Works","Features","Pricing","Sample Videos"]},
+            {title:"Support",links:["Help Centre","Contact Us","Doctor Guide","Privacy Policy"]},
+            {title:"Company",links:["About","Blog","Terms of Service","CCPA / Privacy"]},
+          ].map((col,i)=>(
             <div key={i}>
               <div className="fc-title">{col.title}</div>
-              <ul className="fc-links">{col.links.map((l, j) => <li key={j}><a href="#">{l}</a></li>)}</ul>
+              <ul className="fc-links">{col.links.map((l,j)=><li key={j}><a href="#">{l}</a></li>)}</ul>
             </div>
           ))}
         </div>
@@ -484,74 +481,78 @@ function LandingPage() {
   );
 }
 
-// ── Inline CSS blocks (kept here to avoid flash-of-unstyled during Next.js hydration) ──
 const CINEMA_CSS = `
 @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,300;0,400;1,300;1,400&family=Plus+Jakarta+Sans:wght@300;400;500;600&display=swap');
-*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
-:root{--gold-light:#E8D18A;}
-body{font-family:'Plus Jakarta Sans',sans-serif;overflow-x:hidden;}
-#cinema{position:fixed;inset:0;z-index:9999;background:#0a0a14;display:flex;flex-direction:column;align-items:center;justify-content:center;overflow:hidden;}
-#cinema.fade-out{animation:cinemaExit 1.1s cubic-bezier(0.4,0,0.2,1) forwards;}
-@keyframes cinemaExit{0%{opacity:1;transform:scale(1);}100%{opacity:0;transform:scale(1.06);}}
-.scene{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;opacity:0;pointer-events:none;}
-.scene.active{pointer-events:auto;animation:sceneIn 0.7s ease forwards;}
-@keyframes sceneIn{from{opacity:0;transform:translateY(16px);}to{opacity:1;transform:translateY(0);}}
-@keyframes fadeUp{from{opacity:0;transform:translateY(20px);}to{opacity:1;transform:translateY(0);}}
-.s1-sky{position:absolute;inset:0;background:radial-gradient(ellipse 100% 80% at 50% 30%,#C8E6FF 0%,#A8D4F5 25%,#7EB8E8 50%,#5090C8 75%,#1B3A6B 100%);}
-.s2-bg{position:absolute;inset:0;background:radial-gradient(ellipse 120% 100% at 50% 20%,#B8D8F8 0%,#90C4F0 30%,#4A8AC8 65%,#1A2E5A 100%);}
-.s3-bg{position:absolute;inset:0;background:linear-gradient(180deg,#1A0A00 0%,#3D1A00 40%,#1A0A00 100%);}
-.s4-bg{position:absolute;inset:0;background:linear-gradient(180deg,#0A1A3A 0%,#12306B 40%,#0A1A3A 100%);}
-.cloud{position:absolute;border-radius:50%;background:rgba(255,255,255,0.85);filter:blur(var(--blur,18px));animation:cloudDrift 9s ease-in-out infinite alternate;}
-@keyframes cloudDrift{from{transform:translateX(0);}to{transform:translateX(20px);}}
-.bird-wrap{position:absolute;top:32%;left:50%;transform:translate(-50%,-50%);animation:birdGlide 3s ease-in-out infinite alternate;filter:drop-shadow(0 8px 24px rgba(0,80,180,0.25));}
-@keyframes birdGlide{from{transform:translate(-50%,-50%) translateY(-10px) rotate(-2deg);}to{transform:translate(-50%,-50%) translateY(10px) rotate(2deg);}}
-.cin-text{position:relative;z-index:10;text-align:center;animation:fadeUp 1s ease 0.5s both;}
-.cin-text p{font-family:'Playfair Display',serif;font-size:clamp(1.6rem,4vw,2.8rem);font-style:italic;font-weight:300;color:rgba(255,255,255,0.95);text-shadow:0 2px 24px rgba(0,60,140,0.5);letter-spacing:0.02em;line-height:1.4;}
-.cin-text em{font-style:italic;}
-.dot-row{margin-top:1rem;font-size:0.65rem;letter-spacing:0.35em;color:rgba(255,255,255,0.35);animation:dotPulse 2s ease infinite;}
-@keyframes dotPulse{0%,100%{opacity:0.35;}50%{opacity:0.85;}}
-.bundle-orb{width:90px;height:90px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:2.4rem;animation:orbPulse 2s ease-in-out infinite;}
-.bundle-blue{background:radial-gradient(circle at 35% 35%,#A8D8FF,#2E7DD1);box-shadow:0 0 60px rgba(46,125,209,0.6);}
-.bundle-pink{background:radial-gradient(circle at 35% 35%,#FFB8D8,#E07FAA);box-shadow:0 0 60px rgba(224,127,170,0.6);}
-.bundle-label{font-size:0.72rem;letter-spacing:0.22em;text-transform:uppercase;color:rgba(255,255,255,0.6);}
-@keyframes orbPulse{0%,100%{transform:scale(1);}50%{transform:scale(1.08);}}
-@keyframes bundleFloat{from{transform:translateY(-8px);}to{transform:translateY(8px);}}
-.arena-light{position:absolute;top:0;width:2px;opacity:0.6;background:linear-gradient(to bottom,rgba(255,220,100,0.8),transparent);height:35%;animation:lightSway 3s ease-in-out infinite alternate;}
-.arena-light:nth-child(odd){animation-direction:alternate-reverse;}
-@keyframes lightSway{from{transform:rotate(-3deg);}to{transform:rotate(3deg);}}
-.track-surface{height:60px;border-radius:8px;position:relative;overflow:hidden;background:linear-gradient(90deg,#2A1500,#8B4513,#6B3410,#2A1500);border:2px solid rgba(255,200,100,0.3);box-shadow:0 0 40px rgba(255,150,50,0.2);}
-.track-lane{position:absolute;left:0;right:0;height:1px;background:rgba(255,220,100,0.2);}
-.horse-arrive{position:absolute;top:50%;transform:translateY(-50%);font-size:1.5rem;animation:horseArrive 1.5s cubic-bezier(0.22,1,0.36,1) 0.5s both;}
-@keyframes horseArrive{from{left:-20%;}to{left:20%;}}
-.crowd-dots{position:absolute;top:0;left:0;right:0;height:30%;background-image:radial-gradient(circle 2px at 50% 50%,rgba(255,255,255,0.4) 0%,transparent 100%);background-size:20px 16px;animation:crowdWave 2s ease infinite alternate;mask-image:linear-gradient(to bottom,black 50%,transparent 100%);-webkit-mask-image:linear-gradient(to bottom,black 50%,transparent 100%);}
-@keyframes crowdWave{from{opacity:0.3;}to{opacity:0.7;}}
-.race-lane{height:64px;position:relative;margin-bottom:8px;border-radius:4px;overflow:hidden;border:1px solid rgba(255,255,255,0.08);}
-.lane-blue{background:linear-gradient(90deg,rgba(26,59,138,0.8),rgba(46,125,209,0.3));}
-.lane-pink{background:linear-gradient(90deg,rgba(138,26,70,0.8),rgba(224,127,170,0.3));}
-.racer{position:absolute;top:50%;transform:translateY(-50%);display:flex;align-items:center;gap:0.4rem;animation:raceRun 1.8s cubic-bezier(0.34,1.56,0.64,1) var(--rd,0s) forwards;}
-@keyframes raceRun{from{left:2%;}to{left:var(--stop,55%);}}
-@keyframes horseGallop{0%,100%{transform:scaleY(1) rotate(-2deg);}50%{transform:scaleY(0.92) rotate(2deg);}}
-.race-label{position:absolute;right:12px;top:50%;transform:translateY(-50%);font-size:0.7rem;letter-spacing:0.2em;text-transform:uppercase;font-weight:600;opacity:0.7;}
-.label-blue{color:#82B8E8;}.label-pink{color:#F2B8CF;}
-.obstacle{position:absolute;top:50%;transform:translateY(-50%);font-size:1.6rem;animation:obstacleAppear 0.5s ease var(--oa,1s) both;}
-@keyframes obstacleAppear{from{opacity:0;transform:translateY(-50%) scale(0);}to{opacity:1;transform:translateY(-50%) scale(1);}}
-.s5-half{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;position:relative;overflow:hidden;animation:halfSlide 0.8s cubic-bezier(0.22,1,0.36,1) var(--hs,0s) both;}
-@keyframes halfSlide{from{transform:translateY(100%);}to{transform:translateY(0);}}
-.s5-blue{background:linear-gradient(160deg,#0D2B6B 0%,#1B4F8C 40%,#2E7DD1 100%);}
-.s5-pink{background:linear-gradient(160deg,#6B0D35 0%,#B03060 40%,#E07FAA 100%);}
-.s5-divider{position:absolute;top:0;bottom:0;left:50%;width:3px;background:linear-gradient(to bottom,rgba(255,255,255,0.6),rgba(255,255,255,0.2));transform:translateX(-50%);z-index:20;box-shadow:0 0 20px rgba(255,255,255,0.5);}
-.confetto{position:absolute;border-radius:2px;animation:confettiFall var(--cf-dur,2s) ease var(--cf-del,0s) infinite;opacity:0;}
-@keyframes confettiFall{0%{opacity:0;transform:translateY(-20px) rotate(0deg);top:0;}10%{opacity:1;}90%{opacity:0.6;}100%{opacity:0;transform:translateY(100vh) rotate(720deg);}}
-.reveal-big{font-family:'Playfair Display',serif;font-size:clamp(2.5rem,7vw,5.5rem);font-weight:400;color:white;text-align:center;text-shadow:0 4px 40px rgba(0,0,0,0.4);animation:wordPop 0.6s cubic-bezier(0.34,1.56,0.64,1) var(--wp,0.8s) both;line-height:1.1;}
-@keyframes wordPop{from{opacity:0;transform:scale(0.5);}to{opacity:1;transform:scale(1);}}
-.brand-box{position:relative;z-index:10;text-align:center;animation:wordPop 1s cubic-bezier(0.22,1,0.36,1) 0.6s both;}
-.brand-name{font-family:'Playfair Display',serif;font-size:clamp(2rem,5vw,3.5rem);font-weight:400;color:#111827;letter-spacing:0.04em;margin-bottom:0.5rem;}
-.brand-tag{font-size:0.85rem;letter-spacing:0.28em;text-transform:uppercase;color:rgba(26,26,46,0.55);font-weight:300;margin-bottom:2rem;}
-.enter-btn{display:inline-block;padding:0.9rem 2.6rem;background:linear-gradient(135deg,#2E7DD1,#C2527A);color:white;border:none;border-radius:3px;cursor:pointer;font-family:'Plus Jakarta Sans',sans-serif;font-size:0.8rem;font-weight:500;letter-spacing:0.14em;text-transform:uppercase;box-shadow:0 8px 28px rgba(46,125,209,0.3);transition:transform 0.2s;}
-.enter-btn:hover{transform:translateY(-2px);}
-.scene-progress{position:absolute;bottom:32px;left:50%;transform:translateX(-50%);display:flex;gap:8px;z-index:100;align-items:center;}
-.sp-dot{width:6px;height:6px;border-radius:50%;background:rgba(255,255,255,0.25);transition:background 0.3s,transform 0.3s;}
-.sp-dot.active{background:rgba(255,255,255,0.9);transform:scale(1.5);}
+@keyframes fadeInSkip{from{opacity:0;transform:translateY(-8px)}to{opacity:1;transform:translateY(0)}}
+@keyframes toastIn{from{opacity:0;transform:translateX(20px)}to{opacity:1;transform:translateX(0)}}
+@keyframes fadeOverlay{from{opacity:0}to{opacity:1}}
+@keyframes slideUpDlg{from{opacity:0;transform:translateY(24px)}to{opacity:1;transform:translateY(0)}}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{--gold-light:#E8D18A}
+body{font-family:'Plus Jakarta Sans',sans-serif;overflow-x:hidden}
+#cinema{position:fixed;inset:0;z-index:9999;background:#0a0a14;display:flex;flex-direction:column;align-items:center;justify-content:center;overflow:hidden}
+#cinema.fade-out{animation:cinemaExit 0.7s cubic-bezier(0.4,0,0.2,1) forwards}
+@keyframes cinemaExit{0%{opacity:1;transform:scale(1)}100%{opacity:0;transform:scale(1.04)}}
+.skip-btn{position:fixed;top:24px;right:24px;z-index:10000;display:flex;align-items:center;gap:8px;padding:10px 20px;background:rgba(10,6,8,0.6);border:1px solid rgba(255,255,255,0.15);border-radius:8px;color:rgba(255,255,255,0.7);font-family:'Plus Jakarta Sans',sans-serif;font-size:12px;font-weight:400;letter-spacing:2px;text-transform:uppercase;cursor:pointer;backdrop-filter:blur(12px);transition:all 0.2s;animation:fadeInSkip 0.5s ease-out 0.8s both}
+.skip-btn:hover{background:rgba(10,6,8,0.88);border-color:rgba(255,255,255,0.3);color:#fff}
+.scene{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;opacity:0;pointer-events:none}
+.scene.active{pointer-events:auto;animation:sceneIn 0.7s ease forwards}
+@keyframes sceneIn{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}
+@keyframes fadeUp{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
+.s1-sky{position:absolute;inset:0;background:radial-gradient(ellipse 100% 80% at 50% 30%,#C8E6FF 0%,#A8D4F5 25%,#7EB8E8 50%,#5090C8 75%,#1B3A6B 100%)}
+.s2-bg{position:absolute;inset:0;background:radial-gradient(ellipse 120% 100% at 50% 20%,#B8D8F8 0%,#90C4F0 30%,#4A8AC8 65%,#1A2E5A 100%)}
+.s3-bg{position:absolute;inset:0;background:linear-gradient(180deg,#1A0A00 0%,#3D1A00 40%,#1A0A00 100%)}
+.s4-bg{position:absolute;inset:0;background:linear-gradient(180deg,#0A1A3A 0%,#12306B 40%,#0A1A3A 100%)}
+.cloud{position:absolute;border-radius:50%;background:rgba(255,255,255,0.85);filter:blur(var(--blur,18px));animation:cloudDrift 9s ease-in-out infinite alternate}
+@keyframes cloudDrift{from{transform:translateX(0)}to{transform:translateX(20px)}}
+.bird-wrap{position:absolute;top:32%;left:50%;transform:translate(-50%,-50%);animation:birdGlide 3s ease-in-out infinite alternate;filter:drop-shadow(0 8px 24px rgba(0,80,180,0.25))}
+@keyframes birdGlide{from{transform:translate(-50%,-50%) translateY(-10px) rotate(-2deg)}to{transform:translate(-50%,-50%) translateY(10px) rotate(2deg)}}
+.cin-text{position:relative;z-index:10;text-align:center;animation:fadeUp 1s ease 0.5s both}
+.cin-text p{font-family:'Playfair Display',serif;font-size:clamp(1.6rem,4vw,2.8rem);font-style:italic;font-weight:300;color:rgba(255,255,255,0.95);text-shadow:0 2px 24px rgba(0,60,140,0.5);letter-spacing:0.02em;line-height:1.4}
+.dot-row{margin-top:1rem;font-size:0.65rem;letter-spacing:0.35em;color:rgba(255,255,255,0.35);animation:dotPulse 2s ease infinite}
+@keyframes dotPulse{0%,100%{opacity:0.35}50%{opacity:0.85}}
+.bundle-orb{width:90px;height:90px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:2.4rem;animation:orbPulse 2s ease-in-out infinite}
+.bundle-blue{background:radial-gradient(circle at 35% 35%,#A8D8FF,#2E7DD1);box-shadow:0 0 60px rgba(46,125,209,0.6)}
+.bundle-pink{background:radial-gradient(circle at 35% 35%,#FFB8D8,#E07FAA);box-shadow:0 0 60px rgba(224,127,170,0.6)}
+.bundle-label{font-size:0.72rem;letter-spacing:0.22em;text-transform:uppercase;color:rgba(255,255,255,0.6)}
+@keyframes orbPulse{0%,100%{transform:scale(1)}50%{transform:scale(1.08)}}
+@keyframes bundleFloat{from{transform:translateY(-8px)}to{transform:translateY(8px)}}
+.arena-light{position:absolute;top:0;width:2px;opacity:0.6;background:linear-gradient(to bottom,rgba(255,220,100,0.8),transparent);height:35%;animation:lightSway 3s ease-in-out infinite alternate}
+.arena-light:nth-child(odd){animation-direction:alternate-reverse}
+@keyframes lightSway{from{transform:rotate(-3deg)}to{transform:rotate(3deg)}}
+.track-surface{height:60px;border-radius:8px;position:relative;overflow:hidden;background:linear-gradient(90deg,#2A1500,#8B4513,#6B3410,#2A1500);border:2px solid rgba(255,200,100,0.3);box-shadow:0 0 40px rgba(255,150,50,0.2)}
+.track-lane{position:absolute;left:0;right:0;height:1px;background:rgba(255,220,100,0.2)}
+.horse-arrive{position:absolute;top:50%;transform:translateY(-50%);font-size:1.5rem;animation:horseArrive 1.5s cubic-bezier(0.22,1,0.36,1) 0.5s both}
+@keyframes horseArrive{from{left:-20%}to{left:20%}}
+.crowd-dots{position:absolute;top:0;left:0;right:0;height:30%;background-image:radial-gradient(circle 2px at 50% 50%,rgba(255,255,255,0.4) 0%,transparent 100%);background-size:20px 16px;animation:crowdWave 2s ease infinite alternate;mask-image:linear-gradient(to bottom,black 50%,transparent 100%);-webkit-mask-image:linear-gradient(to bottom,black 50%,transparent 100%)}
+@keyframes crowdWave{from{opacity:0.3}to{opacity:0.7}}
+.race-lane{height:64px;position:relative;margin-bottom:8px;border-radius:4px;overflow:hidden;border:1px solid rgba(255,255,255,0.08)}
+.lane-blue{background:linear-gradient(90deg,rgba(26,59,138,0.8),rgba(46,125,209,0.3))}
+.lane-pink{background:linear-gradient(90deg,rgba(138,26,70,0.8),rgba(224,127,170,0.3))}
+.racer{position:absolute;top:50%;transform:translateY(-50%);display:flex;align-items:center;gap:0.4rem;animation:raceRun 1.8s cubic-bezier(0.34,1.56,0.64,1) var(--rd,0s) forwards}
+@keyframes raceRun{from{left:2%}to{left:var(--stop,55%)}}
+@keyframes horseGallop{0%,100%{transform:scaleY(1) rotate(-2deg)}50%{transform:scaleY(0.92) rotate(2deg)}}
+.race-label{position:absolute;right:12px;top:50%;transform:translateY(-50%);font-size:0.7rem;letter-spacing:0.2em;text-transform:uppercase;font-weight:600;opacity:0.7}
+.label-blue{color:#82B8E8}.label-pink{color:#F2B8CF}
+.obstacle{position:absolute;top:50%;transform:translateY(-50%);font-size:1.6rem;animation:obstacleAppear 0.5s ease var(--oa,1s) both}
+@keyframes obstacleAppear{from{opacity:0;transform:translateY(-50%) scale(0)}to{opacity:1;transform:translateY(-50%) scale(1)}}
+.s5-half{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;position:relative;overflow:hidden;animation:halfSlide 0.8s cubic-bezier(0.22,1,0.36,1) var(--hs,0s) both}
+@keyframes halfSlide{from{transform:translateY(100%)}to{transform:translateY(0)}}
+.s5-blue{background:linear-gradient(160deg,#0D2B6B 0%,#1B4F8C 40%,#2E7DD1 100%)}
+.s5-pink{background:linear-gradient(160deg,#6B0D35 0%,#B03060 40%,#E07FAA 100%)}
+.s5-divider{position:absolute;top:0;bottom:0;left:50%;width:3px;background:linear-gradient(to bottom,rgba(255,255,255,0.6),rgba(255,255,255,0.2));transform:translateX(-50%);z-index:20;box-shadow:0 0 20px rgba(255,255,255,0.5)}
+.confetto{position:absolute;border-radius:2px;animation:confettiFall var(--cf-dur,2s) ease var(--cf-del,0s) infinite;opacity:0}
+@keyframes confettiFall{0%{opacity:0;transform:translateY(-20px) rotate(0deg);top:0}10%{opacity:1}90%{opacity:0.6}100%{opacity:0;transform:translateY(100vh) rotate(720deg)}}
+.reveal-big{font-family:'Playfair Display',serif;font-size:clamp(2.5rem,7vw,5.5rem);font-weight:400;color:white;text-align:center;text-shadow:0 4px 40px rgba(0,0,0,0.4);animation:wordPop 0.6s cubic-bezier(0.34,1.56,0.64,1) var(--wp,0.8s) both;line-height:1.1}
+@keyframes wordPop{from{opacity:0;transform:scale(0.5)}to{opacity:1;transform:scale(1)}}
+.brand-box{position:relative;z-index:10;text-align:center;animation:wordPop 1s cubic-bezier(0.22,1,0.36,1) 0.6s both}
+.brand-name{font-family:'Playfair Display',serif;font-size:clamp(2rem,5vw,3.5rem);font-weight:400;color:#111827;letter-spacing:0.04em;margin-bottom:0.5rem}
+.brand-tag{font-size:0.85rem;letter-spacing:0.28em;text-transform:uppercase;color:rgba(26,26,46,0.55);font-weight:300;margin-bottom:2rem}
+.enter-btn{display:inline-block;padding:0.9rem 2.6rem;background:linear-gradient(135deg,#2E7DD1,#C2527A);color:white;border:none;border-radius:3px;cursor:pointer;font-family:'Plus Jakarta Sans',sans-serif;font-size:0.8rem;font-weight:500;letter-spacing:0.14em;text-transform:uppercase;box-shadow:0 8px 28px rgba(46,125,209,0.3);transition:transform 0.2s}
+.enter-btn:hover{transform:translateY(-2px)}
+.scene-progress{position:absolute;bottom:32px;left:50%;transform:translateX(-50%);display:flex;gap:8px;z-index:100;align-items:center}
+.sp-dot{width:6px;height:6px;border-radius:50%;background:rgba(255,255,255,0.25);transition:background 0.3s,transform 0.3s}
+.sp-dot.active{background:rgba(255,255,255,0.9);transform:scale(1.5)}
 `;
 
 const LANDING_CSS = `

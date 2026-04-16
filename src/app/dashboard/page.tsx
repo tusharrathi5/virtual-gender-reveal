@@ -1,475 +1,254 @@
 "use client";
+
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/lib/AuthContext";
-import { getFirebaseDb } from "@/lib/firebase";
-import { collection, query, where, getDocs, orderBy } from "firebase/firestore";
-import type { Enquiry, EnquiryStatus } from "@/lib/types";
 
-/* ── Journey steps definition ───────────────────────────── */
-const JOURNEY: { key: EnquiryStatus | "pending_payment"; label: string; icon: string; desc: string }[] = [
-  { key: "pending_payment",   label: "Payment",          icon: "💳", desc: "Secure your reveal experience" },
-  { key: "awaiting_doctor",   label: "Revealer Notified",icon: "🔗", desc: "Doctor link sent & awaiting" },
-  { key: "doctor_confirmed",  label: "Secret Received",  icon: "🔒", desc: "Gender confirmed & encrypted" },
-  { key: "video_ready",       label: "Video Ready",      icon: "🎬", desc: "Your reveal video is prepared" },
-  { key: "scheduled",         label: "Reveal Scheduled", icon: "📅", desc: "Countdown has begun" },
-  { key: "live",              label: "Going Live",       icon: "🎉", desc: "The moment is happening now!" },
+const PLANS = [
+  {
+    id:"free",name:"Spark",price:0,label:"Free",tagline:"Try the magic",color:"#a4b4c8",
+    features:["1 reveal event","Basic cinematic intro","Up to 10 guests","Doctor secure link","Standard reveal animation"],
+    cta:"Get Started Free",popular:false,paymentUrl:null,
+  },
+  {
+    id:"premium",name:"Lumière",price:199,label:"$199",tagline:"Most popular",color:"#c8a4c4",
+    features:["1 reveal event","Full 6-scene cinematic intro","Unlimited guests","Doctor secure link","Premium reveal animations","Live watch party room","HD recording","Email invitations"],
+    cta:"Choose Lumière",popular:true,paymentUrl:null,
+  },
+  {
+    id:"custom",name:"Maison",price:650,label:"$650",tagline:"Fully bespoke",color:"#c8b4a4",
+    features:["Everything in Lumière","Custom branded experience","Bespoke reveal animation","Dedicated event manager","Custom domain","Priority support","Post-reveal highlight reel","Printed keepsake package"],
+    cta:"Book Maison",popular:false,paymentUrl:null,
+  },
 ];
 
-const STATUS_STEP: Record<string, number> = {
-  pending_payment:  0,
-  awaiting_doctor:  1,
-  doctor_confirmed: 2,
-  video_ready:      3,
-  scheduled:        4,
-  live:             5,
-  completed:        5,
-};
+type Plan = typeof PLANS[0];
 
-const CSS = `
-@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,300;0,400;1,300;1,400&family=Plus+Jakarta+Sans:wght@300;400;500;600&display=swap');
-*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
-html{scroll-behavior:smooth;}
-body{font-family:'Plus Jakarta Sans',sans-serif;background:#F4F3F0;color:#111827;min-height:100vh;}
+function ConfirmDialog({ plan, onConfirm, onCancel }: { plan: Plan; onConfirm: ()=>void; onCancel: ()=>void }) {
+  return (
+    <div style={{position:"fixed",inset:0,zIndex:1000,display:"flex",alignItems:"center",justifyContent:"center",padding:24}}>
+      {/* Backdrop */}
+      <div onClick={onCancel} style={{position:"absolute",inset:0,background:"rgba(0,0,0,0.75)",backdropFilter:"blur(8px)"}}/>
+      {/* Dialog */}
+      <div style={{
+        position:"relative",width:"100%",maxWidth:460,
+        background:"#120e12",border:`1px solid ${plan.color}30`,
+        borderTop:`2px solid ${plan.color}`,
+        borderRadius:16,padding:"40px 36px",
+        boxShadow:`0 25px 60px rgba(0,0,0,0.6), 0 0 40px ${plan.color}15`,
+        animation:"dialogIn 0.25s ease-out",fontFamily:"'Jost',sans-serif",
+      }}>
+        <div style={{width:10,height:10,borderRadius:"50%",background:plan.color,boxShadow:`0 0 16px ${plan.color}`,marginBottom:24}}/>
+        <h2 style={{fontFamily:"'Cormorant Garamond',serif",fontSize:30,fontWeight:300,color:"#f5eff5",lineHeight:1.2,marginBottom:8}}>
+          Confirm your <em style={{fontStyle:"italic",color:plan.color}}>plan</em>
+        </h2>
+        <p style={{fontSize:13,fontWeight:300,color:"rgba(245,239,245,0.4)",lineHeight:1.6,marginBottom:28}}>
+          You are about to proceed with the <strong style={{color:"rgba(245,239,245,0.8)",fontWeight:400}}>{plan.name}</strong> plan
+          {plan.price > 0 ? ` at a one-time payment of $${plan.price}.` : " — completely free."}
+        </p>
 
-/* ── TOPBAR ── */
-.topbar{
-  position:sticky;top:0;z-index:100;
-  height:64px;display:flex;align-items:center;justify-content:space-between;
-  padding:0 2rem;
-  background:rgba(255,255,255,0.9);
-  backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);
-  border-bottom:1px solid rgba(0,0,0,0.07);
-}
-.topbar-logo{font-family:'Playfair Display',serif;font-size:1.15rem;font-weight:400;color:#111827;}
-.topbar-logo span{color:#E07FAA;}
-.topbar-right{display:flex;align-items:center;gap:1rem;}
-.user-chip{display:flex;align-items:center;gap:0.6rem;font-size:0.8rem;color:#6B7280;}
-.user-avatar{width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,#2E7DD1,#C2527A);display:flex;align-items:center;justify-content:center;color:white;font-size:0.75rem;font-weight:600;}
-.btn-logout{font-size:0.75rem;font-weight:500;letter-spacing:0.08em;text-transform:uppercase;padding:0.45rem 1rem;border-radius:3px;border:1px solid rgba(0,0,0,0.12);background:white;cursor:pointer;color:#6B7280;transition:border-color 0.2s,color 0.2s;}
-.btn-logout:hover{border-color:#C2527A;color:#C2527A;}
-
-/* ── LAYOUT ── */
-.dash-layout{display:grid;grid-template-columns:260px 1fr;min-height:calc(100vh - 64px);}
-@media(max-width:900px){.dash-layout{grid-template-columns:1fr;} .sidebar{display:none;}}
-
-/* ── SIDEBAR ── */
-.sidebar{background:white;border-right:1px solid rgba(0,0,0,0.07);padding:2rem 0;}
-.sidebar-section{padding:0 1.5rem;margin-bottom:2rem;}
-.sidebar-label{font-size:0.6rem;letter-spacing:0.28em;text-transform:uppercase;color:#9CA3AF;margin-bottom:0.8rem;font-weight:500;}
-.sidebar-link{display:flex;align-items:center;gap:0.7rem;padding:0.65rem 0.9rem;border-radius:6px;font-size:0.85rem;color:#374151;cursor:pointer;transition:background 0.2s,color 0.2s;margin-bottom:2px;text-decoration:none;}
-.sidebar-link:hover{background:#F3F4F6;}
-.sidebar-link.active{background:linear-gradient(90deg,rgba(27,79,140,0.08),rgba(194,82,122,0.05));color:#1B4F8C;font-weight:500;}
-.sidebar-icon{font-size:1rem;flex-shrink:0;}
-
-/* ── MAIN ── */
-.dash-main{padding:2.5rem 2rem;overflow-y:auto;}
-.dash-greeting{margin-bottom:2.5rem;}
-.dash-greeting h1{font-family:'Playfair Display',serif;font-size:clamp(1.6rem,3vw,2.2rem);font-weight:300;margin-bottom:0.4rem;}
-.dash-greeting p{font-size:0.88rem;color:#6B7280;font-weight:300;}
-
-/* ── JOURNEY PROGRESS BAR ── */
-.journey-card{
-  background:white;border-radius:12px;padding:2.2rem;margin-bottom:2rem;
-  border:1px solid rgba(0,0,0,0.06);
-  box-shadow:0 2px 16px rgba(0,0,0,0.04);
-}
-.journey-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:1.8rem;flex-wrap:wrap;gap:1rem;}
-.journey-title{font-size:0.95rem;font-weight:600;}
-.journey-subtitle{font-size:0.78rem;color:#6B7280;}
-.journey-status-pill{
-  font-size:0.65rem;letter-spacing:0.2em;text-transform:uppercase;font-weight:600;
-  padding:0.3rem 0.85rem;border-radius:20px;
-}
-.pill-awaiting{background:#EFF6FF;color:#1B4F8C;}
-.pill-confirmed{background:#F0FDF4;color:#16A34A;}
-.pill-live{background:linear-gradient(135deg,#1B4F8C,#C2527A);color:white;}
-.pill-complete{background:#F3F4F6;color:#6B7280;}
-
-/* Progress track */
-.progress-track{position:relative;margin-bottom:2rem;}
-.progress-line-bg{
-  position:absolute;top:20px;left:20px;right:20px;height:2px;
-  background:rgba(0,0,0,0.08);border-radius:1px;z-index:0;
-}
-.progress-line-fill{
-  position:absolute;top:20px;left:20px;height:2px;
-  background:linear-gradient(90deg,#2E7DD1,#C2527A);
-  border-radius:1px;z-index:1;
-  transition:width 1s cubic-bezier(0.4,0,0.2,1);
-}
-.steps-row{display:flex;justify-content:space-between;position:relative;z-index:2;}
-.step-item{display:flex;flex-direction:column;align-items:center;gap:0.5rem;flex:1;}
-.step-bubble{
-  width:40px;height:40px;border-radius:50%;
-  display:flex;align-items:center;justify-content:center;
-  font-size:1.1rem;transition:all 0.4s;
-  border:2px solid transparent;
-}
-.step-bubble-done{background:linear-gradient(135deg,#2E7DD1,#C2527A);box-shadow:0 4px 12px rgba(46,125,209,0.3);}
-.step-bubble-active{background:white;border:2px solid #2E7DD1;box-shadow:0 0 0 4px rgba(46,125,209,0.12);animation:activePulse 2s ease infinite;}
-.step-bubble-pending{background:#F3F4F6;border:2px solid rgba(0,0,0,0.08);}
-@keyframes activePulse{0%,100%{box-shadow:0 0 0 4px rgba(46,125,209,0.12);}50%{box-shadow:0 0 0 8px rgba(46,125,209,0.06);}}
-.step-label{font-size:0.65rem;font-weight:500;letter-spacing:0.04em;text-align:center;color:#6B7280;max-width:60px;line-height:1.3;}
-.step-label-active{color:#1B4F8C;font-weight:600;}
-
-/* Current step callout */
-.current-step-box{
-  display:flex;align-items:flex-start;gap:1rem;
-  padding:1.2rem 1.4rem;border-radius:8px;
-  background:linear-gradient(135deg,rgba(27,79,140,0.04),rgba(194,82,122,0.04));
-  border:1px solid rgba(27,79,140,0.1);
-}
-.csb-icon{font-size:1.5rem;flex-shrink:0;margin-top:2px;}
-.csb-title{font-size:0.9rem;font-weight:600;margin-bottom:0.25rem;}
-.csb-desc{font-size:0.8rem;color:#6B7280;font-weight:300;}
-.csb-action{margin-top:0.7rem;}
-.btn-action{
-  display:inline-flex;align-items:center;gap:0.4rem;
-  padding:0.6rem 1.3rem;border-radius:4px;border:none;cursor:pointer;
-  background:linear-gradient(135deg,#2E7DD1,#C2527A);color:white;
-  font-family:'Plus Jakarta Sans',sans-serif;font-size:0.78rem;
-  font-weight:500;letter-spacing:0.1em;text-transform:uppercase;
-  transition:transform 0.2s,box-shadow 0.2s;
-  box-shadow:0 4px 14px rgba(46,125,209,0.22);
-}
-.btn-action:hover{transform:translateY(-2px);box-shadow:0 8px 22px rgba(46,125,209,0.3);}
-
-/* ── STATS ROW ── */
-.stats-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:1rem;margin-bottom:2rem;}
-.stat-card{background:white;border-radius:10px;padding:1.4rem 1.5rem;border:1px solid rgba(0,0,0,0.06);box-shadow:0 1px 8px rgba(0,0,0,0.04);}
-.stat-icon{font-size:1.3rem;margin-bottom:0.5rem;}
-.stat-val{font-family:'Playfair Display',serif;font-size:1.8rem;font-weight:300;line-height:1;margin-bottom:0.2rem;}
-.stat-label{font-size:0.72rem;color:#9CA3AF;letter-spacing:0.08em;text-transform:uppercase;}
-
-/* ── EVENTS TABLE ── */
-.events-card{background:white;border-radius:12px;border:1px solid rgba(0,0,0,0.06);box-shadow:0 2px 16px rgba(0,0,0,0.04);overflow:hidden;margin-bottom:2rem;}
-.events-head{padding:1.4rem 1.8rem;border-bottom:1px solid rgba(0,0,0,0.06);display:flex;justify-content:space-between;align-items:center;}
-.events-head-title{font-size:0.9rem;font-weight:600;}
-.btn-new{
-  display:inline-flex;align-items:center;gap:0.4rem;
-  padding:0.55rem 1.2rem;border-radius:4px;border:none;cursor:pointer;
-  background:linear-gradient(135deg,#2E7DD1,#C2527A);color:white;
-  font-family:'Plus Jakarta Sans',sans-serif;font-size:0.75rem;font-weight:500;
-  letter-spacing:0.1em;text-transform:uppercase;
-  box-shadow:0 3px 10px rgba(46,125,209,0.22);
-  transition:transform 0.2s;text-decoration:none;
-}
-.btn-new:hover{transform:translateY(-1px);}
-.event-row{
-  display:flex;align-items:center;gap:1rem;padding:1.2rem 1.8rem;
-  border-bottom:1px solid rgba(0,0,0,0.05);transition:background 0.2s;cursor:pointer;
-}
-.event-row:last-child{border-bottom:none;}
-.event-row:hover{background:#FAFAF9;}
-.event-avatar{width:44px;height:44px;border-radius:8px;background:linear-gradient(135deg,#D6EAFE,rgba(242,184,207,0.5));display:flex;align-items:center;justify-content:center;font-size:1.4rem;flex-shrink:0;}
-.event-info{flex:1;}
-.event-name{font-size:0.9rem;font-weight:500;margin-bottom:0.15rem;}
-.event-meta{font-size:0.75rem;color:#9CA3AF;}
-.event-status{font-size:0.65rem;letter-spacing:0.15em;text-transform:uppercase;font-weight:600;padding:0.28rem 0.7rem;border-radius:20px;}
-.es-awaiting{background:#EFF6FF;color:#1B4F8C;}
-.es-confirmed{background:#F0FDF4;color:#16A34A;}
-.es-ready{background:rgba(184,150,46,0.1);color:#B8962E;}
-.es-live{background:linear-gradient(135deg,#1B4F8C,#C2527A);color:white;}
-.es-done{background:#F3F4F6;color:#6B7280;}
-
-/* ── EMPTY STATE ── */
-.empty-state{text-align:center;padding:4rem 2rem;}
-.empty-icon{font-size:3rem;margin-bottom:1rem;}
-.empty-title{font-family:'Playfair Display',serif;font-size:1.4rem;font-weight:300;margin-bottom:0.5rem;}
-.empty-sub{font-size:0.85rem;color:#6B7280;margin-bottom:1.5rem;line-height:1.7;}
-
-/* ── QUICK ACTIONS ── */
-.quick-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:1rem;margin-bottom:2rem;}
-.quick-card{
-  background:white;border-radius:10px;padding:1.4rem;
-  border:1px solid rgba(0,0,0,0.06);
-  box-shadow:0 1px 8px rgba(0,0,0,0.04);
-  cursor:pointer;transition:transform 0.2s,box-shadow 0.2s;
-  text-decoration:none;color:inherit;display:block;
-}
-.quick-card:hover{transform:translateY(-3px);box-shadow:0 8px 28px rgba(0,0,0,0.08);}
-.qc-icon{font-size:1.5rem;margin-bottom:0.7rem;}
-.qc-title{font-size:0.88rem;font-weight:600;margin-bottom:0.25rem;}
-.qc-desc{font-size:0.78rem;color:#6B7280;line-height:1.5;}
-
-/* ── LOADING ── */
-.loading-wrap{min-height:100vh;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:1rem;}
-.spinner{width:36px;height:36px;border:3px solid rgba(46,125,209,0.15);border-top-color:#2E7DD1;border-radius:50%;animation:spin 0.8s linear infinite;}
-@keyframes spin{to{transform:rotate(360deg);}}
-`;
-
-function statusPill(status: EnquiryStatus) {
-  const map: Record<string, { cls: string; label: string }> = {
-    pending_payment:  { cls: "pill-awaiting", label: "Pending Payment" },
-    awaiting_doctor:  { cls: "pill-awaiting", label: "Awaiting Doctor" },
-    doctor_confirmed: { cls: "pill-confirmed", label: "Confirmed ✓" },
-    video_ready:      { cls: "pill-complete",  label: "Video Ready" },
-    scheduled:        { cls: "pill-awaiting",  label: "Scheduled" },
-    live:             { cls: "pill-live",      label: "🔴 Live" },
-    completed:        { cls: "pill-complete",  label: "Completed" },
-  };
-  return map[status] ?? { cls: "pill-complete", label: status };
-}
-
-function eventStatusCls(status: string) {
-  const m: Record<string, string> = {
-    awaiting_doctor: "es-awaiting", doctor_confirmed: "es-confirmed",
-    video_ready: "es-ready", live: "es-live", completed: "es-done", scheduled: "es-awaiting",
-  };
-  return m[status] ?? "es-done";
-}
-
-function eventStatusLabel(status: string) {
-  const m: Record<string, string> = {
-    pending_payment: "Pending", awaiting_doctor: "Awaiting Doctor",
-    doctor_confirmed: "Confirmed", video_ready: "Video Ready",
-    scheduled: "Scheduled", live: "Live!", completed: "Complete",
-  };
-  return m[status] ?? status;
-}
-
-export default function Dashboard() {
-  const { user, loading, logout } = useAuth();
-  const router = useRouter();
-  const [enquiries, setEnquiries] = useState<Enquiry[]>([]);
-  const [dataLoading, setDataLoading] = useState(true);
-  const [activeEnquiry, setActiveEnquiry] = useState<Enquiry | null>(null);
-
-  useEffect(() => {
-    if (!loading && !user) router.push("/auth");
-  }, [user, loading, router]);
-
-  useEffect(() => {
-    if (!user) return;
-    const fetchEnquiries = async () => {
-      try {
-        const db = getFirebaseDb();
-      const q = query(
-          collection(db, "enquiries"),
-          where("userId", "==", user.uid),
-          orderBy("createdAt", "desc")
-        );
-        const snap = await getDocs(q);
-        const data = snap.docs.map(d => ({ id: d.id, ...d.data() } as Enquiry));
-        setEnquiries(data);
-        if (data.length > 0) setActiveEnquiry(data[0]);
-      } catch (e) {
-        console.error(e);
-      } finally {
-        setDataLoading(false);
-      }
-    };
-    fetchEnquiries();
-  }, [user]);
-
-  const handleLogout = async () => { await logout(); router.push("/"); };
-
-  if (loading || !user) {
-    return (
-      <>
-        <style>{CSS}</style>
-        <div className="loading-wrap">
-          <div className="spinner" />
-          <div style={{ fontSize: "0.82rem", color: "#9CA3AF" }}>Loading your dashboard…</div>
+        {/* Plan summary */}
+        <div style={{background:"rgba(255,255,255,0.03)",border:"1px solid rgba(255,255,255,0.06)",borderRadius:10,padding:"16px 20px",marginBottom:28}}>
+          <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:12}}>
+            <span style={{fontFamily:"'Cormorant Garamond',serif",fontSize:20,fontWeight:300,color:"#f5eff5"}}>{plan.name}</span>
+            <span style={{fontFamily:"'Cormorant Garamond',serif",fontSize:24,fontWeight:300,color:plan.color}}>{plan.price===0?"Free":`$${plan.price}`}</span>
+          </div>
+          <div style={{display:"flex",flexDirection:"column",gap:6}}>
+            {plan.features.slice(0,4).map(f=>(
+              <div key={f} style={{display:"flex",alignItems:"center",gap:8,fontSize:12,fontWeight:300,color:"rgba(245,239,245,0.45)"}}>
+                <span style={{color:plan.color,fontSize:9}}>✦</span>{f}
+              </div>
+            ))}
+            {plan.features.length>4&&<div style={{fontSize:11,color:"rgba(245,239,245,0.25)",marginTop:2}}>+{plan.features.length-4} more features</div>}
+          </div>
         </div>
-      </>
-    );
+
+        <div style={{display:"flex",gap:12}}>
+          <button onClick={onCancel} style={{
+            flex:1,padding:"13px 20px",background:"transparent",
+            border:"1px solid rgba(255,255,255,0.1)",borderRadius:10,
+            color:"rgba(245,239,245,0.4)",fontFamily:"'Jost',sans-serif",
+            fontSize:12,fontWeight:400,letterSpacing:1.5,textTransform:"uppercase",cursor:"pointer",transition:"all .2s",
+          }}
+          onMouseEnter={e=>(e.currentTarget.style.borderColor="rgba(255,255,255,0.2)")}
+          onMouseLeave={e=>(e.currentTarget.style.borderColor="rgba(255,255,255,0.1)")}>
+            Cancel
+          </button>
+          <button onClick={onConfirm} style={{
+            flex:2,padding:"13px 20px",
+            background:`linear-gradient(135deg,${plan.color}e6,${plan.color}99)`,
+            border:"none",borderRadius:10,
+            color:"#0a0608",fontFamily:"'Jost',sans-serif",
+            fontSize:12,fontWeight:500,letterSpacing:2,textTransform:"uppercase",cursor:"pointer",transition:"all .25s",
+          }}
+          onMouseEnter={e=>{e.currentTarget.style.transform="translateY(-1px)";e.currentTarget.style.boxShadow=`0 8px 25px ${plan.color}40`}}
+          onMouseLeave={e=>{e.currentTarget.style.transform="";e.currentTarget.style.boxShadow=""}}>
+            Yes, Proceed →
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+export default function DashboardPage() {
+  const { user, logout } = useAuth();
+  const router = useRouter();
+  const [confirmPlan, setConfirmPlan] = useState<Plan|null>(null);
+  const [selectedPlan, setSelectedPlan] = useState<string|null>(null);
+  const [loggingOut, setLoggingOut] = useState(false);
+
+  useEffect(()=>{ if(!user) router.push("/auth"); },[user,router]);
+  if(!user) return null;
+
+  const firstName = user.displayName?.split(" ")[0] || user.email?.split("@")[0] || "there";
+
+  function handlePlanClick(plan: Plan) { setConfirmPlan(plan); }
+
+  function handleConfirm() {
+    if(!confirmPlan) return;
+    setSelectedPlan(confirmPlan.id);
+    setConfirmPlan(null);
+    // Redirect to payment page with plan info
+    router.push(`/payment?plan=${confirmPlan.id}&name=${encodeURIComponent(confirmPlan.name)}&price=${confirmPlan.price}`);
   }
 
-  const currentStep = activeEnquiry ? STATUS_STEP[activeEnquiry.status] ?? 0 : 0;
-  const progressPct = activeEnquiry ? (currentStep / (JOURNEY.length - 1)) * 100 : 0;
-  const activeJourneyStep = JOURNEY[currentStep];
-  const pill = activeEnquiry ? statusPill(activeEnquiry.status) : null;
+  async function handleLogout() {
+    setLoggingOut(true);
+    try { await logout(); router.push("/"); }
+    catch { setLoggingOut(false); }
+  }
 
-  // Next action per step
-  const NEXT_ACTIONS: Record<number, { label: string; href: string }> = {
-    0: { label: "Complete Payment", href: "/#pricing" },
-    1: { label: "Check Doctor Status", href: "#" },
-    2: { label: "Request Video Creation", href: "#" },
-    3: { label: "Schedule Your Reveal", href: "#" },
-    4: { label: "View Countdown", href: "#" },
-    5: { label: "Open Reveal Room", href: "/room" },
-  };
-  const nextAction = NEXT_ACTIONS[currentStep];
+  const CSS = `
+    @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;1,300;1,400&family=Jost:wght@300;400;500;600&display=swap');
+    *{box-sizing:border-box;margin:0;padding:0}
+    @keyframes fadeUp{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
+    @keyframes dialogIn{from{opacity:0;transform:scale(0.95) translateY(10px)}to{opacity:1;transform:scale(1) translateY(0)}}
+    @keyframes pulse{0%,100%{opacity:1}50%{opacity:.5}}
+    .dash-root{min-height:100vh;background:#080508;font-family:'Jost',sans-serif;color:#f5eff5}
+    .dash-bg{position:fixed;inset:0;pointer-events:none;overflow:hidden}
+    .dash-blob{position:absolute;border-radius:50%;filter:blur(100px);opacity:.1}
+    .dash-blob-1{width:600px;height:600px;background:#c8a4c4;top:-200px;right:-100px}
+    .dash-blob-2{width:400px;height:400px;background:#a4b4c8;bottom:-100px;left:-100px}
+    .dash-header{position:sticky;top:0;z-index:99;display:flex;align-items:center;justify-content:space-between;padding:0 40px;height:64px;background:rgba(8,5,8,.85);backdrop-filter:blur(20px);border-bottom:1px solid rgba(255,255,255,.06)}
+    .dash-logo{font-family:'Cormorant Garamond',serif;font-size:15px;font-weight:300;letter-spacing:3px;text-transform:uppercase;color:rgba(200,164,196,.8);display:flex;align-items:center;gap:8px;text-decoration:none;cursor:pointer}
+    .dash-logo::before{content:'✦';font-size:10px;color:#c8a4c4}
+    .dash-user{display:flex;align-items:center;gap:12px}
+    .dash-avatar{width:34px;height:34px;border-radius:50%;background:linear-gradient(135deg,#c8a4c4,#a4b4c8);display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:500;color:#0a0608;flex-shrink:0}
+    .dash-user-name{font-size:13px;font-weight:300;color:rgba(245,239,245,.5);display:none}
+    @media(min-width:640px){.dash-user-name{display:block}}
+    .logout-btn{padding:7px 16px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.08);border-radius:8px;color:rgba(245,239,245,.4);font-family:'Jost',sans-serif;font-size:12px;cursor:pointer;transition:all .2s;letter-spacing:.5px}
+    .logout-btn:hover{background:rgba(255,255,255,.09);color:rgba(245,239,245,.7)}
+    .dash-main{max-width:1100px;margin:0 auto;padding:56px 24px}
+    .welcome-block{animation:fadeUp .5s ease-out;margin-bottom:56px}
+    .welcome-tag{font-size:11px;font-weight:400;letter-spacing:3px;text-transform:uppercase;color:rgba(200,164,196,.45);margin-bottom:14px}
+    .welcome-title{font-family:'Cormorant Garamond',serif;font-size:44px;font-weight:300;color:#f5eff5;line-height:1.2;margin-bottom:10px}
+    .welcome-title em{font-style:italic;color:#c8a4c4}
+    .welcome-sub{font-size:14px;font-weight:300;color:rgba(245,239,245,.35);line-height:1.6;max-width:480px}
+    .section-label{font-size:11px;font-weight:400;letter-spacing:3px;text-transform:uppercase;color:rgba(245,239,245,.2);margin-bottom:28px;display:flex;align-items:center;gap:16px}
+    .section-label::after{content:'';flex:1;height:1px;background:rgba(255,255,255,.05)}
+    .plans-grid{display:grid;gap:18px;margin-bottom:56px;grid-template-columns:1fr}
+    @media(min-width:640px){.plans-grid{grid-template-columns:repeat(2,1fr)}}
+    @media(min-width:900px){.plans-grid{grid-template-columns:repeat(3,1fr)}}
+    .plan-card{position:relative;border-radius:16px;padding:30px;border:1px solid rgba(255,255,255,.07);background:rgba(255,255,255,.025);transition:all .3s;cursor:pointer;animation:fadeUp .6s ease-out both}
+    .plan-card:hover{border-color:rgba(255,255,255,.14);background:rgba(255,255,255,.045);transform:translateY(-3px)}
+    .plan-card.popular-card{border-color:rgba(200,164,196,.2)}
+    .popular-badge{position:absolute;top:-1px;left:50%;transform:translateX(-50%);background:linear-gradient(135deg,#c8a4c4,#a48cc0);color:#0a0608;font-size:9px;font-weight:600;letter-spacing:2px;text-transform:uppercase;padding:4px 14px;border-radius:0 0 8px 8px;white-space:nowrap}
+    .plan-dot{width:8px;height:8px;border-radius:50%;margin-bottom:18px}
+    .plan-name{font-family:'Cormorant Garamond',serif;font-size:26px;font-weight:300;color:#f5eff5;margin-bottom:3px}
+    .plan-tagline{font-size:11px;font-weight:300;letter-spacing:2px;text-transform:uppercase;color:rgba(245,239,245,.28);margin-bottom:22px}
+    .plan-price{font-family:'Cormorant Garamond',serif;font-size:46px;font-weight:300;color:#f5eff5;line-height:1;margin-bottom:3px}
+    .plan-price-sub{font-size:11px;font-weight:300;color:rgba(245,239,245,.2);margin-bottom:24px;letter-spacing:.5px}
+    .plan-divider{height:1px;background:rgba(255,255,255,.06);margin-bottom:20px}
+    .plan-features{list-style:none;display:flex;flex-direction:column;gap:9px;margin-bottom:28px}
+    .plan-feature{display:flex;align-items:flex-start;gap:9px;font-size:12.5px;font-weight:300;color:rgba(245,239,245,.55);line-height:1.4}
+    .plan-btn{width:100%;padding:13px 20px;border:none;border-radius:10px;font-family:'Jost',sans-serif;font-size:11px;font-weight:500;letter-spacing:2px;text-transform:uppercase;cursor:pointer;transition:all .25s}
+    .plan-btn-primary{background:linear-gradient(135deg,rgba(200,164,196,.9),rgba(164,140,180,.9));color:#0a0608}
+    .plan-btn-primary:hover{background:linear-gradient(135deg,rgba(218,185,215,.95),rgba(185,160,200,.95));transform:translateY(-1px);box-shadow:0 8px 25px rgba(200,164,196,.25)}
+    .plan-btn-outline{background:transparent;border:1px solid rgba(255,255,255,.1);color:rgba(245,239,245,.45)}
+    .plan-btn-outline:hover{border-color:rgba(255,255,255,.2);color:rgba(245,239,245,.75)}
+    .journey-card{background:rgba(255,255,255,.02);border:1px solid rgba(255,255,255,.05);border-radius:16px;padding:30px;animation:fadeUp .7s ease-out both}
+    .journey-title{font-family:'Cormorant Garamond',serif;font-size:22px;font-weight:300;color:#f5eff5;margin-bottom:20px}
+    .step{display:flex;align-items:flex-start;gap:18px;padding:14px 0;border-bottom:1px solid rgba(255,255,255,.04)}
+    .step:last-child{border-bottom:none}
+    .step-num{width:28px;height:28px;border-radius:50%;border:1px solid rgba(255,255,255,.1);display:flex;align-items:center;justify-content:center;font-size:11px;color:rgba(245,239,245,.3);flex-shrink:0}
+    .step-num.done{background:rgba(34,197,94,.1);border-color:rgba(34,197,94,.3);color:#22c55e}
+    .step-num.active{background:rgba(200,164,196,.1);border-color:rgba(200,164,196,.3);color:#c8a4c4;animation:pulse 2s ease-in-out infinite}
+    .step-content h4{font-size:13px;font-weight:400;color:rgba(245,239,245,.75);margin-bottom:2px}
+    .step-content p{font-size:12px;font-weight:300;color:rgba(245,239,245,.28);line-height:1.5}
+  `;
 
   return (
     <>
       <style>{CSS}</style>
 
-      {/* Top Bar */}
-      <div className="topbar">
-        <div className="topbar-logo">Virtual <span>Gender</span> Reveal</div>
-        <div className="topbar-right">
-          <div className="user-chip">
-            <div className="user-avatar">{user.email?.[0].toUpperCase()}</div>
-            <span style={{ display: "none" }}>{user.email}</span>
-          </div>
-          <button className="btn-logout" onClick={handleLogout}>Sign Out</button>
+      {confirmPlan && (
+        <ConfirmDialog plan={confirmPlan} onConfirm={handleConfirm} onCancel={()=>setConfirmPlan(null)}/>
+      )}
+
+      <div className="dash-root">
+        <div className="dash-bg">
+          <div className="dash-blob dash-blob-1"/><div className="dash-blob dash-blob-2"/>
         </div>
-      </div>
 
-      <div className="dash-layout">
-        {/* Sidebar */}
-        <aside className="sidebar">
-          <div className="sidebar-section">
-            <div className="sidebar-label">Menu</div>
-            {[
-              { icon: "🏠", label: "Dashboard", href: "/dashboard", active: true },
-              { icon: "✦", label: "My Reveals", href: "#", active: false },
-              { icon: "👥", label: "Guest List", href: "#", active: false },
-              { icon: "🔗", label: "Doctor Link", href: "#", active: false },
-              { icon: "🎬", label: "My Videos", href: "#", active: false },
-            ].map((l, i) => (
-              <a key={i} href={l.href} className={`sidebar-link${l.active ? " active" : ""}`}>
-                <span className="sidebar-icon">{l.icon}</span> {l.label}
-              </a>
-            ))}
+        <header className="dash-header">
+          <div className="dash-logo" onClick={()=>router.push("/")}>VGR Studio</div>
+          <div className="dash-user">
+            <div className="dash-avatar">{firstName.charAt(0).toUpperCase()}</div>
+            <span className="dash-user-name">{user.displayName||user.email}</span>
+            <button className="logout-btn" onClick={handleLogout} disabled={loggingOut}>
+              {loggingOut?"Signing out...":"Sign Out"}
+            </button>
           </div>
-          <div className="sidebar-section">
-            <div className="sidebar-label">Account</div>
-            {[
-              { icon: "⚙️", label: "Settings", href: "#" },
-              { icon: "💳", label: "Billing", href: "#" },
-              { icon: "❓", label: "Help Centre", href: "#" },
-            ].map((l, i) => (
-              <a key={i} href={l.href} className="sidebar-link">
-                <span className="sidebar-icon">{l.icon}</span> {l.label}
-              </a>
-            ))}
-          </div>
-        </aside>
+        </header>
 
-        {/* Main */}
         <main className="dash-main">
-          {/* Greeting */}
-          <div className="dash-greeting">
-            <h1>Welcome back{user.displayName ? `, ${user.displayName.split(" ")[0]}` : ""} 👋</h1>
-            <p>Here's everything you need to manage your reveal experience.</p>
+          <div className="welcome-block">
+            <p className="welcome-tag">Your Dashboard</p>
+            <h1 className="welcome-title">Hello, <em>{firstName}</em> ✦</h1>
+            <p className="welcome-sub">Welcome to your reveal studio. Choose a plan to begin creating your cinematic gender reveal experience.</p>
           </div>
 
-          {/* Journey Progress Card */}
-          {activeEnquiry && (
-            <div className="journey-card">
-              <div className="journey-header">
-                <div>
-                  <div className="journey-title">
-                    {activeEnquiry.babyNickname
-                      ? `${activeEnquiry.babyNickname}'s Reveal Journey`
-                      : "Your Reveal Journey"}
-                  </div>
-                  <div className="journey-subtitle">Track every step of your experience</div>
-                </div>
-                {pill && <span className={`journey-status-pill ${pill.cls}`}>{pill.label}</span>}
+          <p className="section-label">Choose Your Plan</p>
+          <div className="plans-grid">
+            {PLANS.map((plan,i)=>(
+              <div key={plan.id} className={`plan-card${plan.popular?" popular-card":""}`} style={{animationDelay:`${i*0.1}s`}} onClick={()=>handlePlanClick(plan)}>
+                {plan.popular&&<div className="popular-badge">Most Popular</div>}
+                <div className="plan-dot" style={{background:plan.color,boxShadow:`0 0 12px ${plan.color}60`}}/>
+                <h3 className="plan-name">{plan.name}</h3>
+                <p className="plan-tagline">{plan.tagline}</p>
+                <div className="plan-price">{plan.price===0?"Free":`$${plan.price}`}</div>
+                <p className="plan-price-sub">{plan.price===0?"Always free":"one-time payment"}</p>
+                <div className="plan-divider"/>
+                <ul className="plan-features">
+                  {plan.features.map(f=>(
+                    <li key={f} className="plan-feature">
+                      <span style={{color:plan.color,fontSize:9,marginTop:3,flexShrink:0}}>✦</span>{f}
+                    </li>
+                  ))}
+                </ul>
+                <button className={`plan-btn ${plan.popular?"plan-btn-primary":"plan-btn-outline"}`} onClick={e=>{e.stopPropagation();handlePlanClick(plan);}}>
+                  {selectedPlan===plan.id?"✓ Selected":plan.cta}
+                </button>
               </div>
-
-              {/* Track */}
-              <div className="progress-track">
-                <div className="progress-line-bg" />
-                <div className="progress-line-fill" style={{ width: `calc(${progressPct}% * (100% - 40px) / 100%)` }} />
-                <div className="steps-row">
-                  {JOURNEY.map((step, i) => {
-                    const done = i < currentStep;
-                    const active = i === currentStep;
-                    return (
-                      <div className="step-item" key={i} title={step.desc}>
-                        <div className={`step-bubble ${done ? "step-bubble-done" : active ? "step-bubble-active" : "step-bubble-pending"}`}>
-                          {done ? "✓" : step.icon}
-                        </div>
-                        <div className={`step-label${active ? " step-label-active" : ""}`}>{step.label}</div>
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-
-              {/* Current step callout */}
-              <div className="current-step-box">
-                <div className="csb-icon">{activeJourneyStep.icon}</div>
-                <div>
-                  <div className="csb-title">{activeJourneyStep.label}</div>
-                  <div className="csb-desc">{activeJourneyStep.desc}</div>
-                  {nextAction && (
-                    <div className="csb-action">
-                      <a href={nextAction.href} className="btn-action">{nextAction.label} →</a>
-                    </div>
-                  )}
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* Stats */}
-          <div className="stats-row">
-            <div className="stat-card">
-              <div className="stat-icon">✦</div>
-              <div className="stat-val">{enquiries.length}</div>
-              <div className="stat-label">Total Reveals</div>
-            </div>
-            <div className="stat-card">
-              <div className="stat-icon">👥</div>
-              <div className="stat-val">—</div>
-              <div className="stat-label">Total Guests</div>
-            </div>
-            <div className="stat-card">
-              <div className="stat-icon">🎬</div>
-              <div className="stat-val">{enquiries.filter(e => e.status === "video_ready").length}</div>
-              <div className="stat-label">Videos Ready</div>
-            </div>
-            <div className="stat-card">
-              <div className="stat-icon">🔴</div>
-              <div className="stat-val">{enquiries.filter(e => e.status === "live").length}</div>
-              <div className="stat-label">Live Now</div>
-            </div>
-          </div>
-
-          {/* Quick Actions */}
-          <div className="quick-grid">
-            {[
-              { icon: "✦", title: "Start New Reveal", desc: "Create a new gender reveal event", href: "/#pricing" },
-              { icon: "🔗", title: "Doctor Link", desc: "Send or resend the secure doctor link", href: "#" },
-              { icon: "👥", title: "Manage Guests", desc: "Upload or add guests to your event", href: "#" },
-              { icon: "📅", title: "Schedule Reveal", desc: "Set the date and time for your broadcast", href: "#" },
-            ].map((q, i) => (
-              <a key={i} href={q.href} className="quick-card">
-                <div className="qc-icon">{q.icon}</div>
-                <div className="qc-title">{q.title}</div>
-                <div className="qc-desc">{q.desc}</div>
-              </a>
             ))}
           </div>
 
-          {/* Events / Reveals */}
-          <div className="events-card">
-            <div className="events-head">
-              <div className="events-head-title">My Reveal Events</div>
-              <a href="/#pricing" className="btn-new">+ New Reveal</a>
-            </div>
-            {dataLoading ? (
-              <div style={{ padding: "3rem", textAlign: "center" }}>
-                <div className="spinner" style={{ margin: "0 auto" }} />
+          <p className="section-label">Your Reveal Journey</p>
+          <div className="journey-card">
+            <h3 className="journey-title">Getting Started</h3>
+            {[
+              {num:"✓",label:"Account Created",desc:"You're signed in and ready to go.",done:true,active:false},
+              {num:"2",label:"Choose a Plan",desc:"Select the experience that's right for you.",done:!!selectedPlan,active:!selectedPlan},
+              {num:"3",label:"Complete Payment",desc:"Secure checkout — one-time payment, no subscriptions.",done:false,active:!!selectedPlan},
+              {num:"4",label:"Invite Your Doctor",desc:"We'll send a secure, one-time link for the gender submission.",done:false,active:false},
+              {num:"5",label:"Go Live",desc:"Your cinematic reveal plays out in real time for everyone you love.",done:false,active:false},
+            ].map(step=>(
+              <div key={step.label} className="step">
+                <div className={`step-num${step.done?" done":step.active?" active":""}`}>{step.done?"✓":step.num}</div>
+                <div className="step-content"><h4>{step.label}</h4><p>{step.desc}</p></div>
               </div>
-            ) : enquiries.length === 0 ? (
-              <div className="empty-state">
-                <div className="empty-icon">🎀</div>
-                <div className="empty-title">No reveals yet</div>
-                <div className="empty-sub">Start your first gender reveal and create an unforgettable moment for your family.</div>
-                <a href="/#pricing" className="btn-action">✦ Create Your First Reveal</a>
-              </div>
-            ) : (
-              enquiries.map((e, i) => (
-                <div className="event-row" key={i} onClick={() => setActiveEnquiry(e)}>
-                  <div className="event-avatar">🎀</div>
-                  <div className="event-info">
-                    <div className="event-name">{e.babyNickname || "Baby Reveal"}</div>
-                    <div className="event-meta">
-                      {e.dueDate ? `Due ${e.dueDate}` : "—"} &nbsp;·&nbsp; {e.parentNames || user.email}
-                    </div>
-                  </div>
-                  <span className={`event-status ${eventStatusCls(e.status)}`}>{eventStatusLabel(e.status)}</span>
-                </div>
-              ))
-            )}
+            ))}
           </div>
         </main>
       </div>
