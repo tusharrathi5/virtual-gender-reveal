@@ -326,6 +326,24 @@ export default function AuthPage() {
               </div>
             )}
 
+            {!authLoading && user && (
+              <div className="verify-banner">
+                You are logged in as <strong>{user.displayName || user.email}</strong>.{" "}
+                <a href="/dashboard" style={{ color: "#1B4F8C", fontWeight: 600 }}>Go to dashboard</a>
+                {" "}or{" "}
+                <button
+                  type="button"
+                  onClick={async () => {
+                    await logout();
+                    setSuccess("You have been logged out.");
+                  }}
+                  style={{ border: "none", background: "none", color: "#1B4F8C", fontWeight: 600, cursor: "pointer", textDecoration: "underline" }}
+                >
+                  switch account
+                </button>.
+              </div>
+            )}
+
             <div className="tab-row">
               <button className={`tab-btn${tab === "login" ? " active" : ""}`} onClick={() => { setTab("login"); setError(""); setSuccess(""); }}>Log In</button>
               <button className={`tab-btn${tab === "register" ? " active" : ""}`} onClick={() => { setTab("register"); setError(""); setSuccess(""); }}>Register</button>
