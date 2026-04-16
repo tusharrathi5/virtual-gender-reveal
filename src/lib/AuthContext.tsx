@@ -3,6 +3,8 @@ import { createContext, useContext, useEffect, useState, ReactNode } from "react
 import {
   User,
   onAuthStateChanged,
+  setPersistence,
+  browserLocalPersistence,
   signInWithEmailAndPassword,
   createUserWithEmailAndPassword,
   signInWithPopup,
@@ -31,6 +33,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     const auth = getFirebaseAuth();
+    setPersistence(auth, browserLocalPersistence).catch(() => {
+      // no-op fallback (e.g. restricted browser environments)
+    });
     const unsub = onAuthStateChanged(auth, (u) => {
       setUser(u);
       setLoading(false);
