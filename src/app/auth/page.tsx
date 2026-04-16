@@ -49,7 +49,6 @@ function AuthContent() {
         await loginWithEmail(email, password);
         router.push("/dashboard");
       } else {
-        // Placeholder for signup logic
         showToast("Registration is currently handled via Sign In for this demo.", "info");
       }
     } catch (err: any) {
@@ -115,7 +114,7 @@ function AuthContent() {
             {showReset ? "Back to Login" : "Forgot Password?"}
           </span>
           {showReset && (
-            <button onClick={handleReset} className="submit-btn" style={{ marginTop: '15px', background: 'rgba(255,255,255,0.1)', color: '#fff' }}>
+            <button type="button" onClick={handleReset} className="submit-btn" style={{ marginTop: '15px', background: 'rgba(255,255,255,0.1)', color: '#fff' }}>
               Send Reset Link
             </button>
           )}
