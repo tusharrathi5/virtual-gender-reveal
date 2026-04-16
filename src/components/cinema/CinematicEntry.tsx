@@ -3,7 +3,25 @@ import { useState, useEffect, useRef } from "react";
 import { useAuth } from "@/lib/AuthContext";
 
 const SCENE_DURATIONS = [3800, 3200, 3200, 4000, 4500, 0];
-const SESSION_KEY = "vgr_intro_seen"; // ✅ single unified key
+const INTRO_KEY = "vgr_intro_seen";
+const INTRO_TTL = 24 * 60 * 60 * 1000; // 24 hours in ms
+
+// ✅ Use localStorage with 24hr TTL so intro only plays once per day
+// sessionStorage clears on navigation — localStorage persists across pages
+function hasSeenIntro(): boolean {
+  if (typeof window === "undefined") return false;
+  const raw = localStorage.getItem(INTRO_KEY);
+  if (!raw) return false;
+  const ts = parseInt(raw, 10);
+  if (Date.now() - ts > INTRO_TTL) {
+    localStorage.removeItem(INTRO_KEY); // expired — show intro again
+    return false;
+  }
+  return true;
+}
+function markIntroSeen() {
+  if (typeof window !== "undefined") localStorage.setItem(INTRO_KEY, Date.now().toString());
+}
 
 const CLOUDS_S1 = [
   { w: 260, h: 90, top: "12%", left: "5%", blur: "28px" },
@@ -22,17 +40,14 @@ const CONFETTI_PIECES = Array.from({ length: 22 }, (_, i) => ({
 }));
 
 export default function CinematicEntry() {
-  // ✅ Check sessionStorage on first render — skip intro if already seen
-  const [scene, setScene] = useState<number>(() => {
-    if (typeof window !== "undefined" && sessionStorage.getItem(SESSION_KEY)) return 6;
-    return 0;
-  });
+  // ✅ Check localStorage on first render — skip intro if seen in last 24hrs
+  const [scene, setScene] = useState<number>(() => hasSeenIntro() ? 6 : 0);
   const [exiting, setExiting] = useState(false);
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const advance = () => {
     if (scene + 1 >= 6) {
-      sessionStorage.setItem(SESSION_KEY, "1");
+      markIntroSeen();
       setExiting(true);
       setTimeout(() => setScene(6), 700);
     } else {
@@ -41,7 +56,7 @@ export default function CinematicEntry() {
   };
 
   function skipIntro() {
-    sessionStorage.setItem(SESSION_KEY, "1");
+    markIntroSeen();
     setExiting(true);
     setTimeout(() => setScene(6), 600);
   }
