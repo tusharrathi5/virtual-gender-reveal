@@ -1,12 +1,15 @@
 "use client";
-import { createContext, useContext, useEffect, useState, ReactNode } from "react";
+
+import {
+  createContext,
+  useContext,
+  useEffect,
+  useState,
+  ReactNode,
+} from "react";
 import {
   User,
   onAuthStateChanged,
-  setPersistence,
-  browserLocalPersistence,
-  browserSessionPersistence,
-  inMemoryPersistence,
   signInWithEmailAndPassword,
   createUserWithEmailAndPassword,
   signInWithPopup,
@@ -14,86 +17,288 @@ import {
   signOut,
   sendEmailVerification,
   sendPasswordResetEmail,
+  deleteUser,
+  reauthenticateWithCredential,
+  reauthenticateWithPopup,
+  EmailAuthProvider,
+  linkWithCredential,
+  fetchSignInMethodsForEmail,
+  updateProfile,
 } from "firebase/auth";
 import { getFirebaseAuth } from "@/lib/firebase";
+import {
+  createUserDoc,
+  getUserDoc,
+  updateLastLogin,
+  deleteUserDoc,
+  updateUserProvider,
+  updateUserPhone,
+  markEmailVerified,
+  userDocExists,
+  FirestoreUser,
+} from "@/lib/userService";
+
+// ── Types ────────────────────────────────────────────────────
 
 interface AuthContextType {
   user: User | null;
+  firestoreUser: FirestoreUser | null;
   loading: boolean;
-  loginWithEmail: (email: string, password: string) => Promise<void>;
-  registerWithEmail: (email: string, password: string) => Promise<void>;
-  loginWithGoogle: () => Promise<void>;
-  logout: () => Promise<void>;
+  // Email/Password
+  signUpWithEmail: (email: string, password: string, fullName: string, phone: string) => Promise<void>;
+  signInWithEmail: (email: string, password: string) => Promise<void>;
+  // Google
+  signInWithGoogle: () => Promise<{ isNewUser: boolean }>;
+  // Complete Profile (after Google signup)
+  completeGoogleProfile: (phone: string, password: string) => Promise<void>;
+  // Password reset
   resetPassword: (email: string) => Promise<void>;
+  // Sign out
+  logout: () => Promise<void>;
+  // Delete account (self)
+  deleteAccount: (credential?: { type: "email"; password: string } | { type: "google" }) => Promise<void>;
+  // Refresh firestore user
+  refreshFirestoreUser: () => Promise<void>;
 }
+
+// ── Context ──────────────────────────────────────────────────
 
 const AuthContext = createContext<AuthContextType | null>(null);
 
-export function AuthProvider({ children }: { children: ReactNode }) {
-  const [user, setUser] = useState<User | null>(null);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    const auth = getFirebaseAuth();
-    let isMounted = true;
-    let unsub = () => {};
-
-    const initAuth = async () => {
-      try {
-        await setPersistence(auth, browserLocalPersistence);
-      } catch {
-        try {
-          await setPersistence(auth, browserSessionPersistence);
-        } catch {
-          await setPersistence(auth, inMemoryPersistence);
-        }
-      }
-
-      if (!isMounted) return;
-      unsub = onAuthStateChanged(auth, (u) => {
-        setUser(u);
-        setLoading(false);
-      });
-    };
-
-    initAuth();
-    return () => {
-      isMounted = false;
-      unsub();
-    };
-  }, []);
-
-  const loginWithEmail = async (email: string, password: string) => {
-    await signInWithEmailAndPassword(getFirebaseAuth(), email, password);
-  };
-
-  const registerWithEmail = async (email: string, password: string) => {
-    const cred = await createUserWithEmailAndPassword(getFirebaseAuth(), email, password);
-    await sendEmailVerification(cred.user);
-  };
-
-  const loginWithGoogle = async () => {
-    const provider = new GoogleAuthProvider();
-    await signInWithPopup(getFirebaseAuth(), provider);
-  };
-
-  const logout = async () => {
-    await signOut(getFirebaseAuth());
-  };
-
-  const resetPassword = async (email: string) => {
-    await sendPasswordResetEmail(getFirebaseAuth(), email);
-  };
-
-  return (
-    <AuthContext.Provider value={{ user, loading, loginWithEmail, registerWithEmail, loginWithGoogle, logout, resetPassword }}>
-      {children}
-    </AuthContext.Provider>
-  );
-}
-
-export function useAuth() {
+export function useAuth(): AuthContextType {
   const ctx = useContext(AuthContext);
   if (!ctx) throw new Error("useAuth must be used within AuthProvider");
   return ctx;
+}
+
+// ── Provider ─────────────────────────────────────────────────
+
+export function AuthProvider({ children }: { children: ReactNode }) {
+  const [user, setUser] = useState<User | null>(null);
+  const [firestoreUser, setFirestoreUser] = useState<FirestoreUser | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  // Listen to Firebase Auth state
+  useEffect(() => {
+    const auth = getFirebaseAuth();
+    const unsub = onAuthStateChanged(auth, async (firebaseUser) => {
+      setUser(firebaseUser);
+      if (firebaseUser) {
+        try {
+          const fsUser = await getUserDoc(firebaseUser.uid);
+          setFirestoreUser(fsUser);
+          // Auto-mark email as verified if Firebase says so
+          if (firebaseUser.emailVerified && fsUser && !fsUser.emailVerified) {
+            await markEmailVerified(firebaseUser.uid);
+          }
+        } catch (e) {
+          console.error("Error fetching Firestore user:", e);
+        }
+      } else {
+        setFirestoreUser(null);
+      }
+      setLoading(false);
+    });
+    return unsub;
+  }, []);
+
+  // ── Sign Up with Email/Password ──────────────────────────
+
+  async function signUpWithEmail(
+    email: string,
+    password: string,
+    fullName: string,
+    phone: string
+  ): Promise<void> {
+    const auth = getFirebaseAuth();
+
+    // Check if email already exists
+    const methods = await fetchSignInMethodsForEmail(auth, email);
+    if (methods.length > 0) {
+      throw new Error("An account with this email already exists. Please sign in.");
+    }
+
+    // Create Firebase Auth account
+    const cred = await createUserWithEmailAndPassword(auth, email, password);
+    const { user: newUser } = cred;
+
+    // Update display name
+    await updateProfile(newUser, { displayName: fullName });
+
+    // Send email verification
+    await sendEmailVerification(newUser);
+
+    // Create Firestore user doc
+    await createUserDoc({
+      uid: newUser.uid,
+      fullName,
+      email,
+      phone,
+      provider: "email",
+      emailVerified: false,
+    });
+
+    // Update state
+    const fsUser = await getUserDoc(newUser.uid);
+    setFirestoreUser(fsUser);
+  }
+
+  // ── Sign In with Email/Password ──────────────────────────
+
+  async function signInWithEmail(email: string, password: string): Promise<void> {
+    const auth = getFirebaseAuth();
+    const cred = await signInWithEmailAndPassword(auth, email, password);
+
+    // Ensure Firestore doc exists (defensive)
+    const exists = await userDocExists(cred.user.uid);
+    if (!exists) {
+      await createUserDoc({
+        uid: cred.user.uid,
+        fullName: cred.user.displayName || email.split("@")[0],
+        email,
+        provider: "email",
+        emailVerified: cred.user.emailVerified,
+      });
+    }
+
+    // Update last login
+    await updateLastLogin(cred.user.uid);
+    const fsUser = await getUserDoc(cred.user.uid);
+    setFirestoreUser(fsUser);
+  }
+
+  // ── Sign In / Sign Up with Google ────────────────────────
+
+  async function signInWithGoogle(): Promise<{ isNewUser: boolean }> {
+    const auth = getFirebaseAuth();
+    const provider = new GoogleAuthProvider();
+    provider.setCustomParameters({ prompt: "select_account" });
+
+    const cred = await signInWithPopup(auth, provider);
+    const { user: googleUser } = cred;
+    const email = googleUser.email!;
+
+    // Check if Firestore doc exists
+    const exists = await userDocExists(googleUser.uid);
+
+    if (!exists) {
+      // NEW Google user — create minimal Firestore doc (phone/password added in complete-profile)
+      await createUserDoc({
+        uid: googleUser.uid,
+        fullName: googleUser.displayName || email.split("@")[0],
+        email,
+        phone: "",
+        provider: "google",
+        emailVerified: true, // Google emails are pre-verified
+      });
+      const fsUser = await getUserDoc(googleUser.uid);
+      setFirestoreUser(fsUser);
+      return { isNewUser: true };
+    }
+
+    // EXISTING user — update last login
+    await updateLastLogin(googleUser.uid);
+    const fsUser = await getUserDoc(googleUser.uid);
+    setFirestoreUser(fsUser);
+    return { isNewUser: false };
+  }
+
+  // ── Complete Google Profile (link email/password) ────────
+
+  async function completeGoogleProfile(phone: string, password: string): Promise<void> {
+    const auth = getFirebaseAuth();
+    const currentUser = auth.currentUser;
+    if (!currentUser || !currentUser.email) {
+      throw new Error("No authenticated user found.");
+    }
+
+    // Link email/password credential to Google account
+    const credential = EmailAuthProvider.credential(currentUser.email, password);
+    await linkWithCredential(currentUser, credential);
+
+    // Update Firestore
+    await updateUserPhone(currentUser.uid, phone);
+    await updateUserProvider(currentUser.uid, "both");
+
+    // Refresh state
+    const fsUser = await getUserDoc(currentUser.uid);
+    setFirestoreUser(fsUser);
+  }
+
+  // ── Reset Password ───────────────────────────────────────
+
+  async function resetPassword(email: string): Promise<void> {
+    const auth = getFirebaseAuth();
+    await sendPasswordResetEmail(auth, email);
+  }
+
+  // ── Logout ───────────────────────────────────────────────
+
+  async function logout(): Promise<void> {
+    const auth = getFirebaseAuth();
+    await signOut(auth);
+    setFirestoreUser(null);
+  }
+
+  // ── Delete Account (self) ─────────────────────────────────
+
+  async function deleteAccount(
+    credential?: { type: "email"; password: string } | { type: "google" }
+  ): Promise<void> {
+    const auth = getFirebaseAuth();
+    const currentUser = auth.currentUser;
+    if (!currentUser) throw new Error("No authenticated user.");
+
+    // Re-authenticate before deletion (Firebase security requirement)
+    if (credential?.type === "email") {
+      const emailCred = EmailAuthProvider.credential(
+        currentUser.email!,
+        credential.password
+      );
+      await reauthenticateWithCredential(currentUser, emailCred);
+    } else if (credential?.type === "google") {
+      const provider = new GoogleAuthProvider();
+      await reauthenticateWithPopup(currentUser, provider);
+    }
+
+    const uid = currentUser.uid;
+
+    // Delete Firestore doc
+    await deleteUserDoc(uid);
+
+    // Delete Firebase Auth user
+    await deleteUser(currentUser);
+
+    // Sign out
+    await signOut(auth);
+    setFirestoreUser(null);
+  }
+
+  // ── Refresh Firestore User ───────────────────────────────
+
+  async function refreshFirestoreUser(): Promise<void> {
+    if (!user) return;
+    const fsUser = await getUserDoc(user.uid);
+    setFirestoreUser(fsUser);
+  }
+
+  return (
+    <AuthContext.Provider
+      value={{
+        user,
+        firestoreUser,
+        loading,
+        signUpWithEmail,
+        signInWithEmail,
+        signInWithGoogle,
+        completeGoogleProfile,
+        resetPassword,
+        logout,
+        deleteAccount,
+        refreshFirestoreUser,
+      }}
+    >
+      {children}
+    </AuthContext.Provider>
+  );
 }
