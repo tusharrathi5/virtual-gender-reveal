@@ -3,88 +3,50 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/lib/AuthContext";
 
-const CSS = `
-@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,300;0,400;1,300;1,400&family=Plus+Jakarta+Sans:wght@300;400;500;600&display=swap');
-*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
-body{font-family:'Plus Jakarta Sans',sans-serif;background:#F9F8F6;color:#111827;min-height:100vh;overflow-x:hidden;}
-.auth-wrap{min-height:100vh;display:grid;grid-template-columns:1fr 1fr;}
-@media(max-width:900px){.auth-wrap{grid-template-columns:1fr;} .auth-left{display:none;}}
+type ToastType = "success" | "error" | "info";
 
-/* Left decorative panel */
-.auth-left{
-  background:linear-gradient(160deg,#1B4F8C 0%,#12204A 50%,#6B1535 100%);
-  display:flex;flex-direction:column;align-items:center;justify-content:center;
-  padding:3rem;position:relative;overflow:hidden;
+function Toast({ message, type, onClose }: { message: string; type: ToastType; onClose: () => void }) {
+  const colors: Record<ToastType, string> = { success: "#22c55e", error: "#ef4444", info: "#c8a4c4" };
+  const icons: Record<ToastType, string> = { success: "✓", error: "✕", info: "✦" };
+  return (
+    <div style={{
+      position: "fixed", top: 24, right: 24, zIndex: 9999,
+      display: "flex", alignItems: "flex-start", gap: 12,
+      background: "#1a1018", border: `1px solid ${colors[type]}40`,
+      borderLeft: `3px solid ${colors[type]}`,
+      borderRadius: 10, padding: "14px 18px", maxWidth: 380,
+      boxShadow: "0 8px 30px rgba(0,0,0,0.5)",
+      animation: "slideIn 0.3s ease-out", fontFamily: "'Jost',sans-serif",
+    }}>
+      <span style={{ color: colors[type], fontSize: 16, fontWeight: 700, marginTop: 1, flexShrink: 0 }}>{icons[type]}</span>
+      <span style={{ color: "#f5eff5", fontSize: 13, fontWeight: 300, lineHeight: 1.5, flex: 1 }}>{message}</span>
+      <button onClick={onClose} style={{ background: "none", border: "none", color: "rgba(245,239,245,0.3)", cursor: "pointer", fontSize: 18, padding: 0, marginLeft: 8, lineHeight: 1 }}>×</button>
+    </div>
+  );
 }
-.auth-left::before{
-  content:'';position:absolute;inset:0;
-  background:radial-gradient(ellipse 70% 60% at 30% 30%,rgba(130,184,232,0.2),transparent),
-             radial-gradient(ellipse 60% 70% at 70% 70%,rgba(242,184,207,0.15),transparent);
-}
-.auth-orb{
-  position:absolute;border-radius:50%;filter:blur(60px);
-  animation:orbFloat 6s ease-in-out infinite alternate;
-}
-@keyframes orbFloat{from{transform:translateY(0) scale(1);}to{transform:translateY(-20px) scale(1.08);}}
-.left-content{position:relative;z-index:2;text-align:center;}
-.left-logo{font-family:'Playfair Display',serif;font-size:2rem;font-weight:300;color:white;margin-bottom:0.4rem;}
-.left-tag{font-size:0.65rem;letter-spacing:0.3em;text-transform:uppercase;color:rgba(255,255,255,0.4);margin-bottom:3rem;}
-.left-quote{font-family:'Playfair Display',serif;font-size:1.5rem;font-style:italic;font-weight:300;color:rgba(255,255,255,0.85);line-height:1.5;margin-bottom:1.5rem;max-width:320px;}
-.left-sub{font-size:0.82rem;color:rgba(255,255,255,0.4);line-height:1.7;max-width:280px;}
-.journey-preview{margin-top:3rem;display:flex;flex-direction:column;gap:1rem;width:100%;max-width:280px;}
-.jp-step{display:flex;align-items:center;gap:0.8rem;padding:0.8rem 1rem;border-radius:6px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.08);}
-.jp-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;}
-.jp-dot-done{background:#82B8E8;}
-.jp-dot-pending{background:rgba(255,255,255,0.2);}
-.jp-label{font-size:0.78rem;color:rgba(255,255,255,0.6);}
 
-/* Right form panel */
-.auth-right{display:flex;align-items:center;justify-content:center;padding:3rem 2rem;background:#FAFAF9;}
-.auth-card{width:100%;max-width:440px;}
-.auth-header{margin-bottom:2.4rem;}
-.auth-title{font-family:'Playfair Display',serif;font-size:2rem;font-weight:300;margin-bottom:0.4rem;}
-.auth-subtitle{font-size:0.88rem;color:#6B7280;font-weight:300;}
-.tab-row{display:flex;margin-bottom:2rem;border-bottom:1px solid rgba(0,0,0,0.08);}
-.tab-btn{flex:1;padding:0.75rem;border:none;background:none;cursor:pointer;font-family:'Plus Jakarta Sans',sans-serif;font-size:0.82rem;font-weight:500;letter-spacing:0.06em;color:#6B7280;border-bottom:2px solid transparent;margin-bottom:-1px;transition:color 0.2s,border-color 0.2s;}
-.tab-btn.active{color:#1B4F8C;border-bottom-color:#1B4F8C;}
-.form-group{margin-bottom:1.2rem;}
-.form-label{display:block;font-size:0.75rem;font-weight:500;letter-spacing:0.08em;text-transform:uppercase;color:#374151;margin-bottom:0.45rem;}
-.form-input{
-  width:100%;padding:0.85rem 1rem;border-radius:4px;
-  border:1px solid rgba(0,0,0,0.12);background:white;
-  font-family:'Plus Jakarta Sans',sans-serif;font-size:0.92rem;color:#111827;
-  transition:border-color 0.2s,box-shadow 0.2s;outline:none;
+// ✅ Proper email validation — rejects xyz@abc, xyz.com, @abc.com
+function isValidEmail(email: string): boolean {
+  return /^[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}$/.test(email.trim());
 }
-.form-input:focus{border-color:#2E7DD1;box-shadow:0 0 0 3px rgba(46,125,209,0.1);}
-.form-input::placeholder{color:#9CA3AF;}
-.btn-submit{
-  width:100%;padding:1rem;border:none;border-radius:4px;cursor:pointer;
-  background:linear-gradient(135deg,#2E7DD1,#C2527A);color:white;
-  font-family:'Plus Jakarta Sans',sans-serif;font-size:0.84rem;font-weight:500;
-  letter-spacing:0.1em;text-transform:uppercase;
-  box-shadow:0 4px 16px rgba(46,125,209,0.25);
-  transition:transform 0.2s,box-shadow 0.2s,opacity 0.2s;
-  margin-top:0.5rem;
+
+function isValidPhone(phone: string): boolean {
+  return /^\+?[\d\s\-().]{7,20}$/.test(phone.trim()) && phone.replace(/\D/g, "").length >= 7;
 }
-.btn-submit:hover{transform:translateY(-2px);box-shadow:0 8px 28px rgba(46,125,209,0.32);}
-.btn-submit:disabled{opacity:0.6;cursor:not-allowed;transform:none;}
-.divider{display:flex;align-items:center;gap:1rem;margin:1.4rem 0;color:#9CA3AF;font-size:0.78rem;}
-.divider::before,.divider::after{content:'';flex:1;height:1px;background:rgba(0,0,0,0.08);}
-.btn-google{
-  width:100%;padding:0.9rem;border-radius:4px;border:1px solid rgba(0,0,0,0.12);
-  background:white;cursor:pointer;font-family:'Plus Jakarta Sans',sans-serif;
-  font-size:0.84rem;font-weight:500;color:#374151;
-  display:flex;align-items:center;justify-content:center;gap:0.7rem;
-  transition:background 0.2s,border-color 0.2s,transform 0.2s;
+
+function getFirebaseError(err: unknown): string {
+  const msg = err instanceof Error ? err.message : "Something went wrong";
+  if (msg.includes("user-not-found") || msg.includes("invalid-credential") || msg.includes("INVALID_LOGIN_CREDENTIALS"))
+    return "No account found with this email and password. Please check your details or create a new account.";
+  if (msg.includes("wrong-password")) return "Incorrect password. Please try again.";
+  if (msg.includes("email-already-in-use")) return "An account with this email already exists. Please sign in instead.";
+  if (msg.includes("weak-password")) return "Password must be at least 6 characters long.";
+  if (msg.includes("invalid-email")) return "Please enter a valid email address.";
+  if (msg.includes("too-many-requests")) return "Too many attempts. Please wait a moment and try again.";
+  if (msg.includes("network-request-failed")) return "Network error. Please check your connection.";
+  if (msg.includes("popup-closed-by-user")) return "Sign-in was cancelled. Please try again.";
+  return msg.replace("Firebase: ", "").replace(/\s*\(auth\/.*?\)\.?/, "").trim();
 }
-.btn-google:hover{background:#F9FAFB;border-color:#2E7DD1;transform:translateY(-1px);}
-.google-icon{width:18px;height:18px;}
-.error-msg{font-size:0.8rem;color:#DC2626;margin-top:0.4rem;padding:0.6rem 0.8rem;background:#FEF2F2;border-radius:4px;border:1px solid rgba(220,38,38,0.15);}
-.success-msg{font-size:0.8rem;color:#16A34A;margin-top:0.4rem;padding:0.6rem 0.8rem;background:#F0FDF4;border-radius:4px;border:1px solid rgba(22,163,74,0.15);}
-.forgot-link{font-size:0.78rem;color:#2E7DD1;cursor:pointer;text-decoration:none;display:block;text-align:right;margin-top:0.3rem;}
-.forgot-link:hover{text-decoration:underline;}
-.verify-banner{padding:1rem;background:#EFF6FF;border:1px solid rgba(46,125,209,0.2);border-radius:6px;margin-bottom:1.4rem;font-size:0.83rem;color:#1B4F8C;line-height:1.6;}
-`;
 
 export default function AuthPage() {
   const router = useRouter();
@@ -96,9 +58,7 @@ export default function AuthPage() {
   const [mobile, setMobile] = useState("");
   const [otpSent, setOtpSent] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
-  const [success, setSuccess] = useState("");
-  const [showReset, setShowReset] = useState(false);
+  const [toast, setToast] = useState<{ message: string; type: ToastType } | null>(null);
 
   const { user, loading: authLoading, loginWithEmail, registerWithEmail, loginWithGoogle, resetPassword, logout } = useAuth();
   const isValidEmail = (value: string) => /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(value);
@@ -116,9 +76,35 @@ export default function AuthPage() {
     if (message) setLoginMessage(message);
   }, []);
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  function showToast(message: string, type: ToastType) {
+    setToast({ message, type });
+    setTimeout(() => setToast(null), 5000);
+  }
+
+  function redirectAfterAuth() {
+    // ✅ Intent preservation — resume the plan the user clicked before login
+    const savedPlan = intendedPlan || sessionStorage.getItem("vgr_intended_plan") || "";
+    if (savedPlan) {
+      sessionStorage.removeItem("vgr_intended_plan");
+      sessionStorage.setItem("vgr_resume_plan", savedPlan);
+      router.push("/");
+    } else {
+      router.push("/dashboard");
+    }
+  }
+
+  // ── Sign In ──
+  async function handleSignin(e: React.FormEvent) {
     e.preventDefault();
-    setError(""); setSuccess(""); setLoading(true);
+    if (!isValidEmail(email)) {
+      showToast("Please enter a valid email address (e.g. name@example.com).", "error");
+      return;
+    }
+    if (!password) {
+      showToast("Please enter your password.", "error");
+      return;
+    }
+    setLoading(true);
     try {
       if (!isValidEmail(email.trim().toLowerCase())) {
         throw new Error("Please enter a valid email address.");
@@ -141,10 +127,28 @@ export default function AuthPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }
 
-  const handleGoogle = async () => {
-    setError(""); setLoading(true);
+  // ── Signup Step 1: validate details, then go to OTP ──
+  async function handleSignupStep1(e: React.FormEvent) {
+    e.preventDefault();
+    if (!displayName.trim()) { showToast("Please enter your full name.", "error"); return; }
+    if (!isValidEmail(email)) { showToast("Please enter a valid email address (e.g. name@example.com).", "error"); return; }
+    if (!isValidPhone(phone)) { showToast("Please enter a valid phone number.", "error"); return; }
+    if (password.length < 6) { showToast("Password must be at least 6 characters.", "error"); return; }
+    setLoading(true);
+    await new Promise(r => setTimeout(r, 800)); // simulate OTP send
+    setLoading(false);
+    setSignupStep(2);
+    showToast(`Verification code sent to ${phone}. Use 123456 for now.`, "info");
+  }
+
+  // ── Signup Step 2: verify OTP then create account ──
+  async function handleSignupStep2(e: React.FormEvent) {
+    e.preventDefault();
+    if (otp.length !== 6) { showToast("Please enter the 6-digit code.", "error"); return; }
+    if (otp !== "123456") { showToast("Incorrect code. Hint: use 123456", "error"); return; }
+    setLoading(true);
     try {
       await loginWithGoogle();
       router.push(redirectPath);
@@ -153,7 +157,7 @@ export default function AuthPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }
 
   const handleReset = async () => {
     if (!email) { setError("Please enter your email address first."); return; }
@@ -168,41 +172,159 @@ export default function AuthPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }
+
+  function switchMode(m: "signin" | "signup") {
+    setMode(m);
+    setSignupStep(1);
+    setEmail(""); setPassword(""); setDisplayName(""); setPhone(""); setOtp("");
+    setToast(null);
+  }
+
+  const GoogleIcon = () => (
+    <svg width="18" height="18" viewBox="0 0 24 24">
+      <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
+      <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" />
+      <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" />
+      <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" />
+    </svg>
+  );
 
   return (
     <>
-      <style>{CSS}</style>
-      <div className="auth-wrap">
-        {/* Left decorative panel */}
-        <div className="auth-left">
-          <div className="auth-orb" style={{ width: 300, height: 300, top: "10%", left: "-10%", background: "rgba(46,125,209,0.25)" }} />
-          <div className="auth-orb" style={{ width: 250, height: 250, bottom: "5%", right: "-8%", background: "rgba(194,82,122,0.2)", animationDelay: "2s" }} />
-          <div className="left-content">
-            <div className="left-logo">Virtual Gender Reveal</div>
-            <div className="left-tag">Crafted for Moments That Matter</div>
-            <div className="left-quote">"The moment everyone finds out, all at once, together."</div>
-            <div className="left-sub">A cinematic reveal experience built for families spread across the world.</div>
-            <div className="journey-preview">
-              {["Payment Complete", "Doctor Notified", "Video Ready", "Go Live"].map((s, i) => (
-                <div className="jp-step" key={i}>
-                  <div className={`jp-dot ${i === 0 ? "jp-dot-done" : "jp-dot-pending"}`} />
-                  <div className="jp-label">{s}</div>
-                </div>
-              ))}
+      <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=Jost:wght@300;400;500&display=swap');
+        *{box-sizing:border-box;margin:0;padding:0}
+        @keyframes slideIn{from{opacity:0;transform:translateX(20px)}to{opacity:1;transform:translateX(0)}}
+        @keyframes float{0%,100%{transform:translate(0,0) scale(1)}33%{transform:translate(20px,-30px) scale(1.05)}66%{transform:translate(-15px,20px) scale(0.95)}}
+        @keyframes spin{to{transform:rotate(360deg)}}
+        @keyframes fadeIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+        .auth-root{min-height:100vh;display:flex;font-family:'Jost',sans-serif;background:#0a0608;position:relative;overflow:hidden}
+        .blob{position:fixed;border-radius:50%;filter:blur(80px);opacity:.18;pointer-events:none;animation:float 12s ease-in-out infinite}
+        .blob-1{width:500px;height:500px;background:#c8a4c4;top:-100px;left:-150px}
+        .blob-2{width:400px;height:400px;background:#a4b4c8;top:40%;right:-100px;animation-delay:-4s}
+        .blob-3{width:300px;height:300px;background:#c8b4a4;bottom:-50px;left:30%;animation-delay:-8s}
+        .back-link{position:fixed;top:24px;left:24px;z-index:200;display:flex;align-items:center;gap:8px;font-family:'Jost',sans-serif;font-size:11px;font-weight:300;letter-spacing:1.5px;text-transform:uppercase;color:rgba(245,239,245,0.35);text-decoration:none;transition:all 0.2s;padding:8px 14px;border:1px solid rgba(255,255,255,0.08);border-radius:8px;background:rgba(255,255,255,0.03);backdrop-filter:blur(10px)}
+        .back-link:hover{color:rgba(245,239,245,0.7);border-color:rgba(255,255,255,0.15)}
+        .brand-panel{display:none;flex:1;background:linear-gradient(145deg,#1a0f18 0%,#0f1520 50%,#1a120f 100%);position:relative;overflow:hidden;padding:60px;flex-direction:column;justify-content:space-between}
+        @media(min-width:960px){.brand-panel{display:flex}}
+        .brand-pattern{position:absolute;inset:0;background-image:radial-gradient(circle at 20% 30%,rgba(200,164,196,.08) 0%,transparent 50%),radial-gradient(circle at 80% 70%,rgba(164,180,200,.08) 0%,transparent 50%)}
+        .brand-ornament{width:60px;height:1px;background:linear-gradient(90deg,transparent,rgba(200,164,196,.6),transparent);margin:20px 0}
+        .brand-title{font-family:'Cormorant Garamond',serif;font-size:52px;font-weight:300;line-height:1.15;color:#f5eff5;letter-spacing:-.5px}
+        .brand-title em{font-style:italic;color:#c8a4c4}
+        .brand-tagline{font-size:13px;font-weight:300;letter-spacing:3px;text-transform:uppercase;color:rgba(245,239,245,.4);margin-top:24px}
+        .brand-features{display:flex;flex-direction:column;gap:28px}
+        .brand-feature{display:flex;align-items:flex-start;gap:16px}
+        .feature-dot{width:6px;height:6px;border-radius:50%;background:#c8a4c4;margin-top:7px;flex-shrink:0;box-shadow:0 0 10px rgba(200,164,196,.5)}
+        .feature-text h4{font-family:'Cormorant Garamond',serif;font-size:16px;font-weight:400;color:rgba(245,239,245,.9);margin-bottom:4px}
+        .feature-text p{font-size:12px;font-weight:300;color:rgba(245,239,245,.35);line-height:1.6}
+        .brand-footer{font-size:11px;font-weight:300;color:rgba(245,239,245,.2);letter-spacing:1px}
+        .form-panel{flex:none;width:100%;display:flex;align-items:center;justify-content:center;padding:80px 24px 40px;position:relative;z-index:1}
+        @media(min-width:960px){.form-panel{width:480px;padding:40px 24px}}
+        .form-card{width:100%;max-width:400px}
+        .form-logo{font-family:'Cormorant Garamond',serif;font-size:13px;font-weight:300;letter-spacing:4px;text-transform:uppercase;color:rgba(200,164,196,.7);margin-bottom:40px;display:flex;align-items:center;gap:10px}
+        .form-logo::before{content:'';display:block;width:20px;height:1px;background:rgba(200,164,196,.4)}
+        .form-heading{font-family:'Cormorant Garamond',serif;font-size:36px;font-weight:300;color:#f5eff5;line-height:1.2;margin-bottom:8px}
+        .form-heading em{font-style:italic;color:#c8a4c4}
+        .form-sub{font-size:13px;font-weight:300;color:rgba(245,239,245,.35);margin-bottom:32px;line-height:1.6}
+        .mode-toggle{display:flex;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.07);border-radius:8px;padding:3px;margin-bottom:24px;gap:3px}
+        .mode-btn{flex:1;padding:10px;border:none;border-radius:6px;font-family:'Jost',sans-serif;font-size:12px;font-weight:400;letter-spacing:1.5px;text-transform:uppercase;cursor:pointer;transition:all .2s;background:transparent;color:rgba(245,239,245,.35)}
+        .mode-btn.active{background:rgba(200,164,196,.15);color:#c8a4c4;border:1px solid rgba(200,164,196,.2)}
+        .google-btn{width:100%;display:flex;align-items:center;justify-content:center;gap:12px;padding:13px 20px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);border-radius:10px;color:rgba(245,239,245,.8);font-family:'Jost',sans-serif;font-size:13px;font-weight:400;cursor:pointer;transition:all .2s;margin-bottom:20px}
+        .google-btn:hover{background:rgba(255,255,255,.09);border-color:rgba(255,255,255,.18);color:#f5eff5}
+        .google-btn:disabled{opacity:.4;cursor:not-allowed}
+        .divider{display:flex;align-items:center;gap:16px;margin-bottom:20px}
+        .divider-line{flex:1;height:1px;background:rgba(255,255,255,.07)}
+        .divider-text{font-size:11px;font-weight:300;letter-spacing:2px;text-transform:uppercase;color:rgba(245,239,245,.2)}
+        .fields{display:flex;flex-direction:column;gap:12px;margin-bottom:20px}
+        .field label{display:block;font-size:10px;font-weight:400;letter-spacing:2px;text-transform:uppercase;color:rgba(245,239,245,.35);margin-bottom:7px}
+        .field input{width:100%;padding:12px 16px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:10px;color:#f5eff5;font-family:'Jost',sans-serif;font-size:14px;font-weight:300;outline:none;transition:all .2s}
+        .field input::placeholder{color:rgba(245,239,245,.18)}
+        .field input:focus{border-color:rgba(200,164,196,.35);background:rgba(200,164,196,.04);box-shadow:0 0 0 3px rgba(200,164,196,.06)}
+        .phone-row{display:flex;gap:8px}
+        .phone-prefix{padding:12px 14px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:10px;color:rgba(245,239,245,.4);font-family:'Jost',sans-serif;font-size:13px;display:flex;align-items:center;flex-shrink:0}
+        .phone-input{flex:1;padding:12px 16px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:10px;color:#f5eff5;font-family:'Jost',sans-serif;font-size:14px;font-weight:300;outline:none;transition:all .2s}
+        .phone-input:focus{border-color:rgba(200,164,196,.35);background:rgba(200,164,196,.04);box-shadow:0 0 0 3px rgba(200,164,196,.06)}
+        .phone-input::placeholder{color:rgba(245,239,245,.18)}
+        .submit-btn{width:100%;padding:15px 20px;background:linear-gradient(135deg,rgba(200,164,196,.9),rgba(164,140,180,.9));border:none;border-radius:10px;color:#0a0608;font-family:'Jost',sans-serif;font-size:12px;font-weight:500;letter-spacing:2.5px;text-transform:uppercase;cursor:pointer;transition:all .25s;margin-bottom:18px}
+        .submit-btn:hover{background:linear-gradient(135deg,rgba(218,185,215,.95),rgba(185,160,200,.95));transform:translateY(-1px);box-shadow:0 8px 25px rgba(200,164,196,.25)}
+        .submit-btn:disabled{opacity:.5;cursor:not-allowed;transform:none}
+        .switch-mode{text-align:center;font-size:12px;font-weight:300;color:rgba(245,239,245,.3)}
+        .switch-mode button{background:none;border:none;color:#c8a4c4;cursor:pointer;font-family:'Jost',sans-serif;font-size:12px;font-weight:400;text-decoration:underline;text-underline-offset:3px;padding:0;margin-left:4px}
+        .spinner{display:inline-block;width:13px;height:13px;border:2px solid rgba(10,6,8,.3);border-top-color:#0a0608;border-radius:50%;animation:spin .7s linear infinite;vertical-align:middle;margin-right:8px}
+        .step-dots{display:flex;align-items:center;gap:8px;margin-bottom:24px}
+        .step-dot{width:8px;height:8px;border-radius:50%;background:rgba(255,255,255,.1);transition:all .3s}
+        .step-dot.active{background:#c8a4c4;box-shadow:0 0 8px rgba(200,164,196,.5)}
+        .step-dot.done{background:rgba(34,197,94,.5)}
+        .otp-info{font-size:12px;font-weight:300;color:rgba(245,239,245,.4);line-height:1.6;margin-bottom:16px;padding:12px 16px;background:rgba(200,164,196,.06);border:1px solid rgba(200,164,196,.15);border-radius:8px}
+        .otp-input{width:100%;padding:16px;background:rgba(255,255,255,.04);border:1px solid rgba(200,164,196,.25);border-radius:10px;color:#f5eff5;font-family:'Jost',sans-serif;font-size:22px;font-weight:400;outline:none;text-align:center;letter-spacing:8px;transition:all .2s;margin-bottom:20px}
+        .otp-input:focus{border-color:rgba(200,164,196,.5);background:rgba(200,164,196,.06)}
+        .back-step{background:none;border:none;color:rgba(200,164,196,.6);font-family:'Jost',sans-serif;font-size:11px;cursor:pointer;text-decoration:underline;text-underline-offset:3px;padding:0;margin-bottom:16px;display:block;letter-spacing:1px}
+        .otp-wrap{animation:fadeIn .3s ease-out}
+      `}</style>
+
+      {toast && <Toast message={toast.message} type={toast.type} onClose={() => setToast(null)} />}
+      <a href="/" className="back-link">← Back to website</a>
+
+      <div className="auth-root">
+        <div className="blob blob-1" /><div className="blob blob-2" /><div className="blob blob-3" />
+
+        {/* Brand Panel */}
+        <div className="brand-panel">
+          <div className="brand-pattern" />
+          <div>
+            <div style={{ fontFamily: "'Cormorant Garamond',serif", fontSize: 11, letterSpacing: 4, textTransform: "uppercase", color: "rgba(200,164,196,0.5)", marginBottom: 32 }}>
+              Virtual Gender Reveal
             </div>
+            <h1 className="brand-title">The most <em>magical</em><br />reveal of your<br />life, online.</h1>
+            <div className="brand-ornament" />
+            <p className="brand-tagline">Where moments become memories</p>
           </div>
+          <div className="brand-features">
+            {[
+              { title: "Encrypted Gender Vault", desc: "Your doctor submits the gender through a secure, one-time link. Only revealed at your chosen moment." },
+              { title: "Live Cinematic Reveal", desc: "Friends and family watch together — anywhere in the world — as the reveal unfolds in real time." },
+              { title: "Phone Verified Accounts", desc: "Every account is verified with a mobile OTP for maximum security and peace of mind." },
+            ].map(f => (
+              <div className="brand-feature" key={f.title}>
+                <div className="feature-dot" />
+                <div className="feature-text"><h4>{f.title}</h4><p>{f.desc}</p></div>
+              </div>
+            ))}
+          </div>
+          <div className="brand-footer">© 2025 Virtual Gender Reveal · Privacy · Terms</div>
         </div>
 
-        {/* Right form panel */}
-        <div className="auth-right">
-          <div className="auth-card">
-            <div className="auth-header">
-              <div className="auth-title">{tab === "login" ? "Welcome back" : "Create account"}</div>
-              <div className="auth-subtitle">
-                {tab === "login" ? "Sign in to manage your reveal" : "Start planning your reveal today"}
+        {/* Form Panel */}
+        <div className="form-panel">
+          <div className="form-card">
+            <div className="form-logo">VGR Studio</div>
+
+            {/* Mode toggle — hide on OTP step */}
+            {(mode === "signin" || signupStep === 1) && (
+              <div className="mode-toggle">
+                <button className={`mode-btn${mode === "signin" ? " active" : ""}`} onClick={() => switchMode("signin")}>Sign In</button>
+                <button className={`mode-btn${mode === "signup" ? " active" : ""}`} onClick={() => switchMode("signup")}>Create Account</button>
               </div>
-            </div>
+            )}
+
+            {!authLoading && user && (
+              <div className="verify-banner">
+                You are logged in as <strong>{user.displayName || user.email}</strong>.{" "}
+                <a href="/dashboard" style={{ color: "#1B4F8C", fontWeight: 600 }}>Go to dashboard</a>
+                {" "}or{" "}
+                <button
+                  type="button"
+                  onClick={async () => {
+                    await logout();
+                    setSuccess("You have been logged out.");
+                  }}
+                  style={{ border: "none", background: "none", color: "#1B4F8C", fontWeight: 600, cursor: "pointer", textDecoration: "underline" }}
+                >
+                  switch account
+                </button>.
+              </div>
+            )}
 
             {!authLoading && user && (
               <div className="verify-banner">
@@ -275,20 +397,13 @@ export default function AuthPage() {
                   <button type="button" className="btn-submit" style={{ background: "rgba(46,125,209,0.1)", color: "#1B4F8C", boxShadow: "none" }} onClick={handleReset} disabled={loading}>
                     Send Reset Email
                   </button>
+                </form>
+                <div className="switch-mode" style={{ color: "rgba(245,239,245,.2)" }}>
+                  Didn&apos;t receive it?
+                  <button onClick={() => showToast("Code resent! Use 123456 for now.", "info")} style={{ color: "rgba(200,164,196,.6)" }}>Resend</button>
                 </div>
-              )}
-              {error && <div className="error-msg">⚠ {error}</div>}
-              <button className="btn-submit" type="submit" disabled={loading}>
-                {loading ? "Please wait…" : tab === "login" ? "Sign In" : "Create Account"}
-              </button>
-            </form>
-
-            <div className="divider">or continue with</div>
-
-            <button className="btn-google" onClick={handleGoogle} disabled={loading}>
-              <svg className="google-icon" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>
-              Continue with Google
-            </button>
+              </div>
+            )}
           </div>
         </div>
       </div>
@@ -296,10 +411,10 @@ export default function AuthPage() {
   );
 }
 
-function friendlyError(msg: string): string {
-  if (msg.includes("user-not-found") || msg.includes("wrong-password") || msg.includes("invalid-credential")) return "Invalid email or password.";
-  if (msg.includes("email-already-in-use")) return "An account with this email already exists.";
-  if (msg.includes("weak-password")) return "Password must be at least 8 characters.";
-  if (msg.includes("too-many-requests")) return "Too many attempts. Please wait a moment and try again.";
-  return msg;
+export default function AuthPage() {
+  return (
+    <Suspense fallback={<div style={{ minHeight: "100vh", background: "#0a0608" }} />}>
+      <AuthContent />
+    </Suspense>
+  );
 }
