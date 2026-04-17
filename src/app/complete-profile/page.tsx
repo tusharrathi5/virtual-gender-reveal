@@ -11,7 +11,7 @@ function isValidPhone(phone: string): boolean {
 type Step = "profile" | "otp";
 
 export default function CompleteProfilePage() {
-  const { user, firestoreUser, completeGoogleProfile, refreshFirestoreUser } = useAuth();
+  const { user, firestoreUser, loading: authLoading, completeGoogleProfile, refreshFirestoreUser } = useAuth();
   const router = useRouter();
 
   const [step, setStep] = useState<Step>("profile");
@@ -25,7 +25,8 @@ export default function CompleteProfilePage() {
   const [success, setSuccess] = useState("");
 
   // Redirect if not logged in or already completed profile
-  useEffect(() => {
+useEffect(() => {
+    if (authLoading) return;
     if (!user) {
       router.push("/login");
       return;
@@ -34,7 +35,7 @@ export default function CompleteProfilePage() {
     if (firestoreUser?.phone && firestoreUser?.provider === "both") {
       router.push("/dashboard");
     }
-  }, [user, firestoreUser, router]);
+  }, [authLoading, user, firestoreUser, router]);
 
   function handleProfileSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -73,7 +74,7 @@ export default function CompleteProfilePage() {
     }
   }
 
-  if (!user) return null;
+  if (authLoading || !user) return null;
 
   return (
     <>
