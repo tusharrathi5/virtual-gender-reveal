@@ -307,11 +307,9 @@ function LandingPage() {
 
   const routeToReveal = (plan?: string) => {
     if (!user) {
-      router.push("/auth?redirect=/new-reveal&message=login_required");
+      router.push("/login?redirect=/new-reveal");
       return;
     }
-    const confirmed = window.confirm("Continue to payment setup?");
-    if (!confirmed) return;
     const target = plan ? `/new-reveal?plan=${plan}` : "/new-reveal";
     router.push(target);
   };
@@ -331,7 +329,7 @@ function LandingPage() {
           {loading ? null : user ? (
             <a href="/dashboard" className="nav-user-link">Logged in as {user.displayName || user.email || "Account"}</a>
           ) : (
-            <a href="/auth">Log In</a>
+            <a href="/login">Log In</a>
           )}
           <button type="button" className="nav-cta-btn" onClick={() => routeToReveal()}>Start Your Reveal</button>
         </div>
