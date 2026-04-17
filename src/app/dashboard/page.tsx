@@ -139,6 +139,8 @@ export default function DashboardPage() {
     @media(min-width:640px){.dash-user-name{display:block}}
     .logout-btn{padding:7px 16px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.08);border-radius:8px;color:rgba(245,239,245,.4);font-family:'Jost',sans-serif;font-size:12px;cursor:pointer;transition:all .2s;letter-spacing:.5px}
     .logout-btn:hover{background:rgba(255,255,255,.09);color:rgba(245,239,245,.7)}
+    .settings-btn{padding:7px 16px;background:transparent;border:1px solid rgba(200,164,196,.2);border-radius:8px;color:rgba(200,164,196,.7);font-family:'Jost',sans-serif;font-size:12px;cursor:pointer;transition:all .2s;letter-spacing:.5px}
+    .settings-btn:hover{background:rgba(200,164,196,.08);border-color:rgba(200,164,196,.35);color:rgba(200,164,196,.9)}
     .dash-main{max-width:1100px;margin:0 auto;padding:56px 24px}
     .welcome-block{animation:fadeUp .5s ease-out;margin-bottom:56px}
     .welcome-tag{font-size:11px;font-weight:400;letter-spacing:3px;text-transform:uppercase;color:rgba(200,164,196,.45);margin-bottom:14px}
@@ -193,9 +195,12 @@ export default function DashboardPage() {
 
         <header className="dash-header">
           <div className="dash-logo" onClick={()=>router.push("/")}>VGR Studio</div>
-          <div className="dash-user">
+            <div className="dash-user">
             <div className="dash-avatar">{firstName.charAt(0).toUpperCase()}</div>
             <span className="dash-user-name">{user.displayName||user.email}</span>
+            <button className="settings-btn" onClick={()=>router.push("/settings")}>
+              Settings
+            </button>
             <button className="logout-btn" onClick={handleLogout} disabled={loggingOut}>
               {loggingOut?"Signing out...":"Sign Out"}
             </button>
