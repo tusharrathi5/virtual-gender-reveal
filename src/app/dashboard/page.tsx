@@ -98,7 +98,7 @@ export default function DashboardPage() {
   const [selectedPlan, setSelectedPlan] = useState<string|null>(null);
   const [loggingOut, setLoggingOut] = useState(false);
 
-  useEffect(()=>{ if(!user) router.push("/auth"); },[user,router]);
+  useEffect(()=>{ if(!user) router.push("/login"); },[user,router]);
   if(!user) return null;
 
   const firstName = user.displayName?.split(" ")[0] || user.email?.split("@")[0] || "there";
