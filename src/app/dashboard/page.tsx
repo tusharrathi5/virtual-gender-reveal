@@ -92,14 +92,14 @@ function ConfirmDialog({ plan, onConfirm, onCancel }: { plan: Plan; onConfirm: (
 }
 
 export default function DashboardPage() {
-  const { user, logout } = useAuth();
+   const { user, loading, logout } = useAuth();
   const router = useRouter();
   const [confirmPlan, setConfirmPlan] = useState<Plan|null>(null);
   const [selectedPlan, setSelectedPlan] = useState<string|null>(null);
   const [loggingOut, setLoggingOut] = useState(false);
 
-  useEffect(()=>{ if(!user) router.push("/login"); },[user,router]);
-  if(!user) return null;
+  useEffect(()=>{ if(!loading && !user) router.push("/login"); },[loading,user,router]);
+  if(loading || !user) return null;
 
   const firstName = user.displayName?.split(" ")[0] || user.email?.split("@")[0] || "there";
 
