@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { useAuth } from "@/lib/AuthContext";
 
 export default function SettingsPage() {
-  const { user, firestoreUser, deleteAccount, logout } = useAuth();
+  const { user, firestoreUser, loading, deleteAccount, logout } = useAuth();
   const router = useRouter();
 
   const [showDeleteModal, setShowDeleteModal] = useState(false);
@@ -16,10 +16,10 @@ export default function SettingsPage() {
   const [step, setStep] = useState<"confirm" | "reauth">("confirm");
 
   useEffect(() => {
-    if (!user) router.push("/login");
-  }, [user, router]);
+    if (!loading && !user) router.push("/login");
+  }, [loading, user, router]);
 
-  if (!user || !firestoreUser) return null;
+  if (loading || !user || !firestoreUser) return null;
 
   const isGoogleOnly = firestoreUser.provider === "google";
   const hasEmailProvider = firestoreUser.provider === "email" || firestoreUser.provider === "both";
