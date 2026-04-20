@@ -1,47 +1,168 @@
-// ─── Firestore Collection Types ─────────────────────────────
+import { Timestamp } from "firebase/firestore";
+
+// ─── Enquiry (the main "reveal event" document) ─────────────
 
 export type EnquiryStatus =
   | "pending_payment"
-  | "awaiting_doctor"
-  | "doctor_confirmed"
+  | "awaiting_revealer"
+  | "revealer_confirmed"
   | "video_ready"
   | "scheduled"
   | "live"
   | "completed";
 
+export type EnquiryMode = "announcement" | "reveal";
+
+export type RevealerRelation = "doctor" | "relative" | "friend" | "other";
+
+export type GenderStatus = "not_submitted" | "submitted";
+
+// Progress tracker — each stage is either null (not done) or a completion timestamp
+export interface EnquiryStages {
+  paymentReceived: Timestamp | null;
+  revealerLinkSent: Timestamp | null;
+  revealerSubmitted: Timestamp | null;
+  videoGenerated: Timestamp | null;
+  guestInvitesSent: Timestamp | null;
+  eventScheduled: Timestamp | null;
+  eventCompleted: Timestamp | null;
+}
+
 export interface Enquiry {
   id: string;
   userId: string;
-  babyNickname: string;
-  parentNames: string;
-  dueDate: string;
-  revealStyle: string;
+
+  // Mode
+  mode: EnquiryMode;
+
+  // Parents + baby
+  parentName: string;
+  // Names depending on mode:
+  babyName: string | null;           // announcement mode only
+  babyNameGirl: string | null;       // reveal mode only
+  babyNameBoy: string | null;        // reveal mode only
+
+  // Photos (URLs in Firebase Storage)
+  babyPhotoUrl: string;
+  sonogramUrl: string | null;
+
+  // Revealer (reveal mode only)
+  revealerEmail: string | null;
+  revealerRelation: RevealerRelation | null;
+  revealerName: string | null;
+
+  // Event timing
+  revealAt: Timestamp;
+  revealTimezone: string;            // IANA e.g. "Asia/Kolkata"
+
+  // Progress
+  stages: EnquiryStages;
+
+  // Denormalized fields for fast admin queries
+  guestCount: number;
+  genderStatus: GenderStatus;
+
+  // Revealer token (only for reveal mode)
+  doctorTokenHash: string | null;
+
+  // Stripe
+  stripeSessionId: string | null;
+  stripePaymentIntentId: string | null;
+  amountTotal: number | null;
+
+  // Status
   status: EnquiryStatus;
-  doctorEmail: string;
-  doctorTokenHash: string;      // SHA-256 hash — never store plain token
-  doctorConfirmedAt?: string;
-  genderEncrypted?: string;     // AES encrypted — admin only
-  videoUrl?: string;            // Cloudflare Stream URL
-  scheduledAt?: string;         // ISO8601
-  roomPassword?: string;        // hashed
-  stripePaymentIntentId?: string;
-  createdAt: string;
-  updatedAt: string;
+
+  createdAt: Timestamp;
+  updatedAt: Timestamp;
 }
 
-export interface GuestSession {
-  id: string;
+// ─── Secure Gender (encrypted, server-only access) ──────────
+
+export type GenderSubmittedBy = "parent" | "revealer" | "admin";
+
+export interface SecureGender {
   enquiryId: string;
-  joinedAt: string;
-  ipAddress?: string;
+  encryptedGender: string;    // base64 ciphertext
+  iv: string;                  // base64 init vector
+  authTag: string;             // base64 GCM auth tag
+  keyVersion: number;          // which key version was used to encrypt
+  submittedBy: GenderSubmittedBy;
+  submittedByUid: string | null;
+  submittedAt: Timestamp;
+  revealedToGuestsAt: Timestamp | null;
+  createdAt: Timestamp;
+  updatedAt: Timestamp;
 }
+
+// The decrypted form — only ever exists in memory on the server
+export type GenderValue = "boy" | "girl";
+
+// ─── Guest (reveal event invitees) ──────────────────────────
+
+export type GuestInviteStatus = "pending" | "sent" | "failed";
+export type GuestRsvp = "pending" | "accepted" | "declined";
+
+export interface Guest {
+  guestId: string;
+  enquiryId: string;
+  name: string;
+  email: string;
+
+  inviteToken: string;
+  inviteStatus: GuestInviteStatus;
+  inviteSentAt: Timestamp | null;
+
+  rsvp: GuestRsvp;
+  joinedAt: Timestamp | null;
+
+  createdAt: Timestamp;
+  updatedAt: Timestamp;
+}
+
+// ─── Audit Log (optional, for future use) ───────────────────
 
 export interface AuditLog {
   id: string;
-  userId?: string;
+  userId: string | null;
   action: string;
   entityType: string;
   entityId: string;
   metadata?: Record<string, unknown>;
-  createdAt: string;
+  createdAt: Timestamp;
 }
+
+// ─── Form Input Types (used by new-reveal form) ─────────────
+
+// What the form collects — not yet a Firestore document
+export interface NewReveal_FormInput {
+  mode: EnquiryMode;
+  parentName: string;
+  revealAt: string;                    // ISO string from datetime-local input
+  revealTimezone: string;
+
+  babyPhotoFile: File | null;
+  sonogramFile: File | null;
+
+  // Announcement mode fields
+  babyName?: string;
+  announcementGender?: GenderValue;
+
+  // Reveal mode fields
+  babyNameGirl?: string;
+  babyNameBoy?: string;
+  revealerEmail?: string;
+  revealerRelation?: RevealerRelation;
+}
+
+// ─── Helper: initial stages object for new enquiries ────────
+
+export const INITIAL_STAGES: EnquiryStages = {
+  paymentReceived: null,
+  revealerLinkSent: null,
+  revealerSubmitted: null,
+  videoGenerated: null,
+  guestInvitesSent: null,
+  eventScheduled: null,
+  eventCompleted: null,
+};
