@@ -2,7 +2,6 @@
 import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/lib/AuthContext";
-import { CinematicScrollHero } from "./CinematicScrollHero";
 
 const SCENE_DURATIONS = [3800, 3200, 3200, 4000, 4500, 0];
 const INTRO_KEY = "vgr_intro_seen";
@@ -336,7 +335,22 @@ function LandingPage() {
         </div>
       </nav>
 
-      <CinematicScrollHero onCTA={() => routeToReveal()} />
+      <section className="hero-section">
+        <div className="hero-mesh" /><div className="hero-grid-bg" />
+        <div className="hero-inner">
+          <div className="hero-pill">✦ A Little Magic. A Big Reveal.</div>
+          <h1 className="hero-title">
+            <em style={{ color: "#1B4F8C" }}>A Little Magic.</em><br />
+            <em style={{ color: "#E07FAA" }}>A Big Reveal.</em>
+          </h1>
+          <p className="hero-sub">Create a cinematic gender reveal and share the moment live with everyone you love — wherever they are.</p>
+          <p className="hero-auth-note">Mobile OTP verification is being prepared. For now, any phone number can be used as a placeholder during sign up.</p>
+          <div style={{ display: "flex", gap: "1rem", justifyContent: "center", flexWrap: "wrap" }}>
+            <button type="button" className="btn-main" onClick={() => routeToReveal()}>✦ Start Your Reveal</button>
+            <a href="#pricing" className="btn-ghost">View Plans →</a>
+          </div>
+        </div>
+      </section>
 
       <section className="lsection" id="how">
         <div className="linner">
