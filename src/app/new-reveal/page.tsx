@@ -213,12 +213,9 @@ export default function NewRevealPage() {
     if (!photoValidation.ok) return photoValidation.error;
 
     if (mode === "announcement") {
-      if (!babyName.trim()) return "Please enter the baby's name.";
       if (!announcementGender) return "Please select the baby's gender.";
     } else {
       // reveal mode
-      if (!babyNameGirl.trim()) return "Please enter the baby's girl name.";
-      if (!babyNameBoy.trim()) return "Please enter the baby's boy name.";
       if (!revealerEmail.trim()) return "Please enter the revealer's email.";
       if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(revealerEmail.trim())) {
         return "Please enter a valid revealer email.";
@@ -285,7 +282,7 @@ export default function NewRevealPage() {
       const modeSpecific =
         mode === "announcement"
           ? {
-              babyName: babyName.trim(),
+              babyName: babyName.trim() || null,
               babyNameGirl: null,
               babyNameBoy: null,
               revealerEmail: null,
@@ -294,8 +291,8 @@ export default function NewRevealPage() {
             }
           : {
               babyName: null,
-              babyNameGirl: babyNameGirl.trim(),
-              babyNameBoy: babyNameBoy.trim(),
+              babyNameGirl: babyNameGirl.trim() || null,
+              babyNameBoy: babyNameBoy.trim() || null,
               revealerEmail: revealerEmail.trim().toLowerCase(),
               revealerRelation,
               revealerName: null,
@@ -412,7 +409,7 @@ export default function NewRevealPage() {
           {mode === "announcement" && (
             <>
               <div className="form-group">
-                <label className="form-label">Baby&apos;s Name</label>
+                <label className="form-label">Baby&apos;s Name (optional)</label>
                 <input
                   className="form-input"
                   type="text"
@@ -450,7 +447,7 @@ export default function NewRevealPage() {
           {mode === "reveal" && (
             <div className="form-grid">
               <div className="form-group" style={{ marginBottom: 0 }}>
-                <label className="form-label">If it&apos;s a girl</label>
+                <label className="form-label">If it&apos;s a girl (optional)</label>
                 <input
                   className="form-input"
                   type="text"
@@ -462,7 +459,7 @@ export default function NewRevealPage() {
                 />
               </div>
               <div className="form-group" style={{ marginBottom: 0 }}>
-                <label className="form-label">If it&apos;s a boy</label>
+                <label className="form-label">If it&apos;s a boy (optional)</label>
                 <input
                   className="form-input"
                   type="text"
