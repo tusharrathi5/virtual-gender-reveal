@@ -3,8 +3,10 @@ import {
   uploadBytes,
   getDownloadURL,
   deleteObject,
+  listAll,
 } from "firebase/storage";
 import { getFirebaseStorage } from "@/lib/firebase";
+import { PHOTO_MIN, PHOTO_MAX } from "@/lib/types";
 
 // ─── Constants ──────────────────────────────────────────────
 
@@ -56,6 +58,34 @@ export function validateImageFile(file: File): ValidationResult {
   return { ok: true };
 }
 
+/**
+ * Validate an array of files for photo upload (must be 1-3 valid images).
+ */
+export function validatePhotoFiles(files: File[]): ValidationResult {
+  if (!Array.isArray(files) || files.length < PHOTO_MIN) {
+    return {
+      ok: false,
+      error: `Please upload at least ${PHOTO_MIN} photo.`,
+    };
+  }
+  if (files.length > PHOTO_MAX) {
+    return {
+      ok: false,
+      error: `You can upload a maximum of ${PHOTO_MAX} photos.`,
+    };
+  }
+  for (let i = 0; i < files.length; i++) {
+    const result = validateImageFile(files[i]);
+    if (!result.ok) {
+      return {
+        ok: false,
+        error: `Photo ${i + 1}: ${result.error}`,
+      };
+    }
+  }
+  return { ok: true };
+}
+
 // ─── Helpers ────────────────────────────────────────────────
 
 /**
@@ -79,24 +109,39 @@ function getExtension(file: File): string {
   return fromName || "bin";
 }
 
+/**
+ * Build the Storage path for a photo at a given index.
+ * Matches the pattern enforced by storage.rules: enquiries/{enquiryId}/photos/{filename}
+ */
+function getPhotoPath(enquiryId: string, index: number, ext: string): string {
+  return `enquiries/${enquiryId}/photos/photo-${index}.${ext}`;
+}
+
 // ─── Upload Functions ───────────────────────────────────────
 
 /**
- * Upload the baby photo for an enquiry.
- * Overwrites any existing baby photo for the same enquiry.
+ * Upload a single photo for an enquiry at a specific index (0, 1, or 2).
+ * Overwrites any existing photo at that index.
  * Returns the public download URL.
  */
-export async function uploadBabyPhoto(
+export async function uploadPhoto(
   enquiryId: string,
-  file: File
+  file: File,
+  index: number
 ): Promise<string> {
+  if (index < 0 || index >= PHOTO_MAX) {
+    throw new Error(
+      `Photo index must be between 0 and ${PHOTO_MAX - 1}, got ${index}.`
+    );
+  }
+
   const validation = validateImageFile(file);
   if (!validation.ok) {
     throw new Error(validation.error);
   }
 
   const ext = getExtension(file);
-  const path = `enquiries/${enquiryId}/baby-photo.${ext}`;
+  const path = getPhotoPath(enquiryId, index, ext);
 
   const storage = getFirebaseStorage();
   const ref = storageRef(storage, path);
@@ -105,7 +150,7 @@ export async function uploadBabyPhoto(
     contentType: file.type,
     customMetadata: {
       enquiryId,
-      kind: "baby-photo",
+      photoIndex: String(index),
     },
   });
 
@@ -113,35 +158,25 @@ export async function uploadBabyPhoto(
 }
 
 /**
- * Upload the sonogram photo for an enquiry.
- * Overwrites any existing sonogram for the same enquiry.
- * Returns the public download URL.
+ * Upload multiple photos (1 to 3) in parallel.
+ * Returns an array of download URLs in the same order as the input files.
+ * If any upload fails, the whole operation rejects — callers should handle cleanup.
  */
-export async function uploadSonogram(
+export async function uploadPhotos(
   enquiryId: string,
-  file: File
-): Promise<string> {
-  const validation = validateImageFile(file);
+  files: File[]
+): Promise<string[]> {
+  const validation = validatePhotoFiles(files);
   if (!validation.ok) {
     throw new Error(validation.error);
   }
 
-  const ext = getExtension(file);
-  const path = `enquiries/${enquiryId}/sonogram.${ext}`;
-
-  const storage = getFirebaseStorage();
-  const ref = storageRef(storage, path);
-
-  await uploadBytes(ref, file, {
-    contentType: file.type,
-    customMetadata: {
-      enquiryId,
-      kind: "sonogram",
-    },
-  });
-
-  return await getDownloadURL(ref);
+  // Upload all files in parallel, preserving order
+  const uploadPromises = files.map((file, i) => uploadPhoto(enquiryId, file, i));
+  return await Promise.all(uploadPromises);
 }
+
+// ─── Delete Functions ───────────────────────────────────────
 
 /**
  * Delete a single uploaded file by its full Storage URL.
@@ -157,6 +192,39 @@ export async function deleteUploadedFile(downloadUrl: string): Promise<void> {
     const code = (err as { code?: string })?.code;
     if (code === "storage/object-not-found") {
       // Already deleted — ignore
+      return;
+    }
+    throw err;
+  }
+}
+
+/**
+ * Delete all photos for an enquiry by listing and deleting the folder contents.
+ * Used when an enquiry is fully deleted.
+ * Silently succeeds if no photos exist.
+ */
+export async function deleteAllPhotos(enquiryId: string): Promise<void> {
+  try {
+    const storage = getFirebaseStorage();
+    const folderRef = storageRef(storage, `enquiries/${enquiryId}/photos`);
+    const listing = await listAll(folderRef);
+
+    // Delete every file found, in parallel
+    await Promise.all(
+      listing.items.map(async (item) => {
+        try {
+          await deleteObject(item);
+        } catch (err) {
+          const code = (err as { code?: string })?.code;
+          if (code === "storage/object-not-found") return;
+          throw err;
+        }
+      })
+    );
+  } catch (err) {
+    const code = (err as { code?: string })?.code;
+    if (code === "storage/object-not-found") {
+      // Folder doesn't exist — nothing to delete
       return;
     }
     throw err;
