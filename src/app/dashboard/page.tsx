@@ -113,10 +113,11 @@ function DashboardContent() {
     if (!loading && !user) router.push("/login");
   }, [loading, user, router]);
 
-  // Handle Stripe redirect params
+  // Handle redirect params (from Stripe + from new-reveal form)
   useEffect(() => {
     const payment = searchParams.get("payment");
     const plan = searchParams.get("plan");
+    const created = searchParams.get("created");
     if (payment === "success") {
       setToast({
         message: plan
@@ -130,6 +131,12 @@ function DashboardContent() {
       router.replace("/dashboard");
     } else if (payment === "cancelled") {
       setToast({ message: "Payment cancelled. You can try again anytime.", type: "info" });
+      router.replace("/dashboard");
+    } else if (created) {
+      setToast({
+        message: "Your reveal was created successfully! ✨",
+        type: "success",
+      });
       router.replace("/dashboard");
     }
   }, [searchParams, router, refreshFirestoreUser]);
