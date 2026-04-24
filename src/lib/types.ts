@@ -42,9 +42,9 @@ export interface Enquiry {
   babyNameGirl: string | null;       // reveal mode only
   babyNameBoy: string | null;        // reveal mode only
 
-  // Photos (URLs in Firebase Storage)
-  babyPhotoUrl: string;
-  sonogramUrl: string | null;
+  // Photos (URLs in Firebase Storage) — 1 to 3 photos, no special distinction
+  photos: string[];
+  photoCount: number;                // denormalized, equals photos.length
 
   // Revealer (reveal mode only)
   revealerEmail: string | null;
@@ -141,8 +141,8 @@ export interface NewReveal_FormInput {
   revealAt: string;                    // ISO string from datetime-local input
   revealTimezone: string;
 
-  babyPhotoFile: File | null;
-  sonogramFile: File | null;
+  // Photos: 1 to 3 File objects (user picks any number in that range)
+  photoFiles: File[];
 
   // Announcement mode fields
   babyName?: string;
@@ -166,3 +166,8 @@ export const INITIAL_STAGES: EnquiryStages = {
   eventScheduled: null,
   eventCompleted: null,
 };
+
+// ─── Photo constraints (single source of truth) ─────────────
+
+export const PHOTO_MIN = 1;
+export const PHOTO_MAX = 3;
