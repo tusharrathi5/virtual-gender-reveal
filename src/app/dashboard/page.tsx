@@ -213,8 +213,11 @@ function DashboardContent() {
         type: "success",
       });
       await refreshFirestoreUser();
+      // If this is the free plan activation, redirect to the form
+      if (plan.id === "free") {
+        setTimeout(() => router.push("/new-reveal"), 800);
+      }
     } catch (err) {
-      console.error(err);
       setToast({ message: "Something went wrong. Please try again.", type: "error" });
     } finally {
       setActivatingPlan(null);
@@ -377,6 +380,48 @@ function DashboardContent() {
             </section>
           )}
 
+{/* Upgrade section — only for users currently on FREE plan */}
+          {activePlan === "free" && (
+            <section>
+              <p className="section-label">Unlock More</p>
+              <div className="upgrade-intro">
+                <p className="upgrade-intro-text">
+                  You&apos;re on the <strong>Spark</strong> plan. Upgrade anytime for a cinematic,
+                  curated reveal experience.
+                </p>
+              </div>
+              <div className="plans-grid">
+                {PLANS.filter((p) => p.id !== "free").map((plan) => (
+                  <div key={plan.id} className={`plan-card${plan.id === "premium" ? " plan-popular" : ""}`}>
+                    {plan.id === "premium" && <div className="plan-badge-top">Most Popular</div>}
+                    <div className="plan-name">{plan.name}</div>
+                    <div className="plan-price">
+                      <span className="plan-curr">$</span>
+                      <span className="plan-amount">{(plan.priceCents / 100).toFixed(0)}</span>
+                      <span className="plan-per"> one-time</span>
+                    </div>
+                    <p className="plan-desc">{plan.description}</p>
+                    <div className="plan-divider" />
+                    <ul className="plan-feats">
+                      <li>✓ {plan.revealsGranted} reveal{plan.revealsGranted === 1 ? "" : "s"}</li>
+                      <li>✓ Secure revealer link</li>
+                      <li>✓ Live broadcast to guests</li>
+                      {plan.id === "premium" && <li>✓ Custom cinematic video</li>}
+                      {plan.id === "custom" && <li>✓ Bespoke video + concierge support</li>}
+                    </ul>
+                    <button
+                      className={`plan-btn${plan.id === "premium" ? " plan-btn-primary" : ""}`}
+                      onClick={() => handleSelectPlan(plan)}
+                      disabled={!!activatingPlan}
+                    >
+                      {activatingPlan === plan.id ? "Activating…" : `Upgrade to ${plan.name}`}
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </section>
+          )}
+          
           {/* State B: Plan but no revealsAllowed — offer to buy more */}
           {hasPlan && !canCreateReveal && (
             <section>
@@ -620,7 +665,15 @@ body{font-family:'Plus Jakarta Sans',sans-serif;background:#F4F3F0;color:#111827
   text-align:center;font-size:0.78rem;color:#9CA3AF;
   font-style:italic;margin-top:1.2rem;
 }
-
+.upgrade-intro{
+  background:white;border:1px solid rgba(0,0,0,0.06);
+  border-radius:10px;padding:1.1rem 1.4rem;margin-bottom:1.3rem;
+  box-shadow:0 1px 4px rgba(0,0,0,0.03);
+}
+.upgrade-intro-text{
+  font-size:0.88rem;color:#374151;line-height:1.6;font-weight:300;
+}
+.upgrade-intro-text strong{color:#1B4F8C;font-weight:600;}
 @media(max-width:640px){
   .dash-main{padding:2rem 1.2rem 3rem;}
   .welcome-title{font-size:2.2rem;}
