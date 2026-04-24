@@ -1,5 +1,5 @@
 "use client";
-import { useState, useMemo, useRef } from "react";
+import { useState, useMemo, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/lib/AuthContext";
 import { getFirebaseDb } from "@/lib/firebase";
@@ -67,6 +67,48 @@ body{font-family:'Plus Jakarta Sans',sans-serif;background:#F4F3F0;color:#111827
 .gender-opt.selected-boy{border-color:#2E7DD1;background:rgba(46,125,209,0.06);color:#1B4F8C;}
 .gender-opt.selected-girl{border-color:#C2527A;background:rgba(194,82,122,0.06);color:#C2527A;}
 
+/* Timezone dropdown */
+.tz-wrapper{position:relative;}
+.tz-trigger{
+  width:100%;padding:0.85rem 1rem;border-radius:4px;
+  border:1px solid rgba(0,0,0,0.12);background:white;
+  font-family:'Plus Jakarta Sans',sans-serif;font-size:0.92rem;color:#111827;
+  cursor:pointer;text-align:left;display:flex;justify-content:space-between;align-items:center;
+  transition:border-color 0.2s;
+}
+.tz-trigger:hover:not(:disabled){border-color:#2E7DD1;}
+.tz-trigger:disabled{background:#F9FAFB;color:#9CA3AF;cursor:not-allowed;}
+.tz-chevron{font-size:0.7rem;color:#9CA3AF;margin-left:0.5rem;}
+.tz-dropdown{
+  position:absolute;top:calc(100% + 4px);left:0;right:0;
+  background:white;border:1px solid rgba(0,0,0,0.1);border-radius:6px;
+  box-shadow:0 8px 24px rgba(0,0,0,0.1);
+  max-height:360px;overflow:hidden;z-index:100;
+  display:flex;flex-direction:column;
+}
+.tz-search{
+  width:100%;padding:0.7rem 0.9rem;border:none;border-bottom:1px solid rgba(0,0,0,0.08);
+  font-family:'Plus Jakarta Sans',sans-serif;font-size:0.85rem;outline:none;
+  background:#FAFAF9;
+}
+.tz-search:focus{background:white;}
+.tz-group-label{
+  padding:0.6rem 0.9rem 0.3rem;font-size:0.68rem;letter-spacing:0.15em;
+  text-transform:uppercase;color:#9CA3AF;font-weight:500;
+  background:#FAFAF9;border-bottom:1px solid rgba(0,0,0,0.04);
+}
+.tz-scroll{overflow-y:auto;flex:1;}
+.tz-option{
+  padding:0.65rem 0.9rem;cursor:pointer;font-size:0.85rem;color:#374151;
+  display:flex;justify-content:space-between;align-items:center;
+  border-bottom:1px solid rgba(0,0,0,0.04);
+  transition:background 0.15s;
+}
+.tz-option:hover{background:rgba(46,125,209,0.05);color:#1B4F8C;}
+.tz-option.selected{background:rgba(46,125,209,0.08);color:#1B4F8C;font-weight:500;}
+.tz-value{font-size:0.7rem;color:#9CA3AF;margin-left:0.5rem;}
+.tz-empty{padding:1rem;text-align:center;color:#9CA3AF;font-size:0.85rem;}
+
 /* Photo picker */
 .photo-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:0.8rem;margin-bottom:0.6rem;}
 @media(max-width:500px){.photo-grid{grid-template-columns:repeat(3,1fr);gap:0.5rem;}}
@@ -110,12 +152,62 @@ body{font-family:'Plus Jakarta Sans',sans-serif;background:#F4F3F0;color:#111827
 
 // ─── Helpers ────────────────────────────────────────────────
 
-function getLocalTimezone(): string {
+// All US timezones in priority order (grouped at top of dropdown)
+const US_TIMEZONES: { value: string; label: string; short: string }[] = [
+  { value: "America/New_York",    label: "Eastern Time",  short: "ET" },
+  { value: "America/Chicago",     label: "Central Time",  short: "CT" },
+  { value: "America/Denver",      label: "Mountain Time", short: "MT" },
+  { value: "America/Phoenix",     label: "Arizona (no DST)", short: "MST" },
+  { value: "America/Los_Angeles", label: "Pacific Time",  short: "PT" },
+  { value: "America/Anchorage",   label: "Alaska Time",   short: "AKT" },
+  { value: "Pacific/Honolulu",    label: "Hawaii Time",   short: "HT" },
+];
+
+const US_TIMEZONE_VALUES = new Set(US_TIMEZONES.map((t) => t.value));
+const DEFAULT_US_TIMEZONE = "America/New_York";
+
+// Auto-detect browser timezone; if not US, default to Eastern Time
+function getInitialTimezone(): string {
   try {
-    return Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC";
+    const detected = Intl.DateTimeFormat().resolvedOptions().timeZone;
+    if (detected && US_TIMEZONE_VALUES.has(detected)) {
+      return detected;
+    }
+    return DEFAULT_US_TIMEZONE;
   } catch {
-    return "UTC";
+    return DEFAULT_US_TIMEZONE;
   }
+}
+
+// Get all IANA timezones the browser supports — falls back to US-only if unsupported
+function getAllTimezones(): string[] {
+  try {
+    // Intl.supportedValuesOf is available in modern browsers (2022+)
+    const supported = (Intl as unknown as {
+      supportedValuesOf?: (key: string) => string[];
+    }).supportedValuesOf;
+    if (typeof supported === "function") {
+      return supported("timeZone").sort();
+    }
+  } catch {
+    // fall through
+  }
+  // Fallback: just US timezones
+  return US_TIMEZONES.map((t) => t.value);
+}
+
+// Format a timezone for display in the dropdown
+function formatTimezone(tz: string): string {
+  const us = US_TIMEZONES.find((t) => t.value === tz);
+  if (us) return `${us.label} (${us.short})`;
+  // For non-US zones, show a friendlier label: "Asia/Kolkata" → "Kolkata (Asia)"
+  const parts = tz.split("/");
+  if (parts.length >= 2) {
+    const city = parts[parts.length - 1].replace(/_/g, " ");
+    const region = parts[0];
+    return `${city} (${region})`;
+  }
+  return tz;
 }
 
 function getMinDateTime(): string {
@@ -157,10 +249,39 @@ export default function NewRevealPage() {
   const [babyNameBoy, setBabyNameBoy] = useState("");
   const [revealerEmail, setRevealerEmail] = useState("");
   const [revealerRelation, setRevealerRelation] = useState<RevealerRelation>("doctor");
-
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const timezone = useMemo(() => getLocalTimezone(), []);
+  const [timezone, setTimezone] = useState<string>(() => getInitialTimezone());
+  const [tzSearch, setTzSearch] = useState("");
+  const [tzDropdownOpen, setTzDropdownOpen] = useState(false);
+  const tzDropdownRef = useRef<HTMLDivElement>(null);
   const minDateTime = useMemo(() => getMinDateTime(), []);
+
+  // All timezones for the search list (memoized — expensive call)
+  const allTimezones = useMemo(() => getAllTimezones(), []);
+
+  // Filter timezones based on search
+  const filteredWorldTimezones = useMemo(() => {
+    const q = tzSearch.trim().toLowerCase();
+    if (!q) return allTimezones.filter((tz) => !US_TIMEZONE_VALUES.has(tz));
+    return allTimezones.filter(
+      (tz) =>
+        !US_TIMEZONE_VALUES.has(tz) &&
+        (tz.toLowerCase().includes(q) ||
+          formatTimezone(tz).toLowerCase().includes(q))
+    );
+  }, [tzSearch, allTimezones]);
+
+  // Close dropdown on outside click
+  useEffect(() => {
+    if (!tzDropdownOpen) return;
+    function onClick(e: MouseEvent) {
+      if (tzDropdownRef.current && !tzDropdownRef.current.contains(e.target as Node)) {
+        setTzDropdownOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", onClick);
+    return () => document.removeEventListener("mousedown", onClick);
+  }, [tzDropdownOpen]);
 
   // Preview URLs for selected photos
   const previewUrls = useMemo(
@@ -532,8 +653,8 @@ export default function NewRevealPage() {
 
           <div className="form-divider" />
 
-          {/* ── Reveal Date & Time ── */}
-          <div className="form-section-title">When should the reveal play?</div>
+         {/* ── Reveal Date & Time ── */}
+         <div className="form-section-title">When should the reveal play?</div>
           <div className="form-group">
             <label className="form-label">Reveal Date &amp; Time</label>
             <input
@@ -544,9 +665,100 @@ export default function NewRevealPage() {
               disabled={loading}
               min={minDateTime}
             />
+            <div className="hint">Your selected timezone is shown below.</div>
+          </div>
+
+          <div className="form-group">
+            <label className="form-label">Timezone</label>
+            <div className="tz-wrapper" ref={tzDropdownRef}>
+              <button
+                type="button"
+                className="tz-trigger"
+                onClick={() => !loading && setTzDropdownOpen((o) => !o)}
+                disabled={loading}
+              >
+                <span>{formatTimezone(timezone)}</span>
+                <span className="tz-chevron">{tzDropdownOpen ? "▲" : "▼"}</span>
+              </button>
+
+              {tzDropdownOpen && (
+                <div className="tz-dropdown">
+                  <input
+                    type="text"
+                    className="tz-search"
+                    placeholder="Search all timezones…"
+                    value={tzSearch}
+                    onChange={(e) => setTzSearch(e.target.value)}
+                    autoFocus
+                  />
+
+                  {!tzSearch && (
+                    <>
+                      <div className="tz-group-label">United States</div>
+                      {US_TIMEZONES.map((tz) => (
+                        <div
+                          key={tz.value}
+                          className={`tz-option${timezone === tz.value ? " selected" : ""}`}
+                          onClick={() => {
+                            setTimezone(tz.value);
+                            setTzDropdownOpen(false);
+                            setTzSearch("");
+                          }}
+                        >
+                          <span>{tz.label} ({tz.short})</span>
+                          <span className="tz-value">{tz.value}</span>
+                        </div>
+                      ))}
+                      <div className="tz-group-label">All Other Timezones</div>
+                    </>
+                  )}
+
+                  <div className="tz-scroll">
+                    {tzSearch && (
+                      <>
+                        {/* Show matching US zones when searching */}
+                        {US_TIMEZONES.filter((tz) =>
+                          tz.label.toLowerCase().includes(tzSearch.toLowerCase()) ||
+                          tz.value.toLowerCase().includes(tzSearch.toLowerCase())
+                        ).map((tz) => (
+                          <div
+                            key={tz.value}
+                            className={`tz-option${timezone === tz.value ? " selected" : ""}`}
+                            onClick={() => {
+                              setTimezone(tz.value);
+                              setTzDropdownOpen(false);
+                              setTzSearch("");
+                            }}
+                          >
+                            <span>{tz.label} ({tz.short})</span>
+                            <span className="tz-value">{tz.value}</span>
+                          </div>
+                        ))}
+                      </>
+                    )}
+                    {filteredWorldTimezones.length === 0 && tzSearch && (
+                      <div className="tz-empty">No timezones match &quot;{tzSearch}&quot;</div>
+                    )}
+                    {filteredWorldTimezones.map((tz) => (
+                      <div
+                        key={tz}
+                        className={`tz-option${timezone === tz ? " selected" : ""}`}
+                        onClick={() => {
+                          setTimezone(tz);
+                          setTzDropdownOpen(false);
+                          setTzSearch("");
+                        }}
+                      >
+                        <span>{formatTimezone(tz)}</span>
+                        <span className="tz-value">{tz}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
             <div className="hint">
-              Your timezone: <strong>{timezone}</strong> — all guest invites adjust
-              automatically to their local time.
+              All guest invites adjust automatically to their local time.
             </div>
           </div>
 
