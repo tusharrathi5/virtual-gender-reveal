@@ -17,7 +17,6 @@ import {
   signOut,
   sendEmailVerification,
   sendPasswordResetEmail,
-  deleteUser,
   reauthenticateWithCredential,
   reauthenticateWithPopup,
   EmailAuthProvider,
@@ -30,7 +29,6 @@ import {
   createUserDoc,
   getUserDoc,
   updateLastLogin,
-  deleteUserDoc,
   updateUserProvider,
   updateUserPhone,
   markEmailVerified,
@@ -261,15 +259,29 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       await reauthenticateWithPopup(currentUser, provider);
     }
 
-    const uid = currentUser.uid;
+    // Call server-side delete endpoint — it handles:
+    //  - Deleting all the user's enquiry photos from Storage
+    //  - Deleting all their enquiry docs
+    //  - Deleting their secure-genders docs
+    //  - Deleting their user doc
+    //  - Deleting their Firebase Auth user
+    // Re-auth above is required because Firebase only gives us a fresh ID token
+    // if the user recently re-authenticated.
+    const idToken = await currentUser.getIdToken(/* forceRefresh */ true);
+    const res = await fetch("/api/delete-account", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${idToken}`,
+      },
+    });
 
-    // Delete Firestore doc
-    await deleteUserDoc(uid);
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({ error: "Delete failed." }));
+      throw new Error(data.error || "Failed to delete account.");
+    }
 
-    // Delete Firebase Auth user
-    await deleteUser(currentUser);
-
-    // Sign out
+    // Sign out locally — the Auth user is already deleted server-side
     await signOut(auth);
     setFirestoreUser(null);
   }
