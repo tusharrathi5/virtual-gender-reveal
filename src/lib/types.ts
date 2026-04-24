@@ -171,3 +171,45 @@ export const INITIAL_STAGES: EnquiryStages = {
 
 export const PHOTO_MIN = 1;
 export const PHOTO_MAX = 3;
+
+// ─── Plan definitions (source of truth for the dashboard + pricing) ──
+
+export interface PlanDefinition {
+  id: "free" | "premium" | "custom";
+  name: string;
+  priceCents: number;             // 0 for free
+  priceLabel: string;
+  revealsGranted: number;         // how many reveals this plan unlocks per purchase
+  description: string;
+}
+
+export const PLANS: PlanDefinition[] = [
+  {
+    id: "free",
+    name: "Spark",
+    priceCents: 0,
+    priceLabel: "Free",
+    revealsGranted: 1,
+    description: "Try the magic — one free reveal to get started.",
+  },
+  {
+    id: "premium",
+    name: "Lumière",
+    priceCents: 19900,
+    priceLabel: "$199",
+    revealsGranted: 1,
+    description: "Full cinematic reveal with live broadcast.",
+  },
+  {
+    id: "custom",
+    name: "Maison",
+    priceCents: 65000,
+    priceLabel: "$650",
+    revealsGranted: 1,
+    description: "Bespoke reveal with dedicated concierge.",
+  },
+];
+
+export function getPlanById(id: string): PlanDefinition | undefined {
+  return PLANS.find((p) => p.id === id);
+}
