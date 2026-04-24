@@ -394,7 +394,9 @@ export default function NewRevealPage() {
         stripeSessionId: null,
         stripePaymentIntentId: null,
         amountTotal: null,
-        status: "pending_payment" as const,
+        // Status: reveal mode needs a revealer to submit gender first; announcement
+        // mode has everything it needs already (gender saved via Step 5 follow-up).
+        status: mode === "reveal" ? ("awaiting_revealer" as const) : ("video_ready" as const),
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp(),
       };
@@ -419,36 +421,24 @@ export default function NewRevealPage() {
               revealerName: null,
             };
 
-      // 3. Save enquiry document to Firestore
+     // 3. Save enquiry document to Firestore
       const db = getFirebaseDb();
       await setDoc(doc(db, "enquiries", enquiryId), {
         ...baseDoc,
         ...modeSpecific,
       });
 
-      // NOTE: In announcement mode, the gender is known RIGHT NOW, so we also
-      // need to save it to secure-genders. But that requires the Admin SDK
-      // (server-side). For now, we pass it to create-checkout which will
-      // handle the secure-gender write after payment. File 8 will wire this up.
+      // TODO (Step 5): Call server API to (a) consume user's entitlement
+      //   (decrement revealsAllowed, increment revealsCreated, link enquiryId
+      //   to the Purchase), and (b) for announcement mode, encrypt + save
+      //   the known gender to secure-genders collection.
+      //   For now, the enquiry is created but the entitlement is NOT yet
+      //   consumed, so a user could technically create multiple reveals from
+      //   one purchase. This will be fixed in Step 5.
 
-      // 4. Redirect to payment
-      setUploadProgress("Redirecting to payment…");
-
-      // Build payment URL — pass enquiryId so payment-pending / webhook can link up
-      const paymentParams = new URLSearchParams({
-        plan: "premium",
-        enquiryId,
-        name: "Premium",
-        price: "199",
-      });
-
-      // Announcement mode: pass gender through URL so backend can save it post-payment.
-      // This is OK because the URL is HTTPS and only the user sees it.
-      if (mode === "announcement" && announcementGender) {
-        paymentParams.set("gender", announcementGender);
-      }
-
-      router.push(`/payment-pending?${paymentParams.toString()}`);
+      // 4. Redirect to dashboard with success flag
+      setUploadProgress("Finishing up…");
+      router.push(`/dashboard?created=${enquiryId}`);
     } catch (err) {
       console.error("Reveal creation error:", err);
       const msg =
@@ -804,11 +794,11 @@ export default function NewRevealPage() {
             {loading ? (
               <><span className="spinner" />{uploadProgress || "Setting up…"}</>
             ) : (
-              "✦ Continue to Payment →"
+              "✦ Create My Reveal →"
             )}
           </button>
           <div className="hint" style={{ textAlign: "center", marginTop: "0.8rem" }}>
-            Secure payment powered by Stripe. You&apos;ll be redirected to complete payment.
+            You&apos;ll be taken back to your dashboard once everything is set up.
           </div>
         </form>
       </div>
