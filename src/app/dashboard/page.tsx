@@ -132,10 +132,17 @@ function DashboardContent() {
     } else if (payment === "cancelled") {
       setToast({ message: "Payment cancelled. You can try again anytime.", type: "info" });
       router.replace("/dashboard");
-    } else if (created) {
+  } else if (created) {
       setToast({
         message: "Your reveal was created successfully! ✨",
         type: "success",
+      });
+      refreshFirestoreUser();
+      router.replace("/dashboard");
+    } else if (searchParams.get("noEntitlement") === "1") {
+      setToast({
+        message: "Please choose a plan before creating a reveal.",
+        type: "info",
       });
       router.replace("/dashboard");
     }
