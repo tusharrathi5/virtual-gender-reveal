@@ -1,4 +1,4 @@
-import { FieldValue } from "firebase-admin/firestore";
+import { FieldValue, Timestamp } from "firebase-admin/firestore";
 import { getAdminDb } from "@/lib/firebase-admin";
 import { v4 as uuidv4 } from "uuid";
 import { getPlanById } from "@/lib/types";
@@ -21,6 +21,10 @@ export interface ActivatePlanParams {
  * Called by:
  *  - create-checkout route (dev mode, or for free plan)
  *  - Stripe webhook (prod mode, when payment confirmed)
+ *
+ * Note: We use Timestamp.now() for purchasedAt because FieldValue.serverTimestamp()
+ * cannot be used inside arrays (Firestore limitation). Timestamp.now() is resolved
+ * server-side at call time, which for our use case is equivalent.
  */
 export async function activatePlan(params: ActivatePlanParams): Promise<Purchase> {
   const {
@@ -58,8 +62,7 @@ export async function activatePlan(params: ActivatePlanParams): Promise<Purchase
   const purchase: Purchase = {
     purchaseId: uuidv4(),
     plan: planId,
-    purchasedAt: FieldValue.serverTimestamp() as unknown as null,
-    // ^ NOTE: we claim this is Timestamp|null for the type — Firestore resolves it to a real Timestamp
+    purchasedAt: Timestamp.now(),
     amountPaid: amountPaidCents,
     currency,
     stripeSessionId,
