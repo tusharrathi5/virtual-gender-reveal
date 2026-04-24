@@ -2,12 +2,9 @@
 import { useState, useMemo, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/lib/AuthContext";
-import { getFirebaseDb } from "@/lib/firebase";
-import { doc, setDoc, serverTimestamp, Timestamp } from "firebase/firestore";
 import { v4 as uuidv4 } from "uuid";
 import { uploadPhotos, validatePhotoFiles } from "@/lib/storageService";
 import {
-  INITIAL_STAGES,
   PHOTO_MAX,
   PHOTO_MIN,
   type EnquiryMode,
@@ -227,12 +224,26 @@ const RELATION_LABELS: Record<RevealerRelation, string> = {
 // ─── Component ──────────────────────────────────────────────
 
 export default function NewRevealPage() {
-  const { user } = useAuth();
+  const { user, firestoreUser, loading: authLoading } = useAuth();
   const router = useRouter();
 
   const [loading, setLoading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState<string>("");
   const [error, setError] = useState("");
+
+  // Entitlement guard: redirect if user can't create a reveal
+  //   - Not logged in → /login
+  //   - No revealsAllowed → /dashboard (with hint via URL param)
+  useEffect(() => {
+    if (authLoading) return; // wait for auth to resolve
+    if (!user) {
+      router.replace("/login?redirect=/new-reveal");
+      return;
+    }
+    if (firestoreUser && (firestoreUser.revealsAllowed ?? 0) <= 0) {
+      router.replace("/dashboard?noEntitlement=1");
+    }
+  }, [authLoading, user, firestoreUser, router]);
 
   // Shared fields
   const [mode, setMode] = useState<EnquiryMode>("reveal");
@@ -348,7 +359,7 @@ export default function NewRevealPage() {
 
   // ─── Submit ──────────────────────────────────────────────
 
-  async function handleSubmit(e: React.FormEvent) {
+async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!user) {
       setError("You must be logged in.");
@@ -368,75 +379,52 @@ export default function NewRevealPage() {
     const enquiryId = uuidv4();
 
     try {
-      // 1. Upload photos first
+      // 1. Upload photos to Storage first (client-side, direct to Firebase Storage)
       setUploadProgress(`Uploading ${photoFiles.length} photo${photoFiles.length > 1 ? "s" : ""}…`);
       const photoUrls = await uploadPhotos(enquiryId, photoFiles);
 
-      // 2. Build the enquiry document
+      // 2. Call server-side API to atomically:
+      //    - Verify entitlement
+      //    - Create the enquiry doc
+      //    - Consume one purchase slot
+      //    - (announcement mode) encrypt + save the gender to secure-genders
+      //
+      //    If this API call fails, the server-side handler will delete the
+      //    photos we just uploaded to prevent orphaned Storage files.
       setUploadProgress("Saving your reveal details…");
+      const idToken = await user.getIdToken();
 
-      const revealAtTimestamp = Timestamp.fromDate(new Date(revealAt));
-
-      // Shared fields
-      const baseDoc = {
-        id: enquiryId,
-        userId: user.uid,
-        mode,
-        parentName: parentName.trim(),
-        photos: photoUrls,
-        photoCount: photoUrls.length,
-        revealAt: revealAtTimestamp,
-        revealTimezone: timezone,
-        stages: INITIAL_STAGES,
-        guestCount: 0,
-        genderStatus: "not_submitted" as const,
-        doctorTokenHash: null,
-        stripeSessionId: null,
-        stripePaymentIntentId: null,
-        amountTotal: null,
-        // Status: reveal mode needs a revealer to submit gender first; announcement
-        // mode has everything it needs already (gender saved via Step 5 follow-up).
-        status: mode === "reveal" ? ("awaiting_revealer" as const) : ("video_ready" as const),
-        createdAt: serverTimestamp(),
-        updatedAt: serverTimestamp(),
-      };
-
-      // Mode-specific fields
-      const modeSpecific =
-        mode === "announcement"
-          ? {
-              babyName: babyName.trim() || null,
-              babyNameGirl: null,
-              babyNameBoy: null,
-              revealerEmail: null,
-              revealerRelation: null,
-              revealerName: null,
-            }
-          : {
-              babyName: null,
-              babyNameGirl: babyNameGirl.trim() || null,
-              babyNameBoy: babyNameBoy.trim() || null,
-              revealerEmail: revealerEmail.trim().toLowerCase(),
-              revealerRelation,
-              revealerName: null,
-            };
-
-     // 3. Save enquiry document to Firestore
-      const db = getFirebaseDb();
-      await setDoc(doc(db, "enquiries", enquiryId), {
-        ...baseDoc,
-        ...modeSpecific,
+      const res = await fetch("/api/create-reveal", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${idToken}`,
+        },
+        body: JSON.stringify({
+          enquiryId,
+          mode,
+          parentName: parentName.trim(),
+          photos: photoUrls,
+          revealAtMs: new Date(revealAt).getTime(),
+          revealTimezone: timezone,
+          // Announcement mode
+          babyName: mode === "announcement" ? (babyName.trim() || null) : null,
+          announcementGender: mode === "announcement" ? announcementGender : undefined,
+          // Reveal mode
+          babyNameGirl: mode === "reveal" ? (babyNameGirl.trim() || null) : null,
+          babyNameBoy: mode === "reveal" ? (babyNameBoy.trim() || null) : null,
+          revealerEmail: mode === "reveal" ? revealerEmail.trim().toLowerCase() : undefined,
+          revealerRelation: mode === "reveal" ? revealerRelation : undefined,
+        }),
       });
 
-      // TODO (Step 5): Call server API to (a) consume user's entitlement
-      //   (decrement revealsAllowed, increment revealsCreated, link enquiryId
-      //   to the Purchase), and (b) for announcement mode, encrypt + save
-      //   the known gender to secure-genders collection.
-      //   For now, the enquiry is created but the entitlement is NOT yet
-      //   consumed, so a user could technically create multiple reveals from
-      //   one purchase. This will be fixed in Step 5.
+      const data = await res.json().catch(() => ({}));
 
-      // 4. Redirect to dashboard with success flag
+      if (!res.ok) {
+        throw new Error(data.error || "Failed to create reveal. Please try again.");
+      }
+
+      // 3. Redirect to dashboard with success flag
       setUploadProgress("Finishing up…");
       router.push(`/dashboard?created=${enquiryId}`);
     } catch (err) {
@@ -447,9 +435,6 @@ export default function NewRevealPage() {
       setError(msg);
       setLoading(false);
       setUploadProgress("");
-      // NOTE: If photo upload succeeded but Firestore write failed, the photos
-      // are orphaned in Storage. For now, accept this — they're small (<5MB each)
-      // and a cleanup cron can handle it later.
     }
   }
 
