@@ -37,7 +37,7 @@ export interface CreateRevealResult {
  *   2. Find oldest unused completed purchase (revealEnquiryId === null)
  *   3. Decrement revealsAllowed, increment revealsCreated
  *   4. Attach enquiryId to that purchase
- *   5. Create the enquiry document
+ *   5. Create the enquiry document (with denormalized plan field)
  *
  * Uses a Firestore transaction to prevent race conditions where two
  * simultaneous requests could both pass the "revealsAllowed > 0" check
@@ -115,6 +115,11 @@ export async function createRevealAndConsumeEntitlement(
       throw new Error("NO_UNUSED_PURCHASE");
     }
 
+    // Capture the plan from the consumed purchase for denormalization onto enquiry.
+    // This lets the admin panel show plan without a join. Falls back to null if
+    // somehow the purchase has no plan field (shouldn't happen, but defensive).
+    const consumedPlan = target.p.plan ?? null;
+
     // 3 + 4. Update purchase array with enquiryId attached, decrement/increment counters
     purchases[target.idx] = {
       ...purchases[target.idx],
@@ -137,6 +142,7 @@ export async function createRevealAndConsumeEntitlement(
       userId: uid,
       mode,
       parentName,
+      plan: consumedPlan,           // denormalized for admin queries
       photos,
       photoCount: photos.length,
       revealAt: Timestamp.fromMillis(revealAtMs),

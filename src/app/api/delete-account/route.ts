@@ -5,6 +5,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { verifyAuthHeader } from "@/lib/authServer";
 import { getAdminAuth, getAdminDb } from "@/lib/firebase-admin";
 import { deleteEnquiryPhotosAdmin } from "@/lib/storageServiceAdmin";
+import { buildShadowRecord, writeShadowRecord } from "@/lib/deletedUsers";
+import type { FirestoreUser } from "@/lib/userService";
 
 // ─── POST /api/delete-account ───────────────────────────────
 
@@ -12,14 +14,19 @@ import { deleteEnquiryPhotosAdmin } from "@/lib/storageServiceAdmin";
  * Hard-delete the authenticated user's account and all their data.
  *
  * Cleanup order:
- *   1. Find all enquiries belonging to this user
- *   2. For each enquiry: delete Storage photos + secure-genders doc + enquiry doc
- *   3. Delete user doc
- *   4. Delete Firebase Auth user (so they can't log in again with this account)
+ *   1. Read user doc + count enquiries (needed for shadow record)
+ *   2. Write shadow record to deleted_users (30-day retention, then auto-purged)
+ *   3. For each enquiry: delete Storage photos + secure-genders doc + enquiry doc
+ *   4. Delete user doc
+ *   5. Delete Firebase Auth user (so they can't log in again with this account)
  *
  * Storage deletion failures are logged but do NOT stop the overall delete —
  * orphaned photos can be cleaned up later by a cron job. The priority is
  * removing the user's ability to access the account and their personal Firestore data.
+ *
+ * The shadow record write is best-effort — if it fails, we still proceed with
+ * the delete. Better to delete the user with no shadow than to refuse to delete
+ * them at all and leave the account active.
  */
 export async function POST(req: NextRequest) {
   try {
@@ -42,15 +49,44 @@ export async function POST(req: NextRequest) {
       photosDeleted: 0,
       photosFailed: 0,
       storageErrors: [] as string[],
+      shadowRecordWritten: false,
     };
 
-    // 1. Find all enquiries for this user
+    // 1. Read user doc + enquiries up front (needed for shadow record)
+    const userSnap = await db.collection("users").doc(uid).get();
+    const userData = userSnap.exists ? (userSnap.data() as FirestoreUser) : null;
+
     const enquiriesSnap = await db
       .collection("enquiries")
       .where("userId", "==", uid)
       .get();
 
-    // 2. For each enquiry, delete photos + secure-genders doc + enquiry doc
+    // 2. Write shadow record BEFORE deletions
+    //    Best-effort: log failure but don't stop the delete.
+    if (userData) {
+      try {
+        const shadow = buildShadowRecord({
+          user: userData,
+          enquiryCount: enquiriesSnap.size,
+          deletedBy: "user",
+        });
+        await writeShadowRecord(shadow);
+        cleanup.shadowRecordWritten = true;
+      } catch (shadowErr) {
+        console.error(
+          `[delete-account] Failed to write shadow record for ${uid}:`,
+          shadowErr
+        );
+        // Continue — better to delete the user than to leave them stuck
+      }
+    } else {
+      // No user doc — nothing to shadow. Probably an Auth-only orphan.
+      console.warn(
+        `[delete-account] No user doc found for uid=${uid}; skipping shadow record.`
+      );
+    }
+
+    // 3. For each enquiry, delete photos + secure-genders doc + enquiry doc
     for (const enquiryDoc of enquiriesSnap.docs) {
       const enquiryId = enquiryDoc.id;
 
@@ -89,7 +125,7 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    // 3. Delete user doc
+    // 4. Delete user doc
     try {
       await db.collection("users").doc(uid).delete();
     } catch (err) {
@@ -97,7 +133,7 @@ export async function POST(req: NextRequest) {
       // Not fatal — we still delete the Auth user below
     }
 
-    // 4. Delete Firebase Auth user
+    // 5. Delete Firebase Auth user
     //    This is the most important step — once this succeeds, the user
     //    can no longer log in with this account.
     try {
