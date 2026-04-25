@@ -1,7 +1,9 @@
-"use client";
+﻿"use client";
 import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/lib/AuthContext";
+import Image from "next/image";
+import bgImage from "@/app/assets/bg.png";
 
 const SCENE_DURATIONS = [3800, 3200, 3200, 4000, 4500, 0];
 const INTRO_KEY = "vgr_intro_seen";
@@ -321,61 +323,113 @@ function LandingPage() {
       {confirmPlan && <ConfirmDialog plan={confirmPlan} onConfirm={handleConfirm} onCancel={() => setConfirmPlan(null)} />}
 
       <nav id="main-nav">
-        <a href="/" className="nav-logo">Virtual Gender Reveal<strong>Crafted for Moments That Matter</strong></a>
+        <a href="/" className="nav-logo">
+          <span className="nav-logo-icons">💙🩷</span>
+          <span className="nav-logo-text">VGR</span>
+        </a>
         <div className="nav-links">
-          <a href="#how">How It Works</a>
-          <a href="#pricing">Pricing</a>
-          <a href="#contact">Contact</a>
+          <a href="/" className="nav-link nav-link-active">Home</a>
+          <button type="button" className="nav-link" onClick={() => routeToReveal()}>Create Party</button>
+          <a href="#how" className="nav-link">How It Works</a>
+          <a href="#pricing" className="nav-link">FAQ</a>
+        </div>
+        <div className="nav-right">
           {loading ? null : user ? (
             <a href="/dashboard" className="nav-user-link">Logged in as {user.displayName || user.email || "Account"}</a>
           ) : (
-            <a href="/login">Log In</a>
+            <a href="/login" className="nav-login-btn">👤 Log In</a>
           )}
-          <button type="button" className="nav-cta-btn" onClick={() => routeToReveal()}>Start Your Reveal</button>
         </div>
       </nav>
 
       <section className="hero-section">
-        <div className="hero-mesh" /><div className="hero-grid-bg" />
-        <div className="hero-inner">
-          <div className="hero-pill">✦ A Little Magic. A Big Reveal.</div>
-          <h1 className="hero-title">
-            <em style={{ color: "#1B4F8C" }}>A Little Magic.</em><br />
-            <em style={{ color: "#E07FAA" }}>A Big Reveal.</em>
-          </h1>
-          <p className="hero-sub">Create a cinematic gender reveal and share the moment live with everyone you love — wherever they are.</p>
-          <p className="hero-auth-note">Mobile OTP verification is being prepared. For now, any phone number can be used as a placeholder during sign up.</p>
-          <div style={{ display: "flex", gap: "1rem", justifyContent: "center", flexWrap: "wrap" }}>
-            <button type="button" className="btn-main" onClick={() => routeToReveal()}>✦ Start Your Reveal</button>
-            <a href="#pricing" className="btn-ghost">View Plans →</a>
+        <Image src={bgImage} alt="" fill style={{ objectFit: "cover", objectPosition: "center" }} priority />
+        <div className="hero-overlay" />
+        <div className="balloons-wrap">
+          {([
+            { top: "8%",  left: "2%",  right: "",   color: "#FF6EB4", size: "3.2rem", delay: "0s"   },
+            { top: "32%", left: "5%",  right: "",   color: "#4DA8E8", size: "2.8rem", delay: "0.6s" },
+            { top: "65%", left: "3%",  right: "",   color: "#FF6EB4", size: "2.3rem", delay: "1.2s" },
+            { top: "12%", left: "",    right: "3%", color: "#4DA8E8", size: "3rem",   delay: "0.3s" },
+            { top: "42%", left: "",    right: "2%", color: "#FF6EB4", size: "2.6rem", delay: "0.9s" },
+            { top: "68%", left: "",    right: "5%", color: "#4DA8E8", size: "2rem",   delay: "0.5s" },
+          ] as Array<{ top: string; left: string; right: string; color: string; size: string; delay: string }>).map((b, i) => (
+            <div key={i} className="balloon" style={{ top: b.top, left: b.left || undefined, right: b.right || undefined, animationDelay: b.delay }}>
+              <span style={{ color: b.color, fontSize: b.size, filter: "drop-shadow(0 4px 8px rgba(0,0,0,0.12))" }}>🎈</span>
+            </div>
+          ))}
+        </div>
+        <div className="hero-content">
+          <div className="hero-left">
+            <h1 className="hero-title-new">
+              <span className="ht-virtual">Virtual</span>
+              <span className="ht-gender">Gender Reveal</span>
+              <span className="ht-party">Party!</span>
+            </h1>
+            <p className="hero-sub-new">Celebrate your big moment together,<br />no matter where you are! 💗</p>
+            <button type="button" className="btn-create-party" onClick={() => routeToReveal()}>🎉 Create Your Party</button>
+            <div className="hero-tagline">👥 Invite. Reveal. Celebrate!</div>
+          </div>
+          <div className="hero-right">
+            <div className="hero-card-mock">
+              <div className="mock-logo-circle">🦢</div>
+              <div className="mock-gr-letters">
+                <span style={{ color: "#E8449A" }}>G</span><span style={{ color: "#4DA8E8" }}>R</span>
+              </div>
+              <div className="mock-brand-line">VIRTUAL</div>
+              <div className="mock-brand-name">GENDER REVEAL</div>
+              <div className="mock-divider" />
+              <div className="mock-controls">
+                {(["📹", "🎤", "🤍", "📵"] as string[]).map((icon, i) => (
+                  <div key={i} className={`mock-ctrl${i === 3 ? " mock-ctrl-end" : ""}`}>{icon}</div>
+                ))}
+              </div>
+            </div>
           </div>
         </div>
       </section>
 
-      <section className="lsection" id="how">
-        <div className="linner">
-          <div className="fade-up">
-            <div className="ltag">How It Works</div>
-            <h2 className="ltitle">Four steps.<br /><em>One perfect moment.</em></h2>
+      <section className="hiw-new-section" id="how">
+        <div className="hiw-new-inner">
+          <div className="hiw-new-header fade-up">
+            <span className="hiw-sparkle">✨</span>
+            <h2 className="hiw-main-title">How it Works</h2>
+            <span className="hiw-sparkle">✨</span>
           </div>
-          <div className="hiw-grid fade-up">
+          <div className="hiw-cards-row fade-up">
             {[
-              { who: "You", wc: "wc-you", title: "You book. We get to work.", desc: "Tell us your due date, your baby's nickname, and how you want the reveal to feel. That's all we need. Your doctor link goes out within the hour." },
-              { who: "Your Doctor", wc: "wc-doc", title: "The secret goes in. It doesn't come out.", desc: "Your doctor or relative clicks a private, one-time secure link. They submit the gender. It's encrypted instantly. You have zero access until the reveal plays." },
-              { who: "Us", wc: "wc-us", title: "We make your reveal video.", desc: "Our team creates a personalized reveal video — your baby's nickname, your names, your story. Cinematic. Emotional. Made for the biggest reaction." },
-              { who: "Everyone", wc: "wc-all", title: "Every person. One second. Zero exceptions.", desc: "Your guests get a beautiful personal invitation, join a live virtual party room, and at the exact second you chose — the reveal plays." },
+              { num: 1, nc: "hnc-1", icon: "📅", ic: "hib-1", tc: "hct-1", title: "Create Your Party",  desc: "Set up your virtual gender reveal party in minutes and customize every detail." },
+              { num: 2, nc: "hnc-2", icon: "💌", ic: "hib-2", tc: "hct-2", title: "Invite Loved Ones",  desc: "Send invites to friends and family near or far. Everyone can join!" },
+              { num: 3, nc: "hnc-3", icon: "🎁", ic: "hib-3", tc: "hct-3", title: "Time to Reveal",     desc: "Open the box and reveal the big surprise together in real-time!" },
+              { num: 4, nc: "hnc-4", icon: "🎈", ic: "hib-4", tc: "hct-4", title: "Celebrate Together", desc: "Share reactions, take photos, and make memories that last forever." },
             ].map((s, i) => (
-              <div className="hiw-card" key={i}>
-                <span className={`hiw-who ${s.wc}`}>{s.who}</span>
-                <div className="hiw-num">0{i + 1}</div>
-                <div className="hiw-title">{s.title}</div>
-                <div className="hiw-desc">{s.desc}</div>
+              <div className="hiw-new-card" key={i}>
+                <div className={`hiw-num-circle ${s.nc}`}>{s.num}</div>
+                <div className={`hiw-icon-bubble ${s.ic}`}>
+                  <span style={{ fontSize: "2rem" }}>{s.icon}</span>
+                </div>
+                <div className={`hiw-card-title ${s.tc}`}>{s.title}</div>
+                <div className="hiw-card-desc">{s.desc}</div>
+              </div>
+            ))}
+          </div>
+          <div className="hiw-feat-bar fade-up">
+            {[
+              { icon: "👥", cls: "",       label: "Join Anywhere",    sub: "Everyone can join from any device."        },
+              { icon: "🔒", cls: "blue",   label: "Private & Secure", sub: "Your moment, your privacy."               },
+              { icon: "💬", cls: "purple", label: "Live Chat",        sub: "Chat, react and share the excitement!"    },
+              { icon: "📸", cls: "green",  label: "Capture Memories", sub: "Save and download your special moments."  },
+            ].map((f, i) => (
+              <div className="hiw-feat-item" key={i}>
+                <div className={`hiw-feat-icon ${f.cls}`}>{f.icon}</div>
+                <div className="hiw-feat-text"><strong>{f.label}</strong><span>{f.sub}</span></div>
               </div>
             ))}
           </div>
         </div>
       </section>
 
+{/*
       <section className="feat-bg" id="features">
         <div className="linner">
           <div className="fade-up">
@@ -403,97 +457,147 @@ function LandingPage() {
           </div>
         </div>
       </section>
+      */}
 
-      <section className="lsection" id="pricing">
-        <div className="linner">
-          <div className="fade-up" style={{ textAlign: "center" }}>
-            <div className="ltag">Pricing</div>
-            <h2 className="ltitle">One payment. One reveal.<br /><em>No surprises.</em></h2>
+      <section className="pricing-section" id="pricing">
+        <div className="pricing-bg-dec pricing-bg-left">🎈<br />🎈</div>
+        <div className="pricing-bg-dec pricing-bg-right">🎈</div>
+        <div className="pricing-inner">
+          <div className="pricing-header fade-up">
+            <div className="pricing-pill-badge">💜 Choose Your Plan</div>
+            <h2 className="pricing-main-title">
+              <span className="pricing-title-line1">Simple Plans,</span>
+              <span className="pricing-title-line2">Perfect Celebrations!</span>
+            </h2>
+            <p className="pricing-sub">Pick the perfect plan for your virtual gender reveal party.</p>
             {!loading && !user && (
-              <p style={{ fontSize: 13, color: "#C2527A", marginTop: 8, fontStyle: "italic" }}>Sign in or create an account to choose a plan ✦</p>
+              <p style={{ fontSize: 13, color: "#E8449A", marginTop: 8, fontStyle: "italic" }}>Sign in or create an account to choose a plan ✦</p>
             )}
           </div>
-          <div className="price-grid fade-up">
+          <div className="pricing-grid fade-up">
             {[
-              { cls: "pc-free", badge: "Free", bc: "bc-free", name: "Free Plan", desc: "Basic reveal setup to get started.", price: "0", planId: "free", pCls: "", dc: "d-light", divCls: "dv-light", feats: ["Basic reveal page", "Doctor secure link", "Up to 20 guests", "Email invitations", "7-day replay"], fCls: "fl", ckCls: "ck-b", btnCls: "btn-bp", btnLabel: "Start Free" },
-              { cls: "pc-prem", badge: "Most Popular", bc: "bc-pop", name: "Premium", desc: "Full cinematic + live experience.", price: "199", planId: "premium", pCls: "pc-price-dark", dc: "d-dark", divCls: "dv-dark", feats: ["Cinematic reveal video — made by us", "Live virtual party room", "Up to 200 guests", "Live chat & Boy/Girl polls", "Personalized guest invitations", "30-day replay window", "Custom overlay"], fCls: "fd", ckCls: "ck-w", btnCls: "btn-wg", btnLabel: "Go Premium" },
-              { cls: "pc-cust", badge: "White Glove", bc: "bc-gold", name: "Custom", desc: "Fully personalized story reveal.", price: "650", planId: "custom", pCls: "pc-price-gold", dc: "d-gold", divCls: "dv-gold", feats: ["Bespoke reveal video story", "Unlimited guests", "Dedicated concierge", "Custom soundtrack", "Live on-call support", "Permanent family archive"], fCls: "fg", ckCls: "ck-g", btnCls: "btn-gd", btnLabel: "Create Custom Reveal" },
+              { cardCls: "pnew-basic",   iconCls: "pic-pink",   icon: "🎈", nameCls: "pn-pink", name: "Free Plan", desc: "Everything you need for a simple & fun reveal!",   priceCls: "pp-pink", price: "0",   priceSub: "Free forever",     checkCls: "pnew-check-pink", feats: ["Basic reveal page", "Doctor secure link", "Up to 20 guests", "Email invitations", "7-day replay"], btnCls: "pbtn-pink",     btnLabel: "Start Free",           planId: "free",    popular: false },
+              { cardCls: "pnew-premium", iconCls: "pic-purple", icon: "👑", nameCls: "pn-blue", name: "Premium", desc: "The most loved plan for unforgettable memories!", priceCls: "pp-blue", price: "199", priceSub: "One-time payment", checkCls: "pnew-check-blue", feats: ["Cinematic reveal video — made by us", "Live virtual party room", "Up to 200 guests", "Live chat & Boy/Girl polls", "Personalized guest invitations", "30-day replay window", "Custom overlay"], btnCls: "pbtn-gradient", btnLabel: "Choose Premium",        planId: "premium", popular: true  },
+              { cardCls: "pnew-custom",  iconCls: "pic-blue",   icon: "💎", nameCls: "pn-blue", name: "Custom",   desc: "The ultimate experience for big celebrations!",   priceCls: "pp-blue", price: "650", priceSub: "One-time payment", checkCls: "pnew-check-blue", feats: ["Bespoke reveal video story", "Unlimited guests", "Dedicated concierge", "Custom soundtrack", "Live on-call support", "Permanent family archive"],                                              btnCls: "pbtn-blue",     btnLabel: "Create Custom Reveal", planId: "custom",  popular: false },
             ].map((p, i) => (
-              <div className={`pc ${p.cls}`} key={i}>
-                <span className={`pc-badge ${p.bc}`}>{p.badge}</span>
-                <div className={`pc-name${p.pCls ? " pn-dark" : ""}`}>{p.name}</div>
-                <div className={`pc-desc ${p.dc}`}>{p.desc}</div>
-                <div className={`pc-price ${p.pCls}`}><span className="pc-curr">$</span><span className="pc-amount">{p.price}</span><span className="pc-per"> / reveal</span></div>
-                <div className={`pc-div ${p.divCls}`} />
-                <ul className="pc-feats">
-                  {p.feats.map((f, j) => <li key={j} className={p.fCls}><span className={p.ckCls}>✓</span>{f}</li>)}
-                </ul>
-                <button className={`pc-btn ${p.btnCls}`} onClick={() => routeToReveal(p.name.toLowerCase())}>{p.btnLabel}</button>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      <section className="testi-bg">
-        <div className="linner">
-          <div className="fade-up" style={{ textAlign: "center" }}>
-            <div className="ltag">Testimonials</div>
-            <h2 className="ltitle">Moments That <em>Stay Forever</em></h2>
-          </div>
-          <div className="testi-grid fade-up">
-            {[
-              { q: "\u201cWe had family in three different states watching. Everyone found out at the exact same second. My mom ugly-cried in Florida and I watched it happen live. I will never forget that.\u201d", name: "Sarah M.", loc: "Texas", av: "#2E7DD1" },
-              { q: "\u201cThe doctor link was so easy. She submitted in under a minute. I genuinely had no idea. When the video played and it said girl \u2014 I couldn\u2019t breathe.\u201d", name: "Jessica & Tom K.", loc: "New York", av: "#E07FAA" },
-              { q: "\u201cMy parents are in their 70s. They couldn\u2019t travel. For the first time they had the actual front-row seat. Not a text an hour later. They were there.\u201d", name: "Amanda R.", loc: "California", av: "#B8962E" },
-            ].map((t, i) => (
-              <div className="testi-card" key={i}>
-                <div className="testi-stars">★★★★★</div>
-                <div className="testi-q">{t.q}</div>
-                <div style={{ display: "flex", alignItems: "center", gap: "0.7rem" }}>
-                  <div style={{ width: 36, height: 36, borderRadius: "50%", background: t.av, display: "flex", alignItems: "center", justifyContent: "center", color: "white", fontSize: "0.85rem", fontWeight: 500, flexShrink: 0 }}>{t.name[0]}</div>
-                  <div><div style={{ fontSize: "0.85rem", fontWeight: 500 }}>{t.name}</div><div style={{ fontSize: "0.74rem", color: "#6B7280" }}>{t.loc}</div></div>
+              <div className={`pnew-card ${p.cardCls}`} key={i}>
+                {p.popular && <div className="pnew-popular-badge">⭐ MOST POPULAR</div>}
+                <div className={`pnew-icon-circle ${p.iconCls}`}>{p.icon}</div>
+                <div className={`pnew-name ${p.nameCls}`}>{p.name}</div>
+                <div className="pnew-desc">{p.desc}</div>
+                <div className="pnew-price">
+                  <span className={`pnew-price-main ${p.priceCls}`}>
+                    <span className="pnew-price-curr">$</span><span className="pnew-price-amt">{p.price}</span>
+                  </span>
                 </div>
+                <div className="pnew-price-sub">{p.priceSub}</div>
+                <div className="pnew-divider" />
+                <ul className="pnew-feats">
+                  {p.feats.map((f, j) => <li key={j}><span className={p.checkCls}>✓</span>{f}</li>)}
+                </ul>
+                <button className={`pnew-btn ${p.btnCls}`} onClick={() => routeToReveal(p.planId)}>{p.btnLabel}</button>
+              </div>
+            ))}
+          </div>
+          <div className="pricing-trust fade-up">
+            <span>🔒 Secure Payments</span>
+            <div className="pricing-trust-divider" />
+            <span>100% Safe &amp; Encrypted</span>
+            <div className="pricing-trust-divider" />
+            <span>No hidden fees.</span>
+          </div>
+        </div>
+      </section>
+
+      <section className="testi-new-section">
+        <div className="testi-heart-left">💗</div>
+        <div className="testi-heart-right">💙</div>
+        <div className="testi-new-inner">
+          <div className="testi-new-header fade-up">
+            <div className="testi-pill-badge">💗 Loved by Thousands</div>
+            <h2 className="testi-main-title">What Our <span className="testi-title-pink">Users</span> Say</h2>
+            <p className="testi-new-sub">Real stories. Real smiles. Real celebrations. 💗</p>
+          </div>
+          <div className="testi-new-grid fade-up">
+            {[
+              { q: "“We had family in three different states watching. Everyone found out at the exact same second. My mom ugly-cried in Florida and I watched it happen live. I will never forget that.”", name: "Sarah M.",        role: "Mom-to-be",    av: "👩",  starCls: "testi-stars-pink",   nameCls: "tn-pink",   heart: "💗" },
+              { q: "“The doctor link was so easy. She submitted in under a minute. I genuinely had no idea. When the video played and it said girl — I couldn’t breathe.”",                   name: "Jessica & Tom K.", role: "Parents-to-be", av: "👫",  starCls: "testi-stars-purple", nameCls: "tn-purple", heart: "💜" },
+              { q: "“My parents are in their 70s. They couldn’t travel. For the first time they had the actual front-row seat. Not a text an hour later. They were there.”",                        name: "Amanda R.",        role: "Mom-to-be",    av: "🧑🏾", starCls: "testi-stars-blue",   nameCls: "tn-blue",   heart: "💙" },
+            ].map((t, i) => (
+              <div className="testi-new-card" key={i}>
+                <div className="testi-avatar-placeholder">{t.av}</div>
+                <div className={`testi-new-stars ${t.starCls}`}>★★★★★</div>
+                <div className="testi-new-q">{t.q}</div>
+                <div className={`testi-new-name ${t.nameCls}`}>{t.name}</div>
+                <div className="testi-new-role">{t.role}</div>
+                <div className="testi-card-heart">{t.heart}</div>
+              </div>
+            ))}
+          </div>
+          <div className="testi-stats-bar fade-up">
+            {[
+              { icon: "👥", iconCls: "tsi-pink",   num: "50K+", label: "Happy Families" },
+              { icon: "🎉", iconCls: "tsi-blue",   num: "25K+", label: "Parties Hosted" },
+              { icon: "🌐", iconCls: "tsi-purple", num: "100+", label: "Countries"       },
+              { icon: "💗", iconCls: "tsi-gold",   num: "4.9",  label: "Average Rating"  },
+            ].map((s, i) => (
+              <div className="testi-stat-item" key={i}>
+                <div className={`testi-stat-icon ${s.iconCls}`}>{s.icon}</div>
+                <div className="testi-stat-text"><strong>{s.num}</strong><span>{s.label}</span></div>
               </div>
             ))}
           </div>
         </div>
       </section>
 
-      <section className="cta-section" id="contact">
-        <div className="cta-inner">
-          <h2 className="cta-title">Your family is waiting<br /><em>to find out together.</em></h2>
-          <p className="cta-sub">Book your reveal today and your doctor link will be ready within the hour.</p>
-          <p className="cta-sub2">Grandma in Florida and your best friend in New York will both be there.</p>
-          <button type="button" className="cta-btn" onClick={() => routeToReveal()}>✦ Start Your Reveal</button>
-          <div className="cta-box">
+      <section className="cta-new-section" id="contact">
+        <div className="cta-bg-dec cta-bg-left">🎈</div>
+        <div className="cta-bg-dec cta-bg-right">💗</div>
+        <div className="cta-new-inner">
+          <div className="cta-pill-badge">💗 Your Moment Awaits</div>
+          <h2 className="cta-new-title">
+            Your family is waiting<br />
+            <span className="cta-title-gradient">to find out together.</span>
+          </h2>
+          <p className="cta-new-sub">Book your reveal today and your doctor link will be ready within the hour.</p>
+          <p className="cta-new-sub2">Grandma in Florida and your best friend in New York will both be there.</p>
+          <button type="button" className="cta-new-btn" onClick={() => routeToReveal()}>🎉 Start Your Reveal</button>
+          <div className="cta-new-box">
             <p>Virtual Baby Reveal is designed to make your special moment joyful, seamless, and completely stress-free.</p>
-            <br /><p><em>Because moments like these deserve to be felt together.</em></p>
+            <p><em>Because moments like these deserve to be felt together.</em></p>
           </div>
         </div>
       </section>
 
-      <footer>
-        <div className="footer-top">
-          <div>
-            <div className="footer-logo">Virtual Gender Reveal</div>
-            <div className="footer-tag">Crafted for Moments That Matter</div>
-            <div className="footer-copy">The world&apos;s most heartfelt virtual gender reveal platform.</div>
-          </div>
-          {[
-            { title: "Platform", links: ["How It Works", "Features", "Pricing", "Sample Videos"] },
-            { title: "Support", links: ["Help Centre", "Contact Us", "Doctor Guide", "Privacy Policy"] },
-            { title: "Company", links: ["About", "Blog", "Terms of Service", "CCPA / Privacy"] },
-          ].map((col, i) => (
-            <div key={i}>
-              <div className="fc-title">{col.title}</div>
-              <ul className="fc-links">{col.links.map((l, j) => <li key={j}><a href="#">{l}</a></li>)}</ul>
+      <footer className="footer-new">
+        <div className="footer-new-inner">
+          <div className="footer-new-top">
+            <div className="footer-brand-col">
+              <a href="/" className="footer-logo-new">
+                <span>💙🩷</span>
+                <span className="footer-logo-text">VGR</span>
+              </a>
+              <div className="footer-logo-sub">Virtual Gender Reveal</div>
+              <div className="footer-tagline-text">Crafted for Moments That Matter</div>
+              <div className="footer-copy-text">The world&apos;s most heartfelt virtual gender reveal platform.</div>
             </div>
-          ))}
-        </div>
-        <div className="footer-bottom">
-          <span>© 2026 Virtual Gender Reveal. All rights reserved.</span>
-          <span>Because moments like these deserve to be felt together.</span>
+            {[
+              { title: "Platform", links: ["How It Works", "Features", "Pricing", "Sample Videos"] },
+              { title: "Support",  links: ["Help Centre", "Contact Us", "Doctor Guide", "Privacy Policy"] },
+              { title: "Company",  links: ["About", "Blog", "Terms of Service", "CCPA / Privacy"] },
+            ].map((col, i) => (
+              <div key={i}>
+                <div className="footer-col-title">{col.title}</div>
+                <ul className="footer-col-links">
+                  {col.links.map((l, j) => <li key={j}><a href="#">{l}</a></li>)}
+                </ul>
+              </div>
+            ))}
+          </div>
+          <div className="footer-new-bottom">
+            <span>© 2026 Virtual Gender Reveal. All rights reserved.</span>
+            <span>Because moments like these deserve to be felt together. 💗</span>
+          </div>
         </div>
       </footer>
     </>
@@ -575,7 +679,7 @@ body{font-family:'Plus Jakarta Sans',sans-serif;overflow-x:hidden}
 `;
 
 const LANDING_CSS = `
-@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,300;0,400;1,300;1,400&family=Plus+Jakarta+Sans:wght@300;400;500;600&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Nunito:wght@700;800;900&family=Playfair+Display:ital,wght@0,300;0,400;1,300;1,400&family=Plus+Jakarta+Sans:wght@300;400;500;600&display=swap');
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
 html{scroll-behavior:smooth;}
 body{font-family:'Plus Jakarta Sans',sans-serif;background:#fff;color:#111827;overflow-x:hidden;}
@@ -687,4 +791,195 @@ footer{background:#111827;padding:4rem 2rem 2rem;}
 .fc-links a:hover{color:rgba(255,255,255,0.9);}
 .footer-bottom{max-width:1060px;margin:0 auto;padding-top:1.8rem;border-top:1px solid rgba(255,255,255,0.07);display:flex;justify-content:space-between;flex-wrap:wrap;gap:1rem;font-size:0.74rem;color:rgba(255,255,255,0.28);}
 @media(max-width:768px){.nav-links{display:none;}.pc-prem{transform:none;}.pc-prem:hover{transform:translateY(-4px);}}
+/* ── Hero Redesign ── */
+.hero-section{min-height:100vh;display:flex;align-items:center;padding:5rem 2rem 3rem;position:relative;overflow:hidden;background:#f0e8ff;}
+.hero-overlay{position:absolute;inset:0;background:linear-gradient(135deg,rgba(255,182,214,0.65) 0%,rgba(196,225,255,0.65) 100%);z-index:1;}
+.balloons-wrap{position:absolute;inset:0;z-index:2;pointer-events:none;}
+.balloon{position:absolute;animation:balloonFloat 4s ease-in-out infinite alternate;}
+@keyframes balloonFloat{from{transform:translateY(0) rotate(-4deg)}to{transform:translateY(-22px) rotate(4deg)}}
+.hero-content{position:relative;z-index:3;display:grid;grid-template-columns:1fr 1fr;gap:3rem;align-items:center;max-width:1100px;margin:0 auto;width:100%;}
+.hero-left{display:flex;flex-direction:column;align-items:flex-start;gap:0;}
+.hero-title-new{line-height:1.05;margin-bottom:1.2rem;}
+.ht-virtual{font-family:'Nunito',sans-serif;font-size:clamp(3rem,6vw,5.5rem);font-weight:900;color:#E8449A;display:block;letter-spacing:-0.01em;}
+.ht-gender{font-family:'Nunito',sans-serif;font-size:clamp(2.2rem,4.5vw,4rem);font-weight:900;color:#7B3FC4;display:block;letter-spacing:-0.01em;}
+.ht-party{font-family:'Nunito',sans-serif;font-size:clamp(2.5rem,5vw,4.5rem);font-weight:900;color:#3A9FE8;display:block;letter-spacing:-0.01em;}
+.hero-sub-new{font-size:1.05rem;color:#333;line-height:1.65;margin-bottom:1.8rem;font-weight:400;}
+.btn-create-party{display:inline-flex;align-items:center;gap:0.5rem;padding:1rem 2.4rem;border-radius:50px;border:none;cursor:pointer;font-family:'Nunito',sans-serif;font-size:1.05rem;font-weight:800;background:linear-gradient(135deg,#E8449A,#FF7EC8);color:white;box-shadow:0 6px 24px rgba(232,68,154,0.4);transition:transform 0.2s,box-shadow 0.2s;margin-bottom:1rem;}
+.btn-create-party:hover{transform:translateY(-3px);box-shadow:0 10px 32px rgba(232,68,154,0.5);}
+.hero-tagline{font-size:1rem;color:#444;font-weight:600;display:flex;align-items:center;gap:0.4rem;}
+.hero-right{display:flex;justify-content:center;align-items:center;}
+.hero-card-mock{background:white;border-radius:28px;padding:2.4rem 2rem 1.6rem;box-shadow:0 24px 64px rgba(100,60,160,0.22);text-align:center;max-width:300px;width:100%;}
+.mock-logo-circle{width:120px;height:120px;border-radius:50%;background:linear-gradient(135deg,#FFB8D8 0%,#B8D8FF 100%);margin:0 auto 1rem;display:flex;align-items:center;justify-content:center;font-size:3.2rem;box-shadow:0 8px 24px rgba(180,100,200,0.2);}
+.mock-gr-letters{font-family:'Nunito',sans-serif;font-size:3.2rem;font-weight:900;line-height:1;margin-bottom:0.5rem;}
+.mock-brand-line{font-size:0.75rem;letter-spacing:0.35em;color:#aaa;font-weight:400;margin-bottom:0.15rem;}
+.mock-brand-name{font-size:0.8rem;letter-spacing:0.2em;background:linear-gradient(135deg,#E8449A,#3A9FE8);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;font-weight:700;}
+.mock-divider{height:1px;background:#eee;margin:1.2rem 0 1rem;}
+.mock-controls{display:flex;justify-content:center;gap:0.9rem;}
+.mock-ctrl{width:40px;height:40px;border-radius:50%;background:#f4f4f4;display:flex;align-items:center;justify-content:center;font-size:1.1rem;}
+.mock-ctrl-end{background:#FF4E6A;}
+/* ── How It Works Redesign ── */
+.hiw-new-section{padding:5rem 2rem 0;background:#fff;}
+.hiw-new-inner{max-width:1060px;margin:0 auto;}
+.hiw-new-header{display:flex;align-items:center;justify-content:center;gap:1rem;margin-bottom:3.5rem;}
+.hiw-sparkle{font-size:1.8rem;}
+.hiw-main-title{font-family:'Nunito',sans-serif;font-size:clamp(2rem,4vw,3rem);font-weight:900;color:#1a1a2e;text-align:center;}
+.hiw-cards-row{display:grid;grid-template-columns:repeat(4,1fr);gap:1rem;margin-bottom:3rem;position:relative;}
+.hiw-new-card{text-align:center;padding:1.8rem 1.2rem;position:relative;background:#fff;border-radius:20px;box-shadow:0 4px 20px rgba(0,0,0,0.07);transition:transform 0.25s,box-shadow 0.25s;}
+.hiw-new-card:hover{transform:translateY(-5px);box-shadow:0 12px 36px rgba(100,60,200,0.12);}
+.hiw-new-card:not(:last-child)::after{content:'';position:absolute;top:44px;right:-1.2rem;width:2.4rem;border-top:2.5px dashed #D8C4F8;z-index:2;}
+.hiw-num-circle{width:46px;height:46px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:'Nunito',sans-serif;font-size:1.2rem;font-weight:900;color:white;margin:0 auto 1.2rem;box-shadow:0 4px 14px rgba(0,0,0,0.15);}
+.hnc-1{background:linear-gradient(135deg,#E8449A,#FF7EC8);}.hnc-2{background:linear-gradient(135deg,#3A9FE8,#7EC8FF);}.hnc-3{background:linear-gradient(135deg,#7B6EE8,#B09CFF);}.hnc-4{background:linear-gradient(135deg,#E8449A,#FF7EC8);}
+.hiw-icon-bubble{width:76px;height:76px;border-radius:50%;margin:0 auto 1rem;display:flex;align-items:center;justify-content:center;}
+.hib-1{background:rgba(232,68,154,0.1);}.hib-2{background:rgba(58,159,232,0.1);}.hib-3{background:rgba(123,110,232,0.1);}.hib-4{background:rgba(232,68,154,0.1);}
+.hiw-card-title{font-family:'Nunito',sans-serif;font-size:1rem;font-weight:800;margin-bottom:0.5rem;}
+.hct-1{color:#E8449A;}.hct-2{color:#3A9FE8;}.hct-3{color:#7B6EE8;}.hct-4{color:#E8449A;}
+.hiw-card-desc{font-size:0.82rem;color:#888;line-height:1.6;font-weight:400;}
+.hiw-feat-bar{background:#1a2a4a;border-radius:20px;padding:1.6rem 2.5rem;display:grid;grid-template-columns:repeat(4,1fr);gap:1rem;margin-bottom:0;}
+.hiw-feat-item{display:flex;align-items:center;gap:0.8rem;}
+.hiw-feat-icon{width:40px;height:40px;border-radius:50%;background:rgba(232,68,154,0.2);display:flex;align-items:center;justify-content:center;font-size:1.2rem;flex-shrink:0;}
+.hiw-feat-icon.blue{background:rgba(58,159,232,0.2);}.hiw-feat-icon.purple{background:rgba(123,110,232,0.2);}.hiw-feat-icon.green{background:rgba(58,200,120,0.2);}
+.hiw-feat-text{display:flex;flex-direction:column;gap:0.15rem;}
+.hiw-feat-text strong{font-family:'Nunito',sans-serif;font-size:0.88rem;font-weight:700;color:white;}
+.hiw-feat-text span{font-size:0.73rem;color:rgba(255,255,255,0.55);}
+@media(max-width:900px){.hiw-cards-row{grid-template-columns:repeat(2,1fr);}.hiw-new-card:nth-child(2)::after,.hiw-new-card:nth-child(4)::after{display:none;}.hiw-feat-bar{grid-template-columns:repeat(2,1fr);}}
+@media(max-width:640px){.hero-content{grid-template-columns:1fr;}.hero-right{display:none;}.hiw-cards-row{grid-template-columns:1fr 1fr;}.hiw-new-card::after{display:none;}.hiw-feat-bar{grid-template-columns:1fr 1fr;}}
+/* ── Navbar Redesign ── */
+nav#main-nav{position:fixed;top:1rem;left:50%;transform:translateX(-50%);width:calc(100% - 3rem);max-width:880px;height:62px;display:flex;align-items:center;justify-content:space-between;padding:0 1.4rem;background:rgba(255,255,255,0.96);backdrop-filter:blur(20px);border-radius:50px;box-shadow:0 4px 20px rgba(0,0,0,0.1);border:1px solid rgba(255,255,255,0.9);transition:box-shadow 0.3s;}
+nav#main-nav.solid{box-shadow:0 6px 28px rgba(0,0,0,0.14);}
+.nav-logo{display:flex;align-items:center;gap:0.35rem;text-decoration:none;}
+.nav-logo-icons{font-size:1.25rem;line-height:1;}
+.nav-logo-text{font-family:'Nunito',sans-serif;font-size:1.5rem;font-weight:900;color:#E8449A;line-height:1;}
+.nav-links{display:flex;gap:0.2rem;align-items:center;}
+.nav-link{font-family:'Plus Jakarta Sans',sans-serif;font-size:0.87rem;font-weight:500;text-decoration:none;color:#555;padding:0.38rem 1rem;border-radius:50px;transition:color 0.2s,background 0.2s;background:none;border:none;cursor:pointer;}
+.nav-link:hover{color:#E8449A;background:rgba(232,68,154,0.07);}
+.nav-link-active{color:#E8449A !important;background:rgba(232,68,154,0.1);}
+.nav-right{display:flex;align-items:center;gap:0.7rem;}
+.nav-login-btn{display:inline-flex;align-items:center;gap:0.4rem;padding:0.5rem 1.3rem;border-radius:50px;background:#3A9FE8;color:white !important;font-family:'Nunito',sans-serif;font-size:0.86rem;font-weight:700;text-decoration:none;transition:background 0.2s,transform 0.2s;}
+.nav-login-btn:hover{background:#2E8AD4;transform:translateY(-1px);}
+@media(max-width:768px){nav#main-nav{width:calc(100% - 2rem);padding:0 1rem;}.nav-links{display:none;}.nav-login-btn{padding:0.45rem 1rem;font-size:0.8rem;}}
+/* ── Pricing Redesign ── */
+.pricing-section{padding:5rem 2rem 4rem;position:relative;overflow:hidden;background:linear-gradient(160deg,#FFD6EC 0%,#EEE6FF 40%,#CCE8FF 100%);}
+.pricing-bg-dec{position:absolute;font-size:5rem;line-height:1.3;pointer-events:none;opacity:0.7;animation:balloonFloat 5s ease-in-out infinite alternate;}
+.pricing-bg-left{left:1%;top:8%;animation-direction:alternate;}
+.pricing-bg-right{right:1%;top:10%;font-size:7rem;animation-direction:alternate-reverse;}
+.pricing-inner{max-width:1020px;margin:0 auto;position:relative;z-index:2;}
+.pricing-header{text-align:center;margin-bottom:3rem;}
+.pricing-pill-badge{display:inline-flex;align-items:center;gap:0.4rem;padding:0.38rem 1.2rem;border:1.5px solid #B07EE8;border-radius:50px;font-size:0.72rem;font-weight:600;color:#7B4FC4;letter-spacing:0.1em;text-transform:uppercase;margin-bottom:1.2rem;}
+.pricing-main-title{margin-bottom:0.7rem;}
+.pricing-title-line1{font-family:'Nunito',sans-serif;font-size:clamp(2rem,5vw,3.2rem);font-weight:900;color:#1a1a2e;display:block;line-height:1.1;}
+.pricing-title-line2{font-family:'Nunito',sans-serif;font-size:clamp(2rem,5vw,3.2rem);font-weight:900;display:block;line-height:1.1;background:linear-gradient(90deg,#E8449A,#3A9FE8);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;}
+.pricing-sub{font-size:1rem;color:#555;line-height:1.6;}
+.pricing-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:1.5rem;align-items:start;margin-bottom:2rem;}
+.pnew-card{background:white;border-radius:24px;padding:2.4rem 1.8rem 2rem;position:relative;transition:transform 0.3s,box-shadow 0.3s;text-align:center;}
+.pnew-card:hover{transform:translateY(-6px);}
+.pnew-basic{border:2px solid #FFB8D8;box-shadow:0 8px 32px rgba(232,68,154,0.1);}
+.pnew-premium{border:2px solid #B0C8FF;box-shadow:0 20px 56px rgba(100,80,220,0.18);transform:translateY(-10px);}
+.pnew-premium:hover{transform:translateY(-16px);}
+.pnew-custom{border:2px solid #A8D8F8;box-shadow:0 8px 32px rgba(58,159,232,0.1);}
+.pnew-popular-badge{position:absolute;top:-15px;left:50%;transform:translateX(-50%);background:linear-gradient(135deg,#E8449A,#FF7EC8);color:white;font-family:'Nunito',sans-serif;font-size:0.72rem;font-weight:800;padding:0.34rem 1.1rem;border-radius:50px;white-space:nowrap;display:flex;align-items:center;gap:0.35rem;box-shadow:0 4px 12px rgba(232,68,154,0.4);}
+.pnew-icon-circle{width:68px;height:68px;border-radius:50%;margin:0 auto 1rem;display:flex;align-items:center;justify-content:center;font-size:2rem;}
+.pic-pink{background:rgba(232,68,154,0.1);}.pic-purple{background:rgba(123,110,232,0.1);}.pic-blue{background:rgba(58,159,232,0.1);}
+.pnew-name{font-family:'Nunito',sans-serif;font-size:1.5rem;font-weight:900;margin-bottom:0.4rem;}
+.pn-pink{color:#E8449A;}.pn-blue{color:#3A9FE8;}
+.pnew-desc{font-size:0.84rem;color:#888;line-height:1.55;margin-bottom:1.2rem;}
+.pnew-price{text-align:center;margin-bottom:0.2rem;}
+.pnew-price-main{font-family:'Nunito',sans-serif;font-weight:900;line-height:1;}
+.pp-pink{color:#E8449A;}.pp-blue{color:#3A9FE8;}
+.pnew-price-curr{font-size:1.8rem;vertical-align:super;line-height:1;}
+.pnew-price-amt{font-size:4rem;line-height:1;}
+.pnew-price-sub{font-size:0.76rem;color:#aaa;margin-bottom:1.4rem;}
+.pnew-divider{height:1px;background:#f2f2f2;margin:1.2rem 0;}
+.pnew-feats{list-style:none;margin-bottom:1.8rem;text-align:left;}
+.pnew-feats li{font-size:0.84rem;color:#444;padding:0.35rem 0;display:flex;align-items:flex-start;gap:0.6rem;line-height:1.45;}
+.pnew-check-pink{color:#E8449A;font-weight:800;flex-shrink:0;}.pnew-check-blue{color:#3A9FE8;font-weight:800;flex-shrink:0;}
+.pnew-btn{width:100%;padding:0.95rem;border:none;border-radius:50px;cursor:pointer;font-family:'Nunito',sans-serif;font-size:1rem;font-weight:800;transition:transform 0.2s,box-shadow 0.2s;}
+.pnew-btn:hover{transform:translateY(-2px);}
+.pbtn-pink{background:linear-gradient(135deg,#E8449A,#FF7EC8);color:white;box-shadow:0 4px 16px rgba(232,68,154,0.35);}
+.pbtn-gradient{background:linear-gradient(135deg,#E8449A,#3A9FE8);color:white;box-shadow:0 4px 20px rgba(100,80,220,0.3);}
+.pbtn-blue{background:linear-gradient(135deg,#3A9FE8,#7EC8FF);color:white;box-shadow:0 4px 16px rgba(58,159,232,0.35);}
+.pricing-trust{display:flex;align-items:center;justify-content:center;gap:1.2rem;background:white;border-radius:16px;padding:1rem 2rem;box-shadow:0 4px 16px rgba(0,0,0,0.06);font-size:0.85rem;color:#555;flex-wrap:wrap;}
+.pricing-trust-divider{width:1px;height:20px;background:#e0e0e0;}
+@media(max-width:768px){.pricing-grid{grid-template-columns:1fr;}.pnew-premium{transform:none;}.pnew-premium:hover{transform:translateY(-6px);}}
+/* ── Testimonials Redesign ── */
+.testi-new-section{padding:5rem 2rem 0;background:white;position:relative;overflow:hidden;}
+.testi-heart-left{position:absolute;left:2%;top:12%;font-size:5rem;pointer-events:none;animation:balloonFloat 5s ease-in-out infinite alternate;opacity:0.7;}
+.testi-heart-right{position:absolute;right:2%;top:18%;font-size:4.5rem;pointer-events:none;animation:balloonFloat 4.5s ease-in-out infinite alternate-reverse;opacity:0.6;}
+.testi-new-inner{max-width:1060px;margin:0 auto;position:relative;z-index:2;}
+.testi-new-header{text-align:center;margin-bottom:3rem;}
+.testi-pill-badge{display:inline-flex;align-items:center;gap:0.4rem;padding:0.38rem 1.2rem;border:1.5px solid #E8449A;border-radius:50px;font-size:0.72rem;font-weight:600;color:#E8449A;letter-spacing:0.1em;text-transform:uppercase;margin-bottom:1.2rem;}
+.testi-main-title{font-family:'Nunito',sans-serif;font-size:clamp(2rem,4.5vw,2.8rem);font-weight:900;color:#1a1a2e;line-height:1.15;}
+.testi-title-pink{color:#E8449A;}
+.testi-new-sub{font-size:0.95rem;color:#888;margin-top:0.6rem;}
+.testi-new-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:1.5rem;margin-bottom:3rem;}
+.testi-new-card{background:white;border-radius:20px;padding:1.8rem;box-shadow:0 4px 20px rgba(0,0,0,0.07);border:1px solid #f0f0f0;position:relative;transition:transform 0.25s,box-shadow 0.25s;}
+.testi-new-card:hover{transform:translateY(-4px);box-shadow:0 12px 36px rgba(100,60,200,0.1);}
+.testi-avatar-placeholder{width:56px;height:56px;border-radius:50%;background:linear-gradient(135deg,#FFB8D8,#B8D8FF);display:flex;align-items:center;justify-content:center;font-size:1.8rem;margin-bottom:0.8rem;}
+.testi-new-stars{font-size:1rem;margin-bottom:0.7rem;letter-spacing:0.05em;}
+.testi-stars-pink{color:#E8449A;}.testi-stars-purple{color:#7B6EE8;}.testi-stars-blue{color:#3A9FE8;}
+.testi-new-q{font-size:0.85rem;color:#444;line-height:1.75;margin-bottom:1rem;font-style:italic;}
+.testi-new-name{font-family:'Nunito',sans-serif;font-size:0.95rem;font-weight:800;}
+.tn-pink{color:#E8449A;}.tn-blue{color:#3A9FE8;}.tn-purple{color:#7B6EE8;}
+.testi-new-role{font-size:0.76rem;color:#aaa;margin-top:0.15rem;}
+.testi-card-heart{position:absolute;bottom:1.2rem;right:1.4rem;font-size:1.2rem;}
+.testi-stats-bar{background:#1a2a4a;border-radius:20px;padding:1.6rem 2.5rem;display:grid;grid-template-columns:repeat(4,1fr);gap:1rem;margin-bottom:0;}
+.testi-stat-item{display:flex;align-items:center;gap:0.8rem;}
+.testi-stat-icon{width:44px;height:44px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:1.2rem;flex-shrink:0;}
+.tsi-pink{background:rgba(232,68,154,0.2);}.tsi-blue{background:rgba(58,159,232,0.2);}.tsi-purple{background:rgba(123,110,232,0.2);}.tsi-gold{background:rgba(255,180,50,0.2);}
+.testi-stat-text{display:flex;flex-direction:column;gap:0.1rem;}
+.testi-stat-text strong{font-family:'Nunito',sans-serif;font-size:1.05rem;font-weight:900;color:white;}
+.testi-stat-text span{font-size:0.72rem;color:rgba(255,255,255,0.55);}
+@media(max-width:768px){.testi-new-grid{grid-template-columns:1fr;}.testi-stats-bar{grid-template-columns:repeat(2,1fr);}.pricing-trust{gap:0.8rem;font-size:0.78rem;}}
+/* ── How It Works feat-bar polish ── */
+.hiw-new-section{padding-bottom:3rem;}
+.hiw-feat-bar{background:white;border:1px solid rgba(232,68,154,0.12);box-shadow:0 4px 24px rgba(100,60,200,0.07);padding:1.8rem 2.8rem;}
+.hiw-feat-item{gap:1rem;}
+.hiw-feat-icon{width:48px;height:48px;font-size:1.4rem;background:rgba(255,110,180,0.12);box-shadow:0 0 0 1.5px rgba(255,110,180,0.2);}
+.hiw-feat-icon.blue{background:rgba(77,168,232,0.12);box-shadow:0 0 0 1.5px rgba(77,168,232,0.2);}
+.hiw-feat-icon.purple{background:rgba(123,110,232,0.12);box-shadow:0 0 0 1.5px rgba(123,110,232,0.2);}
+.hiw-feat-icon.green{background:rgba(72,200,136,0.12);box-shadow:0 0 0 1.5px rgba(72,200,136,0.2);}
+.hiw-feat-text strong{font-size:0.92rem;font-weight:800;color:#1a1a2e;}
+.hiw-feat-text span{font-size:0.75rem;color:#888;}
+/* ── Testi stats-bar light override ── */
+.testi-stats-bar{background:white;border:1px solid rgba(232,68,154,0.12);box-shadow:0 4px 24px rgba(100,60,200,0.07);}
+.tsi-pink{background:rgba(232,68,154,0.12);box-shadow:0 0 0 1.5px rgba(232,68,154,0.2);}
+.tsi-blue{background:rgba(58,159,232,0.12);box-shadow:0 0 0 1.5px rgba(58,159,232,0.2);}
+.tsi-purple{background:rgba(123,110,232,0.12);box-shadow:0 0 0 1.5px rgba(123,110,232,0.2);}
+.tsi-gold{background:rgba(255,180,50,0.12);box-shadow:0 0 0 1.5px rgba(255,180,50,0.2);}
+.testi-stat-text strong{color:#1a1a2e;}
+.testi-stat-text span{color:#888;}
+/* ── CTA Section Redesign ── */
+.cta-new-section{padding:6rem 2rem;position:relative;overflow:hidden;background:linear-gradient(160deg,#FFD6EC 0%,#EEE6FF 50%,#CCE8FF 100%);text-align:center;}
+.cta-bg-dec{position:absolute;pointer-events:none;font-size:6rem;opacity:0.65;animation:balloonFloat 5s ease-in-out infinite alternate;}
+.cta-bg-left{left:3%;top:10%;}
+.cta-bg-right{right:3%;top:15%;animation-direction:alternate-reverse;font-size:5rem;}
+.cta-new-inner{position:relative;z-index:2;max-width:680px;margin:0 auto;}
+.cta-pill-badge{display:inline-flex;align-items:center;gap:0.4rem;padding:0.38rem 1.2rem;border:1.5px solid #E8449A;border-radius:50px;font-size:0.72rem;font-weight:600;color:#E8449A;letter-spacing:0.1em;text-transform:uppercase;margin-bottom:1.4rem;}
+.cta-new-title{font-family:'Nunito',sans-serif;font-size:clamp(2.2rem,5vw,3.4rem);font-weight:900;color:#1a1a2e;line-height:1.15;margin-bottom:1rem;}
+.cta-title-gradient{background:linear-gradient(90deg,#E8449A,#3A9FE8);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;display:block;}
+.cta-new-sub{font-size:1rem;color:#555;line-height:1.7;margin-bottom:0.4rem;}
+.cta-new-sub2{font-size:0.88rem;color:#888;margin-bottom:2.2rem;font-style:italic;}
+.cta-new-btn{display:inline-flex;align-items:center;gap:0.5rem;padding:1rem 2.8rem;border-radius:50px;border:none;cursor:pointer;font-family:'Nunito',sans-serif;font-size:1.05rem;font-weight:800;background:linear-gradient(135deg,#E8449A,#FF7EC8);color:white;box-shadow:0 6px 24px rgba(232,68,154,0.4);transition:transform 0.2s,box-shadow 0.2s;margin-bottom:2.2rem;}
+.cta-new-btn:hover{transform:translateY(-3px);box-shadow:0 10px 32px rgba(232,68,154,0.5);}
+.cta-new-box{background:white;border-radius:20px;padding:1.8rem 2rem;border:1px solid rgba(232,68,154,0.1);box-shadow:0 4px 20px rgba(100,60,200,0.06);}
+.cta-new-box p{font-size:0.88rem;color:#555;line-height:1.85;margin-bottom:0.5rem;}
+.cta-new-box p:last-child{margin-bottom:0;}
+.cta-new-box em{color:#E8449A;}
+/* ── Footer Redesign ── */
+.footer-new{background:#fff;border-top:3px solid transparent;border-image:linear-gradient(90deg,#E8449A,#7B6EE8,#3A9FE8) 1;padding:4rem 2rem 2rem;}
+.footer-new-inner{max-width:1060px;margin:0 auto;}
+.footer-new-top{display:flex;flex-wrap:wrap;gap:3rem;justify-content:space-between;margin-bottom:3rem;}
+.footer-brand-col{max-width:220px;}
+.footer-logo-new{display:flex;align-items:center;gap:0.35rem;text-decoration:none;margin-bottom:0.4rem;}
+.footer-logo-new span:first-child{font-size:1.3rem;}
+.footer-logo-text{font-family:'Nunito',sans-serif;font-size:1.5rem;font-weight:900;color:#E8449A;line-height:1;}
+.footer-logo-sub{font-family:'Playfair Display',serif;font-size:0.95rem;color:#1a1a2e;margin-bottom:0.2rem;}
+.footer-tagline-text{font-size:0.65rem;letter-spacing:0.22em;text-transform:uppercase;color:#E8449A;margin-bottom:0.8rem;font-weight:600;}
+.footer-copy-text{font-size:0.82rem;color:#888;line-height:1.7;}
+.footer-col-title{font-family:'Nunito',sans-serif;font-size:0.78rem;font-weight:800;letter-spacing:0.12em;text-transform:uppercase;color:#1a1a2e;margin-bottom:1rem;}
+.footer-col-links{list-style:none;}
+.footer-col-links li{margin-bottom:0.5rem;}
+.footer-col-links a{font-size:0.84rem;color:#888;text-decoration:none;transition:color 0.2s;}
+.footer-col-links a:hover{color:#E8449A;}
+.footer-new-bottom{padding-top:1.6rem;border-top:1px solid rgba(0,0,0,0.07);display:flex;justify-content:space-between;flex-wrap:wrap;gap:1rem;font-size:0.74rem;color:#bbb;}
+@media(max-width:640px){.footer-new-top{flex-direction:column;gap:2rem;}.cta-bg-dec{font-size:3.5rem;}}
 `;
