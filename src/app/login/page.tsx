@@ -3,6 +3,9 @@
 import { useState, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useAuth } from "@/lib/AuthContext";
+import { getAuth } from "firebase/auth";
+import { doc, getDoc } from "firebase/firestore";
+import { getFirebaseDb } from "@/lib/firebase";
 
 type ToastType = "success" | "error" | "info";
 
@@ -60,6 +63,25 @@ function LoginContent() {
     return msg.replace("Firebase: ", "").replace(/\s*\(auth\/.*?\)\.?/, "").trim();
   }
 
+  // After sign-in, check the user's Firestore role and route admins to /admin.
+  // For everyone else, fall back to redirectTo (default /dashboard or whatever
+  // ?redirect= says). Errors are non-fatal — we just send them to redirectTo.
+  async function getRedirectForUser(): Promise<string> {
+    const auth = getAuth();
+    const uid = auth.currentUser?.uid;
+    if (!uid) return redirectTo;
+    try {
+      const db = getFirebaseDb();
+      const userDoc = await getDoc(doc(db, "users", uid));
+      if (userDoc.exists() && userDoc.data().role === "admin") {
+        return "/admin";
+      }
+    } catch (err) {
+      console.error("[login] Failed to check admin role:", err);
+    }
+    return redirectTo;
+  }
+
   async function handleEmailLogin(e: React.FormEvent) {
     e.preventDefault();
     if (!isValidEmail(email)) { showToast("Please enter a valid email address.", "error"); return; }
@@ -69,7 +91,8 @@ function LoginContent() {
     try {
       await signInWithEmail(email.trim(), password);
       showToast("Signed in successfully!", "success");
-      setTimeout(() => router.push(redirectTo), 1000);
+      const target = await getRedirectForUser();
+      setTimeout(() => router.push(target), 1000);
     } catch (err) {
       showToast(getAuthError(err), "error");
     } finally {
@@ -86,7 +109,8 @@ function LoginContent() {
         setTimeout(() => router.push("/complete-profile"), 1000);
       } else {
         showToast("Signed in successfully!", "success");
-        setTimeout(() => router.push(redirectTo), 1000);
+        const target = await getRedirectForUser();
+        setTimeout(() => router.push(target), 1000);
       }
     } catch (err) {
       showToast(getAuthError(err), "error");
