@@ -2,8 +2,6 @@
 import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/lib/AuthContext";
-import Image from "next/image";
-import bgImage from "@/app/assets/bg.png";
 
 const SCENE_DURATIONS = [3800, 3200, 3200, 4000, 4500, 0];
 const INTRO_KEY = "vgr_intro_seen";
@@ -343,47 +341,25 @@ function LandingPage() {
       </nav>
 
       <section className="hero-section">
-        <Image src={bgImage} alt="" fill style={{ objectFit: "cover", objectPosition: "center" }} priority />
+        <video autoPlay muted loop playsInline style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover", objectPosition: "center", zIndex: 0 }}>
+          <source src="/assets/bg.mp4" type="video/mp4" />
+        </video>
         <div className="hero-overlay" />
-        <div className="balloons-wrap">
-          {([
-            { top: "8%",  left: "2%",  right: "",   color: "#FF6EB4", size: "3.2rem", delay: "0s"   },
-            { top: "32%", left: "5%",  right: "",   color: "#4DA8E8", size: "2.8rem", delay: "0.6s" },
-            { top: "65%", left: "3%",  right: "",   color: "#FF6EB4", size: "2.3rem", delay: "1.2s" },
-            { top: "12%", left: "",    right: "3%", color: "#4DA8E8", size: "3rem",   delay: "0.3s" },
-            { top: "42%", left: "",    right: "2%", color: "#FF6EB4", size: "2.6rem", delay: "0.9s" },
-            { top: "68%", left: "",    right: "5%", color: "#4DA8E8", size: "2rem",   delay: "0.5s" },
-          ] as Array<{ top: string; left: string; right: string; color: string; size: string; delay: string }>).map((b, i) => (
-            <div key={i} className="balloon" style={{ top: b.top, left: b.left || undefined, right: b.right || undefined, animationDelay: b.delay }}>
-              <span style={{ color: b.color, fontSize: b.size, filter: "drop-shadow(0 4px 8px rgba(0,0,0,0.12))" }}>🎈</span>
-            </div>
-          ))}
-        </div>
+
         <div className="hero-content">
           <div className="hero-left">
-            <h1 className="hero-title-new">
-              <span className="ht-virtual">Virtual</span>
-              <span className="ht-gender">Gender Reveal</span>
-              <span className="ht-party">Party!</span>
-            </h1>
+            <img
+              src="/assets/VirtualGenderRevealPartyText.png"
+              alt="Virtual Gender Reveal Party!"
+              className="hero-title-img"
+            />
             <p className="hero-sub-new">Celebrate your big moment together,<br />no matter where you are! 💗</p>
             <button type="button" className="btn-create-party" onClick={() => routeToReveal()}>🎉 Create Your Party</button>
             <div className="hero-tagline">👥 Invite. Reveal. Celebrate!</div>
           </div>
           <div className="hero-right">
-            <div className="hero-card-mock">
-              <div className="mock-logo-circle">🦢</div>
-              <div className="mock-gr-letters">
-                <span style={{ color: "#E8449A" }}>G</span><span style={{ color: "#4DA8E8" }}>R</span>
-              </div>
-              <div className="mock-brand-line">VIRTUAL</div>
-              <div className="mock-brand-name">GENDER REVEAL</div>
-              <div className="mock-divider" />
-              <div className="mock-controls">
-                {(["📹", "🎤", "🤍", "📵"] as string[]).map((icon, i) => (
-                  <div key={i} className={`mock-ctrl${i === 3 ? " mock-ctrl-end" : ""}`}>{icon}</div>
-                ))}
-              </div>
+            <div className="hero-card-mock hero-card-video">
+              <img src="/assets/liveVideoBox.png" alt="Live reveal preview" className="hero-mock-video" />
             </div>
           </div>
         </div>
@@ -398,16 +374,13 @@ function LandingPage() {
           </div>
           <div className="hiw-cards-row fade-up">
             {[
-              { num: 1, nc: "hnc-1", icon: "📅", ic: "hib-1", tc: "hct-1", title: "Create Your Party",  desc: "Set up your virtual gender reveal party in minutes and customize every detail." },
-              { num: 2, nc: "hnc-2", icon: "💌", ic: "hib-2", tc: "hct-2", title: "Invite Loved Ones",  desc: "Send invites to friends and family near or far. Everyone can join!" },
-              { num: 3, nc: "hnc-3", icon: "🎁", ic: "hib-3", tc: "hct-3", title: "Time to Reveal",     desc: "Open the box and reveal the big surprise together in real-time!" },
-              { num: 4, nc: "hnc-4", icon: "🎈", ic: "hib-4", tc: "hct-4", title: "Celebrate Together", desc: "Share reactions, take photos, and make memories that last forever." },
+              { img: "/assets/how-it-works/create-your-party.png",  tc: "hct-1", title: "Create Your Party",  desc: "Set up your virtual gender reveal party in minutes and customize every detail." },
+              { img: "/assets/how-it-works/invite-loved-ones.png",  tc: "hct-2", title: "Invite Loved Ones",  desc: "Send invites to friends and family near or far. Everyone can join!" },
+              { img: "/assets/how-it-works/time-to-reveal.png",     tc: "hct-3", title: "Time to Reveal",     desc: "Open the box and reveal the big surprise together in real-time!" },
+              { img: "/assets/how-it-works/celebrate-together.png", tc: "hct-4", title: "Celebrate Together", desc: "Share reactions, take photos, and make memories that last forever." },
             ].map((s, i) => (
               <div className="hiw-new-card" key={i}>
-                <div className={`hiw-num-circle ${s.nc}`}>{s.num}</div>
-                <div className={`hiw-icon-bubble ${s.ic}`}>
-                  <span style={{ fontSize: "2rem" }}>{s.icon}</span>
-                </div>
+                <img src={s.img} alt={s.title} className="hiw-card-img" />
                 <div className={`hiw-card-title ${s.tc}`}>{s.title}</div>
                 <div className="hiw-card-desc">{s.desc}</div>
               </div>
@@ -793,12 +766,12 @@ footer{background:#111827;padding:4rem 2rem 2rem;}
 @media(max-width:768px){.nav-links{display:none;}.pc-prem{transform:none;}.pc-prem:hover{transform:translateY(-4px);}}
 /* ── Hero Redesign ── */
 .hero-section{min-height:100vh;display:flex;align-items:center;padding:5rem 2rem 3rem;position:relative;overflow:hidden;background:#f0e8ff;}
-.hero-overlay{position:absolute;inset:0;background:linear-gradient(135deg,rgba(255,182,214,0.65) 0%,rgba(196,225,255,0.65) 100%);z-index:1;}
+.hero-overlay{position:absolute;inset:0;background:linear-gradient(135deg,rgba(255,182,214,0.45) 0%,rgba(196,225,255,0.45) 100%);z-index:1;}
 .balloons-wrap{position:absolute;inset:0;z-index:2;pointer-events:none;}
 .balloon{position:absolute;animation:balloonFloat 4s ease-in-out infinite alternate;}
 @keyframes balloonFloat{from{transform:translateY(0) rotate(-4deg)}to{transform:translateY(-22px) rotate(4deg)}}
-.hero-content{position:relative;z-index:3;display:grid;grid-template-columns:1fr 1fr;gap:3rem;align-items:center;max-width:1100px;margin:0 auto;width:100%;}
-.hero-left{display:flex;flex-direction:column;align-items:flex-start;gap:0;}
+.hero-content{position:relative;z-index:3;display:grid;grid-template-columns:1fr 1.6fr;gap:3rem;align-items:center;max-width:1400px;margin:0 auto;width:100%;}
+.hero-left{display:flex;flex-direction:column;align-items:center;text-align:center;gap:0;}
 .hero-title-new{line-height:1.05;margin-bottom:1.2rem;}
 .ht-virtual{font-family:'Nunito',sans-serif;font-size:clamp(3rem,6vw,5.5rem);font-weight:900;color:#E8449A;display:block;letter-spacing:-0.01em;}
 .ht-gender{font-family:'Nunito',sans-serif;font-size:clamp(2.2rem,4.5vw,4rem);font-weight:900;color:#7B3FC4;display:block;letter-spacing:-0.01em;}
@@ -808,7 +781,7 @@ footer{background:#111827;padding:4rem 2rem 2rem;}
 .btn-create-party:hover{transform:translateY(-3px);box-shadow:0 10px 32px rgba(232,68,154,0.5);}
 .hero-tagline{font-size:1rem;color:#444;font-weight:600;display:flex;align-items:center;gap:0.4rem;}
 .hero-right{display:flex;justify-content:center;align-items:center;}
-.hero-card-mock{background:white;border-radius:28px;padding:2.4rem 2rem 1.6rem;box-shadow:0 24px 64px rgba(100,60,160,0.22);text-align:center;max-width:300px;width:100%;}
+.hero-card-mock{background:white;border-radius:28px;padding:2.4rem 2rem 1.6rem;box-shadow:0 24px 64px rgba(100,60,160,0.22);text-align:center;width:50vw;width:100%;}
 .mock-logo-circle{width:120px;height:120px;border-radius:50%;background:linear-gradient(135deg,#FFB8D8 0%,#B8D8FF 100%);margin:0 auto 1rem;display:flex;align-items:center;justify-content:center;font-size:3.2rem;box-shadow:0 8px 24px rgba(180,100,200,0.2);}
 .mock-gr-letters{font-family:'Nunito',sans-serif;font-size:3.2rem;font-weight:900;line-height:1;margin-bottom:0.5rem;}
 .mock-brand-line{font-size:0.75rem;letter-spacing:0.35em;color:#aaa;font-weight:400;margin-bottom:0.15rem;}
@@ -822,7 +795,7 @@ footer{background:#111827;padding:4rem 2rem 2rem;}
 .hiw-new-inner{max-width:1060px;margin:0 auto;}
 .hiw-new-header{display:flex;align-items:center;justify-content:center;gap:1rem;margin-bottom:3.5rem;}
 .hiw-sparkle{font-size:1.8rem;}
-.hiw-main-title{font-family:'Nunito',sans-serif;font-size:clamp(2rem,4vw,3rem);font-weight:900;color:#1a1a2e;text-align:center;}
+.hiw-main-title{font-family:'Nunito',sans-serif;font-size:clamp(2rem,4vw,3rem);font-weight:900;text-align:center;background:linear-gradient(90deg,#F72585,#7B2FBE,#3A86FF);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;}
 .hiw-cards-row{display:grid;grid-template-columns:repeat(4,1fr);gap:1rem;margin-bottom:3rem;position:relative;}
 .hiw-new-card{text-align:center;padding:1.8rem 1.2rem;position:relative;background:#fff;border-radius:20px;box-shadow:0 4px 20px rgba(0,0,0,0.07);transition:transform 0.25s,box-shadow 0.25s;}
 .hiw-new-card:hover{transform:translateY(-5px);box-shadow:0 12px 36px rgba(100,60,200,0.12);}
@@ -831,6 +804,7 @@ footer{background:#111827;padding:4rem 2rem 2rem;}
 .hnc-1{background:linear-gradient(135deg,#E8449A,#FF7EC8);}.hnc-2{background:linear-gradient(135deg,#3A9FE8,#7EC8FF);}.hnc-3{background:linear-gradient(135deg,#7B6EE8,#B09CFF);}.hnc-4{background:linear-gradient(135deg,#E8449A,#FF7EC8);}
 .hiw-icon-bubble{width:76px;height:76px;border-radius:50%;margin:0 auto 1rem;display:flex;align-items:center;justify-content:center;}
 .hib-1{background:rgba(232,68,154,0.1);}.hib-2{background:rgba(58,159,232,0.1);}.hib-3{background:rgba(123,110,232,0.1);}.hib-4{background:rgba(232,68,154,0.1);}
+.hiw-card-img{width:180px;height:180px;object-fit:contain;margin:0 auto 1.2rem;display:block;}
 .hiw-card-title{font-family:'Nunito',sans-serif;font-size:1rem;font-weight:800;margin-bottom:0.5rem;}
 .hct-1{color:#E8449A;}.hct-2{color:#3A9FE8;}.hct-3{color:#7B6EE8;}.hct-4{color:#E8449A;}
 .hiw-card-desc{font-size:0.82rem;color:#888;line-height:1.6;font-weight:400;}
@@ -858,7 +832,7 @@ nav#main-nav.solid{box-shadow:0 6px 28px rgba(0,0,0,0.14);}
 .nav-login-btn:hover{background:#2E8AD4;transform:translateY(-1px);}
 @media(max-width:768px){nav#main-nav{width:calc(100% - 2rem);padding:0 1rem;}.nav-links{display:none;}.nav-login-btn{padding:0.45rem 1rem;font-size:0.8rem;}}
 /* ── Pricing Redesign ── */
-.pricing-section{padding:5rem 2rem 4rem;position:relative;overflow:hidden;background:linear-gradient(160deg,#FFD6EC 0%,#EEE6FF 40%,#CCE8FF 100%);}
+.pricing-section{padding:5rem 2rem 4rem;position:relative;overflow:hidden;background:linear-gradient(160deg,#eb70b2 0%,#EEE6FF 40%,#1b69a9 100%);}
 .pricing-bg-dec{position:absolute;font-size:5rem;line-height:1.3;pointer-events:none;opacity:0.7;animation:balloonFloat 5s ease-in-out infinite alternate;}
 .pricing-bg-left{left:1%;top:8%;animation-direction:alternate;}
 .pricing-bg-right{right:1%;top:10%;font-size:7rem;animation-direction:alternate-reverse;}
@@ -901,7 +875,7 @@ nav#main-nav.solid{box-shadow:0 6px 28px rgba(0,0,0,0.14);}
 .pricing-trust-divider{width:1px;height:20px;background:#e0e0e0;}
 @media(max-width:768px){.pricing-grid{grid-template-columns:1fr;}.pnew-premium{transform:none;}.pnew-premium:hover{transform:translateY(-6px);}}
 /* ── Testimonials Redesign ── */
-.testi-new-section{padding:5rem 2rem 0;background:white;position:relative;overflow:hidden;}
+.testi-new-section{padding:5rem 2rem 2rem;background:url('/assets/testimonials-bg.png') center/cover no-repeat;position:relative;overflow:hidden;}
 .testi-heart-left{position:absolute;left:2%;top:12%;font-size:5rem;pointer-events:none;animation:balloonFloat 5s ease-in-out infinite alternate;opacity:0.7;}
 .testi-heart-right{position:absolute;right:2%;top:18%;font-size:4.5rem;pointer-events:none;animation:balloonFloat 4.5s ease-in-out infinite alternate-reverse;opacity:0.6;}
 .testi-new-inner{max-width:1060px;margin:0 auto;position:relative;z-index:2;}
@@ -929,9 +903,18 @@ nav#main-nav.solid{box-shadow:0 6px 28px rgba(0,0,0,0.14);}
 .testi-stat-text strong{font-family:'Nunito',sans-serif;font-size:1.05rem;font-weight:900;color:white;}
 .testi-stat-text span{font-size:0.72rem;color:rgba(255,255,255,0.55);}
 @media(max-width:768px){.testi-new-grid{grid-template-columns:1fr;}.testi-stats-bar{grid-template-columns:repeat(2,1fr);}.pricing-trust{gap:0.8rem;font-size:0.78rem;}}
-/* ── How It Works feat-bar polish ── */
-.hiw-new-section{padding-bottom:3rem;}
-.hiw-feat-bar{background:white;border:1px solid rgba(232,68,154,0.12);box-shadow:0 4px 24px rgba(100,60,200,0.07);padding:1.8rem 2.8rem;}
+/* ── How It Works section color ── */
+.hiw-new-section{padding:5rem 2rem;background:linear-gradient(160deg,rgb(255 178 213) 0%,rgb(123, 47, 190) 50%,rgb(121 170 247) 100%);}
+.hiw-new-inner{background:white;border-radius:80px;padding:3.5rem 3rem;box-shadow:0 20px 60px rgba(150,80,200,0.15),0 4px 16px rgba(0,0,0,0.06);}
+.hiw-new-card:nth-child(1){border:2px solid #FFB8D8;box-shadow:0 8px 32px rgba(232,68,154,0.3),0 0 20px rgba(232,68,154,0.15);}
+.hiw-new-card:nth-child(2){border:2px solid #B0D4FF;box-shadow:0 8px 32px rgba(58,159,232,0.3),0 0 20px rgba(58,159,232,0.15);}
+.hiw-new-card:nth-child(3){border:2px solid #C8B8FF;box-shadow:0 8px 32px rgba(123,110,232,0.3),0 0 20px rgba(123,110,232,0.15);}
+.hiw-new-card:nth-child(4){border:2px solid #FFB8D8;box-shadow:0 8px 32px rgba(232,68,154,0.3),0 0 20px rgba(232,68,154,0.15);}
+.hiw-new-card:nth-child(1):hover{box-shadow:0 16px 48px rgba(232,68,154,0.45),0 0 40px rgba(232,68,154,0.25);}
+.hiw-new-card:nth-child(2):hover{box-shadow:0 16px 48px rgba(58,159,232,0.45),0 0 40px rgba(58,159,232,0.25);}
+.hiw-new-card:nth-child(3):hover{box-shadow:0 16px 48px rgba(123,110,232,0.45),0 0 40px rgba(123,110,232,0.25);}
+.hiw-new-card:nth-child(4):hover{box-shadow:0 16px 48px rgba(232,68,154,0.45),0 0 40px rgba(232,68,154,0.25);}
+.hiw-feat-bar{background:linear-gradient(135deg,#FFE8F4 0%,#EDE8FF 50%,#E8F4FF 100%);border:1px solid rgba(232,68,154,0.12);box-shadow:0 4px 24px rgba(100,60,200,0.07);padding:1.8rem 2.8rem;}
 .hiw-feat-item{gap:1rem;}
 .hiw-feat-icon{width:48px;height:48px;font-size:1.4rem;background:rgba(255,110,180,0.12);box-shadow:0 0 0 1.5px rgba(255,110,180,0.2);}
 .hiw-feat-icon.blue{background:rgba(77,168,232,0.12);box-shadow:0 0 0 1.5px rgba(77,168,232,0.2);}
@@ -948,7 +931,7 @@ nav#main-nav.solid{box-shadow:0 6px 28px rgba(0,0,0,0.14);}
 .testi-stat-text strong{color:#1a1a2e;}
 .testi-stat-text span{color:#888;}
 /* ── CTA Section Redesign ── */
-.cta-new-section{padding:6rem 2rem;position:relative;overflow:hidden;background:linear-gradient(160deg,#FFD6EC 0%,#EEE6FF 50%,#CCE8FF 100%);text-align:center;}
+.cta-new-section{padding:6rem 2rem;position:relative;overflow:hidden;background:linear-gradient(160deg, #e37fb5 0%, #EEE6FF 50%, #317cb9 100%);text-align:center;}
 .cta-bg-dec{position:absolute;pointer-events:none;font-size:6rem;opacity:0.65;animation:balloonFloat 5s ease-in-out infinite alternate;}
 .cta-bg-left{left:3%;top:10%;}
 .cta-bg-right{right:3%;top:15%;animation-direction:alternate-reverse;font-size:5rem;}
@@ -982,4 +965,17 @@ nav#main-nav.solid{box-shadow:0 6px 28px rgba(0,0,0,0.14);}
 .footer-col-links a:hover{color:#E8449A;}
 .footer-new-bottom{padding-top:1.6rem;border-top:1px solid rgba(0,0,0,0.07);display:flex;justify-content:space-between;flex-wrap:wrap;gap:1rem;font-size:0.74rem;color:#bbb;}
 @media(max-width:640px){.footer-new-top{flex-direction:column;gap:2rem;}.cta-bg-dec{font-size:3.5rem;}}
+/* ── Hero card mock — larger ── */
+.hero-title-img{width:100vw;height:auto;display:block;margin-bottom:1.2rem;filter:drop-shadow(0 0 18px rgba(255,255,255,0.9)) drop-shadow(0 0 40px rgba(255,255,255,0.5));}
+.hero-card-mock{width:100%;max-width:720px;padding:3rem 2.8rem 2.2rem;transform:perspective(1000px) rotateY(-8deg) rotateX(4deg);transition:transform 0.4s ease;}
+.hero-card-mock:hover{transform:perspective(1000px) rotateY(-2deg) rotateX(1deg);}
+.hero-card-video{padding:0;overflow:hidden;}
+.hero-mock-video{width:100%;height:auto;display:block;border-radius:28px;}
+.mock-logo-circle{width:170px;height:170px;font-size:4.4rem;}
+.mock-gr-letters{font-size:4.4rem;margin-bottom:0.7rem;}
+.mock-brand-line{font-size:0.85rem;letter-spacing:0.38em;margin-bottom:0.25rem;}
+.mock-brand-name{font-size:0.95rem;letter-spacing:0.22em;}
+.mock-divider{margin:1.6rem 0 1.4rem;}
+.mock-controls{gap:1.2rem;}
+.mock-ctrl{width:52px;height:52px;font-size:1.4rem;}
 `;
