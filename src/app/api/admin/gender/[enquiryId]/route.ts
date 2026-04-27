@@ -4,6 +4,7 @@ export const runtime = "nodejs";
 import { NextRequest, NextResponse } from "next/server";
 import { getAdminAuth, getAdminDb } from "@/lib/firebase-admin";
 import { decryptGender } from "@/lib/doctorToken";
+import { getDecryptedGender } from "@/lib/secureGenderService";
 
 // ─── Admin verification ──────────────────────────────────────────────────────
 
@@ -31,18 +32,21 @@ async function verifyAdmin(request: NextRequest): Promise<{ uid: string } | null
 // ─── GET /api/admin/gender/[enquiryId] ───────────────────────────────────────
 
 /**
- * Returns the decrypted gender value for an enquiry.
+ * Returns the decrypted gender value for an enquiry. The codebase has two
+ * separate gender storage systems and we need to handle both:
  *
- * Looks in multiple possible storage locations to be tolerant of older and
- * newer enquiry shapes (announcement mode vs reveal mode, doctor route vs
- * direct submission, old encryption helper vs secureGenderService):
+ *   1. New system (announcement mode + new reveal flows):
+ *      - Stored in `secure-genders/{enquiryId}` document
+ *      - Encrypted via secureGenderService (AES-GCM with iv/authTag/keyVersion)
+ *      - Read via getDecryptedGender(enquiryId) which handles the schema
  *
- *   1. `enquiry.genderEncrypted` — doctor route format (from /api/doctor/[token])
- *   2. `enquiry.gender` — plaintext (announcement mode may store it directly)
- *   3. `enquiry.genderPlaintext` / `enquiry.genderValue` — defensive aliases
- *   4. `secure-genders/{enquiryId}` doc — new secureGenderService format
+ *   2. Legacy system (older reveal flows via /api/doctor/[token]):
+ *      - Stored as `genderEncrypted` field directly on the enquiry doc
+ *      - Encrypted via doctorToken.encryptGender (single string blob)
+ *      - Read via decryptGender(blob)
  *
- * Whichever exists wins. Debug info on the response shows which path was used.
+ * We try the new system first, fall back to legacy, and return the decrypted
+ * value if either succeeds.
  *
  * NOTE: In Next.js 15+, `params` is a Promise that must be awaited.
  */
@@ -66,6 +70,24 @@ export async function GET(
     );
   }
 
+  // ── 1. Try new system (secure-genders collection) ──
+  try {
+    const gender = await getDecryptedGender(enquiryId);
+    if (gender) {
+      console.log(
+        `[admin/gender] Admin ${admin.uid} decrypted gender for ${enquiryId} (source: secureGenderService)`
+      );
+      return NextResponse.json({ gender, source: "secureGenderService" });
+    }
+  } catch (err) {
+    console.error(
+      `[admin/gender] secureGenderService failed for ${enquiryId}:`,
+      err
+    );
+    // fall through to legacy lookup
+  }
+
+  // ── 2. Try legacy system (genderEncrypted on enquiry doc) ──
   try {
     const db = getAdminDb();
     const snap = await db.collection("enquiries").doc(enquiryId).get();
@@ -78,88 +100,35 @@ export async function GET(
     }
 
     const data = snap.data() ?? {};
+    const encrypted = data.genderEncrypted;
 
-    // 1) Doctor-route format: encrypted blob on enquiry
-    if (typeof data.genderEncrypted === "string" && data.genderEncrypted.length > 0) {
+    if (typeof encrypted === "string" && encrypted.length > 0) {
       try {
-        const gender = decryptGender(data.genderEncrypted);
+        const gender = decryptGender(encrypted);
         console.log(
-          `[admin/gender] Admin ${admin.uid} decrypted gender for ${enquiryId} (source: enquiry.genderEncrypted)`
+          `[admin/gender] Admin ${admin.uid} decrypted gender for ${enquiryId} (source: legacy doctorToken)`
         );
-        return NextResponse.json({ gender, source: "genderEncrypted" });
+        return NextResponse.json({ gender, source: "doctorToken" });
       } catch (decryptErr) {
         console.error(
-          `[admin/gender] decryptGender failed for ${enquiryId}:`,
+          `[admin/gender] Legacy decryptGender failed for ${enquiryId}:`,
           decryptErr
         );
-        // fall through and try other sources
       }
     }
 
-    // 2) Plaintext aliases — used by some create-reveal flows for announcement mode
-    const plain =
-      (typeof data.gender === "string" && data.gender) ||
-      (typeof data.genderPlaintext === "string" && data.genderPlaintext) ||
-      (typeof data.genderValue === "string" && data.genderValue) ||
-      null;
-    if (plain && (plain === "boy" || plain === "girl")) {
-      console.log(
-        `[admin/gender] Admin ${admin.uid} read plaintext gender for ${enquiryId}`
-      );
-      return NextResponse.json({ gender: plain, source: "plaintext" });
-    }
-
-    // 3) secureGenderService location
-    const sgSnap = await db.collection("secure-genders").doc(enquiryId).get();
-    if (sgSnap.exists) {
-      const sg = sgSnap.data() ?? {};
-      // Could be encrypted with doctorToken's encryptGender (a single string)
-      if (typeof sg.genderEncrypted === "string" && sg.genderEncrypted.length > 0) {
-        try {
-          const gender = decryptGender(sg.genderEncrypted);
-          console.log(
-            `[admin/gender] Admin ${admin.uid} decrypted gender for ${enquiryId} (source: secure-genders.genderEncrypted)`
-          );
-          return NextResponse.json({ gender, source: "secure-genders" });
-        } catch (decryptErr) {
-          console.error(
-            `[admin/gender] secure-genders decryptGender failed for ${enquiryId}:`,
-            decryptErr
-          );
-        }
-      }
-      // Plaintext fallback inside secure-genders
-      const sgPlain =
-        (typeof sg.gender === "string" && sg.gender) ||
-        (typeof sg.genderPlaintext === "string" && sg.genderPlaintext) ||
-        null;
-      if (sgPlain && (sgPlain === "boy" || sgPlain === "girl")) {
-        return NextResponse.json({ gender: sgPlain, source: "secure-genders-plain" });
-      }
-    }
-
-    // Nothing found — return debug info so you can see which fields the
-    // enquiry actually has. Strip values, just send the keys for safety.
-    const enquiryKeys = Object.keys(data);
-    console.log(
-      `[admin/gender] No gender found for ${enquiryId}. Enquiry keys: ${enquiryKeys.join(", ")}`
-    );
-
+    // ── 3. Nothing found anywhere ──
     return NextResponse.json({
       gender: null,
       reason: "not_submitted",
-      debug: {
-        enquiryKeys,
-        secureGendersDocExists: sgSnap.exists,
-      },
     });
   } catch (err) {
     console.error(
-      `[admin/gender] Failed to decrypt gender for enquiry ${enquiryId}:`,
+      `[admin/gender] Failed to look up gender for enquiry ${enquiryId}:`,
       err
     );
     const msg =
-      err instanceof Error ? err.message : "Failed to decrypt gender.";
+      err instanceof Error ? err.message : "Failed to fetch gender.";
     return NextResponse.json({ error: msg }, { status: 500 });
   }
 }
