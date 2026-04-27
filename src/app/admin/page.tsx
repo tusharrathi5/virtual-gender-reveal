@@ -85,15 +85,34 @@ interface EnquiryRow {
   createdAt: Date | null;
 }
 
-const STAGE_LABELS: Array<[keyof EnquiryRow["stages"], string]> = [
+// Stages relevant to BOTH modes
+const COMMON_STAGES_PRE: Array<[keyof EnquiryRow["stages"], string]> = [
   ["paymentReceived", "Payment"],
-  ["revealerLinkSent", "Link sent"],
-  ["revealerSubmitted", "Revealer in"],
+];
+const COMMON_STAGES_POST: Array<[keyof EnquiryRow["stages"], string]> = [
   ["videoGenerated", "Video"],
   ["guestInvitesSent", "Invites"],
   ["eventScheduled", "Scheduled"],
   ["eventCompleted", "Completed"],
 ];
+// Reveal-only stages (the doctor/revealer flow)
+const REVEAL_ONLY_STAGES: Array<[keyof EnquiryRow["stages"], string]> = [
+  ["revealerLinkSent", "Link sent"],
+  ["revealerSubmitted", "Revealer in"],
+];
+
+const ANNOUNCEMENT_STAGES = [...COMMON_STAGES_PRE, ...COMMON_STAGES_POST];
+const REVEAL_STAGES = [
+  ...COMMON_STAGES_PRE,
+  ...REVEAL_ONLY_STAGES,
+  ...COMMON_STAGES_POST,
+];
+
+function stagesForMode(
+  mode: EnquiryRow["mode"]
+): Array<[keyof EnquiryRow["stages"], string]> {
+  return mode === "reveal" ? REVEAL_STAGES : ANNOUNCEMENT_STAGES;
+}
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
@@ -756,6 +775,14 @@ export default function AdminPage() {
           background: #fde0e0;
           color: #8b1f1f;
         }
+        .admin-badge-reveal {
+          background: linear-gradient(90deg, #fadce9, #f5b8d4);
+          color: #7a1f4f;
+        }
+        .admin-badge-announcement {
+          background: linear-gradient(90deg, #d4dcfa, #b8c5f5);
+          color: #1f3a7a;
+        }
         .admin-progress {
           display: flex;
           gap: 3px;
@@ -1084,7 +1111,8 @@ function EnquiriesTable({
       </thead>
       <tbody>
         {rows.map((e) => {
-          const stagesDone = STAGE_LABELS.filter(
+          const stages = stagesForMode(e.mode);
+          const stagesDone = stages.filter(
             ([key]) => e.stages[key] !== null
           ).length;
           return (
@@ -1095,7 +1123,15 @@ function EnquiriesTable({
                   {e.parentName}
                 </button>
               </td>
-              <td>{e.mode}</td>
+              <td>
+                {e.mode === "reveal" ? (
+                  <span className="admin-badge admin-badge-reveal">Reveal</span>
+                ) : (
+                  <span className="admin-badge admin-badge-announcement">
+                    Announcement
+                  </span>
+                )}
+              </td>
               <td>
                 {e.plan ? (
                   <span className="admin-badge admin-badge-plan">{e.plan}</span>
@@ -1105,15 +1141,19 @@ function EnquiriesTable({
               </td>
               <td>{e.status}</td>
               <td>
-                {e.genderStatus === "submitted" ? (
+                {e.mode === "announcement" ? (
+                  <span style={{ color: "#888" }}>—</span>
+                ) : e.genderStatus === "submitted" ? (
                   <span className="admin-badge admin-badge-active">Submitted</span>
+                ) : e.stages.revealerLinkSent ? (
+                  <span className="admin-badge admin-badge-plan">Awaiting</span>
                 ) : (
                   <span className="admin-badge admin-badge-disabled">Pending</span>
                 )}
               </td>
               <td>
                 <div className="admin-progress">
-                  {STAGE_LABELS.map(([key]) => (
+                  {stages.map(([key]) => (
                     <span
                       key={key}
                       className={`admin-progress-dot ${
@@ -1123,7 +1163,7 @@ function EnquiriesTable({
                     />
                   ))}
                   <span className="admin-progress-text">
-                    {stagesDone}/{STAGE_LABELS.length}
+                    {stagesDone}/{stages.length}
                   </span>
                 </div>
               </td>
@@ -1254,7 +1294,8 @@ function UserDetailOverlay({
             </p>
           ) : (
             enquiries.map((e) => {
-              const stagesDone = STAGE_LABELS.filter(
+              const stages = stagesForMode(e.mode);
+              const stagesDone = stages.filter(
                 ([key]) => e.stages[key] !== null
               ).length;
               return (
@@ -1275,15 +1316,31 @@ function UserDetailOverlay({
                     }}
                   >
                     <div>
-                      <strong>{e.parentName}</strong> · {e.mode} ·{" "}
+                      <strong>{e.parentName}</strong>
+                      {" · "}
+                      <span
+                        className={`admin-badge ${
+                          e.mode === "reveal"
+                            ? "admin-badge-reveal"
+                            : "admin-badge-announcement"
+                        }`}
+                      >
+                        {e.mode === "reveal" ? "Reveal" : "Announcement"}
+                      </span>
+                      {" · "}
                       {fmtDate(e.createdAt)}
                     </div>
                     <span style={{ color: "#888", fontSize: 13 }}>
-                      {stagesDone}/{STAGE_LABELS.length} stages
+                      {stagesDone}/{stages.length} stages
                     </span>
                   </div>
-                  <div className="admin-stages-detail">
-                    {STAGE_LABELS.map(([key, label]) => (
+                  <div
+                    className="admin-stages-detail"
+                    style={{
+                      gridTemplateColumns: `repeat(${stages.length}, 1fr)`,
+                    }}
+                  >
+                    {stages.map(([key, label]) => (
                       <div
                         key={key}
                         className={`admin-stage-cell ${
@@ -1585,9 +1642,20 @@ function EnquiryDetailOverlay({
         )}
 
         <div className="admin-overlay-section">
-          <h3>Progress (7 stages)</h3>
-          <div className="admin-stages-detail">
-            {STAGE_LABELS.map(([key, label]) => (
+          <h3>
+            Progress (
+            {stagesForMode(enquiry.mode).length} stages —{" "}
+            {enquiry.mode === "reveal" ? "Reveal flow" : "Announcement flow"})
+          </h3>
+          <div
+            className="admin-stages-detail"
+            style={{
+              gridTemplateColumns: `repeat(${
+                stagesForMode(enquiry.mode).length
+              }, 1fr)`,
+            }}
+          >
+            {stagesForMode(enquiry.mode).map(([key, label]) => (
               <div
                 key={key}
                 className={`admin-stage-cell ${
