@@ -36,10 +36,12 @@ async function verifyAdmin(request: NextRequest): Promise<{ uid: string } | null
  * Reads `genderEncrypted` directly from the enquiry doc (the format the
  * /api/doctor/[token] route currently writes). Decrypts using decryptGender
  * from @/lib/doctorToken.
+ *
+ * NOTE: In Next.js 15+, the `params` object is a Promise that must be awaited.
  */
 export async function GET(
   request: NextRequest,
-  { params }: { params: { enquiryId: string } }
+  { params }: { params: Promise<{ enquiryId: string }> }
 ) {
   const admin = await verifyAdmin(request);
   if (!admin) {
@@ -49,7 +51,7 @@ export async function GET(
     );
   }
 
-  const enquiryId = params.enquiryId;
+  const { enquiryId } = await params;
   if (!enquiryId || typeof enquiryId !== "string") {
     return NextResponse.json(
       { error: "Missing enquiryId." },
