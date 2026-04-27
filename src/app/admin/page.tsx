@@ -10,6 +10,7 @@ import {
   Timestamp,
   where,
 } from "firebase/firestore";
+import { getAuth, signOut } from "firebase/auth";
 import { getFirebaseDb } from "@/lib/firebase";
 import { useAuth } from "@/lib/AuthContext";
 
@@ -167,14 +168,14 @@ export default function AdminPage() {
       router.push("/login");
       return;
     }
-    if (firestoreUser && firestoreUser.role !== "admin") {
+    if (firestoreUser && firestoreUser.role?.toLowerCase() !== "admin") {
       router.push("/dashboard");
     }
   }, [user, firestoreUser, authLoading, router]);
 
   // ─── Data fetching ───────────────────────────────────────────────────────
   const loadAll = useCallback(async () => {
-    if (!user || firestoreUser?.role !== "admin") return;
+    if (!user || firestoreUser?.role?.toLowerCase() !== "admin") return;
     setLoadingData(true);
     try {
       const db = getFirebaseDb();
@@ -407,7 +408,7 @@ export default function AdminPage() {
       </div>
     );
   }
-  if (firestoreUser.role !== "admin") return null;
+  if (firestoreUser.role?.toLowerCase() !== "admin") return null;
 
   // ─── Render ──────────────────────────────────────────────────────────────
   return (
@@ -418,9 +419,16 @@ export default function AdminPage() {
           <span className="admin-user">{firestoreUser.email}</span>
           <button
             className="admin-btn admin-btn-secondary"
-            onClick={() => router.push("/dashboard")}
+            onClick={async () => {
+              try {
+                await signOut(getAuth());
+              } catch (err) {
+                console.error("[admin] signOut failed:", err);
+              }
+              router.push("/login");
+            }}
           >
-            Exit Admin
+            Sign out
           </button>
         </div>
       </header>
@@ -957,7 +965,7 @@ function ActiveUsersTable({
               )}
             </td>
             <td>
-              {u.role === "admin" ? (
+              {u.role?.toLowerCase() === "admin" ? (
                 <span className="admin-badge admin-badge-admin">Admin</span>
               ) : (
                 "User"
@@ -1371,6 +1379,7 @@ function EnquiryDetailOverlay({
   const [genderRevealed, setGenderRevealed] = useState(false);
   const [genderValue, setGenderValue] = useState<string | null>(null);
   const [genderLoading, setGenderLoading] = useState(false);
+  const [genderNotSubmitted, setGenderNotSubmitted] = useState(false);
 
   const handleRevealGender = async () => {
     if (genderRevealed) {
@@ -1382,6 +1391,7 @@ function EnquiryDetailOverlay({
       return;
     }
     setGenderLoading(true);
+    setGenderNotSubmitted(false);
     try {
       const token = await getIdToken();
       const res = await fetch(`/api/admin/gender/${enquiry.id}`, {
@@ -1393,7 +1403,8 @@ function EnquiryDetailOverlay({
         return;
       }
       if (data.gender === null) {
-        alert("Gender has not been submitted yet for this enquiry.");
+        // Could be reason: "not_submitted" or "enquiry_not_found"
+        setGenderNotSubmitted(true);
         return;
       }
       setGenderValue(data.gender);
@@ -1504,12 +1515,12 @@ function EnquiryDetailOverlay({
             <div>
               <div className="admin-field-label">Gender</div>
               <div className="admin-field-value">
-                {enquiry.genderStatus === "not_submitted" ? (
+                {genderLoading ? (
+                  <span style={{ color: "#888" }}>Decrypting…</span>
+                ) : genderNotSubmitted ? (
                   <span style={{ color: "#888", fontStyle: "italic" }}>
                     Not submitted yet
                   </span>
-                ) : genderLoading ? (
-                  <span style={{ color: "#888" }}>Decrypting…</span>
                 ) : genderRevealed && genderValue ? (
                   <span
                     className="admin-gender-revealed"
