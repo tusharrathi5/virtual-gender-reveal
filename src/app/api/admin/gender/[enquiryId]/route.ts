@@ -3,7 +3,7 @@ export const runtime = "nodejs";
 
 import { NextRequest, NextResponse } from "next/server";
 import { getAdminAuth, getAdminDb } from "@/lib/firebase-admin";
-import { getDecryptedGender } from "@/lib/secureGenderService";
+import { decryptGender } from "@/lib/doctorToken";
 
 // ─── Admin verification ──────────────────────────────────────────────────────
 
@@ -33,17 +33,9 @@ async function verifyAdmin(request: NextRequest): Promise<{ uid: string } | null
 /**
  * Returns the decrypted gender value for an enquiry.
  *
- * Auth: requires Authorization: Bearer <firebase-id-token> from a user whose
- * Firestore user doc has role === "admin".
- *
- * Returns:
- *   200 { gender: "boy" | "girl" }                 — successfully decrypted
- *   200 { gender: null, reason: "not_submitted" }  — no secure-genders doc exists yet
- *   403 { error: "..." }                            — caller not an admin
- *   500 { error: "..." }                            — decryption error / server failure
- *
- * The decryption key (GENDER_ENCRYPTION_KEY_V1) lives only on the server.
- * This is the ONLY way to read a gender value once it has been encrypted.
+ * Reads `genderEncrypted` directly from the enquiry doc (the format the
+ * /api/doctor/[token] route currently writes). Decrypts using decryptGender
+ * from @/lib/doctorToken.
  */
 export async function GET(
   request: NextRequest,
@@ -66,16 +58,28 @@ export async function GET(
   }
 
   try {
-    const gender = await getDecryptedGender(enquiryId);
+    const db = getAdminDb();
+    const snap = await db.collection("enquiries").doc(enquiryId).get();
 
-    if (gender === null) {
+    if (!snap.exists) {
+      return NextResponse.json({
+        gender: null,
+        reason: "enquiry_not_found",
+      });
+    }
+
+    const data = snap.data();
+    const encrypted = data?.genderEncrypted;
+
+    if (!encrypted || typeof encrypted !== "string") {
       return NextResponse.json({
         gender: null,
         reason: "not_submitted",
       });
     }
 
-    // Audit log — admin decryption events should be traceable.
+    const gender = decryptGender(encrypted);
+
     console.log(
       `[admin/gender] Admin ${admin.uid} decrypted gender for enquiry ${enquiryId}`
     );
