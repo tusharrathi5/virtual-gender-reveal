@@ -8,7 +8,6 @@ import {
   orderBy,
   getDocs,
   Timestamp,
-  where,
 } from "firebase/firestore";
 import { getAuth, signOut } from "firebase/auth";
 import { getFirebaseDb } from "@/lib/firebase";
@@ -16,7 +15,37 @@ import { useAuth } from "@/lib/AuthContext";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
-type Tab = "active" | "deleted" | "enquiries";
+interface EnquiryData {
+  id: string;
+  userId: string;
+  parentName: string;
+  mode: "announcement" | "reveal";
+  plan: string | null;
+  status: string;
+  genderStatus: "submitted" | "not_submitted";
+  babyName: string | null;
+  babyNameGirl: string | null;
+  babyNameBoy: string | null;
+  revealerEmail: string | null;
+  revealerRelation: string | null;
+  revealerName: string | null;
+  revealAt: Date | null;
+  revealTimezone: string;
+  guestCount: number;
+  photos: string[];
+  videoUrl: string | null;
+  videoStatus: "uploaded" | "pending" | "none";
+  stages: {
+    paymentReceived: Date | null;
+    revealerLinkSent: Date | null;
+    revealerSubmitted: Date | null;
+    videoGenerated: Date | null;
+    guestInvitesSent: Date | null;
+    eventScheduled: Date | null;
+    eventCompleted: Date | null;
+  };
+  createdAt: Date | null;
+}
 
 interface UserRow {
   uid: string;
@@ -36,6 +65,7 @@ interface UserRow {
   purchases: Array<Record<string, unknown>>;
   createdAt: Date | null;
   lastLogin: Date | null;
+  latestEnquiry: EnquiryData | null;
 }
 
 interface DeletedRow {
@@ -43,76 +73,22 @@ interface DeletedRow {
   parentName: string | null;
   email: string | null;
   phoneNumber: string | null;
-  activePlan: string | null;
-  totalPurchases: number;
-  totalSpentCents: number;
-  revealsAllowed: number;
-  revealsCreated: number;
-  enquiryCount: number;
   deletedBy: "user" | "admin";
   deletedAt: Date;
   purgeAt: Date;
 }
 
-interface EnquiryRow {
-  id: string;
-  userId: string;
-  parentName: string;
-  mode: "announcement" | "reveal";
-  plan: string | null;
-  status: string;
-  genderStatus: "submitted" | "not_submitted";
-  babyName: string | null;
-  babyNameGirl: string | null;
-  babyNameBoy: string | null;
-  revealerEmail: string | null;
-  revealerRelation: string | null;
-  revealerName: string | null;
-  revealAt: Date | null;
-  revealTimezone: string;
-  guestCount: number;
-  photoCount: number;
-  photos: string[];
-  stages: {
-    paymentReceived: Date | null;
-    revealerLinkSent: Date | null;
-    revealerSubmitted: Date | null;
-    videoGenerated: Date | null;
-    guestInvitesSent: Date | null;
-    eventScheduled: Date | null;
-    eventCompleted: Date | null;
-  };
-  createdAt: Date | null;
-}
+type SortKey =
+  | "name"
+  | "email"
+  | "plan"
+  | "gender"
+  | "revealDate"
+  | "type"
+  | "status"
+  | "video";
 
-// Stages relevant to BOTH modes
-const COMMON_STAGES_PRE: Array<[keyof EnquiryRow["stages"], string]> = [
-  ["paymentReceived", "Payment"],
-];
-const COMMON_STAGES_POST: Array<[keyof EnquiryRow["stages"], string]> = [
-  ["videoGenerated", "Video"],
-  ["guestInvitesSent", "Invites"],
-  ["eventScheduled", "Scheduled"],
-  ["eventCompleted", "Completed"],
-];
-// Reveal-only stages (the doctor/revealer flow)
-const REVEAL_ONLY_STAGES: Array<[keyof EnquiryRow["stages"], string]> = [
-  ["revealerLinkSent", "Link sent"],
-  ["revealerSubmitted", "Revealer in"],
-];
-
-const ANNOUNCEMENT_STAGES = [...COMMON_STAGES_PRE, ...COMMON_STAGES_POST];
-const REVEAL_STAGES = [
-  ...COMMON_STAGES_PRE,
-  ...REVEAL_ONLY_STAGES,
-  ...COMMON_STAGES_POST,
-];
-
-function stagesForMode(
-  mode: EnquiryRow["mode"]
-): Array<[keyof EnquiryRow["stages"], string]> {
-  return mode === "reveal" ? REVEAL_STAGES : ANNOUNCEMENT_STAGES;
-}
+type SortDir = "asc" | "desc";
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
@@ -158,6 +134,59 @@ function fmtMoney(cents: number): string {
   return `$${(cents / 100).toFixed(2)}`;
 }
 
+function getInitials(name: string, email: string): string {
+  const source = name?.trim() || email?.trim() || "?";
+  const parts = source.split(/[\s@]+/).filter(Boolean);
+  if (parts.length >= 2) {
+    return (parts[0][0] + parts[1][0]).toUpperCase();
+  }
+  return source.substring(0, 2).toUpperCase();
+}
+
+function avatarColor(seed: string): string {
+  const palette = [
+    "linear-gradient(135deg, #fadce9, #f5b8d4)",
+    "linear-gradient(135deg, #d4dcfa, #b8c5f5)",
+    "linear-gradient(135deg, #d4f4dd, #b8e8c5)",
+    "linear-gradient(135deg, #fff3c4, #ffe6a8)",
+    "linear-gradient(135deg, #e6dafa, #c8b8f5)",
+    "linear-gradient(135deg, #fde0e0, #f5b8b8)",
+  ];
+  let hash = 0;
+  for (let i = 0; i < seed.length; i++)
+    hash = (hash * 31 + seed.charCodeAt(i)) & 0xffffffff;
+  return palette[Math.abs(hash) % palette.length];
+}
+
+function avatarTextColor(seed: string): string {
+  const palette = ["#7a1f4f", "#1f3a7a", "#1f5f33", "#6a4f00", "#4a3a8b", "#8b1f1f"];
+  let hash = 0;
+  for (let i = 0; i < seed.length; i++)
+    hash = (hash * 31 + seed.charCodeAt(i)) & 0xffffffff;
+  return palette[Math.abs(hash) % palette.length];
+}
+
+function deriveVideoStatus(e: EnquiryData | null): "uploaded" | "pending" | "none" {
+  if (!e) return "none";
+  if (e.videoUrl) return "uploaded";
+  if (e.stages.paymentReceived) return "pending";
+  return "none";
+}
+
+function deriveOverallStatus(e: EnquiryData | null): {
+  label: string;
+  tone: "green" | "yellow" | "blue" | "gray";
+} {
+  if (!e) return { label: "No reveal", tone: "gray" };
+  if (e.stages.eventCompleted) return { label: "Completed", tone: "green" };
+  if (e.videoUrl || e.stages.videoGenerated)
+    return { label: "Video Completed", tone: "green" };
+  if (e.mode === "reveal" && e.genderStatus !== "submitted")
+    return { label: "Reveal Pending", tone: "blue" };
+  if (e.stages.paymentReceived) return { label: "Video Pending", tone: "yellow" };
+  return { label: "Pending Payment", tone: "gray" };
+}
+
 function daysUntil(target: Date): number {
   const ms = target.getTime() - Date.now();
   return Math.ceil(ms / (24 * 60 * 60 * 1000));
@@ -169,18 +198,28 @@ export default function AdminPage() {
   const router = useRouter();
   const { user, firestoreUser, loading: authLoading } = useAuth();
 
-  const [tab, setTab] = useState<Tab>("active");
   const [users, setUsers] = useState<UserRow[]>([]);
   const [deleted, setDeleted] = useState<DeletedRow[]>([]);
-  const [enquiries, setEnquiries] = useState<EnquiryRow[]>([]);
   const [loadingData, setLoadingData] = useState(true);
   const [selectedUser, setSelectedUser] = useState<UserRow | null>(null);
-  const [selectedEnquiry, setSelectedEnquiry] = useState<EnquiryRow | null>(null);
-  const [searchTerm, setSearchTerm] = useState("");
-  const [actionInProgress, setActionInProgress] = useState<string | null>(null);
+  const [showVideoModal, setShowVideoModal] = useState(false);
+  const [actionInProgress, setActionInProgress] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
 
-  // ─── Auth guard ──────────────────────────────────────────────────────────
+  const [searchTerm, setSearchTerm] = useState("");
+  const [planFilter, setPlanFilter] = useState("all");
+  const [videoStatusFilter, setVideoStatusFilter] = useState("all");
+  const [statusFilter, setStatusFilter] = useState("all");
+  const [typeFilter, setTypeFilter] = useState("all");
+  const [dateFrom, setDateFrom] = useState("");
+  const [dateTo, setDateTo] = useState("");
+
+  const [page, setPage] = useState(1);
+  const PAGE_SIZE = 8;
+
+  const [sortKey, setSortKey] = useState<SortKey>("revealDate");
+  const [sortDir, setSortDir] = useState<SortDir>("desc");
+
   useEffect(() => {
     if (authLoading) return;
     if (!user) {
@@ -192,20 +231,75 @@ export default function AdminPage() {
     }
   }, [user, firestoreUser, authLoading, router]);
 
-  // ─── Data fetching ───────────────────────────────────────────────────────
   const loadAll = useCallback(async () => {
     if (!user || firestoreUser?.role?.toLowerCase() !== "admin") return;
     setLoadingData(true);
     try {
       const db = getFirebaseDb();
 
-      // Users
+      const enquiriesSnap = await getDocs(
+        query(collection(db, "enquiries"), orderBy("createdAt", "desc"))
+      );
+      const enquiriesList: EnquiryData[] = enquiriesSnap.docs.map((d) => {
+        const data = d.data() as Record<string, unknown>;
+        const stages = (data.stages as Record<string, unknown>) ?? {};
+        const enq: EnquiryData = {
+          id: d.id,
+          userId: (data.userId as string) ?? "",
+          parentName: (data.parentName as string) ?? "—",
+          mode: (data.mode as "announcement" | "reveal") ?? "reveal",
+          plan: (data.plan as string) ?? null,
+          status: (data.status as string) ?? "pending",
+          genderStatus:
+            (data.genderStatus as "submitted" | "not_submitted") ??
+            "not_submitted",
+          babyName: (data.babyName as string) ?? null,
+          babyNameGirl: (data.babyNameGirl as string) ?? null,
+          babyNameBoy: (data.babyNameBoy as string) ?? null,
+          revealerEmail: (data.revealerEmail as string) ?? null,
+          revealerRelation: (data.revealerRelation as string) ?? null,
+          revealerName: (data.revealerName as string) ?? null,
+          revealAt: tsToDate(data.revealAt),
+          revealTimezone: (data.revealTimezone as string) ?? "UTC",
+          guestCount: (data.guestCount as number) ?? 0,
+          photos: (data.photos as string[]) ?? [],
+          videoUrl: (data.videoUrl as string) ?? null,
+          videoStatus: "none",
+          stages: {
+            paymentReceived: tsToDate(stages.paymentReceived),
+            revealerLinkSent: tsToDate(stages.revealerLinkSent),
+            revealerSubmitted: tsToDate(stages.revealerSubmitted),
+            videoGenerated: tsToDate(stages.videoGenerated),
+            guestInvitesSent: tsToDate(stages.guestInvitesSent),
+            eventScheduled: tsToDate(stages.eventScheduled),
+            eventCompleted: tsToDate(stages.eventCompleted),
+          },
+          createdAt: tsToDate(data.createdAt),
+        };
+        enq.videoStatus = deriveVideoStatus(enq);
+        return enq;
+      });
+
+      const enquiryByUser = new Map<string, EnquiryData>();
+      for (const e of enquiriesList) {
+        const existing = enquiryByUser.get(e.userId);
+        if (
+          !existing ||
+          (e.createdAt &&
+            existing.createdAt &&
+            e.createdAt.getTime() > existing.createdAt.getTime())
+        ) {
+          enquiryByUser.set(e.userId, e);
+        }
+      }
+
       const usersSnap = await getDocs(
         query(collection(db, "users"), orderBy("createdAt", "desc"))
       );
       const usersList: UserRow[] = usersSnap.docs.map((d) => {
         const data = d.data() as Record<string, unknown>;
-        const purchases = (data.purchases as Array<Record<string, unknown>>) ?? [];
+        const purchases =
+          (data.purchases as Array<Record<string, unknown>>) ?? [];
         const completed = purchases.filter((p) => p.status === "completed");
         const totalSpentCents = completed.reduce(
           (sum, p) => sum + ((p.amountPaid as number) ?? 0),
@@ -229,11 +323,11 @@ export default function AdminPage() {
           purchases,
           createdAt: tsToDate(data.createdAt),
           lastLogin: tsToDate(data.lastLogin),
+          latestEnquiry: enquiryByUser.get(d.id) ?? null,
         };
       });
       setUsers(usersList);
 
-      // Deleted users (shadow records)
       const deletedSnap = await getDocs(
         query(collection(db, "deleted_users"), orderBy("deletedAt", "desc"))
       );
@@ -244,65 +338,15 @@ export default function AdminPage() {
           parentName: (data.parentName as string) ?? null,
           email: (data.email as string) ?? null,
           phoneNumber: (data.phoneNumber as string) ?? null,
-          activePlan: (data.activePlan as string) ?? null,
-          totalPurchases: (data.totalPurchases as number) ?? 0,
-          totalSpentCents: (data.totalSpentCents as number) ?? 0,
-          revealsAllowed: (data.revealsAllowed as number) ?? 0,
-          revealsCreated: (data.revealsCreated as number) ?? 0,
-          enquiryCount: (data.enquiryCount as number) ?? 0,
           deletedBy: (data.deletedBy as "user" | "admin") ?? "admin",
           deletedAt: tsToDate(data.deletedAt) ?? new Date(),
           purgeAt: tsToDate(data.purgeAt) ?? new Date(),
         };
       });
       setDeleted(deletedList);
-
-      // Enquiries
-      const enquiriesSnap = await getDocs(
-        query(collection(db, "enquiries"), orderBy("createdAt", "desc"))
-      );
-      const enquiriesList: EnquiryRow[] = enquiriesSnap.docs.map((d) => {
-        const data = d.data() as Record<string, unknown>;
-        const stages = (data.stages as Record<string, unknown>) ?? {};
-        return {
-          id: d.id,
-          userId: (data.userId as string) ?? "",
-          parentName: (data.parentName as string) ?? "—",
-          mode: (data.mode as "announcement" | "reveal") ?? "reveal",
-          plan: (data.plan as string) ?? null,
-          status: (data.status as string) ?? "pending",
-          genderStatus:
-            (data.genderStatus as "submitted" | "not_submitted") ??
-            "not_submitted",
-          babyName: (data.babyName as string) ?? null,
-          babyNameGirl: (data.babyNameGirl as string) ?? null,
-          babyNameBoy: (data.babyNameBoy as string) ?? null,
-          revealerEmail: (data.revealerEmail as string) ?? null,
-          revealerRelation: (data.revealerRelation as string) ?? null,
-          revealerName: (data.revealerName as string) ?? null,
-          revealAt: tsToDate(data.revealAt),
-          revealTimezone: (data.revealTimezone as string) ?? "UTC",
-          guestCount: (data.guestCount as number) ?? 0,
-          photoCount: (data.photoCount as number) ?? 0,
-          photos: (data.photos as string[]) ?? [],
-          stages: {
-            paymentReceived: tsToDate(stages.paymentReceived),
-            revealerLinkSent: tsToDate(stages.revealerLinkSent),
-            revealerSubmitted: tsToDate(stages.revealerSubmitted),
-            videoGenerated: tsToDate(stages.videoGenerated),
-            guestInvitesSent: tsToDate(stages.guestInvitesSent),
-            eventScheduled: tsToDate(stages.eventScheduled),
-            eventCompleted: tsToDate(stages.eventCompleted),
-          },
-          createdAt: tsToDate(data.createdAt),
-        };
-      });
-      setEnquiries(enquiriesList);
     } catch (err) {
       console.error("[admin] Failed to load data:", err);
-      alert(
-        "Failed to load admin data. Check Firestore rules allow admin reads on users, enquiries, and deleted_users collections."
-      );
+      alert("Failed to load admin data. Check Firestore rules allow admin reads.");
     } finally {
       setLoadingData(false);
     }
@@ -314,13 +358,12 @@ export default function AdminPage() {
 
   const refresh = () => setRefreshKey((k) => k + 1);
 
-  // ─── Admin actions ───────────────────────────────────────────────────────
   const callAdminApi = async (
     body: Record<string, unknown>,
     method: "POST" | "PUT" = "POST"
   ): Promise<boolean> => {
     if (!user) return false;
-    setActionInProgress(JSON.stringify(body));
+    setActionInProgress(true);
     try {
       const token = await user.getIdToken();
       const res = await fetch("/api/admin/delete-user", {
@@ -339,1116 +382,1222 @@ export default function AdminPage() {
       return true;
     } catch (err) {
       console.error("[admin] action failed:", err);
-      alert("Action failed. Check your connection and try again.");
+      alert("Action failed.");
       return false;
     } finally {
-      setActionInProgress(null);
+      setActionInProgress(false);
     }
   };
 
   const handleDisable = async (uid: string) => {
-    if (!confirm("Disable this user? They won't be able to log in.")) return;
-    const ok = await callAdminApi({ uid, action: "disable" }, "PUT");
-    if (ok) {
+    if (!confirm("Disable this user?")) return;
+    if (await callAdminApi({ uid, action: "disable" }, "PUT")) {
       refresh();
       setSelectedUser(null);
     }
   };
-
   const handleEnable = async (uid: string) => {
-    if (!confirm("Re-enable this user? Their shadow record will be deleted."))
-      return;
-    const ok = await callAdminApi({ uid, action: "enable" }, "PUT");
-    if (ok) {
+    if (!confirm("Re-enable this user?")) return;
+    if (await callAdminApi({ uid, action: "enable" }, "PUT")) {
       refresh();
       setSelectedUser(null);
     }
   };
-
   const handleSoftDelete = async (uid: string) => {
-    if (
-      !confirm(
-        "Soft-delete this user? They'll be disabled and a 30-day shadow record kept. Their data stays in Firestore."
-      )
-    )
-      return;
-    const ok = await callAdminApi({ uid, hardDelete: false }, "POST");
-    if (ok) {
+    if (!confirm("Soft-delete this user? 30-day shadow record will be kept.")) return;
+    if (await callAdminApi({ uid, hardDelete: false }, "POST")) {
       refresh();
       setSelectedUser(null);
     }
   };
-
   const handleHardDelete = async (uid: string, email: string) => {
-    const confirm1 = confirm(
-      `PERMANENTLY DELETE ${email}?\n\nThis will:\n• Delete their auth account\n• Delete all their enquiries\n• Delete all their photos\n• Delete encrypted gender data\n\nA 30-day shadow record will be kept for support/fraud lookup.`
-    );
-    if (!confirm1) return;
-    const confirm2 = prompt(`Type DELETE to confirm hard delete of ${email}`);
-    if (confirm2 !== "DELETE") {
-      alert("Hard delete cancelled.");
+    if (!confirm(`PERMANENTLY DELETE ${email}?`)) return;
+    const c = prompt(`Type DELETE to confirm hard delete of ${email}`);
+    if (c !== "DELETE") {
+      alert("Cancelled.");
       return;
     }
-    const ok = await callAdminApi({ uid, hardDelete: true }, "POST");
-    if (ok) {
+    if (await callAdminApi({ uid, hardDelete: true }, "POST")) {
       refresh();
       setSelectedUser(null);
     }
   };
 
-  // ─── Filtering ───────────────────────────────────────────────────────────
   const filteredUsers = useMemo(() => {
     const term = searchTerm.toLowerCase().trim();
-    if (!term) return users;
-    return users.filter(
-      (u) =>
-        u.email.toLowerCase().includes(term) ||
-        u.fullName.toLowerCase().includes(term) ||
-        u.phone.toLowerCase().includes(term)
-    );
-  }, [users, searchTerm]);
+    return users.filter((u) => {
+      if (term) {
+        const haystack = `${u.fullName} ${u.email} ${u.phone}`.toLowerCase();
+        if (!haystack.includes(term)) return false;
+      }
+      if (planFilter !== "all") {
+        if ((u.activePlan || "none").toLowerCase() !== planFilter) return false;
+      }
+      const e = u.latestEnquiry;
+      if (videoStatusFilter !== "all") {
+        if (deriveVideoStatus(e) !== videoStatusFilter) return false;
+      }
+      if (statusFilter !== "all") {
+        const s = deriveOverallStatus(e).label.toLowerCase().replace(/ /g, "-");
+        if (s !== statusFilter) return false;
+      }
+      if (typeFilter !== "all") {
+        if (!e || e.mode !== typeFilter) return false;
+      }
+      if (dateFrom && e?.revealAt) {
+        if (e.revealAt < new Date(dateFrom)) return false;
+      } else if (dateFrom && !e?.revealAt) return false;
+      if (dateTo && e?.revealAt) {
+        const end = new Date(dateTo);
+        end.setHours(23, 59, 59, 999);
+        if (e.revealAt > end) return false;
+      } else if (dateTo && !e?.revealAt) return false;
+      return true;
+    });
+  }, [users, searchTerm, planFilter, videoStatusFilter, statusFilter, typeFilter, dateFrom, dateTo]);
 
-  const filteredEnquiries = useMemo(() => {
-    const term = searchTerm.toLowerCase().trim();
-    if (!term) return enquiries;
-    return enquiries.filter(
-      (e) =>
-        e.parentName.toLowerCase().includes(term) ||
-        (e.revealerEmail || "").toLowerCase().includes(term) ||
-        (e.babyName || "").toLowerCase().includes(term)
-    );
-  }, [enquiries, searchTerm]);
+  const sortedUsers = useMemo(() => {
+    const copy = [...filteredUsers];
+    copy.sort((a, b) => {
+      let av: string | number = "";
+      let bv: string | number = "";
+      switch (sortKey) {
+        case "name": av = a.fullName.toLowerCase(); bv = b.fullName.toLowerCase(); break;
+        case "email": av = a.email.toLowerCase(); bv = b.email.toLowerCase(); break;
+        case "plan": av = a.activePlan; bv = b.activePlan; break;
+        case "revealDate":
+          av = a.latestEnquiry?.revealAt?.getTime() ?? 0;
+          bv = b.latestEnquiry?.revealAt?.getTime() ?? 0;
+          break;
+        case "type": av = a.latestEnquiry?.mode ?? ""; bv = b.latestEnquiry?.mode ?? ""; break;
+        case "status":
+          av = deriveOverallStatus(a.latestEnquiry).label;
+          bv = deriveOverallStatus(b.latestEnquiry).label;
+          break;
+        case "video":
+          av = deriveVideoStatus(a.latestEnquiry);
+          bv = deriveVideoStatus(b.latestEnquiry);
+          break;
+        case "gender":
+          av = a.latestEnquiry?.genderStatus ?? "z";
+          bv = b.latestEnquiry?.genderStatus ?? "z";
+          break;
+      }
+      if (av < bv) return sortDir === "asc" ? -1 : 1;
+      if (av > bv) return sortDir === "asc" ? 1 : -1;
+      return 0;
+    });
+    return copy;
+  }, [filteredUsers, sortKey, sortDir]);
 
-  // ─── Loading / unauthorized states ───────────────────────────────────────
+  const totalPages = Math.max(1, Math.ceil(sortedUsers.length / PAGE_SIZE));
+  const currentPage = Math.min(page, totalPages);
+  const pagedUsers = sortedUsers.slice(
+    (currentPage - 1) * PAGE_SIZE,
+    currentPage * PAGE_SIZE
+  );
+
+  useEffect(() => {
+    setPage(1);
+  }, [searchTerm, planFilter, videoStatusFilter, statusFilter, typeFilter, dateFrom, dateTo]);
+
+  const toggleSort = (key: SortKey) => {
+    if (sortKey === key) setSortDir((d) => (d === "asc" ? "desc" : "asc"));
+    else {
+      setSortKey(key);
+      setSortDir("asc");
+    }
+  };
+
+  const resetFilters = () => {
+    setSearchTerm("");
+    setPlanFilter("all");
+    setVideoStatusFilter("all");
+    setStatusFilter("all");
+    setTypeFilter("all");
+    setDateFrom("");
+    setDateTo("");
+  };
+
+  const handleExportCsv = async () => {
+    if (!user) return;
+    setActionInProgress(true);
+    try {
+      const token = await user.getIdToken();
+      const csvField = (s: unknown) => {
+        const str = s == null ? "" : String(s);
+        return /[",\n]/.test(str) ? `"${str.replace(/"/g, '""')}"` : str;
+      };
+      const rows: string[] = [
+        ["Name","Email","Phone","Plan","Role","Status","Reveals Created","Total Spent (USD)","Reveal ID","Mode","Reveal Date","Baby Gender","Reveal Status","Video Status","Joined"].join(","),
+      ];
+      for (const u of sortedUsers) {
+        const e = u.latestEnquiry;
+        let gender = "";
+        if (e && e.id) {
+          try {
+            const r = await fetch(`/api/admin/gender/${e.id}`, {
+              headers: { Authorization: `Bearer ${token}` },
+            });
+            const data = await r.json();
+            if (r.ok && data.gender) gender = data.gender;
+          } catch {}
+        }
+        rows.push([
+          csvField(u.fullName), csvField(u.email), csvField(u.phone), csvField(u.activePlan),
+          csvField(u.role),
+          csvField(u.isDeleted || u.status === "disabled" ? "Disabled" : "Active"),
+          csvField(u.revealsCreated), csvField((u.totalSpentCents / 100).toFixed(2)),
+          csvField(e?.id ?? ""), csvField(e?.mode ?? ""),
+          csvField(e?.revealAt ? fmtDate(e.revealAt) : ""), csvField(gender),
+          csvField(deriveOverallStatus(e).label), csvField(deriveVideoStatus(e)),
+          csvField(u.createdAt ? fmtDate(u.createdAt) : ""),
+        ].join(","));
+      }
+      const blob = new Blob([rows.join("\n")], { type: "text/csv;charset=utf-8;" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `vgr-users-${new Date().toISOString().slice(0, 10)}.csv`;
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch (err) {
+      console.error(err);
+      alert("CSV export failed.");
+    } finally {
+      setActionInProgress(false);
+    }
+  };
+
   if (authLoading || !firestoreUser) {
     return (
-      <div className="admin-loading">
-        <div className="admin-loading-text">Loading…</div>
+      <div className="vgr-loading">
+        <div className="vgr-loading-text">Loading…</div>
+        <style jsx>{`
+          .vgr-loading {
+            min-height: 100vh;
+            background: linear-gradient(135deg, #faf6fa 0%, #f3e9f4 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+          }
+          .vgr-loading-text {
+            font-family: "Playfair Display", serif;
+            font-size: 24px;
+            color: #888;
+          }
+        `}</style>
       </div>
     );
   }
   if (firestoreUser.role?.toLowerCase() !== "admin") return null;
 
-  // ─── Render ──────────────────────────────────────────────────────────────
   return (
-    <div className="admin-page">
-      <header className="admin-header">
-        <h1 className="admin-title">VGR Admin</h1>
-        <div className="admin-header-right">
-          <span className="admin-user">{firestoreUser.email}</span>
+    <div className="vgr-admin">
+      <aside className="vgr-sidebar">
+        <div className="vgr-brand">
+          <div className="vgr-brand-icon">
+            <span className="balloon balloon-blue">●</span>
+            <span className="balloon balloon-pink">●</span>
+          </div>
+          <div className="vgr-brand-text">
+            <div className="vgr-brand-name">
+              <span className="brand-gender">Gender</span>
+              <span className="brand-reveal">Reveal</span>
+            </div>
+            <div className="vgr-brand-sub">Admin Dashboard</div>
+          </div>
+        </div>
+
+        <nav className="vgr-nav">
+          {[
+            { key: "dashboard", label: "Dashboard", icon: "▦" },
+            { key: "users", label: "Users", icon: "◉", active: true },
+            { key: "reveals", label: "Reveals", icon: "❤" },
+            { key: "videos", label: "Videos", icon: "▶" },
+            { key: "orders", label: "Orders", icon: "$" },
+            { key: "settings", label: "Settings", icon: "⚙" },
+            { key: "billing", label: "Billing", icon: "▤" },
+            { key: "support", label: "Support", icon: "?" },
+          ].map((item) => (
+            <button
+              key={item.key}
+              className={`vgr-nav-item ${item.active ? "active" : "disabled"}`}
+              disabled={!item.active}
+              title={item.active ? undefined : "Coming soon"}
+            >
+              <span className="vgr-nav-icon">{item.icon}</span>
+              <span className="vgr-nav-label">{item.label}</span>
+              {!item.active && <span className="vgr-nav-soon">soon</span>}
+            </button>
+          ))}
+        </nav>
+
+        <div className="vgr-sidebar-footer">
+          <div className="vgr-account">
+            <div
+              className="vgr-account-avatar"
+              style={{
+                background: avatarColor(firestoreUser.email || "admin"),
+                color: avatarTextColor(firestoreUser.email || "admin"),
+              }}
+            >
+              {getInitials("", firestoreUser.email || "Admin")}
+            </div>
+            <div className="vgr-account-info">
+              <div className="vgr-account-name">Admin</div>
+              <div className="vgr-account-role">Business Owner</div>
+            </div>
+            <button
+              className="vgr-account-menu"
+              onClick={async () => {
+                if (!confirm("Sign out?")) return;
+                try {
+                  await signOut(getAuth());
+                } catch (err) {
+                  console.error(err);
+                }
+                router.push("/login");
+              }}
+              title="Sign out"
+              aria-label="Sign out"
+            >
+              ⎋
+            </button>
+          </div>
+        </div>
+      </aside>
+
+      <main className="vgr-main">
+        <header className="vgr-page-header">
+          <div>
+            <h1 className="vgr-page-title">Users</h1>
+            <p className="vgr-page-sub">Manage all users and their reveal parties</p>
+          </div>
           <button
-            className="admin-btn admin-btn-secondary"
-            onClick={async () => {
-              try {
-                await signOut(getAuth());
-              } catch (err) {
-                console.error("[admin] signOut failed:", err);
-              }
-              router.push("/login");
-            }}
+            className="vgr-btn vgr-btn-export"
+            onClick={handleExportCsv}
+            disabled={actionInProgress || sortedUsers.length === 0}
           >
-            Sign out
+            <span className="vgr-btn-icon">↓</span> Export CSV
+          </button>
+        </header>
+
+        <section className="vgr-filters">
+          <div className="vgr-filter-group">
+            <label className="vgr-filter-label">Search</label>
+            <div className="vgr-search-wrap">
+              <input
+                className="vgr-input"
+                type="text"
+                placeholder="Search by name, email, or phone…"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+              />
+              <span className="vgr-search-icon">⌕</span>
+            </div>
+          </div>
+          <div className="vgr-filter-group">
+            <label className="vgr-filter-label">Plan</label>
+            <select className="vgr-select" value={planFilter} onChange={(e) => setPlanFilter(e.target.value)}>
+              <option value="all">All Plans</option>
+              <option value="premium">Premium</option>
+              <option value="basic">Basic</option>
+              <option value="spark">Spark</option>
+              <option value="none">None</option>
+            </select>
+          </div>
+          <div className="vgr-filter-group">
+            <label className="vgr-filter-label">Video Status</label>
+            <select className="vgr-select" value={videoStatusFilter} onChange={(e) => setVideoStatusFilter(e.target.value)}>
+              <option value="all">All</option>
+              <option value="uploaded">Uploaded</option>
+              <option value="pending">Pending</option>
+              <option value="none">Not started</option>
+            </select>
+          </div>
+          <div className="vgr-filter-group">
+            <label className="vgr-filter-label">Status</label>
+            <select className="vgr-select" value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)}>
+              <option value="all">All</option>
+              <option value="completed">Completed</option>
+              <option value="video-completed">Video Completed</option>
+              <option value="video-pending">Video Pending</option>
+              <option value="reveal-pending">Reveal Pending</option>
+              <option value="pending-payment">Pending Payment</option>
+            </select>
+          </div>
+          <div className="vgr-filter-group">
+            <label className="vgr-filter-label">Type</label>
+            <select className="vgr-select" value={typeFilter} onChange={(e) => setTypeFilter(e.target.value)}>
+              <option value="all">All</option>
+              <option value="reveal">Reveal</option>
+              <option value="announcement">Announcement</option>
+            </select>
+          </div>
+          <div className="vgr-filter-group vgr-filter-group-date">
+            <label className="vgr-filter-label">Reveal Date</label>
+            <div className="vgr-date-range">
+              <input className="vgr-input vgr-input-date" type="date" value={dateFrom} onChange={(e) => setDateFrom(e.target.value)} />
+              <span className="vgr-date-sep">→</span>
+              <input className="vgr-input vgr-input-date" type="date" value={dateTo} onChange={(e) => setDateTo(e.target.value)} />
+            </div>
+          </div>
+          <div className="vgr-filter-group vgr-filter-group-reset">
+            <label className="vgr-filter-label">&nbsp;</label>
+            <button className="vgr-btn vgr-btn-reset" onClick={resetFilters}>
+              <span className="vgr-btn-icon">↺</span> Reset Filters
+            </button>
+          </div>
+        </section>
+
+        <div className="vgr-total-row">
+          <div className="vgr-total">
+            <span className="vgr-total-icon">▦</span>
+            <span>
+              Total Users: <strong>{filteredUsers.length}</strong>
+              {filteredUsers.length !== users.length && (
+                <span className="vgr-total-note"> (of {users.length})</span>
+              )}
+            </span>
+          </div>
+          <button className="vgr-btn vgr-btn-ghost" onClick={refresh} disabled={loadingData}>
+            {loadingData ? "Loading…" : "↻ Refresh"}
           </button>
         </div>
-      </header>
 
-      <div className="admin-tabs">
-        <button
-          className={`admin-tab ${tab === "active" ? "active" : ""}`}
-          onClick={() => {
-            setTab("active");
-            setSearchTerm("");
-          }}
-        >
-          Active Users <span className="admin-tab-count">{users.length}</span>
-        </button>
-        <button
-          className={`admin-tab ${tab === "deleted" ? "active" : ""}`}
-          onClick={() => {
-            setTab("deleted");
-            setSearchTerm("");
-          }}
-        >
-          Deleted Users{" "}
-          <span className="admin-tab-count">{deleted.length}</span>
-        </button>
-        <button
-          className={`admin-tab ${tab === "enquiries" ? "active" : ""}`}
-          onClick={() => {
-            setTab("enquiries");
-            setSearchTerm("");
-          }}
-        >
-          Enquiries <span className="admin-tab-count">{enquiries.length}</span>
-        </button>
-        <div className="admin-tab-spacer" />
-        <button
-          className="admin-btn admin-btn-secondary"
-          onClick={refresh}
-          disabled={loadingData}
-        >
-          {loadingData ? "Loading…" : "↻ Refresh"}
-        </button>
-      </div>
+        <section className="vgr-table-card">
+          {loadingData ? (
+            <div className="vgr-table-loading">Loading users…</div>
+          ) : sortedUsers.length === 0 ? (
+            <div className="vgr-table-empty">
+              No users match your filters. <button className="vgr-link" onClick={resetFilters}>Reset filters</button>
+            </div>
+          ) : (
+            <>
+              <div className="vgr-table-scroll">
+                <table className="vgr-table">
+                  <thead>
+                    <tr>
+                      <SortHeader label="Name" sortKey="name" currentKey={sortKey} currentDir={sortDir} onClick={toggleSort} />
+                      <SortHeader label="Email" sortKey="email" currentKey={sortKey} currentDir={sortDir} onClick={toggleSort} />
+                      <SortHeader label="Plan" sortKey="plan" currentKey={sortKey} currentDir={sortDir} onClick={toggleSort} />
+                      <SortHeader label="Baby Gender" sortKey="gender" currentKey={sortKey} currentDir={sortDir} onClick={toggleSort} />
+                      <SortHeader label="Reveal Date" sortKey="revealDate" currentKey={sortKey} currentDir={sortDir} onClick={toggleSort} />
+                      <SortHeader label="Type" sortKey="type" currentKey={sortKey} currentDir={sortDir} onClick={toggleSort} />
+                      <SortHeader label="Status" sortKey="status" currentKey={sortKey} currentDir={sortDir} onClick={toggleSort} />
+                      <SortHeader label="Video" sortKey="video" currentKey={sortKey} currentDir={sortDir} onClick={toggleSort} />
+                      <th className="vgr-th vgr-th-actions">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {pagedUsers.map((u) => (
+                      <UserTableRow
+                        key={u.uid}
+                        user={u}
+                        onSelect={() => setSelectedUser(u)}
+                        onUploadClick={() => setShowVideoModal(true)}
+                        getIdToken={async () => (user ? await user.getIdToken() : "")}
+                      />
+                    ))}
+                  </tbody>
+                </table>
+              </div>
 
-      {tab !== "deleted" && (
-        <div className="admin-search-row">
-          <input
-            type="text"
-            placeholder={
-              tab === "active"
-                ? "Search by name, email, or phone…"
-                : "Search by parent name, baby name, or revealer email…"
-            }
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="admin-search"
-          />
-        </div>
-      )}
+              <div className="vgr-pagination">
+                <div className="vgr-pagination-info">
+                  Showing <strong>{(currentPage - 1) * PAGE_SIZE + 1} to {Math.min(currentPage * PAGE_SIZE, sortedUsers.length)}</strong> of <strong>{sortedUsers.length}</strong> users
+                </div>
+                <Pagination current={currentPage} total={totalPages} onPage={setPage} />
+              </div>
+            </>
+          )}
+        </section>
 
-      <main className="admin-main">
-        {loadingData ? (
-          <div className="admin-empty">Loading…</div>
-        ) : tab === "active" ? (
-          <ActiveUsersTable
-            rows={filteredUsers}
-            onSelect={setSelectedUser}
-          />
-        ) : tab === "deleted" ? (
-          <DeletedUsersTable rows={deleted} />
-        ) : (
-          <EnquiriesTable
-            rows={filteredEnquiries}
-            onSelect={setSelectedEnquiry}
-          />
+        {deleted.length > 0 && (
+          <details className="vgr-deleted-section">
+            <summary>{deleted.length} deleted user{deleted.length === 1 ? "" : "s"} (30-day shadow records)</summary>
+            <div className="vgr-deleted-list">
+              {deleted.map((d) => {
+                const days = daysUntil(d.purgeAt);
+                return (
+                  <div key={d.originalUid} className="vgr-deleted-row">
+                    <div>
+                      <strong>{d.parentName || d.email || "—"}</strong>
+                      <span className="vgr-deleted-meta">
+                        {" · "}{d.email || "no email"}{" · deleted by "}{d.deletedBy}{" · "}{fmtDate(d.deletedAt)}
+                      </span>
+                    </div>
+                    <span className={`vgr-pill ${days <= 3 ? "vgr-pill-red" : "vgr-pill-amber"}`}>
+                      Purges in {days} day{days === 1 ? "" : "s"}
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
+          </details>
         )}
       </main>
 
-      {/* User detail overlay */}
       {selectedUser && (
-        <UserDetailOverlay
+        <UserProfileOverlay
           user={selectedUser}
-          enquiries={enquiries.filter((e) => e.userId === selectedUser.uid)}
           onClose={() => setSelectedUser(null)}
           onDisable={() => handleDisable(selectedUser.uid)}
           onEnable={() => handleEnable(selectedUser.uid)}
           onSoftDelete={() => handleSoftDelete(selectedUser.uid)}
-          onHardDelete={() =>
-            handleHardDelete(selectedUser.uid, selectedUser.email)
-          }
-          actionInProgress={actionInProgress !== null}
+          onHardDelete={() => handleHardDelete(selectedUser.uid, selectedUser.email)}
+          actionInProgress={actionInProgress}
           isSelf={selectedUser.uid === user?.uid}
+          getIdToken={async () => (user ? await user.getIdToken() : "")}
+          onUploadClick={() => setShowVideoModal(true)}
         />
       )}
 
-      {/* Enquiry detail overlay */}
-      {selectedEnquiry && (
-        <EnquiryDetailOverlay
-          enquiry={selectedEnquiry}
-          owner={users.find((u) => u.uid === selectedEnquiry.userId)}
-          onClose={() => setSelectedEnquiry(null)}
-          getIdToken={async () => (user ? await user.getIdToken() : "")}
-        />
-      )}
+      {showVideoModal && <VideoUploadModal onClose={() => setShowVideoModal(false)} />}
 
       <style jsx global>{`
-        .admin-page {
-          font-family: "Plus Jakarta Sans", sans-serif;
-          background: #f4f3f0;
+        @import url("https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap");
+
+        :root {
+          --vgr-sidebar-from: #f8d8e8;
+          --vgr-sidebar-to: #e3d4f5;
+          --vgr-bg: #f8f5f9;
+          --vgr-card: #ffffff;
+          --vgr-border: #ece6ee;
+          --vgr-border-light: #f4eef5;
+          --vgr-text: #1a1a1a;
+          --vgr-text-muted: #6b6b6b;
+          --vgr-text-light: #9b9b9b;
+          --vgr-pink: #ec90c6;
+          --vgr-blue: #6c8eef;
+          --vgr-purple: #8b5cf6;
+          --vgr-green: #22c55e;
+          --vgr-amber: #f59e0b;
+          --vgr-red: #ef4444;
+        }
+
+        * { box-sizing: border-box; }
+        body { margin: 0; }
+
+        .vgr-admin {
+          font-family: "Plus Jakarta Sans", -apple-system, sans-serif;
+          background: var(--vgr-bg);
+          color: var(--vgr-text);
           min-height: 100vh;
-          color: #1a1a1a;
+          display: flex;
         }
-        .admin-loading {
-          min-height: 100vh;
-          background: #f4f3f0;
+
+        .vgr-sidebar {
+          width: 240px;
+          flex-shrink: 0;
+          background: linear-gradient(180deg, var(--vgr-sidebar-from) 0%, var(--vgr-sidebar-to) 100%);
+          padding: 24px 16px;
+          display: flex;
+          flex-direction: column;
+          position: sticky;
+          top: 0;
+          height: 100vh;
+        }
+        .vgr-brand {
           display: flex;
           align-items: center;
-          justify-content: center;
+          gap: 12px;
+          padding: 0 8px 24px;
+          border-bottom: 1px solid rgba(255,255,255,0.4);
+          margin-bottom: 16px;
         }
-        .admin-loading-text {
+        .vgr-brand-icon { position: relative; width: 36px; height: 36px; flex-shrink: 0; }
+        .balloon { position: absolute; font-size: 20px; line-height: 1; }
+        .balloon-blue { color: #6c8eef; top: 0; left: 0; }
+        .balloon-pink { color: #ec90c6; bottom: 0; right: 0; }
+        .vgr-brand-text { flex: 1; min-width: 0; }
+        .vgr-brand-name {
           font-family: "Playfair Display", serif;
-          font-size: 24px;
-          color: #888;
+          font-weight: 700;
+          font-size: 18px;
+          line-height: 1.1;
         }
-        .admin-header {
-          display: flex;
-          justify-content: space-between;
-          align-items: center;
-          padding: 24px 40px;
-          border-bottom: 1px solid #e5e3df;
-          background: #fff;
-        }
-        .admin-title {
-          font-family: "Playfair Display", serif;
-          font-size: 32px;
-          margin: 0;
-          background: linear-gradient(90deg, #6c8eef 0%, #ec90c6 100%);
-          -webkit-background-clip: text;
-          background-clip: text;
-          -webkit-text-fill-color: transparent;
-        }
-        .admin-header-right {
-          display: flex;
-          gap: 16px;
-          align-items: center;
-        }
-        .admin-user {
-          font-size: 14px;
-          color: #555;
-        }
-        .admin-btn {
+        .brand-gender { color: #6c8eef; margin-right: 4px; }
+        .brand-reveal { color: #ec90c6; }
+        .vgr-brand-sub { font-size: 11px; color: var(--vgr-text-muted); margin-top: 2px; }
+
+        .vgr-nav { display: flex; flex-direction: column; gap: 4px; flex: 1; }
+        .vgr-nav-item {
           font-family: inherit;
-          font-size: 14px;
-          padding: 8px 16px;
-          border-radius: 8px;
-          cursor: pointer;
-          border: 1px solid transparent;
-          font-weight: 500;
-          transition: all 0.15s;
-        }
-        .admin-btn:disabled {
-          opacity: 0.5;
-          cursor: not-allowed;
-        }
-        .admin-btn-primary {
-          background: linear-gradient(90deg, #6c8eef, #ec90c6);
-          color: #fff;
-        }
-        .admin-btn-primary:hover:not(:disabled) {
-          opacity: 0.9;
-        }
-        .admin-btn-secondary {
-          background: #fff;
-          border-color: #d4d2cd;
-          color: #1a1a1a;
-        }
-        .admin-btn-secondary:hover:not(:disabled) {
-          background: #f4f3f0;
-        }
-        .admin-btn-danger {
-          background: #c43c4f;
-          color: #fff;
-        }
-        .admin-btn-danger:hover:not(:disabled) {
-          background: #a82c3d;
-        }
-        .admin-btn-warn {
-          background: #fff3c4;
-          border-color: #d4af37;
-          color: #6a4f00;
-        }
-        .admin-tabs {
           display: flex;
-          gap: 8px;
-          padding: 16px 40px 0;
-          border-bottom: 1px solid #e5e3df;
-          background: #fff;
           align-items: center;
-        }
-        .admin-tab {
-          font-family: inherit;
-          font-size: 15px;
-          padding: 12px 20px;
+          gap: 12px;
+          padding: 11px 14px;
           background: transparent;
           border: none;
-          border-bottom: 3px solid transparent;
-          cursor: pointer;
-          color: #666;
+          border-radius: 10px;
+          color: var(--vgr-text);
+          font-size: 14px;
           font-weight: 500;
-          margin-bottom: -1px;
-        }
-        .admin-tab:hover {
-          color: #1a1a1a;
-        }
-        .admin-tab.active {
-          color: #6c8eef;
-          border-bottom-color: #6c8eef;
-        }
-        .admin-tab-count {
-          font-size: 12px;
-          background: #f4f3f0;
-          padding: 2px 8px;
-          border-radius: 999px;
-          margin-left: 6px;
-          color: #555;
-        }
-        .admin-tab-spacer {
-          flex: 1;
-        }
-        .admin-search-row {
-          padding: 16px 40px 0;
-        }
-        .admin-search {
+          cursor: pointer;
+          text-align: left;
+          transition: all 0.15s;
           width: 100%;
-          max-width: 400px;
-          padding: 10px 14px;
-          font-family: inherit;
-          font-size: 14px;
-          border: 1px solid #d4d2cd;
-          border-radius: 8px;
-          background: #fff;
         }
-        .admin-search:focus {
-          outline: none;
-          border-color: #6c8eef;
+        .vgr-nav-item:hover:not(.disabled):not(.active) { background: rgba(255,255,255,0.5); }
+        .vgr-nav-item.active {
+          background: rgba(255,255,255,0.85);
+          font-weight: 600;
+          box-shadow: 0 2px 8px rgba(140,100,200,0.08);
         }
-        .admin-main {
-          padding: 24px 40px 40px;
+        .vgr-nav-item.disabled { color: var(--vgr-text-light); cursor: not-allowed; }
+        .vgr-nav-icon { font-size: 14px; width: 18px; text-align: center; flex-shrink: 0; }
+        .vgr-nav-label { flex: 1; }
+        .vgr-nav-soon {
+          font-size: 9px;
+          background: rgba(255,255,255,0.6);
+          color: var(--vgr-text-light);
+          padding: 2px 6px;
+          border-radius: 4px;
+          text-transform: uppercase;
+          letter-spacing: 0.5px;
+          font-weight: 600;
         }
-        .admin-empty {
-          text-align: center;
-          padding: 80px 0;
-          color: #888;
-          font-style: italic;
-        }
-        .admin-table {
-          width: 100%;
-          background: #fff;
-          border: 1px solid #e5e3df;
+
+        .vgr-sidebar-footer { padding-top: 16px; border-top: 1px solid rgba(255,255,255,0.4); }
+        .vgr-account {
+          display: flex; align-items: center; gap: 10px;
+          padding: 8px;
+          background: rgba(255,255,255,0.6);
           border-radius: 12px;
-          border-collapse: separate;
-          border-spacing: 0;
-          overflow: hidden;
         }
-        .admin-table th {
-          text-align: left;
-          padding: 14px 16px;
-          font-size: 12px;
-          font-weight: 600;
-          text-transform: uppercase;
-          letter-spacing: 0.5px;
-          color: #666;
-          background: #faf9f6;
-          border-bottom: 1px solid #e5e3df;
+        .vgr-account-avatar {
+          width: 36px; height: 36px; border-radius: 50%;
+          display: flex; align-items: center; justify-content: center;
+          font-weight: 700; font-size: 13px; flex-shrink: 0;
         }
-        .admin-table td {
-          padding: 14px 16px;
-          font-size: 14px;
-          border-bottom: 1px solid #f0eeea;
+        .vgr-account-info { flex: 1; min-width: 0; }
+        .vgr-account-name { font-size: 13px; font-weight: 600; }
+        .vgr-account-role { font-size: 11px; color: var(--vgr-text-muted); }
+        .vgr-account-menu {
+          background: none; border: none; cursor: pointer;
+          color: var(--vgr-text-muted); font-size: 16px;
+          padding: 4px 8px; border-radius: 6px; transition: all 0.15s;
         }
-        .admin-table tbody tr:hover {
-          background: #faf9f6;
-        }
-        .admin-table tbody tr:last-child td {
-          border-bottom: none;
-        }
-        .admin-link {
-          color: #6c8eef;
-          background: none;
-          border: none;
-          font-family: inherit;
-          font-size: inherit;
-          cursor: pointer;
-          padding: 0;
-          text-align: left;
-        }
-        .admin-link:hover {
-          text-decoration: underline;
-        }
-        .admin-badge {
-          display: inline-block;
-          padding: 2px 8px;
-          font-size: 11px;
-          font-weight: 600;
-          border-radius: 999px;
-          text-transform: uppercase;
-          letter-spacing: 0.3px;
-        }
-        .admin-badge-active {
-          background: #d4f4dd;
-          color: #1f5f33;
-        }
-        .admin-badge-disabled {
-          background: #fde0e0;
-          color: #8b1f1f;
-        }
-        .admin-badge-admin {
-          background: linear-gradient(90deg, #d4dcfa, #fadce9);
-          color: #4a3a8b;
-        }
-        .admin-badge-plan {
-          background: #fff3c4;
-          color: #6a4f00;
-        }
-        .admin-badge-soon {
-          background: #fde0e0;
-          color: #8b1f1f;
-        }
-        .admin-badge-reveal {
-          background: linear-gradient(90deg, #fadce9, #f5b8d4);
-          color: #7a1f4f;
-        }
-        .admin-badge-announcement {
-          background: linear-gradient(90deg, #d4dcfa, #b8c5f5);
-          color: #1f3a7a;
-        }
-        .admin-progress {
-          display: flex;
-          gap: 3px;
-          align-items: center;
-        }
-        .admin-progress-dot {
-          width: 12px;
-          height: 12px;
-          border-radius: 50%;
-          background: #e0ddd5;
-        }
-        .admin-progress-dot.done {
-          background: linear-gradient(135deg, #6c8eef, #ec90c6);
-        }
-        .admin-progress-text {
-          font-size: 12px;
-          color: #888;
-          margin-left: 8px;
-        }
-        .admin-overlay {
-          position: fixed;
-          inset: 0;
-          background: rgba(20, 20, 20, 0.5);
-          z-index: 100;
-          display: flex;
-          padding: 32px;
-          overflow: auto;
-        }
-        .admin-overlay-content {
-          background: #fff;
-          border-radius: 16px;
-          width: 100%;
-          max-width: 1100px;
-          margin: auto;
-          padding: 32px 40px;
-          box-shadow: 0 20px 60px rgba(0, 0, 0, 0.2);
-        }
-        .admin-overlay-header {
-          display: flex;
-          justify-content: space-between;
-          align-items: flex-start;
+        .vgr-account-menu:hover { background: rgba(255,255,255,0.8); color: var(--vgr-text); }
+
+        .vgr-main { flex: 1; padding: 32px 40px; min-width: 0; }
+        .vgr-page-header {
+          display: flex; justify-content: space-between; align-items: flex-start;
           margin-bottom: 24px;
-          padding-bottom: 20px;
-          border-bottom: 1px solid #e5e3df;
         }
-        .admin-overlay-back {
+        .vgr-page-title {
+          font-family: "Playfair Display", serif;
+          font-size: 32px; font-weight: 700; margin: 0;
+          letter-spacing: -0.5px;
+        }
+        .vgr-page-sub { font-size: 14px; color: var(--vgr-text-muted); margin: 4px 0 0; }
+
+        .vgr-btn {
           font-family: inherit;
-          background: none;
-          border: 1px solid #d4d2cd;
-          padding: 8px 14px;
-          border-radius: 8px;
-          cursor: pointer;
-          font-size: 13px;
+          display: inline-flex; align-items: center; gap: 8px;
+          padding: 9px 16px; font-size: 13px; font-weight: 600;
+          border: 1px solid var(--vgr-border); border-radius: 8px;
+          background: white; color: var(--vgr-text); cursor: pointer;
+          transition: all 0.15s;
         }
-        .admin-overlay-title {
-          font-family: "Playfair Display", serif;
-          font-size: 28px;
-          margin: 0 0 4px;
+        .vgr-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+        .vgr-btn:hover:not(:disabled) { background: var(--vgr-bg); }
+        .vgr-btn-export { color: var(--vgr-purple); border-color: rgba(139,92,246,0.3); }
+        .vgr-btn-export:hover:not(:disabled) { background: rgba(139,92,246,0.05); }
+        .vgr-btn-reset { color: var(--vgr-text-muted); }
+        .vgr-btn-ghost { background: transparent; border-color: transparent; color: var(--vgr-text-muted); }
+        .vgr-btn-ghost:hover:not(:disabled) {
+          background: white; border-color: var(--vgr-border); color: var(--vgr-text);
         }
-        .admin-overlay-sub {
-          font-size: 14px;
-          color: #666;
-          margin: 0;
-        }
-        .admin-overlay-section {
-          margin-bottom: 28px;
-        }
-        .admin-overlay-section h3 {
-          font-family: "Playfair Display", serif;
-          font-size: 18px;
-          margin: 0 0 14px;
-          color: #1a1a1a;
-        }
-        .admin-grid {
+        .vgr-btn-icon { font-size: 14px; line-height: 1; }
+        .vgr-btn-primary { background: linear-gradient(90deg, #6c8eef, #ec90c6); color: white; border-color: transparent; }
+        .vgr-btn-primary:hover:not(:disabled) { opacity: 0.92; }
+        .vgr-btn-warn { background: #fff3c4; border-color: #d4af37; color: #6a4f00; }
+        .vgr-btn-danger { background: #ef4444; color: white; border-color: transparent; }
+        .vgr-btn-danger:hover:not(:disabled) { background: #dc2626; }
+
+        .vgr-filters {
+          background: white; border: 1px solid var(--vgr-border);
+          border-radius: 14px; padding: 20px 24px; margin-bottom: 20px;
           display: grid;
-          grid-template-columns: repeat(2, 1fr);
-          gap: 14px 24px;
+          grid-template-columns: 2fr 1fr 1fr 1fr 1fr 1.5fr auto;
+          gap: 16px; align-items: end;
         }
-        .admin-grid-3 {
-          display: grid;
-          grid-template-columns: repeat(3, 1fr);
-          gap: 14px 24px;
+        @media (max-width: 1500px) {
+          .vgr-filters { grid-template-columns: 1fr 1fr 1fr 1fr; }
+          .vgr-filter-group-date { grid-column: span 2; }
         }
-        .admin-field-label {
-          font-size: 11px;
-          color: #888;
-          text-transform: uppercase;
-          letter-spacing: 0.5px;
-          margin-bottom: 2px;
+        @media (max-width: 900px) {
+          .vgr-filters { grid-template-columns: 1fr 1fr; }
+          .vgr-filter-group-date { grid-column: span 2; }
         }
-        .admin-field-value {
-          font-size: 14px;
-          color: #1a1a1a;
-          word-break: break-word;
+        .vgr-filter-group { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+        .vgr-filter-label {
+          font-size: 11px; font-weight: 600; color: var(--vgr-text-muted);
+          text-transform: uppercase; letter-spacing: 0.5px;
         }
-        .admin-actions {
-          display: flex;
-          gap: 12px;
-          flex-wrap: wrap;
+        .vgr-input, .vgr-select {
+          font-family: inherit; padding: 9px 12px; font-size: 13px;
+          border: 1px solid var(--vgr-border); border-radius: 8px;
+          background: white; color: var(--vgr-text); outline: none;
+          transition: border-color 0.15s; width: 100%;
         }
-        .admin-gender-blur {
-          display: inline-block;
-          padding: 4px 12px;
+        .vgr-input:focus, .vgr-select:focus { border-color: var(--vgr-blue); }
+        .vgr-search-wrap { position: relative; }
+        .vgr-search-icon {
+          position: absolute; right: 12px; top: 50%; transform: translateY(-50%);
+          color: var(--vgr-text-light); font-size: 14px; pointer-events: none;
+        }
+        .vgr-search-wrap .vgr-input { padding-right: 32px; }
+        .vgr-date-range { display: flex; align-items: center; gap: 6px; }
+        .vgr-date-sep { color: var(--vgr-text-light); font-size: 12px; flex-shrink: 0; }
+        .vgr-input-date { font-size: 12px; padding: 9px 8px; }
+
+        .vgr-total-row {
+          display: flex; justify-content: space-between; align-items: center;
+          margin-bottom: 12px; padding: 0 4px;
+        }
+        .vgr-total {
+          display: flex; align-items: center; gap: 8px;
+          font-size: 14px; color: var(--vgr-text-muted);
+          background: white; padding: 8px 14px;
+          border-radius: 8px; border: 1px solid var(--vgr-border);
+        }
+        .vgr-total-icon { color: var(--vgr-purple); }
+        .vgr-total-note { color: var(--vgr-text-light); font-size: 12px; }
+
+        .vgr-table-card {
+          background: white; border: 1px solid var(--vgr-border);
+          border-radius: 14px; overflow: hidden;
+        }
+        .vgr-table-loading, .vgr-table-empty {
+          padding: 60px 20px; text-align: center; color: var(--vgr-text-muted);
+        }
+        .vgr-link {
+          background: none; border: none; color: var(--vgr-blue);
+          cursor: pointer; font: inherit; padding: 0; text-decoration: underline;
+        }
+        .vgr-table-scroll { overflow-x: auto; }
+        .vgr-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+        .vgr-th {
+          text-align: left; padding: 14px 16px;
+          font-size: 11px; font-weight: 700; color: var(--vgr-text-muted);
+          text-transform: uppercase; letter-spacing: 0.7px;
+          border-bottom: 1px solid var(--vgr-border);
+          background: #fafafa; white-space: nowrap;
+          cursor: pointer; user-select: none; transition: color 0.15s;
+        }
+        .vgr-th:hover { color: var(--vgr-text); }
+        .vgr-th-actions { cursor: default; }
+        .vgr-th-actions:hover { color: var(--vgr-text-muted); }
+        .vgr-sort-arrow { margin-left: 4px; font-size: 9px; color: var(--vgr-text-light); }
+        .vgr-sort-arrow.active { color: var(--vgr-blue); }
+        .vgr-table tbody tr { transition: background 0.15s; cursor: pointer; }
+        .vgr-table tbody tr:hover { background: #fafaf8; }
+        .vgr-table tbody td {
+          padding: 14px 16px; border-bottom: 1px solid var(--vgr-border-light); vertical-align: middle;
+        }
+        .vgr-table tbody tr:last-child td { border-bottom: none; }
+
+        .vgr-name-cell { display: flex; align-items: center; gap: 10px; }
+        .vgr-avatar {
+          width: 32px; height: 32px; border-radius: 50%;
+          display: flex; align-items: center; justify-content: center;
+          font-size: 11px; font-weight: 700; flex-shrink: 0;
+        }
+        .vgr-avatar-lg { width: 56px; height: 56px; font-size: 16px; }
+        .vgr-name-text { font-weight: 500; color: var(--vgr-text); white-space: nowrap; }
+        .vgr-email { color: var(--vgr-text-muted); white-space: nowrap; }
+
+        .vgr-pill {
+          display: inline-flex; align-items: center; gap: 4px;
+          padding: 3px 10px; font-size: 11px; font-weight: 600;
+          border-radius: 999px; white-space: nowrap;
+        }
+        .vgr-pill-purple { background: rgba(139,92,246,0.12); color: #7c3aed; }
+        .vgr-pill-blue { background: rgba(108,142,239,0.15); color: #4267d4; }
+        .vgr-pill-yellow { background: rgba(245,158,11,0.15); color: #b45309; }
+        .vgr-pill-amber { background: rgba(245,158,11,0.15); color: #b45309; }
+        .vgr-pill-pink { background: rgba(236,144,198,0.18); color: #be4a8b; }
+        .vgr-pill-green { background: rgba(34,197,94,0.12); color: #15803d; }
+        .vgr-pill-gray { background: #f0eeea; color: #777; }
+        .vgr-pill-red { background: rgba(239,68,68,0.12); color: #b91c1c; }
+
+        .vgr-gender-cell { display: inline-flex; align-items: center; gap: 6px; }
+        .vgr-gender-icon {
+          width: 18px; height: 18px; border-radius: 50%;
+          display: inline-flex; align-items: center; justify-content: center;
+          font-size: 10px; font-weight: 700; color: white; flex-shrink: 0;
+        }
+        .vgr-gender-icon.girl { background: #ec90c6; }
+        .vgr-gender-icon.boy { background: #6c8eef; }
+        .vgr-gender-icon.pending { background: #f59e0b; }
+        .vgr-gender-icon.hidden {
+          background: linear-gradient(135deg, #d4dcfa, #fadce9); color: #555;
+        }
+        .vgr-gender-blur {
+          color: transparent; text-shadow: 0 0 8px rgba(0,0,0,0.5);
+          cursor: pointer; padding: 2px 8px;
           background: linear-gradient(90deg, #d4dcfa, #fadce9);
-          border-radius: 6px;
-          color: transparent;
-          text-shadow: 0 0 12px rgba(0, 0, 0, 0.6);
-          cursor: pointer;
-          user-select: none;
-          font-weight: 600;
+          border-radius: 4px; font-weight: 600; font-size: 11px; letter-spacing: 1px;
         }
-        .admin-gender-revealed {
-          display: inline-block;
-          padding: 4px 12px;
-          background: linear-gradient(90deg, #d4dcfa, #fadce9);
-          border-radius: 6px;
-          font-weight: 600;
-          text-transform: uppercase;
-          letter-spacing: 0.5px;
+        .vgr-gender-blur:hover { opacity: 0.9; }
+
+        .vgr-video-cell { display: inline-flex; align-items: center; gap: 6px; }
+        .vgr-video-uploaded {
+          display: inline-flex; align-items: center; gap: 4px;
+          color: #15803d; font-size: 12px; font-weight: 600;
         }
-        .admin-photos {
-          display: flex;
-          gap: 12px;
-          flex-wrap: wrap;
+        .vgr-video-edit {
+          background: none; border: none; cursor: pointer; padding: 4px;
+          color: var(--vgr-text-light); border-radius: 4px; font-size: 12px;
         }
-        .admin-photo {
-          width: 120px;
-          height: 120px;
-          object-fit: cover;
-          border-radius: 8px;
-          border: 1px solid #e5e3df;
+        .vgr-video-edit:hover { color: var(--vgr-blue); background: rgba(108,142,239,0.08); }
+        .vgr-video-upload-btn {
+          display: inline-flex; align-items: center; gap: 6px;
+          padding: 6px 12px; font-size: 12px; font-weight: 600;
+          color: var(--vgr-blue); background: rgba(108,142,239,0.08);
+          border: 1px solid rgba(108,142,239,0.3); border-radius: 6px;
+          cursor: pointer; font-family: inherit;
         }
-        .admin-stages-detail {
-          display: grid;
-          grid-template-columns: repeat(7, 1fr);
-          gap: 8px;
+        .vgr-video-upload-btn:hover { background: rgba(108,142,239,0.15); }
+
+        .vgr-actions-cell { position: relative; }
+        .vgr-actions-btn {
+          background: none; border: none; cursor: pointer;
+          padding: 6px 8px; color: var(--vgr-text-muted);
+          border-radius: 6px; font-size: 16px; line-height: 1;
         }
-        .admin-stage-cell {
-          text-align: center;
-          padding: 12px 4px;
-          background: #f9f8f5;
-          border-radius: 8px;
-          border: 2px solid transparent;
+        .vgr-actions-btn:hover { background: var(--vgr-bg); color: var(--vgr-text); }
+        .vgr-actions-menu {
+          position: absolute; right: 12px; top: 100%; margin-top: 4px;
+          background: white; border: 1px solid var(--vgr-border);
+          border-radius: 10px; box-shadow: 0 8px 24px rgba(0,0,0,0.08);
+          padding: 6px; z-index: 50; min-width: 180px;
         }
-        .admin-stage-cell.done {
-          background: linear-gradient(
-            135deg,
-            rgba(108, 142, 239, 0.15),
-            rgba(236, 144, 198, 0.15)
-          );
-          border-color: rgba(108, 142, 239, 0.3);
+        .vgr-actions-menu button {
+          display: block; width: 100%; text-align: left;
+          padding: 8px 12px; background: none; border: none; cursor: pointer;
+          font-family: inherit; font-size: 13px; color: var(--vgr-text); border-radius: 6px;
         }
-        .admin-stage-cell .label {
-          font-size: 11px;
-          font-weight: 600;
-          margin-bottom: 4px;
+        .vgr-actions-menu button:hover:not(:disabled) { background: var(--vgr-bg); }
+        .vgr-actions-menu button:disabled { opacity: 0.4; cursor: not-allowed; }
+        .vgr-actions-menu button.danger { color: var(--vgr-red); }
+        .vgr-actions-menu .vgr-actions-divider {
+          height: 1px; background: var(--vgr-border-light); margin: 4px 0;
         }
-        .admin-stage-cell .when {
-          font-size: 10px;
-          color: #888;
+
+        .vgr-pagination {
+          display: flex; justify-content: space-between; align-items: center;
+          padding: 14px 20px; border-top: 1px solid var(--vgr-border-light);
+          background: #fafafa;
+        }
+        .vgr-pagination-info { font-size: 12px; color: var(--vgr-text-muted); }
+        .vgr-page-btns { display: flex; gap: 4px; align-items: center; }
+        .vgr-page-btn {
+          min-width: 32px; height: 32px; padding: 0 8px;
+          border-radius: 8px; background: white;
+          border: 1px solid var(--vgr-border); color: var(--vgr-text);
+          cursor: pointer; font-family: inherit; font-size: 12px; font-weight: 600;
+        }
+        .vgr-page-btn:hover:not(:disabled):not(.active) { background: var(--vgr-bg); }
+        .vgr-page-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+        .vgr-page-btn.active {
+          background: linear-gradient(135deg, #8b5cf6, #ec90c6);
+          color: white; border-color: transparent;
+        }
+        .vgr-page-ellipsis { color: var(--vgr-text-light); padding: 0 4px; }
+
+        .vgr-deleted-section {
+          margin-top: 24px; background: white;
+          border: 1px solid var(--vgr-border);
+          border-radius: 14px; padding: 14px 20px;
+        }
+        .vgr-deleted-section summary {
+          font-size: 13px; font-weight: 600;
+          color: var(--vgr-text-muted); cursor: pointer; padding: 4px 0;
+        }
+        .vgr-deleted-list { margin-top: 12px; display: flex; flex-direction: column; gap: 8px; }
+        .vgr-deleted-row {
+          display: flex; justify-content: space-between; align-items: center;
+          padding: 12px 14px; background: var(--vgr-bg);
+          border-radius: 8px; font-size: 13px;
+        }
+        .vgr-deleted-meta { color: var(--vgr-text-muted); font-size: 12px; }
+
+        .vgr-overlay {
+          position: fixed; inset: 0;
+          background: rgba(20,15,30,0.55); backdrop-filter: blur(4px);
+          z-index: 100; display: flex; padding: 32px; overflow: auto;
+        }
+        .vgr-overlay-content {
+          background: white; border-radius: 18px;
+          width: 100%; max-width: 980px; margin: auto; padding: 0;
+          box-shadow: 0 24px 60px rgba(0,0,0,0.18); overflow: hidden;
+        }
+        .vgr-overlay-hero {
+          background: linear-gradient(135deg, #fadce9 0%, #d4dcfa 100%);
+          padding: 28px 32px;
+          display: flex; justify-content: space-between; align-items: flex-start; gap: 16px;
+        }
+        .vgr-overlay-hero-info { display: flex; gap: 16px; align-items: center; }
+        .vgr-overlay-title {
+          font-family: "Playfair Display", serif;
+          font-size: 28px; font-weight: 700; margin: 0;
+        }
+        .vgr-overlay-sub { font-size: 13px; color: var(--vgr-text-muted); margin: 2px 0 0; }
+        .vgr-overlay-close {
+          background: rgba(255,255,255,0.7); border: none;
+          width: 36px; height: 36px; border-radius: 50%;
+          font-size: 18px; cursor: pointer; color: var(--vgr-text);
+        }
+        .vgr-overlay-close:hover { background: white; }
+        .vgr-overlay-body { padding: 28px 32px; }
+        .vgr-section { margin-bottom: 28px; }
+        .vgr-section h3 {
+          font-family: "Playfair Display", serif;
+          font-size: 17px; font-weight: 600;
+          margin: 0 0 14px; color: var(--vgr-text);
+        }
+        .vgr-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 14px 28px; }
+        .vgr-grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px 28px; }
+        .vgr-field-label {
+          font-size: 11px; font-weight: 600; color: var(--vgr-text-light);
+          text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 3px;
+        }
+        .vgr-field-value { font-size: 14px; color: var(--vgr-text); word-break: break-word; }
+        .vgr-photos {
+          display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 12px;
+        }
+        .vgr-photo {
+          width: 100%; aspect-ratio: 1; object-fit: cover;
+          border-radius: 10px; border: 1px solid var(--vgr-border);
+        }
+        .vgr-stages {
+          display: grid; grid-template-columns: repeat(auto-fit, minmax(110px, 1fr)); gap: 8px;
+        }
+        .vgr-stage {
+          padding: 12px 10px; background: #faf8fa;
+          border: 2px solid transparent; border-radius: 10px; text-align: center;
+        }
+        .vgr-stage.done {
+          background: linear-gradient(135deg, rgba(108,142,239,0.12), rgba(236,144,198,0.12));
+          border-color: rgba(139,92,246,0.25);
+        }
+        .vgr-stage-label { font-size: 11px; font-weight: 600; margin-bottom: 4px; color: var(--vgr-text); }
+        .vgr-stage-when { font-size: 10px; color: var(--vgr-text-muted); }
+        .vgr-actions-row { display: flex; gap: 10px; flex-wrap: wrap; }
+        .vgr-self-warning {
+          background: #fff3c4; color: #6a4f00;
+          padding: 12px 16px; border-radius: 10px;
+          font-size: 13px; margin-bottom: 14px;
+        }
+
+        .vgr-video-modal {
+          position: fixed; inset: 0;
+          background: rgba(20,15,30,0.55); backdrop-filter: blur(4px);
+          z-index: 200;
+          display: flex; align-items: center; justify-content: center;
+          padding: 24px;
+        }
+        .vgr-video-modal-content {
+          background: white; border-radius: 16px; padding: 32px;
+          max-width: 460px; width: 100%; text-align: center;
+          box-shadow: 0 20px 60px rgba(0,0,0,0.2);
+        }
+        .vgr-video-modal-icon { font-size: 40px; margin-bottom: 12px; }
+        .vgr-video-modal h3 {
+          font-family: "Playfair Display", serif; font-size: 22px; margin: 0 0 8px;
+        }
+        .vgr-video-modal p {
+          color: var(--vgr-text-muted); font-size: 14px; line-height: 1.5; margin: 0 0 20px;
+        }
+        .vgr-progress-bar {
+          height: 8px; background: var(--vgr-bg);
+          border-radius: 999px; overflow: hidden; margin: 16px 0 8px;
+        }
+        .vgr-progress-fill {
+          height: 100%; width: 0%;
+          background: linear-gradient(90deg, #6c8eef, #ec90c6);
+          border-radius: 999px; transition: width 0.3s;
         }
       `}</style>
     </div>
   );
 }
 
-// ─── Active Users Table ──────────────────────────────────────────────────────
+// ─── Sortable column header ─────────────────────────────────────────────────
 
-function ActiveUsersTable({
-  rows,
-  onSelect,
+function SortHeader({
+  label,
+  sortKey,
+  currentKey,
+  currentDir,
+  onClick,
 }: {
-  rows: UserRow[];
-  onSelect: (u: UserRow) => void;
+  label: string;
+  sortKey: SortKey;
+  currentKey: SortKey;
+  currentDir: SortDir;
+  onClick: (k: SortKey) => void;
 }) {
-  if (rows.length === 0)
-    return <div className="admin-empty">No users found.</div>;
+  const active = sortKey === currentKey;
   return (
-    <table className="admin-table">
-      <thead>
-        <tr>
-          <th>Name</th>
-          <th>Email</th>
-          <th>Plan</th>
-          <th>Role</th>
-          <th>Status</th>
-          <th>Reveals</th>
-          <th>Joined</th>
-        </tr>
-      </thead>
-      <tbody>
-        {rows.map((u) => (
-          <tr key={u.uid}>
-            <td>
-              <button className="admin-link" onClick={() => onSelect(u)}>
-                {u.fullName || "—"}
-              </button>
-            </td>
-            <td>{u.email}</td>
-            <td>
-              {u.activePlan && u.activePlan !== "none" ? (
-                <span className="admin-badge admin-badge-plan">
-                  {u.activePlan}
-                </span>
-              ) : (
-                "—"
-              )}
-            </td>
-            <td>
-              {u.role?.toLowerCase() === "admin" ? (
-                <span className="admin-badge admin-badge-admin">Admin</span>
-              ) : (
-                "User"
-              )}
-            </td>
-            <td>
-              {u.isDeleted || u.status === "disabled" ? (
-                <span className="admin-badge admin-badge-disabled">
-                  Disabled
-                </span>
-              ) : (
-                <span className="admin-badge admin-badge-active">Active</span>
-              )}
-            </td>
-            <td>
-              {u.revealsCreated} / {u.revealsCreated + u.revealsAllowed}
-            </td>
-            <td>{fmtDate(u.createdAt)}</td>
-          </tr>
-        ))}
-      </tbody>
-    </table>
+    <th className="vgr-th" onClick={() => onClick(sortKey)}>
+      {label}
+      <span className={`vgr-sort-arrow ${active ? "active" : ""}`}>
+        {active ? (currentDir === "asc" ? "▲" : "▼") : "↕"}
+      </span>
+    </th>
   );
 }
 
-// ─── Deleted Users Table ─────────────────────────────────────────────────────
+// ─── Pagination ─────────────────────────────────────────────────────────────
 
-function DeletedUsersTable({ rows }: { rows: DeletedRow[] }) {
-  if (rows.length === 0)
-    return (
-      <div className="admin-empty">
-        No deleted users. Shadow records appear here for 30 days after deletion.
-      </div>
-    );
-  return (
-    <table className="admin-table">
-      <thead>
-        <tr>
-          <th>Name</th>
-          <th>Email</th>
-          <th>Phone</th>
-          <th>Plan</th>
-          <th>Spent</th>
-          <th>Reveals</th>
-          <th>Deleted by</th>
-          <th>Deleted at</th>
-          <th>Expires in</th>
-        </tr>
-      </thead>
-      <tbody>
-        {rows.map((r) => {
-          const days = daysUntil(r.purgeAt);
-          return (
-            <tr key={r.originalUid}>
-              <td>{r.parentName || "—"}</td>
-              <td>{r.email || "—"}</td>
-              <td>{r.phoneNumber || "—"}</td>
-              <td>{r.activePlan || "—"}</td>
-              <td>{fmtMoney(r.totalSpentCents)}</td>
-              <td>{r.revealsCreated}</td>
-              <td>
-                <span
-                  className={
-                    r.deletedBy === "admin"
-                      ? "admin-badge admin-badge-disabled"
-                      : "admin-badge admin-badge-plan"
-                  }
-                >
-                  {r.deletedBy}
-                </span>
-              </td>
-              <td>{fmtDate(r.deletedAt)}</td>
-              <td>
-                <span
-                  className={
-                    days <= 3
-                      ? "admin-badge admin-badge-soon"
-                      : "admin-badge admin-badge-active"
-                  }
-                >
-                  {days} day{days === 1 ? "" : "s"}
-                </span>
-              </td>
-            </tr>
-          );
-        })}
-      </tbody>
-    </table>
-  );
-}
-
-// ─── Enquiries Table ─────────────────────────────────────────────────────────
-
-function EnquiriesTable({
-  rows,
-  onSelect,
+function Pagination({
+  current,
+  total,
+  onPage,
 }: {
-  rows: EnquiryRow[];
-  onSelect: (e: EnquiryRow) => void;
+  current: number;
+  total: number;
+  onPage: (n: number) => void;
 }) {
-  if (rows.length === 0)
-    return <div className="admin-empty">No enquiries yet.</div>;
-  return (
-    <table className="admin-table">
-      <thead>
-        <tr>
-          <th>Date</th>
-          <th>Parent</th>
-          <th>Mode</th>
-          <th>Plan</th>
-          <th>Status</th>
-          <th>Revealer</th>
-          <th>Progress</th>
-          <th>Event</th>
-        </tr>
-      </thead>
-      <tbody>
-        {rows.map((e) => {
-          const stages = stagesForMode(e.mode);
-          const stagesDone = stages.filter(
-            ([key]) => e.stages[key] !== null
-          ).length;
-          return (
-            <tr key={e.id}>
-              <td>{fmtDate(e.createdAt)}</td>
-              <td>
-                <button className="admin-link" onClick={() => onSelect(e)}>
-                  {e.parentName}
-                </button>
-              </td>
-              <td>
-                {e.mode === "reveal" ? (
-                  <span className="admin-badge admin-badge-reveal">Reveal</span>
-                ) : (
-                  <span className="admin-badge admin-badge-announcement">
-                    Announcement
-                  </span>
-                )}
-              </td>
-              <td>
-                {e.plan ? (
-                  <span className="admin-badge admin-badge-plan">{e.plan}</span>
-                ) : (
-                  "—"
-                )}
-              </td>
-              <td>{e.status}</td>
-              <td>
-                {e.mode === "announcement" ? (
-                  <span style={{ color: "#888" }}>—</span>
-                ) : e.genderStatus === "submitted" ? (
-                  <span className="admin-badge admin-badge-active">Submitted</span>
-                ) : e.stages.revealerLinkSent ? (
-                  <span className="admin-badge admin-badge-plan">Awaiting</span>
-                ) : (
-                  <span className="admin-badge admin-badge-disabled">Pending</span>
-                )}
-              </td>
-              <td>
-                <div className="admin-progress">
-                  {stages.map(([key]) => (
-                    <span
-                      key={key}
-                      className={`admin-progress-dot ${
-                        e.stages[key] ? "done" : ""
-                      }`}
-                      title={key}
-                    />
-                  ))}
-                  <span className="admin-progress-text">
-                    {stagesDone}/{stages.length}
-                  </span>
-                </div>
-              </td>
-              <td>{fmtDate(e.revealAt)}</td>
-            </tr>
-          );
-        })}
-      </tbody>
-    </table>
-  );
-}
+  // Compact page list with ellipsis, max ~7 visible
+  const pages: (number | "…")[] = [];
+  if (total <= 7) {
+    for (let i = 1; i <= total; i++) pages.push(i);
+  } else {
+    pages.push(1);
+    if (current > 3) pages.push("…");
+    const start = Math.max(2, current - 1);
+    const end = Math.min(total - 1, current + 1);
+    for (let i = start; i <= end; i++) pages.push(i);
+    if (current < total - 2) pages.push("…");
+    pages.push(total);
+  }
 
-// ─── User Detail Overlay ─────────────────────────────────────────────────────
-
-function UserDetailOverlay({
-  user,
-  enquiries,
-  onClose,
-  onDisable,
-  onEnable,
-  onSoftDelete,
-  onHardDelete,
-  actionInProgress,
-  isSelf,
-}: {
-  user: UserRow;
-  enquiries: EnquiryRow[];
-  onClose: () => void;
-  onDisable: () => void;
-  onEnable: () => void;
-  onSoftDelete: () => void;
-  onHardDelete: () => void;
-  actionInProgress: boolean;
-  isSelf: boolean;
-}) {
   return (
-    <div className="admin-overlay" onClick={onClose}>
-      <div
-        className="admin-overlay-content"
-        onClick={(e) => e.stopPropagation()}
+    <div className="vgr-page-btns">
+      <button
+        className="vgr-page-btn"
+        disabled={current === 1}
+        onClick={() => onPage(current - 1)}
+        aria-label="Previous page"
       >
-        <div className="admin-overlay-header">
-          <div>
-            <h2 className="admin-overlay-title">{user.fullName || "—"}</h2>
-            <p className="admin-overlay-sub">
-              {user.email} · {user.uid}
-            </p>
-          </div>
-          <button className="admin-overlay-back" onClick={onClose}>
-            ← Back
+        ‹
+      </button>
+      {pages.map((p, idx) =>
+        p === "…" ? (
+          <span key={`e-${idx}`} className="vgr-page-ellipsis">
+            …
+          </span>
+        ) : (
+          <button
+            key={p}
+            className={`vgr-page-btn ${p === current ? "active" : ""}`}
+            onClick={() => onPage(p)}
+          >
+            {p}
           </button>
-        </div>
-
-        <div className="admin-overlay-section">
-          <h3>Account Information</h3>
-          <div className="admin-grid">
-            <div>
-              <div className="admin-field-label">Phone</div>
-              <div className="admin-field-value">{user.phone || "—"}</div>
-            </div>
-            <div>
-              <div className="admin-field-label">Provider</div>
-              <div className="admin-field-value">{user.provider || "—"}</div>
-            </div>
-            <div>
-              <div className="admin-field-label">Email Verified</div>
-              <div className="admin-field-value">
-                {user.emailVerified ? "Yes" : "No"}
-              </div>
-            </div>
-            <div>
-              <div className="admin-field-label">Role</div>
-              <div className="admin-field-value">{user.role}</div>
-            </div>
-            <div>
-              <div className="admin-field-label">Last Login</div>
-              <div className="admin-field-value">
-                {fmtDateTime(user.lastLogin)}
-              </div>
-            </div>
-            <div>
-              <div className="admin-field-label">Created</div>
-              <div className="admin-field-value">
-                {fmtDateTime(user.createdAt)}
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div className="admin-overlay-section">
-          <h3>Plan & Spending</h3>
-          <div className="admin-grid-3">
-            <div>
-              <div className="admin-field-label">Active Plan</div>
-              <div className="admin-field-value">{user.activePlan}</div>
-            </div>
-            <div>
-              <div className="admin-field-label">Total Spent</div>
-              <div className="admin-field-value">
-                {fmtMoney(user.totalSpentCents)}
-              </div>
-            </div>
-            <div>
-              <div className="admin-field-label">Purchases</div>
-              <div className="admin-field-value">{user.totalPurchases}</div>
-            </div>
-            <div>
-              <div className="admin-field-label">Reveals Used</div>
-              <div className="admin-field-value">{user.revealsCreated}</div>
-            </div>
-            <div>
-              <div className="admin-field-label">Reveals Remaining</div>
-              <div className="admin-field-value">{user.revealsAllowed}</div>
-            </div>
-          </div>
-        </div>
-
-        <div className="admin-overlay-section">
-          <h3>
-            Enquiries{" "}
-            <span style={{ color: "#888", fontSize: 14, fontWeight: 400 }}>
-              ({enquiries.length})
-            </span>
-          </h3>
-          {enquiries.length === 0 ? (
-            <p style={{ color: "#888", fontStyle: "italic" }}>
-              No enquiries yet.
-            </p>
-          ) : (
-            enquiries.map((e) => {
-              const stages = stagesForMode(e.mode);
-              const stagesDone = stages.filter(
-                ([key]) => e.stages[key] !== null
-              ).length;
-              return (
-                <div
-                  key={e.id}
-                  style={{
-                    padding: 16,
-                    background: "#faf9f6",
-                    borderRadius: 8,
-                    marginBottom: 12,
-                  }}
-                >
-                  <div
-                    style={{
-                      display: "flex",
-                      justifyContent: "space-between",
-                      marginBottom: 12,
-                    }}
-                  >
-                    <div>
-                      <strong>{e.parentName}</strong>
-                      {" · "}
-                      <span
-                        className={`admin-badge ${
-                          e.mode === "reveal"
-                            ? "admin-badge-reveal"
-                            : "admin-badge-announcement"
-                        }`}
-                      >
-                        {e.mode === "reveal" ? "Reveal" : "Announcement"}
-                      </span>
-                      {" · "}
-                      {fmtDate(e.createdAt)}
-                    </div>
-                    <span style={{ color: "#888", fontSize: 13 }}>
-                      {stagesDone}/{stages.length} stages
-                    </span>
-                  </div>
-                  <div
-                    className="admin-stages-detail"
-                    style={{
-                      gridTemplateColumns: `repeat(${stages.length}, 1fr)`,
-                    }}
-                  >
-                    {stages.map(([key, label]) => (
-                      <div
-                        key={key}
-                        className={`admin-stage-cell ${
-                          e.stages[key] ? "done" : ""
-                        }`}
-                      >
-                        <div className="label">{label}</div>
-                        <div className="when">
-                          {e.stages[key] ? fmtDate(e.stages[key]) : "—"}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              );
-            })
-          )}
-        </div>
-
-        <div className="admin-overlay-section">
-          <h3>Admin Actions</h3>
-          {isSelf && (
-            <p
-              style={{
-                background: "#fff3c4",
-                color: "#6a4f00",
-                padding: 12,
-                borderRadius: 8,
-                marginBottom: 16,
-              }}
-            >
-              ⚠️ This is your own account. You cannot disable or delete
-              yourself.
-            </p>
-          )}
-          <div className="admin-actions">
-            {!isSelf &&
-              (user.isDeleted || user.status === "disabled" ? (
-                <button
-                  className="admin-btn admin-btn-primary"
-                  onClick={onEnable}
-                  disabled={actionInProgress}
-                >
-                  Enable User
-                </button>
-              ) : (
-                <button
-                  className="admin-btn admin-btn-warn"
-                  onClick={onDisable}
-                  disabled={actionInProgress}
-                >
-                  Disable User
-                </button>
-              ))}
-            {!isSelf && !user.isDeleted && (
-              <button
-                className="admin-btn admin-btn-secondary"
-                onClick={onSoftDelete}
-                disabled={actionInProgress}
-              >
-                Soft Delete
-              </button>
-            )}
-            {!isSelf && (
-              <button
-                className="admin-btn admin-btn-danger"
-                onClick={onHardDelete}
-                disabled={actionInProgress}
-              >
-                Hard Delete (Permanent)
-              </button>
-            )}
-          </div>
-        </div>
-      </div>
+        )
+      )}
+      <button
+        className="vgr-page-btn"
+        disabled={current === total}
+        onClick={() => onPage(current + 1)}
+        aria-label="Next page"
+      >
+        ›
+      </button>
     </div>
   );
 }
 
-// ─── Enquiry Detail Overlay ──────────────────────────────────────────────────
+// ─── User table row ─────────────────────────────────────────────────────────
 
-function EnquiryDetailOverlay({
-  enquiry,
-  owner,
-  onClose,
+function UserTableRow({
+  user,
+  onSelect,
+  onUploadClick,
   getIdToken,
 }: {
-  enquiry: EnquiryRow;
-  owner: UserRow | undefined;
-  onClose: () => void;
+  user: UserRow;
+  onSelect: () => void;
+  onUploadClick: () => void;
   getIdToken: () => Promise<string>;
 }) {
-  const [genderRevealed, setGenderRevealed] = useState(false);
-  const [genderValue, setGenderValue] = useState<string | null>(null);
-  const [genderLoading, setGenderLoading] = useState(false);
-  const [genderNotSubmitted, setGenderNotSubmitted] = useState(false);
+  const [actionsOpen, setActionsOpen] = useState(false);
+  const e = user.latestEnquiry;
+  const status = deriveOverallStatus(e);
+  const videoStatus = deriveVideoStatus(e);
+  const planLabel =
+    user.activePlan && user.activePlan !== "none" ? user.activePlan : "None";
 
-  const handleRevealGender = async () => {
-    if (genderRevealed) {
-      setGenderRevealed(false);
+  const planPillClass =
+    user.activePlan === "premium"
+      ? "vgr-pill-purple"
+      : user.activePlan === "basic"
+      ? "vgr-pill-blue"
+      : user.activePlan === "spark"
+      ? "vgr-pill-pink"
+      : "vgr-pill-gray";
+
+  return (
+    <tr onClick={onSelect}>
+      <td>
+        <div className="vgr-name-cell">
+          <div
+            className="vgr-avatar"
+            style={{
+              background: avatarColor(user.email),
+              color: avatarTextColor(user.email),
+            }}
+          >
+            {getInitials(user.fullName, user.email)}
+          </div>
+          <div className="vgr-name-text">{user.fullName || "—"}</div>
+        </div>
+      </td>
+      <td className="vgr-email">{user.email || "—"}</td>
+      <td>
+        <span className={`vgr-pill ${planPillClass}`}>
+          {planLabel.charAt(0).toUpperCase() + planLabel.slice(1)}
+        </span>
+      </td>
+      <td>
+        <GenderCell enquiry={e} getIdToken={getIdToken} />
+      </td>
+      <td className="vgr-email">{e?.revealAt ? fmtDate(e.revealAt) : "—"}</td>
+      <td>
+        {e ? (
+          <span
+            className={`vgr-pill ${
+              e.mode === "reveal" ? "vgr-pill-pink" : "vgr-pill-green"
+            }`}
+          >
+            {e.mode === "reveal" ? "Reveal" : "Announcement"}
+          </span>
+        ) : (
+          <span className="vgr-pill vgr-pill-gray">—</span>
+        )}
+      </td>
+      <td>
+        <span
+          className={`vgr-pill vgr-pill-${
+            status.tone === "green"
+              ? "green"
+              : status.tone === "yellow"
+              ? "yellow"
+              : status.tone === "blue"
+              ? "blue"
+              : "gray"
+          }`}
+        >
+          {status.label}
+        </span>
+      </td>
+      <td onClick={(ev) => ev.stopPropagation()}>
+        {videoStatus === "uploaded" ? (
+          <div className="vgr-video-cell">
+            <span className="vgr-video-uploaded">
+              <span style={{ fontSize: 10 }}>✓</span> Uploaded
+            </span>
+            <button
+              className="vgr-video-edit"
+              onClick={onUploadClick}
+              title="Replace video"
+              aria-label="Replace video"
+            >
+              ✎
+            </button>
+          </div>
+        ) : videoStatus === "pending" ? (
+          <button className="vgr-video-upload-btn" onClick={onUploadClick}>
+            <span style={{ fontSize: 12 }}>↑</span> Upload Video
+          </button>
+        ) : (
+          <span className="vgr-pill vgr-pill-gray">—</span>
+        )}
+      </td>
+      <td className="vgr-actions-cell" onClick={(ev) => ev.stopPropagation()}>
+        <button
+          className="vgr-actions-btn"
+          onClick={() => setActionsOpen((o) => !o)}
+          aria-label="Actions"
+        >
+          ⋯
+        </button>
+        {actionsOpen && (
+          <>
+            <div
+              style={{ position: "fixed", inset: 0, zIndex: 40 }}
+              onClick={() => setActionsOpen(false)}
+            />
+            <div className="vgr-actions-menu">
+              <button
+                onClick={() => {
+                  setActionsOpen(false);
+                  onSelect();
+                }}
+              >
+                View profile
+              </button>
+              <div className="vgr-actions-divider" />
+              <button
+                onClick={() => {
+                  setActionsOpen(false);
+                  onSelect();
+                }}
+              >
+                Manage user…
+              </button>
+            </div>
+          </>
+        )}
+      </td>
+    </tr>
+  );
+}
+
+// ─── Gender cell with click-to-reveal ───────────────────────────────────────
+
+function GenderCell({
+  enquiry,
+  getIdToken,
+}: {
+  enquiry: EnquiryData | null;
+  getIdToken: () => Promise<string>;
+}) {
+  const [revealed, setRevealed] = useState(false);
+  const [value, setValue] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [notSubmitted, setNotSubmitted] = useState(false);
+
+  if (!enquiry) {
+    return (
+      <span className="vgr-gender-cell">
+        <span className="vgr-gender-icon hidden">—</span>
+        <span style={{ color: "#999" }}>—</span>
+      </span>
+    );
+  }
+
+  const handleClick = async (ev: React.MouseEvent) => {
+    ev.stopPropagation();
+    if (loading) return;
+    if (revealed) {
+      setRevealed(false);
       return;
     }
-    if (genderValue) {
-      setGenderRevealed(true);
+    if (value) {
+      setRevealed(true);
       return;
     }
-    setGenderLoading(true);
-    setGenderNotSubmitted(false);
+    setLoading(true);
+    setNotSubmitted(false);
     try {
       const token = await getIdToken();
       const res = await fetch(`/api/admin/gender/${enquiry.id}`, {
@@ -1460,216 +1609,541 @@ function EnquiryDetailOverlay({
         return;
       }
       if (data.gender === null) {
-        // Could be reason: "not_submitted" or "enquiry_not_found"
-        setGenderNotSubmitted(true);
+        setNotSubmitted(true);
         return;
       }
-      setGenderValue(data.gender);
-      setGenderRevealed(true);
+      setValue(data.gender);
+      setRevealed(true);
     } catch (err) {
       console.error(err);
       alert("Failed to decrypt gender.");
     } finally {
-      setGenderLoading(false);
+      setLoading(false);
     }
   };
 
-  return (
-    <div className="admin-overlay" onClick={onClose}>
-      <div
-        className="admin-overlay-content"
-        onClick={(e) => e.stopPropagation()}
+  if (loading) {
+    return (
+      <span className="vgr-gender-cell" style={{ color: "#999" }}>
+        Decrypting…
+      </span>
+    );
+  }
+  if (notSubmitted) {
+    return (
+      <span className="vgr-gender-cell" onClick={handleClick}>
+        <span className="vgr-gender-icon pending">?</span>
+        <span style={{ color: "#b45309" }}>Pending</span>
+      </span>
+    );
+  }
+  if (revealed && value) {
+    const isGirl = value.toLowerCase() === "girl";
+    return (
+      <span
+        className="vgr-gender-cell"
+        onClick={handleClick}
+        title="Click to hide"
       >
-        <div className="admin-overlay-header">
-          <div>
-            <h2 className="admin-overlay-title">{enquiry.parentName}</h2>
-            <p className="admin-overlay-sub">
-              {enquiry.mode === "announcement"
-                ? "Announcement"
-                : "Reveal"}{" "}
-              · created {fmtDate(enquiry.createdAt)} · ID {enquiry.id}
-            </p>
-          </div>
-          <button className="admin-overlay-back" onClick={onClose}>
-            ← Back
-          </button>
-        </div>
+        <span className={`vgr-gender-icon ${isGirl ? "girl" : "boy"}`}>
+          {isGirl ? "♀" : "♂"}
+        </span>
+        <span
+          style={{
+            color: isGirl ? "#be4a8b" : "#4267d4",
+            fontWeight: 600,
+          }}
+        >
+          {isGirl ? "Girl" : "Boy"}
+        </span>
+      </span>
+    );
+  }
+  return (
+    <span
+      className="vgr-gender-cell"
+      onClick={handleClick}
+      title="Click to reveal"
+    >
+      <span className="vgr-gender-icon hidden">?</span>
+      <span className="vgr-gender-blur">HIDDEN</span>
+    </span>
+  );
+}
 
-        <div className="admin-overlay-section">
-          <h3>Owner</h3>
-          {owner ? (
-            <div className="admin-grid">
-              <div>
-                <div className="admin-field-label">Name</div>
-                <div className="admin-field-value">
-                  {owner.fullName || "—"}
-                </div>
-              </div>
-              <div>
-                <div className="admin-field-label">Email</div>
-                <div className="admin-field-value">{owner.email}</div>
-              </div>
-              <div>
-                <div className="admin-field-label">Phone</div>
-                <div className="admin-field-value">{owner.phone || "—"}</div>
-              </div>
-              <div>
-                <div className="admin-field-label">Plan</div>
-                <div className="admin-field-value">{owner.activePlan}</div>
-              </div>
-            </div>
-          ) : (
-            <p style={{ color: "#888", fontStyle: "italic" }}>
-              Owner record not found (user may have been deleted).
-            </p>
-          )}
-        </div>
+// ─── User profile overlay (unified — account + plan + reveal + photos + actions) ───
 
-        <div className="admin-overlay-section">
-          <h3>Reveal Details</h3>
-          <div className="admin-grid">
-            <div>
-              <div className="admin-field-label">Plan</div>
-              <div className="admin-field-value">{enquiry.plan || "—"}</div>
+function UserProfileOverlay({
+  user,
+  onClose,
+  onDisable,
+  onEnable,
+  onSoftDelete,
+  onHardDelete,
+  actionInProgress,
+  isSelf,
+  getIdToken,
+  onUploadClick,
+}: {
+  user: UserRow;
+  onClose: () => void;
+  onDisable: () => void;
+  onEnable: () => void;
+  onSoftDelete: () => void;
+  onHardDelete: () => void;
+  actionInProgress: boolean;
+  isSelf: boolean;
+  getIdToken: () => Promise<string>;
+  onUploadClick: () => void;
+}) {
+  const e = user.latestEnquiry;
+  const status = deriveOverallStatus(e);
+
+  // Mode-specific stages: announcement = 5, reveal = 7
+  const allStages: Array<[keyof EnquiryData["stages"], string]> = [
+    ["paymentReceived", "Payment"],
+    ["revealerLinkSent", "Link sent"],
+    ["revealerSubmitted", "Revealer in"],
+    ["videoGenerated", "Video"],
+    ["guestInvitesSent", "Invites"],
+    ["eventScheduled", "Scheduled"],
+    ["eventCompleted", "Completed"],
+  ];
+  const stages = e
+    ? e.mode === "reveal"
+      ? allStages
+      : allStages.filter(
+          ([k]) => k !== "revealerLinkSent" && k !== "revealerSubmitted"
+        )
+    : [];
+
+  return (
+    <div className="vgr-overlay" onClick={onClose}>
+      <div
+        className="vgr-overlay-content"
+        onClick={(ev) => ev.stopPropagation()}
+      >
+        {/* Hero header */}
+        <div className="vgr-overlay-hero">
+          <div className="vgr-overlay-hero-info">
+            <div
+              className="vgr-avatar vgr-avatar-lg"
+              style={{
+                background: avatarColor(user.email),
+                color: avatarTextColor(user.email),
+              }}
+            >
+              {getInitials(user.fullName, user.email)}
             </div>
             <div>
-              <div className="admin-field-label">Status</div>
-              <div className="admin-field-value">{enquiry.status}</div>
-            </div>
-            <div>
-              <div className="admin-field-label">Reveal Date</div>
-              <div className="admin-field-value">
-                {fmtDateTime(enquiry.revealAt)} ({enquiry.revealTimezone})
-              </div>
-            </div>
-            <div>
-              <div className="admin-field-label">Guest Count</div>
-              <div className="admin-field-value">{enquiry.guestCount}</div>
-            </div>
-            {enquiry.mode === "announcement" ? (
-              <div>
-                <div className="admin-field-label">Baby Name</div>
-                <div className="admin-field-value">
-                  {enquiry.babyName || "—"}
-                </div>
-              </div>
-            ) : (
-              <>
-                <div>
-                  <div className="admin-field-label">Girl Name (if girl)</div>
-                  <div className="admin-field-value">
-                    {enquiry.babyNameGirl || "—"}
-                  </div>
-                </div>
-                <div>
-                  <div className="admin-field-label">Boy Name (if boy)</div>
-                  <div className="admin-field-value">
-                    {enquiry.babyNameBoy || "—"}
-                  </div>
-                </div>
-              </>
-            )}
-            <div>
-              <div className="admin-field-label">Gender</div>
-              <div className="admin-field-value">
-                {genderLoading ? (
-                  <span style={{ color: "#888" }}>Decrypting…</span>
-                ) : genderNotSubmitted ? (
-                  <span style={{ color: "#888", fontStyle: "italic" }}>
-                    Not submitted yet
-                  </span>
-                ) : genderRevealed && genderValue ? (
-                  <span
-                    className="admin-gender-revealed"
-                    onClick={handleRevealGender}
-                    style={{ cursor: "pointer" }}
-                    title="Click to hide"
-                  >
-                    {genderValue}
-                  </span>
+              <h2 className="vgr-overlay-title">
+                {user.fullName || "Unnamed user"}
+              </h2>
+              <p className="vgr-overlay-sub">
+                {user.email}
+                {user.phone ? ` · ${user.phone}` : ""}
+              </p>
+              <div style={{ display: "flex", gap: 6, marginTop: 8 }}>
+                {user.role?.toLowerCase() === "admin" && (
+                  <span className="vgr-pill vgr-pill-purple">Admin</span>
+                )}
+                {user.isDeleted || user.status === "disabled" ? (
+                  <span className="vgr-pill vgr-pill-red">Disabled</span>
                 ) : (
-                  <span
-                    className="admin-gender-blur"
-                    onClick={handleRevealGender}
-                    title="Click to reveal"
-                  >
-                    XXXXXX
+                  <span className="vgr-pill vgr-pill-green">Active</span>
+                )}
+                {user.activePlan && user.activePlan !== "none" && (
+                  <span className="vgr-pill vgr-pill-blue">
+                    {user.activePlan.charAt(0).toUpperCase() +
+                      user.activePlan.slice(1)}{" "}
+                    plan
                   </span>
                 )}
               </div>
             </div>
           </div>
-        </div>
-
-        {enquiry.mode === "reveal" && (
-          <div className="admin-overlay-section">
-            <h3>Revealer</h3>
-            <div className="admin-grid">
-              <div>
-                <div className="admin-field-label">Email</div>
-                <div className="admin-field-value">
-                  {enquiry.revealerEmail || "—"}
-                </div>
-              </div>
-              <div>
-                <div className="admin-field-label">Relation</div>
-                <div className="admin-field-value">
-                  {enquiry.revealerRelation || "—"}
-                </div>
-              </div>
-              <div>
-                <div className="admin-field-label">Name</div>
-                <div className="admin-field-value">
-                  {enquiry.revealerName || "—"}
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {enquiry.photos.length > 0 && (
-          <div className="admin-overlay-section">
-            <h3>Photos ({enquiry.photos.length})</h3>
-            <div className="admin-photos">
-              {enquiry.photos.map((url, i) => (
-                <a key={i} href={url} target="_blank" rel="noopener noreferrer">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img className="admin-photo" src={url} alt={`Photo ${i + 1}`} />
-                </a>
-              ))}
-            </div>
-          </div>
-        )}
-
-        <div className="admin-overlay-section">
-          <h3>
-            Progress (
-            {stagesForMode(enquiry.mode).length} stages —{" "}
-            {enquiry.mode === "reveal" ? "Reveal flow" : "Announcement flow"})
-          </h3>
-          <div
-            className="admin-stages-detail"
-            style={{
-              gridTemplateColumns: `repeat(${
-                stagesForMode(enquiry.mode).length
-              }, 1fr)`,
-            }}
+          <button
+            className="vgr-overlay-close"
+            onClick={onClose}
+            aria-label="Close"
           >
-            {stagesForMode(enquiry.mode).map(([key, label]) => (
-              <div
-                key={key}
-                className={`admin-stage-cell ${
-                  enquiry.stages[key] ? "done" : ""
-                }`}
-              >
-                <div className="label">{label}</div>
-                <div className="when">
-                  {enquiry.stages[key] ? fmtDate(enquiry.stages[key]) : "—"}
+            ×
+          </button>
+        </div>
+
+        <div className="vgr-overlay-body">
+          {/* Account info */}
+          <div className="vgr-section">
+            <h3>Account Information</h3>
+            <div className="vgr-grid-3">
+              <div>
+                <div className="vgr-field-label">Provider</div>
+                <div className="vgr-field-value">{user.provider || "—"}</div>
+              </div>
+              <div>
+                <div className="vgr-field-label">Email Verified</div>
+                <div className="vgr-field-value">
+                  {user.emailVerified ? "Yes" : "No"}
                 </div>
               </div>
-            ))}
+              <div>
+                <div className="vgr-field-label">Last Login</div>
+                <div className="vgr-field-value">
+                  {fmtDateTime(user.lastLogin)}
+                </div>
+              </div>
+              <div>
+                <div className="vgr-field-label">Joined</div>
+                <div className="vgr-field-value">
+                  {fmtDateTime(user.createdAt)}
+                </div>
+              </div>
+              <div>
+                <div className="vgr-field-label">User ID</div>
+                <div
+                  className="vgr-field-value"
+                  style={{ fontSize: 11, fontFamily: "monospace" }}
+                >
+                  {user.uid}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Plan & spending */}
+          <div className="vgr-section">
+            <h3>Plan & Spending</h3>
+            <div className="vgr-grid-3">
+              <div>
+                <div className="vgr-field-label">Active Plan</div>
+                <div className="vgr-field-value">{user.activePlan}</div>
+              </div>
+              <div>
+                <div className="vgr-field-label">Total Spent</div>
+                <div className="vgr-field-value">
+                  {fmtMoney(user.totalSpentCents)}
+                </div>
+              </div>
+              <div>
+                <div className="vgr-field-label">Total Purchases</div>
+                <div className="vgr-field-value">{user.totalPurchases}</div>
+              </div>
+              <div>
+                <div className="vgr-field-label">Reveals Used</div>
+                <div className="vgr-field-value">{user.revealsCreated}</div>
+              </div>
+              <div>
+                <div className="vgr-field-label">Reveals Remaining</div>
+                <div className="vgr-field-value">{user.revealsAllowed}</div>
+              </div>
+            </div>
+          </div>
+
+          {/* Latest reveal */}
+          {e ? (
+            <>
+              <div className="vgr-section">
+                <h3>
+                  Latest Reveal —{" "}
+                  <span
+                    className={`vgr-pill vgr-pill-${
+                      status.tone === "green"
+                        ? "green"
+                        : status.tone === "yellow"
+                        ? "yellow"
+                        : status.tone === "blue"
+                        ? "blue"
+                        : "gray"
+                    }`}
+                  >
+                    {status.label}
+                  </span>
+                </h3>
+                <div className="vgr-grid">
+                  <div>
+                    <div className="vgr-field-label">Mode</div>
+                    <div className="vgr-field-value">
+                      <span
+                        className={`vgr-pill ${
+                          e.mode === "reveal"
+                            ? "vgr-pill-pink"
+                            : "vgr-pill-green"
+                        }`}
+                      >
+                        {e.mode === "reveal" ? "Reveal" : "Announcement"}
+                      </span>
+                    </div>
+                  </div>
+                  <div>
+                    <div className="vgr-field-label">Plan</div>
+                    <div className="vgr-field-value">{e.plan || "—"}</div>
+                  </div>
+                  <div>
+                    <div className="vgr-field-label">Reveal Date</div>
+                    <div className="vgr-field-value">
+                      {fmtDateTime(e.revealAt)} ({e.revealTimezone})
+                    </div>
+                  </div>
+                  <div>
+                    <div className="vgr-field-label">Guest Count</div>
+                    <div className="vgr-field-value">{e.guestCount}</div>
+                  </div>
+                  <div>
+                    <div className="vgr-field-label">Gender</div>
+                    <div className="vgr-field-value">
+                      <GenderCell enquiry={e} getIdToken={getIdToken} />
+                    </div>
+                  </div>
+                  {e.mode === "announcement" ? (
+                    <div>
+                      <div className="vgr-field-label">Baby Name</div>
+                      <div className="vgr-field-value">
+                        {e.babyName || "—"}
+                      </div>
+                    </div>
+                  ) : (
+                    <>
+                      <div>
+                        <div className="vgr-field-label">Girl Name</div>
+                        <div className="vgr-field-value">
+                          {e.babyNameGirl || "—"}
+                        </div>
+                      </div>
+                      <div>
+                        <div className="vgr-field-label">Boy Name</div>
+                        <div className="vgr-field-value">
+                          {e.babyNameBoy || "—"}
+                        </div>
+                      </div>
+                    </>
+                  )}
+                  <div>
+                    <div className="vgr-field-label">Enquiry ID</div>
+                    <div
+                      className="vgr-field-value"
+                      style={{ fontSize: 11, fontFamily: "monospace" }}
+                    >
+                      {e.id}
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Revealer (reveal mode only) */}
+              {e.mode === "reveal" && (
+                <div className="vgr-section">
+                  <h3>Revealer</h3>
+                  <div className="vgr-grid-3">
+                    <div>
+                      <div className="vgr-field-label">Email</div>
+                      <div className="vgr-field-value">
+                        {e.revealerEmail || "—"}
+                      </div>
+                    </div>
+                    <div>
+                      <div className="vgr-field-label">Relation</div>
+                      <div className="vgr-field-value">
+                        {e.revealerRelation || "—"}
+                      </div>
+                    </div>
+                    <div>
+                      <div className="vgr-field-label">Name</div>
+                      <div className="vgr-field-value">
+                        {e.revealerName || "—"}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Photos */}
+              {e.photos.length > 0 && (
+                <div className="vgr-section">
+                  <h3>Photos ({e.photos.length})</h3>
+                  <div className="vgr-photos">
+                    {e.photos.map((url, i) => (
+                      <a
+                        key={i}
+                        href={url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                      >
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img
+                          className="vgr-photo"
+                          src={url}
+                          alt={`Photo ${i + 1}`}
+                        />
+                      </a>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Video */}
+              <div className="vgr-section">
+                <h3>Video</h3>
+                <div
+                  style={{
+                    padding: 18,
+                    background: "#faf8fa",
+                    borderRadius: 12,
+                    display: "flex",
+                    justifyContent: "space-between",
+                    alignItems: "center",
+                    gap: 16,
+                  }}
+                >
+                  <div>
+                    <div style={{ fontSize: 14, fontWeight: 600 }}>
+                      {e.videoUrl
+                        ? "Video uploaded"
+                        : e.stages.paymentReceived
+                        ? "Awaiting upload"
+                        : "Not yet uploaded"}
+                    </div>
+                    <div
+                      style={{
+                        fontSize: 12,
+                        color: "var(--vgr-text-muted)",
+                        marginTop: 2,
+                      }}
+                    >
+                      {e.videoUrl
+                        ? "Click to replace the current video."
+                        : "Cloudflare Stream upload integration coming soon."}
+                    </div>
+                  </div>
+                  <button
+                    className="vgr-btn vgr-btn-primary"
+                    onClick={onUploadClick}
+                  >
+                    {e.videoUrl ? "Replace Video" : "Upload Video"}
+                  </button>
+                </div>
+              </div>
+
+              {/* Progress (mode-specific) */}
+              <div className="vgr-section">
+                <h3>
+                  Progress — {stages.length} stages (
+                  {e.mode === "reveal" ? "Reveal flow" : "Announcement flow"}
+                  )
+                </h3>
+                <div className="vgr-stages">
+                  {stages.map(([key, label]) => (
+                    <div
+                      key={key}
+                      className={`vgr-stage ${e.stages[key] ? "done" : ""}`}
+                    >
+                      <div className="vgr-stage-label">{label}</div>
+                      <div className="vgr-stage-when">
+                        {e.stages[key] ? fmtDate(e.stages[key]) : "—"}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </>
+          ) : (
+            <div className="vgr-section">
+              <h3>Reveal</h3>
+              <p
+                style={{
+                  color: "var(--vgr-text-muted)",
+                  fontStyle: "italic",
+                }}
+              >
+                This user hasn&apos;t created a reveal yet.
+              </p>
+            </div>
+          )}
+
+          {/* Admin actions */}
+          <div className="vgr-section">
+            <h3>Admin Actions</h3>
+            {isSelf && (
+              <div className="vgr-self-warning">
+                ⚠️ This is your own account. You can&apos;t disable or delete
+                yourself.
+              </div>
+            )}
+            <div className="vgr-actions-row">
+              {!isSelf &&
+                (user.isDeleted || user.status === "disabled" ? (
+                  <button
+                    className="vgr-btn vgr-btn-primary"
+                    onClick={onEnable}
+                    disabled={actionInProgress}
+                  >
+                    Enable User
+                  </button>
+                ) : (
+                  <button
+                    className="vgr-btn vgr-btn-warn"
+                    onClick={onDisable}
+                    disabled={actionInProgress}
+                  >
+                    Disable User
+                  </button>
+                ))}
+              {!isSelf && !user.isDeleted && (
+                <button
+                  className="vgr-btn"
+                  onClick={onSoftDelete}
+                  disabled={actionInProgress}
+                >
+                  Soft Delete
+                </button>
+              )}
+              {!isSelf && (
+                <button
+                  className="vgr-btn vgr-btn-danger"
+                  onClick={onHardDelete}
+                  disabled={actionInProgress}
+                >
+                  Hard Delete (Permanent)
+                </button>
+              )}
+            </div>
           </div>
         </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── Video upload placeholder modal ─────────────────────────────────────────
+
+function VideoUploadModal({ onClose }: { onClose: () => void }) {
+  return (
+    <div className="vgr-video-modal" onClick={onClose}>
+      <div
+        className="vgr-video-modal-content"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="vgr-video-modal-icon">📤</div>
+        <h3>Video Upload</h3>
+        <p>
+          Cloudflare Stream integration is coming soon. Once enabled, you&apos;ll
+          be able to upload videos directly from this dialog and watch real-time
+          upload progress.
+        </p>
+        <div className="vgr-progress-bar">
+          <div className="vgr-progress-fill" />
+        </div>
+        <div
+          style={{
+            fontSize: 11,
+            color: "var(--vgr-text-light)",
+            marginBottom: 20,
+          }}
+        >
+          Upload pipeline: pending Cloudflare setup
+        </div>
+        <button className="vgr-btn" onClick={onClose}>
+          Close
+        </button>
       </div>
     </div>
   );
