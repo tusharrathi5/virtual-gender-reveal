@@ -48,6 +48,23 @@ function relationToLabel(relation: RevealerRelation): string {
     default: return "trusted contact";
   }
 }
+
+function getAppUrl(req: NextRequest): string {
+  const configured = process.env.NEXT_PUBLIC_APP_URL?.trim();
+  if (configured) return configured.replace(/\/$/, "");
+
+  const origin = req.headers.get("origin")?.trim();
+  if (origin) return origin.replace(/\/$/, "");
+
+  const host = req.headers.get("host")?.trim();
+  if (host) {
+    const protocol = host.includes("localhost") ? "http" : "https";
+    return `${protocol}://${host}`;
+  }
+
+  throw new Error("APP_URL_UNAVAILABLE");
+}
+
 // ─── POST /api/create-reveal ────────────────────────────────
 
 export async function POST(req: NextRequest) {
@@ -138,19 +155,14 @@ export async function POST(req: NextRequest) {
     if (validatedMode === "reveal") {
       const token = generateDoctorToken(validatedEnquiryId);
       const tokenHash = CryptoJS.SHA256(token).toString();
-      const appUrl = process.env.NEXT_PUBLIC_APP_URL;
-      if (!appUrl) {
-        return NextResponse.json(
-          { error: "Server misconfigured: NEXT_PUBLIC_APP_URL missing." },
-          { status: 500 }
-        );
-      }
+      const appUrl = getAppUrl(req);
 
       await getAdminDb().collection("enquiries").doc(validatedEnquiryId).update({
         doctorTokenHash: tokenHash,
       });
 
       const revealUrl = `${appUrl}/api/doctor/${token}`;
+      let revealerEmailSent = true;
       try {
         await sendDoctorInviteEmail({
           to: revealerEmail!.trim().toLowerCase(),
@@ -160,15 +172,18 @@ export async function POST(req: NextRequest) {
           enquiryId: validatedEnquiryId,
         });
       } catch (emailErr) {
-        console.error(`[create-reveal] Failed to send doctor invite for ${validatedEnquiryId}:`, emailErr);
-        return NextResponse.json(
-          {
-            error: "Reveal created, but we couldn't send the revealer email. Please contact support.",
-            enquiryId: validatedEnquiryId,
-          },
-          { status: 500 }
-        );
+        revealerEmailSent = false;
+        const details = emailErr instanceof Error ? emailErr.message : String(emailErr);
+        console.error(`[create-reveal] Failed to send doctor invite for ${validatedEnquiryId}: ${details}`);
       }
+
+      return NextResponse.json({
+        success: true,
+        enquiryId: result.enquiryId,
+        status: result.newStatus,
+        consumedPurchaseId: result.consumedPurchaseId,
+        revealerEmailSent,
+      });
     }
 
     if (validatedMode === "announcement" && announcementGender) {

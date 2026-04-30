@@ -71,6 +71,14 @@ export function useAuth(): AuthContextType {
 
 // ── Provider ─────────────────────────────────────────────────
 
+async function fireEmailEvent(payload: Record<string, string>): Promise<void> {
+  await fetch("/api/email-events", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+}
+
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [firestoreUser, setFirestoreUser] = useState<FirestoreUser | null>(null);
@@ -135,6 +143,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       provider: "email",
       emailVerified: false,
     });
+
+    // Trigger welcome email (non-blocking)
+    void fireEmailEvent({
+      type: "signup",
+      email: email.trim().toLowerCase(),
+      fullName: fullName.trim(),
+    }).catch((err) => console.error("[auth] welcome email event failed:", err));
 
     // Update state
     const fsUser = await getUserDoc(newUser.uid);
@@ -228,6 +243,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   async function resetPassword(email: string): Promise<void> {
     const auth = getFirebaseAuth();
     await sendPasswordResetEmail(auth, email);
+
+    // Trigger password-help email (non-blocking)
+    void fireEmailEvent({
+      type: "forgot_password",
+      email: email.trim().toLowerCase(),
+    }).catch((err) => console.error("[auth] forgot-password email event failed:", err));
   }
 
   // ── Logout ───────────────────────────────────────────────
