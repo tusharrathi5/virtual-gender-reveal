@@ -1,8 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/lib/AuthContext";
+import { getFirebaseAuth } from "@/lib/firebase";
+import { ConfirmationResult, RecaptchaVerifier, signInWithPhoneNumber } from "firebase/auth";
 
 type ToastType = "success" | "error" | "info";
 
@@ -35,6 +37,7 @@ function isValidPhone(phone: string): boolean {
 }
 
 type SignupStep = "details" | "otp";
+const COUNTRY_CODES = ["+1", "+44", "+61", "+91", "+971", "+65"];
 
 export default function SignupPage() {
   const { signUpWithEmail, signInWithGoogle } = useAuth();
@@ -43,6 +46,7 @@ export default function SignupPage() {
   const [step, setStep] = useState<SignupStep>("details");
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
+  const [countryCode, setCountryCode] = useState("+91");
   const [phone, setPhone] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -52,7 +56,30 @@ export default function SignupPage() {
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
   const [toast, setToast] = useState<{ message: string; type: ToastType } | null>(null);
+  const [confirmationResult, setConfirmationResult] = useState<ConfirmationResult | null>(null);
+  const [sendingOtp, setSendingOtp] = useState(false);
 
+
+  useEffect(() => {
+    try {
+      const auth = getFirebaseAuth();
+      const w = window as unknown as { recaptchaVerifier?: RecaptchaVerifier };
+      if (w.recaptchaVerifier) return;
+
+      const container = document.getElementById("recaptcha-container");
+      if (!container) return;
+
+      w.recaptchaVerifier = new RecaptchaVerifier(auth, "recaptcha-container", { size: "invisible" });
+    } catch (err) {
+      console.error("[signup] reCAPTCHA init failed:", err);
+      showToast("Phone verification is temporarily unavailable. Please refresh and try again.", "error");
+    }
+  }, []);
+
+  function fullPhoneE164(): string {
+    const digits = phone.replace(/\D/g, "");
+    return `${countryCode}${digits}`;
+  }
   function showToast(message: string, type: ToastType) {
     setToast({ message, type });
     setTimeout(() => setToast(null), 6000);
@@ -68,26 +95,67 @@ export default function SignupPage() {
     return msg.replace("Firebase: ", "").replace(/\s*\(auth\/.*?\)\.?/, "").trim();
   }
 
+  async function sendOtpFlow(): Promise<boolean> {
+    const normalizedPhone = fullPhoneE164();
+    const limitRes = await fetch("/api/auth/otp-limit", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ phone: normalizedPhone, action: "check" }),
+    });
+    const limitData = await limitRes.json().catch(() => ({}));
+    if (!limitRes.ok) {
+      showToast(limitData?.error || "OTP limit reached.", "error");
+      return false;
+    }
+
+    const auth = getFirebaseAuth();
+    const verifier = (window as unknown as { recaptchaVerifier?: RecaptchaVerifier }).recaptchaVerifier;
+    if (!verifier) { showToast("reCAPTCHA not ready. Refresh and try again.", "error"); return false; }
+    const result = await signInWithPhoneNumber(auth, normalizedPhone, verifier);
+
+    const consumeRes = await fetch("/api/auth/otp-limit", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ phone: normalizedPhone, action: "consume" }),
+    });
+    if (!consumeRes.ok) {
+      const consumeData = await consumeRes.json().catch(() => ({}));
+      showToast(consumeData?.error || "OTP limit reached.", "error");
+      return false;
+    }
+    setConfirmationResult(result);
+    showToast(`OTP sent to ${normalizedPhone}.`, "info");
+    return true;
+  }
+
   // Step 1: validate details, then go to OTP
-  function handleDetailsSubmit(e: React.FormEvent) {
+  async function handleDetailsSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!fullName.trim()) { showToast("Please enter your full name.", "error"); return; }
     if (!isValidEmail(email)) { showToast("Please enter a valid email (e.g. name@example.com).", "error"); return; }
     if (!isValidPhone(phone)) { showToast("Please enter a valid phone number.", "error"); return; }
     if (password.length < 6) { showToast("Password must be at least 6 characters.", "error"); return; }
     if (password !== confirmPassword) { showToast("Passwords do not match.", "error"); return; }
-    setStep("otp");
-    showToast("OTP sent to your phone. Use 123456 for now (SMS coming soon).", "info");
+    setSendingOtp(true);
+    try {
+      const ok = await sendOtpFlow();
+      if (ok) setStep("otp");
+    } catch (err) {
+      showToast(getAuthError(err), "error");
+    } finally {
+      setSendingOtp(false);
+    }
   }
 
   // Step 2: verify OTP and create account
   async function handleOtpSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (otp.length !== 6) { showToast("Please enter the 6-digit OTP.", "error"); return; }
-    // Placeholder OTP verification — replace with real SMS service later
-    if (otp !== "123456") { showToast("Invalid OTP. Hint: use 123456", "error"); return; }
+    if (!confirmationResult) { showToast("Please request OTP first.", "error"); return; }
 
     setLoading(true);
+    try { await confirmationResult.confirm(otp); } catch { setLoading(false); showToast("Invalid OTP. Please try again.", "error"); return; }
+
     try {
       await signUpWithEmail(email.trim(), password, fullName.trim(), phone);
       showToast("Account created! Please check your email to verify your account.", "success");
@@ -176,6 +244,8 @@ export default function SignupPage() {
 
       {toast && <Toast message={toast.message} type={toast.type} onClose={() => setToast(null)} />}
 
+      <div id="recaptcha-container" style={{ display: "none" }} />
+
       <div className="auth-page">
         <div className="auth-card">
           <div className="auth-logo">VGR Studio</div>
@@ -229,7 +299,7 @@ export default function SignupPage() {
                 <div className="form-group">
                   <label className="form-label">Phone Number</label>
                   <div className="phone-row">
-                    <div className="phone-prefix">+1</div>
+                    <select className="phone-prefix" value={countryCode} onChange={e => setCountryCode(e.target.value)}>{COUNTRY_CODES.map((c) => <option key={c} value={c}>{c}</option>)}</select>
                     <input className="form-input" type="tel" placeholder="555 000 0000" value={phone} onChange={e => setPhone(e.target.value)} disabled={isLoading} style={{ flex: 1 }} />
                   </div>
                 </div>
@@ -262,8 +332,8 @@ export default function SignupPage() {
                   )}
                 </div>
 
-                <button className="btn-primary" type="submit" disabled={isLoading}>
-                  Continue →
+                <button className="btn-primary" type="submit" disabled={isLoading || sendingOtp}>
+                  {sendingOtp ? "Sending OTP..." : "Continue →"}
                 </button>
               </form>
             </>
@@ -272,8 +342,8 @@ export default function SignupPage() {
           {step === "otp" && (
             <div className="otp-wrap">
               <div className="otp-info">
-                📱 A 6-digit code was sent to <strong>{phone}</strong>.<br />
-                <span style={{ color: "#1e40af", opacity: .8 }}>SMS integration coming soon — use <strong>123456</strong> for now.</span>
+                📱 A 6-digit code was sent to <strong>{fullPhoneE164()}</strong>.<br />
+                <span style={{ color: "#1e40af", opacity: .8 }}>Enter the OTP sent by Firebase SMS to verify your phone number.</span>
               </div>
               <button className="back-btn" onClick={() => setStep("details")}>← Change details</button>
               <form onSubmit={handleOtpSubmit}>
@@ -293,8 +363,8 @@ export default function SignupPage() {
                 <button className="btn-primary" type="submit" disabled={loading || otp.length !== 6}>
                   {loading ? <><span className="spinner" />Creating account...</> : "Verify & Create Account"}
                 </button>
-                <button type="button" className="btn-secondary" onClick={() => showToast("OTP resent! Use 123456 for now.", "info")}>
-                  Resend OTP
+                <button type="button" className="btn-secondary" disabled={isLoading || sendingOtp} onClick={async () => { setSendingOtp(true); try { await sendOtpFlow(); } catch (err) { showToast(getAuthError(err), "error"); } finally { setSendingOtp(false); } }}>
+                  {sendingOtp ? "Resending..." : "Resend OTP"}
                 </button>
               </form>
             </div>
