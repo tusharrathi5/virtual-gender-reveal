@@ -5,6 +5,10 @@ import { NextRequest, NextResponse } from "next/server";
 import { verifyAuthHeader } from "@/lib/authServer";
 import { createRevealAndConsumeEntitlement } from "@/lib/revealCreation";
 import { saveGender } from "@/lib/secureGenderService";
+import { generateDoctorToken } from "@/lib/doctorToken";
+import CryptoJS from "crypto-js";
+import { getAdminDb } from "@/lib/firebase-admin";
+import { sendDoctorInviteEmail } from "@/lib/resendEmail";
 import { deleteEnquiryPhotosAdmin } from "@/lib/storageServiceAdmin";
 import {
   INITIAL_STAGES,
@@ -34,6 +38,16 @@ interface CreateRevealBody {
   revealerRelation?: RevealerRelation;
 }
 
+
+
+function relationToLabel(relation: RevealerRelation): string {
+  switch (relation) {
+    case "doctor": return "doctor or midwife";
+    case "relative": return "relative";
+    case "friend": return "friend";
+    default: return "trusted contact";
+  }
+}
 // ─── POST /api/create-reveal ────────────────────────────────
 
 export async function POST(req: NextRequest) {
@@ -121,6 +135,42 @@ export async function POST(req: NextRequest) {
     //    We do this AFTER the transaction so we're not blocking the transaction
     //    on encryption work, and because secure-genders is a separate collection
     //    that doesn't need to be atomic with the enquiry creation.
+    if (validatedMode === "reveal") {
+      const token = generateDoctorToken(validatedEnquiryId);
+      const tokenHash = CryptoJS.SHA256(token).toString();
+      const appUrl = process.env.NEXT_PUBLIC_APP_URL;
+      if (!appUrl) {
+        return NextResponse.json(
+          { error: "Server misconfigured: NEXT_PUBLIC_APP_URL missing." },
+          { status: 500 }
+        );
+      }
+
+      await getAdminDb().collection("enquiries").doc(validatedEnquiryId).update({
+        doctorTokenHash: tokenHash,
+      });
+
+      const revealUrl = `${appUrl}/api/doctor/${token}`;
+      try {
+        await sendDoctorInviteEmail({
+          to: revealerEmail!.trim().toLowerCase(),
+          parentName: validatedParentName,
+          relationLabel: relationToLabel(revealerRelation!),
+          revealUrl,
+          enquiryId: validatedEnquiryId,
+        });
+      } catch (emailErr) {
+        console.error(`[create-reveal] Failed to send doctor invite for ${validatedEnquiryId}:`, emailErr);
+        return NextResponse.json(
+          {
+            error: "Reveal created, but we couldn't send the revealer email. Please contact support.",
+            enquiryId: validatedEnquiryId,
+          },
+          { status: 500 }
+        );
+      }
+    }
+
     if (validatedMode === "announcement" && announcementGender) {
       try {
         await saveGender({
