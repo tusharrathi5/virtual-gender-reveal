@@ -61,9 +61,18 @@ export default function SignupPage() {
 
 
   useEffect(() => {
-    const auth = getFirebaseAuth();
-    if (!(window as unknown as { recaptchaVerifier?: RecaptchaVerifier }).recaptchaVerifier) {
-      (window as unknown as { recaptchaVerifier?: RecaptchaVerifier }).recaptchaVerifier = new RecaptchaVerifier(auth, "recaptcha-container", { size: "invisible" });
+    try {
+      const auth = getFirebaseAuth();
+      const w = window as unknown as { recaptchaVerifier?: RecaptchaVerifier };
+      if (w.recaptchaVerifier) return;
+
+      const container = document.getElementById("recaptcha-container");
+      if (!container) return;
+
+      w.recaptchaVerifier = new RecaptchaVerifier(auth, "recaptcha-container", { size: "invisible" });
+    } catch (err) {
+      console.error("[signup] reCAPTCHA init failed:", err);
+      showToast("Phone verification is temporarily unavailable. Please refresh and try again.", "error");
     }
   }, []);
 
