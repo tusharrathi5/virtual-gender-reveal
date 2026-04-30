@@ -69,7 +69,7 @@ export default function SignupPage() {
       const container = document.getElementById("recaptcha-container");
       if (!container) return;
 
-      w.recaptchaVerifier = new RecaptchaVerifier(auth, "recaptcha-container", { size: "invisible" });
+      w.recaptchaVerifier = new RecaptchaVerifier(auth, "recaptcha-container", { size: "normal" });
     } catch (err) {
       console.error("[signup] reCAPTCHA init failed:", err);
       showToast("Phone verification is temporarily unavailable. Please refresh and try again.", "error");
@@ -244,7 +244,7 @@ export default function SignupPage() {
 
       {toast && <Toast message={toast.message} type={toast.type} onClose={() => setToast(null)} />}
 
-      <div id="recaptcha-container" style={{ display: "none" }} />
+      
 
       <div className="auth-page">
         <div className="auth-card">
@@ -332,6 +332,10 @@ export default function SignupPage() {
                   )}
                 </div>
 
+                <div style={{ marginBottom: 14 }}>
+                  <div id="recaptcha-container" />
+                </div>
+
                 <button className="btn-primary" type="submit" disabled={isLoading || sendingOtp}>
                   {sendingOtp ? "Sending OTP..." : "Continue →"}
                 </button>
@@ -343,7 +347,7 @@ export default function SignupPage() {
             <div className="otp-wrap">
               <div className="otp-info">
                 📱 A 6-digit code was sent to <strong>{fullPhoneE164()}</strong>.<br />
-                <span style={{ color: "#1e40af", opacity: .8 }}>Enter the OTP sent by Firebase SMS to verify your phone number.</span>
+                <span style={{ color: "#1e40af", opacity: .8 }}>Enter the OTP sent by Firebase SMS after completing CAPTCHA verification.</span>
               </div>
               <button className="back-btn" onClick={() => setStep("details")}>← Change details</button>
               <form onSubmit={handleOtpSubmit}>
