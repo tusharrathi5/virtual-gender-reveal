@@ -233,6 +233,8 @@ export default function SignupPage() {
 
       {toast && <Toast message={toast.message} type={toast.type} onClose={() => setToast(null)} />}
 
+      <div id="recaptcha-container" style={{ display: "none" }} />
+
       <div className="auth-page">
         <div className="auth-card">
           <div className="auth-logo">VGR Studio</div>
