@@ -16,7 +16,6 @@ import {
   GoogleAuthProvider,
   signOut,
   sendEmailVerification,
-  sendPasswordResetEmail,
   reauthenticateWithCredential,
   reauthenticateWithPopup,
   EmailAuthProvider,
@@ -241,14 +240,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   // ── Reset Password ───────────────────────────────────────
 
   async function resetPassword(email: string): Promise<void> {
-    const auth = getFirebaseAuth();
-    await sendPasswordResetEmail(auth, email);
+    const normalized = email.trim().toLowerCase();
+    const res = await fetch("/api/email-events", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ type: "forgot_password", email: normalized }),
+    });
 
-    // Trigger password-help email (non-blocking)
-    void fireEmailEvent({
-      type: "forgot_password",
-      email: email.trim().toLowerCase(),
-    }).catch((err) => console.error("[auth] forgot-password email event failed:", err));
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({ error: "Failed to send reset email." }));
+      throw new Error(data.error || "Failed to send reset email.");
+    }
   }
 
   // ── Logout ───────────────────────────────────────────────

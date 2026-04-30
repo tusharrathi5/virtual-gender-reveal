@@ -161,7 +161,7 @@ export async function POST(req: NextRequest) {
         doctorTokenHash: tokenHash,
       });
 
-      const revealUrl = `${appUrl}/api/doctor/${token}`;
+      const revealUrl = `${appUrl}/doctor/${token}`;
       let revealerEmailSent = true;
       try {
         await sendDoctorInviteEmail({

@@ -28,6 +28,11 @@ export interface SendPasswordHelpEmailParams {
   to: string;
 }
 
+export interface SendPasswordResetLinkEmailParams {
+  to: string;
+  resetUrl: string;
+}
+
 
 function isTrue(value: string | undefined): boolean {
   if (!value) return false;
@@ -143,4 +148,19 @@ export async function sendPasswordHelpEmail(params: SendPasswordHelpEmailParams)
   `;
 
   await sendEmail({ to: params.to, subject: "Your password reset request", html });
+}
+
+
+export async function sendPasswordResetLinkEmail(params: SendPasswordResetLinkEmailParams): Promise<void> {
+  const url = escapeHtml(params.resetUrl);
+  const html = `
+    <div style="font-family:Arial,sans-serif;line-height:1.6;color:#111">
+      <h2 style="margin:0 0 12px">Reset your password</h2>
+      <p>Use the secure link below to reset your password:</p>
+      <p><a href="${url}">Reset Password</a></p>
+      <p>If you did not request this, you can ignore this email.</p>
+    </div>
+  `;
+
+  await sendEmail({ to: params.to, subject: "Reset your Virtual Gender Reveal password", html });
 }

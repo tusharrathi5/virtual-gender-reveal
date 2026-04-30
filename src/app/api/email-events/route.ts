@@ -2,7 +2,8 @@ export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
 
 import { NextRequest, NextResponse } from "next/server";
-import { sendPasswordHelpEmail, sendWelcomeEmail } from "@/lib/resendEmail";
+import { sendPasswordResetLinkEmail, sendWelcomeEmail } from "@/lib/resendEmail";
+import { getAdminAuth } from "@/lib/firebase-admin";
 
 type EmailEventBody =
   | { type: "forgot_password"; email: string }
@@ -23,7 +24,18 @@ export async function POST(req: NextRequest) {
       if (!body.email || !isValidEmail(body.email)) {
         return NextResponse.json({ error: "Invalid email." }, { status: 400 });
       }
-      await sendPasswordHelpEmail({ to: body.email.trim().toLowerCase() });
+      const email = body.email.trim().toLowerCase();
+      const appUrl = process.env.NEXT_PUBLIC_APP_URL || req.headers.get("origin") || "";
+      if (!appUrl) {
+        return NextResponse.json({ error: "Missing app URL for reset link generation." }, { status: 500 });
+      }
+
+      const resetUrl = await getAdminAuth().generatePasswordResetLink(email, {
+        url: `${appUrl.replace(/\/$/, "")}/login?reset=1`,
+        handleCodeInApp: false,
+      });
+
+      await sendPasswordResetLinkEmail({ to: email, resetUrl });
       return NextResponse.json({ success: true });
     }
 
