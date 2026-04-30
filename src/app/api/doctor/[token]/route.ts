@@ -8,9 +8,18 @@ import { doc, getDoc, updateDoc, serverTimestamp } from "firebase/firestore";
 import CryptoJS from "crypto-js";
 import { saveGender } from "@/lib/secureGenderService";
 
+function normalizeToken(rawToken: string): string {
+  try {
+    return decodeURIComponent(rawToken).trim().replace(/\s+/g, "");
+  } catch {
+    return rawToken.trim().replace(/\s+/g, "");
+  }
+}
+
 export async function GET(_: NextRequest, { params }: { params: { token: string } }) {
   try {
-    const payload = validateDoctorToken(params.token);
+    const token = normalizeToken(params.token);
+    const payload = validateDoctorToken(token);
     if (!payload) return NextResponse.json({ error: "Invalid or expired link" }, { status: 401 });
 
     const db = getFirebaseDb();
@@ -18,7 +27,7 @@ export async function GET(_: NextRequest, { params }: { params: { token: string 
     if (!snap.exists()) return NextResponse.json({ error: "Enquiry not found" }, { status: 404 });
 
     const data = snap.data();
-    const hash = CryptoJS.SHA256(params.token).toString();
+    const hash = CryptoJS.SHA256(token).toString();
     if (hash !== data.doctorTokenHash) return NextResponse.json({ error: "Link already used" }, { status: 410 });
 
     return NextResponse.json({ success: true, enquiryId: payload.enquiryId });
@@ -29,7 +38,8 @@ export async function GET(_: NextRequest, { params }: { params: { token: string 
 
 export async function POST(req: NextRequest, { params }: { params: { token: string } }) {
   try {
-    const payload = validateDoctorToken(params.token);
+    const token = normalizeToken(params.token);
+    const payload = validateDoctorToken(token);
     if (!payload) return NextResponse.json({ error: "Invalid or expired link" }, { status: 401 });
 
     const { gender } = await req.json();
@@ -43,7 +53,7 @@ export async function POST(req: NextRequest, { params }: { params: { token: stri
     if (!snap.exists()) return NextResponse.json({ error: "Not found" }, { status: 404 });
 
     const data = snap.data();
-    const hash = CryptoJS.SHA256(params.token).toString();
+    const hash = CryptoJS.SHA256(token).toString();
     if (hash !== data.doctorTokenHash) return NextResponse.json({ error: "Link already used" }, { status: 410 });
 
     await saveGender({
