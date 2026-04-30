@@ -2,10 +2,10 @@ export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
 
 import { NextRequest, NextResponse } from "next/server";
-import { getFirebaseDb } from "@/lib/firebase";
-import { doc, getDoc, updateDoc, serverTimestamp } from "firebase/firestore";
+import { FieldValue, Timestamp } from "firebase-admin/firestore";
 import CryptoJS from "crypto-js";
 import { saveGender } from "@/lib/secureGenderService";
+import { getAdminDb } from "@/lib/firebase-admin";
 
 function normalizeToken(rawToken: string): string {
   try {
@@ -32,13 +32,13 @@ async function verifyActiveToken(token: string): Promise<{ enquiryId: string } |
   const payload = decodeTokenPayload(token);
   if (!payload) return null;
 
-  const db = getFirebaseDb();
-  const snap = await getDoc(doc(db, "enquiries", payload.enquiryId));
-  if (!snap.exists()) return null;
+  const enquiryRef = getAdminDb().collection("enquiries").doc(payload.enquiryId);
+  const snap = await enquiryRef.get();
+  if (!snap.exists) return null;
 
-  const data = snap.data();
+  const data = snap.data() as { doctorTokenHash?: string | null };
   const hash = CryptoJS.SHA256(token).toString();
-  if (hash !== data.doctorTokenHash) return null;
+  if (!data?.doctorTokenHash || hash !== data.doctorTokenHash) return null;
 
   return { enquiryId: payload.enquiryId };
 }
@@ -50,8 +50,9 @@ export async function GET(_: NextRequest, { params }: { params: Promise<{ token:
     const verified = await verifyActiveToken(token);
     if (!verified) return NextResponse.json({ error: "Invalid or expired link" }, { status: 401 });
     return NextResponse.json({ success: true, enquiryId: verified.enquiryId });
-  } catch {
-    return NextResponse.json({ error: "Server error" }, { status: 500 });
+  } catch (err) {
+    console.error("[doctor-token][GET]", err);
+    return NextResponse.json({ error: "Server error validating link" }, { status: 500 });
   }
 }
 
@@ -62,31 +63,42 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ tok
     const verified = await verifyActiveToken(token);
     if (!verified) return NextResponse.json({ error: "Invalid or expired link" }, { status: 401 });
 
-    const { gender } = await req.json();
-    if (!( ["boy", "girl"] as const).includes(gender)) {
+    const body = await req.json().catch(() => null) as { gender?: string } | null;
+    const gender = body?.gender;
+    if (!( ["boy", "girl"] as const).includes(gender as "boy" | "girl")) {
       return NextResponse.json({ error: "Invalid gender" }, { status: 400 });
     }
 
-    const db = getFirebaseDb();
-    const ref = doc(db, "enquiries", verified.enquiryId);
-
     await saveGender({
       enquiryId: verified.enquiryId,
-      gender,
-      submittedBy: "doctor",
+      gender: gender as "boy" | "girl",
+      submittedBy: "revealer",
       submittedByUid: null,
     });
 
-    await updateDoc(ref, {
+    const nowIso = new Date().toISOString();
+    const enquiryRef = getAdminDb().collection("enquiries").doc(verified.enquiryId);
+    await enquiryRef.update({
       doctorTokenHash: "",
-      doctorConfirmedAt: new Date().toISOString(),
+      doctorConfirmedAt: nowIso,
       genderStatus: "submitted",
       status: "doctor_confirmed",
-      updatedAt: serverTimestamp(),
+      "stages.revealerSubmitted": Timestamp.now(),
+      updatedAt: FieldValue.serverTimestamp(),
+    });
+
+    await getAdminDb().collection("email_log").add({
+      type: "revealer_submission",
+      enquiryId: verified.enquiryId,
+      submittedGender: gender,
+      submittedAt: nowIso,
+      source: "doctor_token",
+      createdAt: FieldValue.serverTimestamp(),
     });
 
     return NextResponse.json({ success: true });
-  } catch {
-    return NextResponse.json({ error: "Server error" }, { status: 500 });
+  } catch (err) {
+    console.error("[doctor-token][POST]", err);
+    return NextResponse.json({ error: "Server error submitting gender" }, { status: 500 });
   }
 }
