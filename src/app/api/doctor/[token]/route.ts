@@ -43,9 +43,10 @@ async function verifyActiveToken(token: string): Promise<{ enquiryId: string } |
   return { enquiryId: payload.enquiryId };
 }
 
-export async function GET(_: NextRequest, { params }: { params: { token: string } }) {
+export async function GET(_: NextRequest, { params }: { params: Promise<{ token: string }> }) {
   try {
-    const token = normalizeToken(params.token);
+    const { token: rawToken } = await params;
+    const token = normalizeToken(rawToken);
     const verified = await verifyActiveToken(token);
     if (!verified) return NextResponse.json({ error: "Invalid or expired link" }, { status: 401 });
     return NextResponse.json({ success: true, enquiryId: verified.enquiryId });
@@ -54,9 +55,10 @@ export async function GET(_: NextRequest, { params }: { params: { token: string 
   }
 }
 
-export async function POST(req: NextRequest, { params }: { params: { token: string } }) {
+export async function POST(req: NextRequest, { params }: { params: Promise<{ token: string }> }) {
   try {
-    const token = normalizeToken(params.token);
+    const { token: rawToken } = await params;
+    const token = normalizeToken(rawToken);
     const verified = await verifyActiveToken(token);
     if (!verified) return NextResponse.json({ error: "Invalid or expired link" }, { status: 401 });
 
