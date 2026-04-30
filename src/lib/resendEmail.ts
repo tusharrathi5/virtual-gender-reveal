@@ -4,6 +4,13 @@ interface BaseEmailParams {
   html: string;
 }
 
+interface ResolvedConfig {
+  apiKey: string;
+  from: string;
+  testMode: boolean;
+  testRecipient: string | null;
+}
+
 export interface SendDoctorInviteParams {
   to: string;
   parentName: string;
@@ -21,6 +28,12 @@ export interface SendPasswordHelpEmailParams {
   to: string;
 }
 
+
+function isTrue(value: string | undefined): boolean {
+  if (!value) return false;
+  return ["1", "true", "yes", "on"].includes(value.trim().toLowerCase());
+}
+
 function escapeHtml(input: string): string {
   return input
     .replace(/&/g, "&amp;")
@@ -30,7 +43,7 @@ function escapeHtml(input: string): string {
     .replace(/'/g, "&#39;");
 }
 
-function resolveResendConfig(): { apiKey: string; from: string } {
+function resolveResendConfig(): ResolvedConfig {
   const apiKey = process.env.RESEND_API_KEY?.trim();
   const domain = process.env.RESEND_DOMAIN?.trim();
 
@@ -41,6 +54,9 @@ function resolveResendConfig(): { apiKey: string; from: string } {
     process.env.EMAIL_FROM_ADDRESS?.trim() ||
     (domain ? `no-reply@${domain}` : "");
 
+  const testMode = isTrue(process.env.EMAIL_TEST_MODE);
+  const testRecipient = process.env.EMAIL_TEST_RECIPIENT?.trim() || process.env.EMAIL_FROM_ADDRESS?.trim() || null;
+
   if (!apiKey) throw new Error("RESEND_NOT_CONFIGURED: missing RESEND_API_KEY");
   if (!from) {
     throw new Error(
@@ -48,11 +64,17 @@ function resolveResendConfig(): { apiKey: string; from: string } {
     );
   }
 
-  return { apiKey, from };
+  return { apiKey, from, testMode, testRecipient };
 }
 
 async function sendEmail({ to, subject, html }: BaseEmailParams): Promise<void> {
-  const { apiKey, from } = resolveResendConfig();
+  const { apiKey, from, testMode, testRecipient } = resolveResendConfig();
+  const recipient = testMode && testRecipient ? testRecipient : to;
+  const finalSubject = testMode ? `[TEST MODE] ${subject}` : subject;
+
+  if (testMode) {
+    console.warn(`[resendEmail] EMAIL_TEST_MODE enabled. Redirecting email intended for ${to} to ${recipient}.`);
+  }
 
   const response = await fetch("https://api.resend.com/emails", {
     method: "POST",
@@ -62,8 +84,8 @@ async function sendEmail({ to, subject, html }: BaseEmailParams): Promise<void> 
     },
     body: JSON.stringify({
       from,
-      to: [to],
-      subject,
+      to: [recipient],
+      subject: finalSubject,
       html,
     }),
   });
