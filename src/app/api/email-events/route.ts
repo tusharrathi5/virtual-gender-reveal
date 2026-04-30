@@ -2,12 +2,11 @@ export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
 
 import { NextRequest, NextResponse } from "next/server";
-import { sendPasswordResetLinkEmail, sendWelcomeEmail } from "@/lib/resendEmail";
+import { sendPasswordResetLinkEmail } from "@/lib/resendEmail";
 import { getAdminAuth } from "@/lib/firebase-admin";
 
 type EmailEventBody =
-  | { type: "forgot_password"; email: string }
-  | { type: "signup"; email: string; fullName: string };
+  | { type: "forgot_password"; email: string };
 
 function isValidEmail(email: string): boolean {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim());
@@ -36,17 +35,6 @@ export async function POST(req: NextRequest) {
       });
 
       await sendPasswordResetLinkEmail({ to: email, resetUrl });
-      return NextResponse.json({ success: true });
-    }
-
-    if (body.type === "signup") {
-      if (!body.email || !isValidEmail(body.email) || !body.fullName?.trim()) {
-        return NextResponse.json({ error: "Invalid signup payload." }, { status: 400 });
-      }
-      await sendWelcomeEmail({
-        to: body.email.trim().toLowerCase(),
-        fullName: body.fullName.trim(),
-      });
       return NextResponse.json({ success: true });
     }
 
