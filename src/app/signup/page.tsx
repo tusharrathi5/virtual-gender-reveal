@@ -100,7 +100,7 @@ export default function SignupPage() {
     const limitRes = await fetch("/api/auth/otp-limit", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ phone: normalizedPhone }),
+      body: JSON.stringify({ phone: normalizedPhone, action: "check" }),
     });
     const limitData = await limitRes.json().catch(() => ({}));
     if (!limitRes.ok) {
@@ -112,6 +112,17 @@ export default function SignupPage() {
     const verifier = (window as unknown as { recaptchaVerifier?: RecaptchaVerifier }).recaptchaVerifier;
     if (!verifier) { showToast("reCAPTCHA not ready. Refresh and try again.", "error"); return false; }
     const result = await signInWithPhoneNumber(auth, normalizedPhone, verifier);
+
+    const consumeRes = await fetch("/api/auth/otp-limit", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ phone: normalizedPhone, action: "consume" }),
+    });
+    if (!consumeRes.ok) {
+      const consumeData = await consumeRes.json().catch(() => ({}));
+      showToast(consumeData?.error || "OTP limit reached.", "error");
+      return false;
+    }
     setConfirmationResult(result);
     showToast(`OTP sent to ${normalizedPhone}.`, "info");
     return true;
