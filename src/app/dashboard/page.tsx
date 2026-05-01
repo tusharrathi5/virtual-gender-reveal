@@ -28,8 +28,59 @@ function Toast({ message, type, onClose }: { message: string; type: ToastType; o
   const colors = { success: "#22c55e", error: "#ef4444", info: "#2E7DD1" };
   useEffect(() => {
     const t = setTimeout(onClose, 5000);
-  
-  function statusColor(status: string): string {
+    return () => clearTimeout(t);
+  }, [onClose]);
+  return (
+    <div style={{
+      position: "fixed", top: 20, right: 20, zIndex: 9999,
+      background: "white", borderLeft: `4px solid ${colors[type]}`,
+      borderRadius: 8, padding: "14px 18px", maxWidth: 380,
+      display: "flex", alignItems: "flex-start", gap: 10,
+      boxShadow: "0 10px 30px rgba(0,0,0,0.1)",
+      fontFamily: "'Plus Jakarta Sans',sans-serif", fontSize: 14,
+      animation: "slideIn .3s ease-out",
+    }}>
+      <span style={{ color: colors[type], fontWeight: 700, flexShrink: 0 }}>
+        {type === "success" ? "✓" : type === "error" ? "✕" : "ℹ"}
+      </span>
+      <span style={{ color: "#111827", lineHeight: 1.5, flex: 1 }}>{message}</span>
+      <button onClick={onClose} style={{ background: "none", border: "none", color: "#9CA3AF", cursor: "pointer", fontSize: 16 }}>×</button>
+    </div>
+  );
+}
+
+function timestampToDate(value: unknown): Date | null {
+  if (!value) return null;
+  if (value instanceof Date) return value;
+  if (typeof value === "object" && value !== null && "toDate" in value) {
+    const fn = (value as { toDate: unknown }).toDate;
+    if (typeof fn === "function") return (value as { toDate: () => Date }).toDate();
+  }
+  return null;
+}
+
+function formatRevealDate(d: Date | null): string {
+  if (!d) return "—";
+  return d.toLocaleDateString("en-US", {
+    weekday: "short", month: "short", day: "numeric",
+    hour: "numeric", minute: "2-digit",
+  });
+}
+
+function statusLabel(status: string): string {
+  const map: Record<string, string> = {
+    pending_payment: "Pending Payment",
+    awaiting_revealer: "Awaiting Revealer",
+    revealer_confirmed: "Revealer Confirmed",
+    video_ready: "Video Ready",
+    scheduled: "Scheduled",
+    live: "Live",
+    completed: "Completed",
+  };
+  return map[status] || status;
+}
+
+function statusColor(status: string): string {
   const map: Record<string, string> = {
     pending_payment: "#9CA3AF",
     awaiting_revealer: "#F59E0B",
