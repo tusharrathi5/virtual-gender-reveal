@@ -113,6 +113,13 @@ function DashboardContent() {
     if (!loading && !user) router.push("/login");
   }, [loading, user, router]);
 
+
+  useEffect(() => {
+    if (!loading && firestoreUser?.role?.toLowerCase() === "admin") {
+      router.replace("/admin");
+    }
+  }, [loading, firestoreUser, router]);
+
   // Handle redirect params (from Stripe + from new-reveal form)
   useEffect(() => {
     const payment = searchParams.get("payment");
