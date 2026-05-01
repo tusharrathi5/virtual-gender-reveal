@@ -235,54 +235,54 @@ function DashboardContent() {
 
   // ─── Actions ──────────────────────────────────────────────
 
-  async function handleSelectPlan(plan: PlanDefinition) {
-    if (activatingPlan) return;
-    setActivatingPlan(plan.id);
-    try {
-      const token = await user!.getIdToken();
-      const res = await fetch("/api/create-checkout", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({ planId: plan.id }),
-      const data = await res.json();
-      if (!res.ok) {
-        setToast({ message: data.error || "Failed to activate plan.", type: "error" });
-        return;
-      }
-      if (data.url) {
-        // Real Stripe flow — redirect
-        window.location.href = data.url;
-        return;
-      }
-      // Dev mode — plan activated directly
-      setToast({
-        message: data.message || `${plan.name} plan activated.`,
-        type: "success",
-      });
-      await refreshFirestoreUser();
-      // If this is the free plan activation, redirect to the form
-      if (plan.id === "free") {
-        setTimeout(() => router.push("/new-reveal"), 800);
-      }
-    } catch (err) {
-      setToast({ message: "Something went wrong. Please try again.", type: "error" });
-    } finally {
-      setActivatingPlan(null);
-    }
-  }
+ async function handleSelectPlan(plan: PlanDefinition) {
+  if (activatingPlan) return;
+  setActivatingPlan(plan.id);
 
-  async function handleLogout() {
-    setLoggingOut(true);
-    try {
-      await logout();
-      router.push("/");
-    } catch {
-      setLoggingOut(false);
+  try {
+    const token = await user!.getIdToken();
+
+    const res = await fetch("/api/create-checkout", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({ planId: plan.id }),
+    });
+
+    const data = await res.json().catch(() => ({}));
+
+    if (!res.ok) {
+      setToast({ message: data.error || "Failed to activate plan.", type: "error" });
+      return;
     }
+
+    if (data.url) {
+      // Real Stripe flow — redirect
+      window.location.href = data.url;
+      return;
+    }
+
+    // Dev mode — plan activated directly
+    setToast({
+      message: data.message || `${plan.name} plan activated.`,
+      type: "success",
+    });
+
+    await refreshFirestoreUser();
+
+    // If this is the free plan activation, redirect to the form
+    if (plan.id === "free") {
+      setTimeout(() => router.push("/new-reveal"), 800);
+    }
+
+  } catch (err) {
+    setToast({ message: "Something went wrong. Please try again.", type: "error" });
+  } finally {
+    setActivatingPlan(null);
   }
+}
 
   // ─── Render ───────────────────────────────────────────────
 
