@@ -301,9 +301,21 @@ function DashboardContent() {
             <div className="dash-avatar">{firstName.charAt(0).toUpperCase()}</div>
             <span className="dash-user-name">{user.displayName || user.email}</span>
             <button className="btn-ghost-sm" onClick={() => router.push("/settings")}>Settings</button>
-            <button className="btn-ghost-sm" onClick={handleLogout} disabled={loggingOut}>
-              {loggingOut ? "Signing out…" : "Sign Out"}
-            </button>
+            <button
+  className="btn-ghost-sm"
+  disabled={loggingOut}
+  onClick={async () => {
+    setLoggingOut(true);
+    try {
+      await logout();
+      router.push("/");
+    } catch {
+      setLoggingOut(false);
+    }
+  }}
+>
+  {loggingOut ? "Signing out…" : "Sign Out"}
+</button>
           </div>
         </header>
 
