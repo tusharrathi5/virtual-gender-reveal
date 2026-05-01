@@ -3,60 +3,129 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/lib/AuthContext";
+import { getFirebaseAuth } from "@/lib/firebase";
+import { ConfirmationResult, RecaptchaVerifier, signInWithPhoneNumber } from "firebase/auth";
 
 function isValidPhone(phone: string): boolean {
   return /^\+?[\d\s\-().]{7,20}$/.test(phone) && phone.replace(/\D/g, "").length >= 7;
 }
 
 type Step = "profile" | "otp";
+const COUNTRY_CODES = ["+1", "+44", "+61", "+91", "+971", "+65"];
 
 export default function CompleteProfilePage() {
   const { user, firestoreUser, loading: authLoading, completeGoogleProfile, refreshFirestoreUser } = useAuth();
   const router = useRouter();
 
   const [step, setStep] = useState<Step>("profile");
+  const [countryCode, setCountryCode] = useState("+91");
   const [phone, setPhone] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [otp, setOtp] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [sendingOtp, setSendingOtp] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
+  const [confirmationResult, setConfirmationResult] = useState<ConfirmationResult | null>(null);
 
-  // Redirect if not logged in or already completed profile
-useEffect(() => {
+  useEffect(() => {
     if (authLoading) return;
     if (!user) {
       router.push("/login");
       return;
     }
-    // If user already has phone and both providers, redirect to dashboard
     if (firestoreUser?.phone && firestoreUser?.provider === "both") {
       router.push("/dashboard");
     }
   }, [authLoading, user, firestoreUser, router]);
 
-  function handleProfileSubmit(e: React.FormEvent) {
+  useEffect(() => {
+    try {
+      const auth = getFirebaseAuth();
+      const w = window as unknown as { recaptchaVerifier?: RecaptchaVerifier };
+      if (w.recaptchaVerifier) return;
+      const container = document.getElementById("recaptcha-container-complete");
+      if (!container) return;
+      w.recaptchaVerifier = new RecaptchaVerifier(auth, "recaptcha-container-complete", { size: "normal" });
+    } catch (err) {
+      console.error("[complete-profile] reCAPTCHA init failed:", err);
+      setError("Phone verification is temporarily unavailable. Please refresh and try again.");
+    }
+  }, []);
+
+  const fullPhoneE164 = () => `${countryCode}${phone.replace(/\D/g, "")}`;
+
+  async function sendOtpFlow(): Promise<boolean> {
+    const normalizedPhone = fullPhoneE164();
+
+    const checkRes = await fetch("/api/auth/otp-limit", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ phone: normalizedPhone, action: "check" }),
+    });
+    const checkData = await checkRes.json().catch(() => ({}));
+    if (!checkRes.ok) {
+      setError(checkData?.error || "OTP limit reached.");
+      return false;
+    }
+
+    const auth = getFirebaseAuth();
+    const verifier = (window as unknown as { recaptchaVerifier?: RecaptchaVerifier }).recaptchaVerifier;
+    if (!verifier) {
+      setError("reCAPTCHA not ready. Please refresh and try again.");
+      return false;
+    }
+
+    const result = await signInWithPhoneNumber(auth, normalizedPhone, verifier);
+
+    const consumeRes = await fetch("/api/auth/otp-limit", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ phone: normalizedPhone, action: "consume" }),
+    });
+    if (!consumeRes.ok) {
+      const consumeData = await consumeRes.json().catch(() => ({}));
+      setError(consumeData?.error || "OTP limit reached.");
+      return false;
+    }
+
+    setConfirmationResult(result);
+    setSuccess(`OTP sent to ${normalizedPhone}.`);
+    return true;
+  }
+
+  async function handleProfileSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError("");
+    setSuccess("");
     if (!isValidPhone(phone)) { setError("Please enter a valid phone number."); return; }
     if (password.length < 6) { setError("Password must be at least 6 characters."); return; }
     if (password !== confirmPassword) { setError("Passwords do not match."); return; }
-    setStep("otp");
-    setSuccess("OTP sent to your phone. Use 123456 for now.");
+
+    setSendingOtp(true);
+    try {
+      const ok = await sendOtpFlow();
+      if (ok) setStep("otp");
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "Failed to send OTP.";
+      setError(msg.replace("Firebase: ", "").replace(/\s*\(auth\/.*?\)\.?/, "").trim());
+    } finally {
+      setSendingOtp(false);
+    }
   }
 
   async function handleOtpSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError("");
     if (otp.length !== 6) { setError("Please enter the 6-digit OTP."); return; }
-    // Placeholder OTP check
-    if (otp !== "123456") { setError("Invalid OTP. Hint: use 123456"); return; }
+    if (!confirmationResult) { setError("Please request OTP first."); return; }
 
     setLoading(true);
     try {
-      await completeGoogleProfile(phone, password);
+      await confirmationResult.confirm(otp);
+      await completeGoogleProfile(fullPhoneE164(), password);
       await refreshFirestoreUser();
       setSuccess("Profile completed! Redirecting...");
       setTimeout(() => router.push("/dashboard"), 1500);
@@ -107,6 +176,7 @@ useEffect(() => {
         .btn-primary { width:100%; padding:12px; background:#2563eb; color:white; border:none; border-radius:8px; font-size:14px; font-weight:600; cursor:pointer; transition:background .2s; }
         .btn-primary:hover:not(:disabled) { background:#1d4ed8; }
         .btn-primary:disabled { opacity:.5; cursor:not-allowed; }
+        .btn-secondary { width:100%; padding:12px; background:white; color:#374151; border:1.5px solid #e5e7eb; border-radius:8px; font-size:14px; font-weight:500; cursor:pointer; margin-top:10px; }
         .error-box { background:#fef2f2; border:1px solid #fecaca; border-radius:8px; padding:12px; color:#dc2626; font-size:13px; margin-bottom:16px; }
         .success-box { background:#f0fdf4; border:1px solid #bbf7d0; border-radius:8px; padding:12px; color:#15803d; font-size:13px; margin-bottom:16px; }
         .otp-info { background:#eff6ff; border:1px solid #bfdbfe; border-radius:8px; padding:12px 14px; font-size:13px; color:#1d4ed8; margin-bottom:20px; line-height:1.5; }
@@ -125,25 +195,19 @@ useEffect(() => {
           <div className="logo">VGR Studio</div>
           <p className="subtitle">Complete your profile to secure your account</p>
 
-          {/* User info banner */}
           <div className="user-info">
-            <div className="user-avatar">
-              {(user.displayName || user.email || "?")[0].toUpperCase()}
-            </div>
+            <div className="user-avatar">{(user.displayName || user.email || "?")[0].toUpperCase()}</div>
             <div>
               <div className="user-name">{user.displayName || "Google User"}</div>
               <div className="user-email">{user.email}</div>
             </div>
           </div>
 
-          {/* Step dots */}
           <div className="step-dots">
             <div className={`dot ${step === "profile" ? "dot-active" : "dot-done"}`} />
             <div style={{ width: 24, height: 1, background: step === "otp" ? "#22c55e" : "#e5e7eb" }} />
             <div className={`dot ${step === "otp" ? "dot-active" : "dot-inactive"}`} />
-            <span className="step-text">
-              {step === "profile" ? "SET PHONE & PASSWORD" : "VERIFY PHONE"}
-            </span>
+            <span className="step-text">{step === "profile" ? "SET PHONE & PASSWORD" : "VERIFY PHONE"}</span>
           </div>
 
           {error && <div className="error-box">⚠ {error}</div>}
@@ -154,7 +218,9 @@ useEffect(() => {
               <div className="form-group">
                 <label className="form-label">Phone Number</label>
                 <div className="phone-row">
-                  <div className="phone-prefix">+1</div>
+                  <select className="phone-prefix" value={countryCode} onChange={(e) => setCountryCode(e.target.value)}>
+                    {COUNTRY_CODES.map((c) => <option key={c} value={c}>{c}</option>)}
+                  </select>
                   <input className="form-input" type="tel" placeholder="555 000 0000" value={phone} onChange={e => setPhone(e.target.value)} style={{ flex: 1 }} />
                 </div>
               </div>
@@ -163,60 +229,33 @@ useEffect(() => {
                 <label className="form-label">Create Password</label>
                 <div className="pw-wrap">
                   <input className="form-input" type={showPassword ? "text" : "password"} placeholder="Min. 6 characters" value={password} onChange={e => setPassword(e.target.value)} style={{ paddingRight: 44 }} />
-                  <button type="button" className="pw-toggle" onClick={() => setShowPassword(!showPassword)}>
-                    {showPassword ? "Hide" : "Show"}
-                  </button>
+                  <button type="button" className="pw-toggle" onClick={() => setShowPassword(!showPassword)}>{showPassword ? "Hide" : "Show"}</button>
                 </div>
-                {password && (
-                  <div className={`pw-strength ${password.length < 6 ? "pw-weak" : password.length < 10 ? "pw-ok" : "pw-strong"}`}>
-                    {password.length < 6 ? "Weak" : password.length < 10 ? "Moderate" : "Strong"} password
-                  </div>
-                )}
+                {password && <div className={`pw-strength ${password.length < 6 ? "pw-weak" : password.length < 10 ? "pw-ok" : "pw-strong"}`}>{password.length < 6 ? "Weak" : password.length < 10 ? "Moderate" : "Strong"} password</div>}
               </div>
 
               <div className="form-group">
                 <label className="form-label">Confirm Password</label>
-                <input
-                  className="form-input"
-                  type="password"
-                  placeholder="Repeat password"
-                  value={confirmPassword}
-                  onChange={e => setConfirmPassword(e.target.value)}
-                  style={{ borderColor: confirmPassword && confirmPassword !== password ? "#ef4444" : undefined }}
-                />
-                {confirmPassword && confirmPassword !== password && (
-                  <div className="pw-strength pw-weak">Passwords do not match</div>
-                )}
+                <input className="form-input" type="password" placeholder="Repeat password" value={confirmPassword} onChange={e => setConfirmPassword(e.target.value)} style={{ borderColor: confirmPassword && confirmPassword !== password ? "#ef4444" : undefined }} />
+                {confirmPassword && confirmPassword !== password && <div className="pw-strength pw-weak">Passwords do not match</div>}
               </div>
 
-              <button className="btn-primary" type="submit">Send OTP & Continue →</button>
+              <div style={{ marginBottom: 14 }}><div id="recaptcha-container-complete" /></div>
+              <button className="btn-primary" type="submit" disabled={sendingOtp}>{sendingOtp ? "Sending OTP..." : "Send OTP & Continue →"}</button>
             </form>
           )}
 
           {step === "otp" && (
             <div style={{ animation: "fadeIn .3s ease-out" }}>
-              <div className="otp-info">
-                📱 OTP sent to <strong>{phone}</strong>.<br />
-                <span style={{ opacity: .8 }}>SMS integration coming soon — use <strong>123456</strong> for now.</span>
-              </div>
+              <div className="otp-info">📱 OTP sent to <strong>{fullPhoneE164()}</strong>.<br /><span style={{ opacity: .8 }}>Enter the OTP received on SMS to continue.</span></div>
               <button className="back-btn" onClick={() => { setStep("profile"); setOtp(""); setError(""); }}>← Change details</button>
               <form onSubmit={handleOtpSubmit}>
                 <div className="form-group">
                   <label className="form-label">Enter 6-digit OTP</label>
-                  <input
-                    className="otp-input"
-                    type="text"
-                    inputMode="numeric"
-                    maxLength={6}
-                    placeholder="• • • • • •"
-                    value={otp}
-                    onChange={e => setOtp(e.target.value.replace(/\D/g, "").slice(0, 6))}
-                    autoFocus
-                  />
+                  <input className="otp-input" type="text" inputMode="numeric" maxLength={6} placeholder="• • • • • •" value={otp} onChange={e => setOtp(e.target.value.replace(/\D/g, "").slice(0, 6))} autoFocus />
                 </div>
-                <button className="btn-primary" type="submit" disabled={loading || otp.length !== 6}>
-                  {loading ? <><span className="spinner" />Linking account...</> : "Verify & Complete"}
-                </button>
+                <button className="btn-primary" type="submit" disabled={loading || otp.length !== 6}>{loading ? <><span className="spinner" />Linking account...</> : "Verify & Complete"}</button>
+                <button type="button" className="btn-secondary" disabled={sendingOtp || loading} onClick={async () => { setSendingOtp(true); try { await sendOtpFlow(); } catch (err) { const msg = err instanceof Error ? err.message : "Failed to resend OTP."; setError(msg); } finally { setSendingOtp(false); } }}>{sendingOtp ? "Resending..." : "Resend OTP"}</button>
               </form>
             </div>
           )}
