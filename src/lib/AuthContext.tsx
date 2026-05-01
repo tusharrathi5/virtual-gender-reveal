@@ -107,6 +107,40 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return unsub;
   }, []);
 
+
+  // Auto-logout policy for admin sessions:
+  //  - logout after 15 minutes inactivity
+  //  - logout when page/tab is closed or navigated away
+  useEffect(() => {
+    if (!user || !firestoreUser || firestoreUser.role?.toLowerCase() !== "admin") return;
+
+    const auth = getFirebaseAuth();
+    let timeout: ReturnType<typeof setTimeout> | null = null;
+    const INACTIVITY_MS = 15 * 60 * 1000;
+
+    const schedule = () => {
+      if (timeout) clearTimeout(timeout);
+      timeout = setTimeout(() => {
+        signOut(auth).catch((err) => console.error("[auth] admin auto-logout failed:", err));
+      }, INACTIVITY_MS);
+    };
+
+    const onActivity = () => schedule();
+    const onPageHide = () => {
+      signOut(auth).catch((err) => console.error("[auth] admin pagehide logout failed:", err));
+    };
+
+    schedule();
+    ["mousemove", "mousedown", "keydown", "scroll", "touchstart"].forEach((evt) => window.addEventListener(evt, onActivity));
+    window.addEventListener("pagehide", onPageHide);
+
+    return () => {
+      if (timeout) clearTimeout(timeout);
+      ["mousemove", "mousedown", "keydown", "scroll", "touchstart"].forEach((evt) => window.removeEventListener(evt, onActivity));
+      window.removeEventListener("pagehide", onPageHide);
+    };
+  }, [user, firestoreUser]);
+
   // ── Sign Up with Email/Password ──────────────────────────
 
   async function signUpWithEmail(

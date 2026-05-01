@@ -355,7 +355,7 @@ function LandingPage() {
         </div>
         <div className="nav-right">
           {loading ? null : user ? (
-            <a href="/dashboard" className="nav-user-link">Logged in as {user.displayName || user.email || "Account"}</a>
+            <a href={(firestoreUser?.role?.toLowerCase?.() === "admin") ? "/admin" : "/dashboard"} className="nav-user-link">Logged in as {user.displayName || user.email || "Account"}</a>
           ) : (
             <a href="/login" className="nav-login-btn">👤 Log In</a>
           )}
