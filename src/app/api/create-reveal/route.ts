@@ -5,6 +5,10 @@ import { NextRequest, NextResponse } from "next/server";
 import { verifyAuthHeader } from "@/lib/authServer";
 import { createRevealAndConsumeEntitlement } from "@/lib/revealCreation";
 import { saveGender } from "@/lib/secureGenderService";
+import { generateDoctorToken } from "@/lib/doctorToken";
+import CryptoJS from "crypto-js";
+import { getAdminDb } from "@/lib/firebase-admin";
+import { sendDoctorInviteEmail } from "@/lib/resendEmail";
 import { deleteEnquiryPhotosAdmin } from "@/lib/storageServiceAdmin";
 import {
   INITIAL_STAGES,
@@ -32,6 +36,33 @@ interface CreateRevealBody {
   babyNameBoy?: string | null;
   revealerEmail?: string;
   revealerRelation?: RevealerRelation;
+}
+
+
+
+function relationToLabel(relation: RevealerRelation): string {
+  switch (relation) {
+    case "doctor": return "doctor or midwife";
+    case "relative": return "relative";
+    case "friend": return "friend";
+    default: return "trusted contact";
+  }
+}
+
+function getAppUrl(req: NextRequest): string {
+  const configured = process.env.NEXT_PUBLIC_APP_URL?.trim();
+  if (configured) return configured.replace(/\/$/, "");
+
+  const origin = req.headers.get("origin")?.trim();
+  if (origin) return origin.replace(/\/$/, "");
+
+  const host = req.headers.get("host")?.trim();
+  if (host) {
+    const protocol = host.includes("localhost") ? "http" : "https";
+    return `${protocol}://${host}`;
+  }
+
+  throw new Error("APP_URL_UNAVAILABLE");
 }
 
 // ─── POST /api/create-reveal ────────────────────────────────
@@ -121,6 +152,40 @@ export async function POST(req: NextRequest) {
     //    We do this AFTER the transaction so we're not blocking the transaction
     //    on encryption work, and because secure-genders is a separate collection
     //    that doesn't need to be atomic with the enquiry creation.
+    if (validatedMode === "reveal") {
+      const token = generateDoctorToken(validatedEnquiryId);
+      const tokenHash = CryptoJS.SHA256(token).toString();
+      const appUrl = getAppUrl(req);
+
+      await getAdminDb().collection("enquiries").doc(validatedEnquiryId).update({
+        doctorTokenHash: tokenHash,
+      });
+
+      const revealUrl = `${appUrl}/doctor/${encodeURIComponent(token)}`;
+      let revealerEmailSent = true;
+      try {
+        await sendDoctorInviteEmail({
+          to: revealerEmail!.trim().toLowerCase(),
+          parentName: validatedParentName,
+          relationLabel: relationToLabel(revealerRelation!),
+          revealUrl,
+          enquiryId: validatedEnquiryId,
+        });
+      } catch (emailErr) {
+        revealerEmailSent = false;
+        const details = emailErr instanceof Error ? emailErr.message : String(emailErr);
+        console.error(`[create-reveal] Failed to send doctor invite for ${validatedEnquiryId}: ${details}`);
+      }
+
+      return NextResponse.json({
+        success: true,
+        enquiryId: result.enquiryId,
+        status: result.newStatus,
+        consumedPurchaseId: result.consumedPurchaseId,
+        revealerEmailSent,
+      });
+    }
+
     if (validatedMode === "announcement" && announcementGender) {
       try {
         await saveGender({
