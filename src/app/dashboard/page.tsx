@@ -28,61 +28,8 @@ function Toast({ message, type, onClose }: { message: string; type: ToastType; o
   const colors = { success: "#22c55e", error: "#ef4444", info: "#2E7DD1" };
   useEffect(() => {
     const t = setTimeout(onClose, 5000);
-    return () => clearTimeout(t);
-  }, [onClose]);
-  return (
-    <div style={{
-      position: "fixed", top: 20, right: 20, zIndex: 9999,
-      background: "white", borderLeft: `4px solid ${colors[type]}`,
-      borderRadius: 8, padding: "14px 18px", maxWidth: 380,
-      display: "flex", alignItems: "flex-start", gap: 10,
-      boxShadow: "0 10px 30px rgba(0,0,0,0.1)",
-      fontFamily: "'Plus Jakarta Sans',sans-serif", fontSize: 14,
-      animation: "slideIn .3s ease-out",
-    }}>
-      <span style={{ color: colors[type], fontWeight: 700, flexShrink: 0 }}>
-        {type === "success" ? "✓" : type === "error" ? "✕" : "ℹ"}
-      </span>
-      <span style={{ color: "#111827", lineHeight: 1.5, flex: 1 }}>{message}</span>
-      <button onClick={onClose} style={{ background: "none", border: "none", color: "#9CA3AF", cursor: "pointer", fontSize: 16 }}>×</button>
-    </div>
-  );
-}
-
-// ─── Helpers ────────────────────────────────────────────────
-
-function timestampToDate(value: unknown): Date | null {
-  if (!value) return null;
-  if (value instanceof Date) return value;
-  if (typeof value === "object" && value !== null && "toDate" in value) {
-    const fn = (value as { toDate: unknown }).toDate;
-    if (typeof fn === "function") return (value as { toDate: () => Date }).toDate();
-  }
-  return null;
-}
-
-function formatRevealDate(d: Date | null): string {
-  if (!d) return "—";
-  return d.toLocaleDateString("en-US", {
-    weekday: "short", month: "short", day: "numeric",
-    hour: "numeric", minute: "2-digit",
-  });
-}
-
-function statusLabel(status: string): string {
-  const map: Record<string, string> = {
-    pending_payment: "Pending Payment",
-    awaiting_revealer: "Awaiting Revealer",
-    revealer_confirmed: "Revealer Confirmed",
-    video_ready: "Video Ready",
-    scheduled: "Scheduled",
-    live: "Live",
-    completed: "Completed",
-  };
-  return map[status] || status;
-}
-
-function statusColor(status: string): string {
+  
+  function statusColor(status: string): string {
   const map: Record<string, string> = {
     pending_payment: "#9CA3AF",
     awaiting_revealer: "#F59E0B",
@@ -107,6 +54,8 @@ function DashboardContent() {
   const [toast, setToast] = useState<{ message: string; type: ToastType } | null>(null);
   const [activatingPlan, setActivatingPlan] = useState<string | null>(null);
   const [loggingOut, setLoggingOut] = useState(false);
+  const [guestCsv, setGuestCsv] = useState("");
+  const [sendingInvites, setSendingInvites] = useState(false);
 
   // Redirect if not logged in
   useEffect(() => {
@@ -203,6 +152,36 @@ function DashboardContent() {
   const hasPlan = activePlan !== "none";
   const canCreateReveal = revealsAllowed > 0;
 
+
+  async function sendGuestInvites(enquiryId: string) {
+    if (!user) return;
+    const rows = guestCsv.split(/\n+/).map((r) => r.trim()).filter(Boolean);
+    const guests = rows.map((r) => { const [name, email] = r.split(",").map((x) => x?.trim()); return { name, email }; }).filter((g) => !!g.name && !!g.email);
+
+    if (guests.length === 0) {
+      setToast({ type: "error", message: "Please add guests as: Name, email@example.com (one per line)." });
+      return;
+    }
+
+    setSendingInvites(true);
+    try {
+      const idToken = await user.getIdToken();
+      const res = await fetch("/api/guest/send-invites", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${idToken}` },
+        body: JSON.stringify({ enquiryId, guests }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data?.error || "Failed to send invites.");
+      setGuestCsv("");
+      setToast({ type: "success", message: `Sent ${data.sent ?? guests.length} guest invite(s).` });
+    } catch (err) {
+      setToast({ type: "error", message: err instanceof Error ? err.message : "Failed to send invites." });
+    } finally {
+      setSendingInvites(false);
+    }
+  }
+
   // ─── Actions ──────────────────────────────────────────────
 
   async function handleSelectPlan(plan: PlanDefinition) {
@@ -217,7 +196,6 @@ function DashboardContent() {
           Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify({ planId: plan.id }),
-      });
       const data = await res.json();
       if (!res.ok) {
         setToast({ message: data.error || "Failed to activate plan.", type: "error" });
@@ -319,6 +297,17 @@ function DashboardContent() {
                   ✦ Start New Reveal →
                 </button>
               </div>
+            </section>
+          )}
+
+          {reveals[0] && (
+            <section className="dash-section">
+              <p className="section-label">Invite Guests</p>
+              <p className="welcome-sub" style={{ marginTop: 0 }}>Add one guest per line: <code>Name, email@example.com</code></p>
+              <textarea value={guestCsv} onChange={(e) => setGuestCsv(e.target.value)} placeholder={`Ava, ava@example.com\nNoah, noah@example.com`} style={{ width: "100%", minHeight: 120, border: "1px solid #d1d5db", borderRadius: 10, padding: 12, fontFamily: "inherit" }} />
+              <button className="btn-primary-lg" style={{ marginTop: 10 }} onClick={() => sendGuestInvites(reveals[0].id)} disabled={sendingInvites}>
+                {sendingInvites ? "Sending invites..." : "Send Guest Invites"}
+              </button>
             </section>
           )}
 
