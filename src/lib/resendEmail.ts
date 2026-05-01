@@ -33,6 +33,14 @@ export interface SendPasswordResetLinkEmailParams {
   resetUrl: string;
 }
 
+export interface SendGuestInviteEmailParams {
+  to: string;
+  guestName: string;
+  parentName: string;
+  revealAtIso: string;
+  inviteUrl: string;
+}
+
 
 function isTrue(value: string | undefined): boolean {
   if (!value) return false;
@@ -163,4 +171,24 @@ export async function sendPasswordResetLinkEmail(params: SendPasswordResetLinkEm
   `;
 
   await sendEmail({ to: params.to, subject: "Reset your Virtual Gender Reveal password", html });
+}
+
+
+export async function sendGuestInviteEmail(params: SendGuestInviteEmailParams): Promise<void> {
+  const guestName = escapeHtml(params.guestName || "there");
+  const parentName = escapeHtml(params.parentName);
+  const inviteUrl = escapeHtml(params.inviteUrl);
+  const revealAt = new Date(params.revealAtIso).toLocaleString("en-US", { dateStyle: "full", timeStyle: "short" });
+
+  const html = `
+    <div style="font-family:Arial,sans-serif;line-height:1.6;color:#111">
+      <h2 style="margin:0 0 12px">You're invited to a Virtual Gender Reveal 🎉</h2>
+      <p>Hi ${guestName}, ${parentName} invited you to their reveal celebration.</p>
+      <p><strong>Scheduled for:</strong> ${escapeHtml(revealAt)}</p>
+      <p>Open your secure invite link:</p>
+      <p><a href="${inviteUrl}">${inviteUrl}</a></p>
+    </div>
+  `;
+
+  await sendEmail({ to: params.to, subject: "You're invited to a Gender Reveal", html });
 }
