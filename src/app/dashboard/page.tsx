@@ -247,7 +247,6 @@ function DashboardContent() {
           Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify({ planId: plan.id }),
-      });
       const data = await res.json();
       if (!res.ok) {
         setToast({ message: data.error || "Failed to activate plan.", type: "error" });
