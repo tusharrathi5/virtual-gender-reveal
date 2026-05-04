@@ -294,7 +294,7 @@ function ConfirmDialog({ plan, onConfirm, onCancel }: { plan: PlanMeta; onConfir
 
 // ── Landing Page ─────────────────────────────────────────────
 function LandingPage() {
-  const { user, loading } = useAuth();
+  const { user, loading, firestoreUser } = useAuth();
   const router = useRouter();
   const [toast, setToast] = useState<{ message: string; type: "success" | "error" | "info" } | null>(null);
   const [confirmPlan, setConfirmPlan] = useState<PlanMeta | null>(null);
@@ -306,12 +306,34 @@ function LandingPage() {
   }
 
   const routeToReveal = (plan?: string) => {
+    const targetReveal = plan ? `/new-reveal?plan=${plan}` : "/new-reveal";
+
     if (!user) {
-      router.push("/login?redirect=/new-reveal");
+      const redirect = encodeURIComponent(targetReveal);
+      router.push(`/login?redirect=${redirect}`);
       return;
     }
-    const target = plan ? `/new-reveal?plan=${plan}` : "/new-reveal";
-    router.push(target);
+
+    const role = firestoreUser?.role?.toLowerCase?.() ?? "";
+    if (role === "admin") {
+      router.push("/admin");
+      return;
+    }
+
+    const activePlan = firestoreUser?.activePlan ?? "none";
+    const revealsAllowed = firestoreUser?.revealsAllowed ?? 0;
+
+    if (activePlan === "none") {
+      router.push("/dashboard?noEntitlement=1");
+      return;
+    }
+
+    if (revealsAllowed > 0) {
+      router.push(targetReveal);
+      return;
+    }
+
+    router.push("/dashboard?needsRepurchase=1");
   };
 
   return (
@@ -333,7 +355,7 @@ function LandingPage() {
         </div>
         <div className="nav-right">
           {loading ? null : user ? (
-            <a href="/dashboard" className="nav-user-link">Logged in as {user.displayName || user.email || "Account"}</a>
+            <a href={(firestoreUser?.role?.toLowerCase?.() === "admin") ? "/admin" : "/dashboard"} className="nav-user-link">Logged in as {user.displayName || user.email || "Account"}</a>
           ) : (
             <a href="/login" className="nav-login-btn">👤 Log In</a>
           )}
