@@ -31,6 +31,11 @@ interface GuestRow {
   message: string | null;
   hasMessage: boolean;
 }
+interface CsvPreview {
+  valid: { name: string; email: string }[];
+  invalid: string[];
+  duplicates: string[];
+}
 
 // ─── Toast ──────────────────────────────────────────────────
 
@@ -119,6 +124,7 @@ function DashboardContent() {
   const [loggingOut, setLoggingOut] = useState(false);
   const [guestCsv, setGuestCsv] = useState("");
   const [sendingInvites, setSendingInvites] = useState(false);
+  const [csvPreview, setCsvPreview] = useState<CsvPreview>({ valid: [], invalid: [], duplicates: [] });
   const [guestRows, setGuestRows] = useState<GuestRow[]>([]);
   const [revealUnlocked, setRevealUnlocked] = useState(false);
 
@@ -225,6 +231,98 @@ function DashboardContent() {
   const hasPlan = activePlan !== "none";
   const canCreateReveal = revealsAllowed > 0;
 
+
+  async function sendGuestInvites(enquiryId: string) {
+    if (!user) return;
+    const rows = guestCsv.split(/\n+/).map((r) => r.trim()).filter(Boolean);
+    const guests = rows.map((r) => { const [name, email] = r.split(",").map((x) => x?.trim()); return { name, email }; }).filter((g) => !!g.name && !!g.email);
+
+    if (guests.length === 0) {
+      setToast({ type: "error", message: "Please add guests as: Name, email@example.com (one per line)." });
+      return;
+    }
+
+    setSendingInvites(true);
+    try {
+      const idToken = await user.getIdToken();
+      const res = await fetch("/api/guest/send-invites", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${idToken}` },
+        body: JSON.stringify({ enquiryId, guests }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data?.error || "Failed to send invites.");
+      setGuestCsv("");
+      setToast({ type: "success", message: `Sent ${data.sent ?? guests.length} guest invite(s).` });
+      await loadGuestList(enquiryId);
+    } catch (err) {
+      setToast({ type: "error", message: err instanceof Error ? err.message : "Failed to send invites." });
+    } finally {
+      setSendingInvites(false);
+    }
+  }
+
+  function parseGuestCsv(raw: string): CsvPreview {
+    const lines = raw.split(/\r?\n/).map((l) => l.trim()).filter(Boolean);
+    const seen = new Set<string>();
+    const valid: { name: string; email: string }[] = [];
+    const invalid: string[] = [];
+    const duplicates: string[] = [];
+    for (const line of lines) {
+      const [name, email] = line.split(",").map((x) => x?.trim() || "");
+      const normalizedEmail = email.toLowerCase();
+      const emailOk = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(normalizedEmail);
+      if (!name || !emailOk) {
+        invalid.push(line);
+        continue;
+      }
+      if (seen.has(normalizedEmail)) {
+        duplicates.push(normalizedEmail);
+        continue;
+      }
+      seen.add(normalizedEmail);
+      valid.push({ name, email: normalizedEmail });
+    }
+    return { valid, invalid, duplicates };
+  }
+
+  async function onGuestCsvFile(file: File) {
+    const text = await file.text();
+    const preview = parseGuestCsv(text);
+    setCsvPreview(preview);
+    const normalized = preview.valid.map((g) => `${g.name}, ${g.email}`).join("\n");
+    setGuestCsv(normalized);
+    if (preview.invalid.length > 0) {
+      setToast({ type: "info", message: `Ignored ${preview.invalid.length} invalid row(s).` });
+    }
+  }
+  async function loadGuestList(enquiryId: string) {
+    const idToken = await user!.getIdToken();
+    const res = await fetch(`/api/guest/list?enquiryId=${encodeURIComponent(enquiryId)}`, { headers: { Authorization: `Bearer ${idToken}` } });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(data?.error || "Failed to load guest list.");
+    setGuestRows(Array.isArray(data?.guests) ? data.guests : []);
+    setRevealUnlocked(Boolean(data?.revealUnlocked));
+  }
+
+  async function manageGuest(guestId: string, action: "resend" | "revoke", enquiryId: string) {
+    try {
+      const idToken = await user!.getIdToken();
+      const res = await fetch("/api/guest/manage", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${idToken}` },
+        body: JSON.stringify({ guestId, action }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data?.error || `Failed to ${action} invite.`);
+      setToast({ type: "success", message: action === "resend" ? "Invite resent." : "Invite revoked." });
+      await loadGuestList(enquiryId);
+    } catch (err) {
+      setToast({ type: "error", message: err instanceof Error ? err.message : "Failed to manage guest." });
+    }
+  }
+
+  // ─── Actions ──────────────────────────────────────────────
 
   async function sendGuestInvites(enquiryId: string) {
     if (!user) return;
@@ -477,7 +575,24 @@ function DashboardContent() {
             <section className="dash-section">
               <p className="section-label">Invite Guests</p>
               <p className="welcome-sub" style={{ marginTop: 0 }}>Add one guest per line: <code>Name, email@example.com</code></p>
+              <div style={{ marginBottom: 10 }}>
+                <input
+                  type="file"
+                  accept=".csv,text/csv"
+                  onChange={(e) => {
+                    const file = e.target.files?.[0];
+                    if (file) void onGuestCsvFile(file);
+                  }}
+                />
+              </div>
               <textarea value={guestCsv} onChange={(e) => setGuestCsv(e.target.value)} placeholder={`Ava, ava@example.com\nNoah, noah@example.com`} style={{ width: "100%", minHeight: 120, border: "1px solid #d1d5db", borderRadius: 10, padding: 12, fontFamily: "inherit" }} />
+              {(csvPreview.valid.length > 0 || csvPreview.invalid.length > 0 || csvPreview.duplicates.length > 0) && (
+                <div style={{ marginTop: 8, fontSize: 13, color: "#374151" }}>
+                  <div>Preview: {csvPreview.valid.length} valid row(s).</div>
+                  {csvPreview.duplicates.length > 0 && <div>{csvPreview.duplicates.length} duplicate email(s) skipped.</div>}
+                  {csvPreview.invalid.length > 0 && <div>{csvPreview.invalid.length} invalid row(s) skipped.</div>}
+                </div>
+              )}
               <button className="btn-primary-lg" style={{ marginTop: 10 }} onClick={() => sendGuestInvites(reveals[0].id)} disabled={sendingInvites}>
                 {sendingInvites ? "Sending invites..." : "Send Guest Invites"}
               </button>
