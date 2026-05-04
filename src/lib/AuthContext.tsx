@@ -177,6 +177,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       emailVerified: false,
     });
 
+    // Trigger welcome email (non-blocking)
+    void fireEmailEvent({
+      type: "signup",
+      email: email.trim().toLowerCase(),
+      fullName: fullName.trim(),
+    }).catch((err) => console.error("[auth] welcome email event failed:", err));
+
     // Update state
     const fsUser = await getUserDoc(newUser.uid);
     setFirestoreUser(fsUser);
