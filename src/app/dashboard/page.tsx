@@ -324,55 +324,173 @@ function DashboardContent() {
 
   // ─── Actions ──────────────────────────────────────────────
 
-  async function handleSelectPlan(plan: PlanDefinition) {
-    if (activatingPlan) return;
-    setActivatingPlan(plan.id);
+  async function sendGuestInvites(enquiryId: string) {
+    if (!user) return;
+    const rows = guestCsv.split(/\n+/).map((r) => r.trim()).filter(Boolean);
+    const guests = rows.map((r) => { const [name, email] = r.split(",").map((x) => x?.trim()); return { name, email }; }).filter((g) => !!g.name && !!g.email);
+
+    if (guests.length === 0) {
+      setToast({ type: "error", message: "Please add guests as: Name, email@example.com (one per line)." });
+      return;
+    }
+
+    setSendingInvites(true);
     try {
-      const token = await user!.getIdToken();
-      const res = await fetch("/api/create-checkout", {
+      const idToken = await user.getIdToken();
+      const res = await fetch("/api/guest/send-invites", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({ planId: plan.id }),
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${idToken}` },
+        body: JSON.stringify({ enquiryId, guests }),
       });
-      const data = await res.json();
-      if (!res.ok) {
-        setToast({ message: data.error || "Failed to activate plan.", type: "error" });
-        return;
-      }
-      if (data.url) {
-        // Real Stripe flow — redirect
-        window.location.href = data.url;
-        return;
-      }
-      // Dev mode — plan activated directly
-      setToast({
-        message: data.message || `${plan.name} plan activated.`,
-        type: "success",
-      });
-      await refreshFirestoreUser();
-      // If this is the free plan activation, redirect to the form
-      if (plan.id === "free") {
-        setTimeout(() => router.push("/new-reveal"), 800);
-      }
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data?.error || "Failed to send invites.");
+      setGuestCsv("");
+      setToast({ type: "success", message: `Sent ${data.sent ?? guests.length} guest invite(s).` });
+      await loadGuestList(enquiryId);
     } catch (err) {
-      setToast({ message: "Something went wrong. Please try again.", type: "error" });
+      setToast({ type: "error", message: err instanceof Error ? err.message : "Failed to send invites." });
     } finally {
-      setActivatingPlan(null);
+      setSendingInvites(false);
+    }
+  }
+  async function loadGuestList(enquiryId: string) {
+    const idToken = await user!.getIdToken();
+    const res = await fetch(`/api/guest/list?enquiryId=${encodeURIComponent(enquiryId)}`, { headers: { Authorization: `Bearer ${idToken}` } });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(data?.error || "Failed to load guest list.");
+    setGuestRows(Array.isArray(data?.guests) ? data.guests : []);
+    setRevealUnlocked(Boolean(data?.revealUnlocked));
+  }
+
+  async function manageGuest(guestId: string, action: "resend" | "revoke", enquiryId: string) {
+    try {
+      const idToken = await user!.getIdToken();
+      const res = await fetch("/api/guest/manage", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${idToken}` },
+        body: JSON.stringify({ guestId, action }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data?.error || `Failed to ${action} invite.`);
+      setToast({ type: "success", message: action === "resend" ? "Invite resent." : "Invite revoked." });
+      await loadGuestList(enquiryId);
+    } catch (err) {
+      setToast({ type: "error", message: err instanceof Error ? err.message : "Failed to manage guest." });
     }
   }
 
-  async function handleLogout() {
-    setLoggingOut(true);
+  // ─── Actions ──────────────────────────────────────────────
+
+  async function sendGuestInvites(enquiryId: string) {
+    if (!user) return;
+    const rows = guestCsv.split(/\n+/).map((r) => r.trim()).filter(Boolean);
+    const guests = rows.map((r) => { const [name, email] = r.split(",").map((x) => x?.trim()); return { name, email }; }).filter((g) => !!g.name && !!g.email);
+
+    if (guests.length === 0) {
+      setToast({ type: "error", message: "Please add guests as: Name, email@example.com (one per line)." });
+      return;
+    }
+
+    setSendingInvites(true);
     try {
-      await logout();
-      router.push("/");
-    } catch {
-      setLoggingOut(false);
+      const idToken = await user.getIdToken();
+      const res = await fetch("/api/guest/send-invites", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${idToken}` },
+        body: JSON.stringify({ enquiryId, guests }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data?.error || "Failed to send invites.");
+      setGuestCsv("");
+      setToast({ type: "success", message: `Sent ${data.sent ?? guests.length} guest invite(s).` });
+    } catch (err) {
+      setToast({ type: "error", message: err instanceof Error ? err.message : "Failed to send invites." });
+    } finally {
+      setSendingInvites(false);
     }
   }
+
+  // ─── Actions ──────────────────────────────────────────────
+
+  async function sendGuestInvites(enquiryId: string) {
+    if (!user) return;
+    const rows = guestCsv.split(/\n+/).map((r) => r.trim()).filter(Boolean);
+    const guests = rows.map((r) => { const [name, email] = r.split(",").map((x) => x?.trim()); return { name, email }; }).filter((g) => !!g.name && !!g.email);
+
+    if (guests.length === 0) {
+      setToast({ type: "error", message: "Please add guests as: Name, email@example.com (one per line)." });
+      return;
+    }
+
+    setSendingInvites(true);
+    try {
+      const idToken = await user.getIdToken();
+      const res = await fetch("/api/guest/send-invites", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${idToken}` },
+        body: JSON.stringify({ enquiryId, guests }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data?.error || "Failed to send invites.");
+      setGuestCsv("");
+      setToast({ type: "success", message: `Sent ${data.sent ?? guests.length} guest invite(s).` });
+    } catch (err) {
+      setToast({ type: "error", message: err instanceof Error ? err.message : "Failed to send invites." });
+    } finally {
+      setSendingInvites(false);
+    }
+  }
+
+  // ─── Actions ──────────────────────────────────────────────
+
+ async function handleSelectPlan(plan: PlanDefinition) {
+  if (activatingPlan) return;
+  setActivatingPlan(plan.id);
+
+  try {
+    const token = await user!.getIdToken();
+
+    const res = await fetch("/api/create-checkout", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({ planId: plan.id }),
+    });
+
+    const data = await res.json().catch(() => ({}));
+
+    if (!res.ok) {
+      setToast({ message: data.error || "Failed to activate plan.", type: "error" });
+      return;
+    }
+
+    if (data.url) {
+      // Real Stripe flow — redirect
+      window.location.href = data.url;
+      return;
+    }
+
+    // Dev mode — plan activated directly
+    setToast({
+      message: data.message || `${plan.name} plan activated.`,
+      type: "success",
+    });
+
+    await refreshFirestoreUser();
+
+    // If this is the free plan activation, redirect to the form
+    if (plan.id === "free") {
+      setTimeout(() => router.push("/new-reveal"), 800);
+    }
+
+  } catch (err) {
+    setToast({ message: "Something went wrong. Please try again.", type: "error" });
+  } finally {
+    setActivatingPlan(null);
+  }
+}
 
   // ─── Render ───────────────────────────────────────────────
 
@@ -391,9 +509,21 @@ function DashboardContent() {
             <div className="dash-avatar">{firstName.charAt(0).toUpperCase()}</div>
             <span className="dash-user-name">{user.displayName || user.email}</span>
             <button className="btn-ghost-sm" onClick={() => router.push("/settings")}>Settings</button>
-            <button className="btn-ghost-sm" onClick={handleLogout} disabled={loggingOut}>
-              {loggingOut ? "Signing out…" : "Sign Out"}
-            </button>
+            <button
+  className="btn-ghost-sm"
+  disabled={loggingOut}
+  onClick={async () => {
+    setLoggingOut(true);
+    try {
+      await logout();
+      router.push("/");
+    } catch {
+      setLoggingOut(false);
+    }
+  }}
+>
+  {loggingOut ? "Signing out…" : "Sign Out"}
+</button>
           </div>
         </header>
 
