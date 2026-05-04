@@ -29,6 +29,11 @@ export async function GET(_: NextRequest, { params }: { params: Promise<{ token:
   return NextResponse.json({
     success: true,
     guest: { name: guest.data()?.name },
+    response: {
+      prediction: (guest.data()?.prediction as "boy" | "girl" | null) ?? null,
+      message: (guest.data()?.message as string | null) ?? null,
+      submittedAt: guest.data()?.joinedAt ?? null,
+    },
     reveal: { parentName: data.parentName || "Parents", revealAtIso: data.revealAt?.toDate?.().toISOString?.() || null },
   });
 }
@@ -48,6 +53,9 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ tok
   const guest = await guestRef.get();
   if (!guest.exists) return NextResponse.json({ error: "Invite not found." }, { status: 404 });
   if ((guest.data()?.tokenHash as string) !== CryptoJS.SHA256(token).toString()) return NextResponse.json({ error: "Invalid invite." }, { status: 401 });
+  if (guest.data()?.prediction) {
+    return NextResponse.json({ error: "Response already submitted." }, { status: 409 });
+  }
 
   await guestRef.update({ prediction, message, joinedAt: FieldValue.serverTimestamp(), updatedAt: FieldValue.serverTimestamp() });
   return NextResponse.json({ success: true });

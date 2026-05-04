@@ -18,6 +18,8 @@ interface RevealSummary {
   genderStatus: string;
   photos: string[];
   createdAt: Date | null;
+  videoUrl?: string | null;
+  videoReady?: boolean;
 }
 
 // ─── Toast ──────────────────────────────────────────────────
@@ -180,6 +182,8 @@ function DashboardContent() {
             genderStatus: data.genderStatus ?? "not_submitted",
             photos: Array.isArray(data.photos) ? data.photos : [],
             createdAt: timestampToDate(data.createdAt),
+            videoUrl: typeof data.videoUrl === "string" ? data.videoUrl : null,
+            videoReady: Boolean(data.videoUrl) || Boolean(data?.stages?.videoGenerated),
           };
         });
         setReveals(items);
@@ -203,6 +207,37 @@ function DashboardContent() {
   const hasPlan = activePlan !== "none";
   const canCreateReveal = revealsAllowed > 0;
 
+
+  async function sendGuestInvites(enquiryId: string) {
+    if (!user) return;
+    const rows = guestCsv.split(/\n+/).map((r) => r.trim()).filter(Boolean);
+    const guests = rows.map((r) => { const [name, email] = r.split(",").map((x) => x?.trim()); return { name, email }; }).filter((g) => !!g.name && !!g.email);
+
+    if (guests.length === 0) {
+      setToast({ type: "error", message: "Please add guests as: Name, email@example.com (one per line)." });
+      return;
+    }
+
+    setSendingInvites(true);
+    try {
+      const idToken = await user.getIdToken();
+      const res = await fetch("/api/guest/send-invites", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${idToken}` },
+        body: JSON.stringify({ enquiryId, guests }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data?.error || "Failed to send invites.");
+      setGuestCsv("");
+      setToast({ type: "success", message: `Sent ${data.sent ?? guests.length} guest invite(s).` });
+    } catch (err) {
+      setToast({ type: "error", message: err instanceof Error ? err.message : "Failed to send invites." });
+    } finally {
+      setSendingInvites(false);
+    }
+  }
+
+  // ─── Actions ──────────────────────────────────────────────
 
   async function sendGuestInvites(enquiryId: string) {
     if (!user) return;
@@ -363,7 +398,7 @@ function DashboardContent() {
             </section>
           )}
 
-          {reveals[0] && (
+          {reveals[0] && reveals[0].videoReady && (
             <section className="dash-section">
               <p className="section-label">Invite Guests</p>
               <p className="welcome-sub" style={{ marginTop: 0 }}>Add one guest per line: <code>Name, email@example.com</code></p>
@@ -371,6 +406,14 @@ function DashboardContent() {
               <button className="btn-primary-lg" style={{ marginTop: 10 }} onClick={() => sendGuestInvites(reveals[0].id)} disabled={sendingInvites}>
                 {sendingInvites ? "Sending invites..." : "Send Guest Invites"}
               </button>
+            </section>
+          )}
+          {reveals[0] && !reveals[0].videoReady && (
+            <section className="dash-section">
+              <p className="section-label">Invite Guests</p>
+              <p className="welcome-sub" style={{ marginTop: 0 }}>
+                Guest upload will appear here after admin uploads your reveal video.
+              </p>
             </section>
           )}
 
