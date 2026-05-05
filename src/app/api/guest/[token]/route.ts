@@ -25,7 +25,9 @@ export async function GET(_: NextRequest, { params }: { params: Promise<{ token:
   const enquiry = await getAdminDb().collection("enquiries").doc(payload.enquiryId).get();
   if (!enquiry.exists) return NextResponse.json({ error: "Reveal not found." }, { status: 404 });
 
-  const data = enquiry.data() as { parentName?: string; revealAt?: { toDate: () => Date } };
+  const data = enquiry.data() as { parentName?: string; revealAt?: { toDate: () => Date }; videoUrl?: string | null };
+  const revealAt = data.revealAt?.toDate?.() ?? null;
+  const isLive = !!revealAt && Date.now() >= revealAt.getTime();
   return NextResponse.json({
     success: true,
     guest: { name: guest.data()?.name },
@@ -34,7 +36,12 @@ export async function GET(_: NextRequest, { params }: { params: Promise<{ token:
       message: (guest.data()?.message as string | null) ?? null,
       submittedAt: guest.data()?.joinedAt ?? null,
     },
-    reveal: { parentName: data.parentName || "Parents", revealAtIso: data.revealAt?.toDate?.().toISOString?.() || null },
+    reveal: {
+      parentName: data.parentName || "Parents",
+      revealAtIso: revealAt?.toISOString?.() || null,
+      isLive,
+      videoUrl: isLive ? data.videoUrl || null : null,
+    },
   });
 }
 

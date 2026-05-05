@@ -2136,10 +2136,12 @@ function VideoUploadModal({
   const [file, setFile] = useState<File | null>(null);
   const [busy, setBusy] = useState(false);
   const [status, setStatus] = useState<string | null>(null);
+  const [progress, setProgress] = useState(0);
 
   async function uploadNow() {
     if (!file) return;
     setBusy(true);
+    setProgress(0);
     setStatus("Initializing upload…");
     try {
       const token = await user.getIdToken();
@@ -2156,14 +2158,29 @@ function VideoUploadModal({
       setStatus("Uploading video to Cloudflare…");
       const form = new FormData();
       form.append("file", file);
-      const uploadRes = await fetch(initData.uploadURL, {
-        method: "POST",
-        body: form,
+      const uploadData = await new Promise<Record<string, unknown>>((resolve, reject) => {
+        const xhr = new XMLHttpRequest();
+        xhr.open("POST", initData.uploadURL);
+        xhr.upload.onprogress = (e) => {
+          if (e.lengthComputable) {
+            const pct = Math.min(100, Math.round((e.loaded / e.total) * 100));
+            setProgress(pct);
+            setStatus(`Uploading video to Cloudflare… ${pct}%`);
+          }
+        };
+        xhr.onerror = () => reject(new Error("Cloudflare upload failed."));
+        xhr.onload = () => {
+          try {
+            const parsed = JSON.parse(xhr.responseText || "{}");
+            if (xhr.status >= 200 && xhr.status < 300 && parsed?.success !== false) resolve(parsed);
+            else reject(new Error(parsed?.errors?.[0]?.message || "Cloudflare upload failed."));
+          } catch {
+            reject(new Error("Cloudflare upload failed."));
+          }
+        };
+        xhr.send(form);
       });
-      const uploadData = await uploadRes.json().catch(() => ({}));
-      if (!uploadRes.ok || uploadData?.success === false) {
-        throw new Error(uploadData?.errors?.[0]?.message || "Cloudflare upload failed.");
-      }
+      if (!uploadData) throw new Error("Cloudflare upload failed.");
 
       setStatus("Finalizing video record…");
       const markRes = await fetch("/api/admin/video/mark-ready", {
@@ -2173,6 +2190,7 @@ function VideoUploadModal({
       });
       const markData = await markRes.json().catch(() => ({}));
       if (!markRes.ok) throw new Error(markData?.error || "Failed to mark video ready.");
+      setProgress(100);
       setStatus("Upload complete. Video is ready.");
     } catch (err) {
       const msg = err instanceof Error ? err.message : "Upload failed.";
@@ -2193,7 +2211,7 @@ function VideoUploadModal({
         <p>Upload a video file and we&apos;ll push it directly to Cloudflare Stream.</p>
         <input type="file" accept="video/*" onChange={(e) => setFile(e.target.files?.[0] ?? null)} />
         <div className="vgr-progress-bar">
-          <div className="vgr-progress-fill" />
+          <div className="vgr-progress-fill" style={{ width: `${progress}%` }} />
         </div>
         <div
           style={{
