@@ -854,7 +854,16 @@ export default function AdminPage() {
         />
       )}
 
-      {showVideoModal && <VideoUploadModal onClose={() => setShowVideoModal(false)} />}
+      {showVideoModal && selectedUser?.latestEnquiry && user && (
+        <VideoUploadModal
+          enquiryId={selectedUser.latestEnquiry.id}
+          user={user}
+          onClose={() => {
+            setShowVideoModal(false);
+            setRefreshKey((k) => k + 1);
+          }}
+        />
+      )}
 
       <style jsx global>{`
         @import url("https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap");
@@ -2115,7 +2124,64 @@ function UserProfileOverlay({
 
 // ─── Video upload placeholder modal ─────────────────────────────────────────
 
-function VideoUploadModal({ onClose }: { onClose: () => void }) {
+function VideoUploadModal({
+  onClose,
+  enquiryId,
+  user,
+}: {
+  onClose: () => void;
+  enquiryId: string;
+  user: { getIdToken: () => Promise<string> };
+}) {
+  const [file, setFile] = useState<File | null>(null);
+  const [busy, setBusy] = useState(false);
+  const [status, setStatus] = useState<string | null>(null);
+
+  async function uploadNow() {
+    if (!file) return;
+    setBusy(true);
+    setStatus("Initializing upload…");
+    try {
+      const token = await user.getIdToken();
+      const initRes = await fetch("/api/admin/video/init-upload", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ enquiryId }),
+      });
+      const initData = await initRes.json().catch(() => ({}));
+      if (!initRes.ok || !initData?.uploadURL || !initData?.uid) {
+        throw new Error(initData?.error || "Failed to initialize upload.");
+      }
+
+      setStatus("Uploading video to Cloudflare…");
+      const form = new FormData();
+      form.append("file", file);
+      const uploadRes = await fetch(initData.uploadURL, {
+        method: "POST",
+        body: form,
+      });
+      const uploadData = await uploadRes.json().catch(() => ({}));
+      if (!uploadRes.ok || uploadData?.success === false) {
+        throw new Error(uploadData?.errors?.[0]?.message || "Cloudflare upload failed.");
+      }
+
+      setStatus("Finalizing video record…");
+      const markRes = await fetch("/api/admin/video/mark-ready", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ enquiryId, streamUid: initData.uid }),
+      });
+      const markData = await markRes.json().catch(() => ({}));
+      if (!markRes.ok) throw new Error(markData?.error || "Failed to mark video ready.");
+      setStatus("Upload complete. Video is ready.");
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "Upload failed.";
+      setStatus(msg);
+    } finally {
+      setBusy(false);
+    }
+  }
+
   return (
     <div className="vgr-video-modal" onClick={onClose}>
       <div
@@ -2124,11 +2190,8 @@ function VideoUploadModal({ onClose }: { onClose: () => void }) {
       >
         <div className="vgr-video-modal-icon">📤</div>
         <h3>Video Upload</h3>
-        <p>
-          Cloudflare Stream integration is coming soon. Once enabled, you&apos;ll
-          be able to upload videos directly from this dialog and watch real-time
-          upload progress.
-        </p>
+        <p>Upload a video file and we&apos;ll push it directly to Cloudflare Stream.</p>
+        <input type="file" accept="video/*" onChange={(e) => setFile(e.target.files?.[0] ?? null)} />
         <div className="vgr-progress-bar">
           <div className="vgr-progress-fill" />
         </div>
@@ -2139,8 +2202,11 @@ function VideoUploadModal({ onClose }: { onClose: () => void }) {
             marginBottom: 20,
           }}
         >
-          Upload pipeline: pending Cloudflare setup
+          {status ?? "Choose a video file to begin upload"}
         </div>
+        <button className="vgr-btn vgr-btn-primary" onClick={uploadNow} disabled={!file || busy} style={{ marginBottom: 10 }}>
+          {busy ? "Uploading..." : "Upload Video"}
+        </button>
         <button className="vgr-btn" onClick={onClose}>
           Close
         </button>
