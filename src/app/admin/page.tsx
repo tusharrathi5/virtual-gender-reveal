@@ -2182,16 +2182,8 @@ function VideoUploadModal({
       });
       if (!uploadData) throw new Error("Cloudflare upload failed.");
 
-      setStatus("Finalizing video record…");
-      const markRes = await fetch("/api/admin/video/mark-ready", {
-        method: "POST",
-        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-        body: JSON.stringify({ enquiryId, streamUid: initData.uid }),
-      });
-      const markData = await markRes.json().catch(() => ({}));
-      if (!markRes.ok) throw new Error(markData?.error || "Failed to mark video ready.");
       setProgress(100);
-      setStatus("Upload complete. Video is ready.");
+      setStatus("Upload complete. Cloudflare is processing the video. It will auto-mark ready shortly.");
     } catch (err) {
       const msg = err instanceof Error ? err.message : "Upload failed.";
       setStatus(msg);
