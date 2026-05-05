@@ -25,9 +25,23 @@ export async function GET(_: NextRequest, { params }: { params: Promise<{ token:
   const enquiry = await getAdminDb().collection("enquiries").doc(payload.enquiryId).get();
   if (!enquiry.exists) return NextResponse.json({ error: "Reveal not found." }, { status: 404 });
 
-  const data = enquiry.data() as { parentName?: string; revealAt?: { toDate: () => Date }; videoUrl?: string | null };
+  const data = enquiry.data() as {
+    parentName?: string;
+    revealAt?: { toDate: () => Date };
+    revealTimezone?: string;
+    videoUrl?: string | null;
+    stages?: { eventCompleted?: unknown };
+  };
   const revealAt = data.revealAt?.toDate?.() ?? null;
   const isLive = !!revealAt && Date.now() >= revealAt.getTime();
+  const isCompleted = Boolean(data?.stages?.eventCompleted);
+  const feedSnap = await getAdminDb().collection("guest_invites").where("enquiryId", "==", payload.enquiryId).get();
+  const feed = feedSnap.docs
+    .map((d) => d.data() as { name?: string; message?: string | null; updatedAt?: { toDate?: () => Date } })
+    .filter((m) => m.message)
+    .sort((a, b) => (b.updatedAt?.toDate?.().getTime?.() || 0) - (a.updatedAt?.toDate?.().getTime?.() || 0))
+    .slice(0, 20)
+    .map((m) => ({ name: m.name || "Guest", message: m.message || "" }));
   return NextResponse.json({
     success: true,
     guest: { name: guest.data()?.name },
@@ -39,9 +53,12 @@ export async function GET(_: NextRequest, { params }: { params: Promise<{ token:
     reveal: {
       parentName: data.parentName || "Parents",
       revealAtIso: revealAt?.toISOString?.() || null,
+      revealTimezone: data.revealTimezone || "UTC",
       isLive,
+      isCompleted,
       videoUrl: isLive ? data.videoUrl || null : null,
     },
+    feed,
   });
 }
 

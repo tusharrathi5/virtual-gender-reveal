@@ -15,8 +15,11 @@ export default function GuestInvitePage() {
   const [guestName, setGuestName] = useState("Guest");
   const [parentName, setParentName] = useState("Parents");
   const [revealAtIso, setRevealAtIso] = useState<string | null>(null);
+  const [revealTimezone, setRevealTimezone] = useState("UTC");
   const [isLive, setIsLive] = useState(false);
+  const [isCompleted, setIsCompleted] = useState(false);
   const [videoUrl, setVideoUrl] = useState<string | null>(null);
+  const [feed, setFeed] = useState<Array<{ name: string; message: string }>>([]);
 
   const [prediction, setPrediction] = useState<Prediction>(null);
   const [message, setMessage] = useState("");
@@ -27,29 +30,40 @@ export default function GuestInvitePage() {
     return () => clearInterval(id);
   }, []);
 
+  const loadInvite = async () => {
+    const res = await fetch(`/api/guest/${token}`);
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      setError(data?.error || "Invalid invite");
+      setLoading(false);
+      return;
+    }
+
+    setGuestName(data?.guest?.name || "Guest");
+    setParentName(data?.reveal?.parentName || "Parents");
+    setRevealAtIso(data?.reveal?.revealAtIso || null);
+    setRevealTimezone(data?.reveal?.revealTimezone || "UTC");
+    setIsLive(Boolean(data?.reveal?.isLive));
+    setIsCompleted(Boolean(data?.reveal?.isCompleted));
+    setVideoUrl(data?.reveal?.videoUrl || null);
+    setFeed(Array.isArray(data?.feed) ? data.feed : []);
+
+    if (data?.response?.prediction === "boy" || data?.response?.prediction === "girl") {
+      setPrediction(data.response.prediction);
+      setMessage(data?.response?.message || "");
+      setDone(true);
+    }
+    setLoading(false);
+  };
+
   useEffect(() => {
     (async () => {
-      const res = await fetch(`/api/guest/${token}`);
-      const data = await res.json().catch(() => ({}));
-      if (!res.ok) {
-        setError(data?.error || "Invalid invite");
-        setLoading(false);
-        return;
-      }
-
-      setGuestName(data?.guest?.name || "Guest");
-      setParentName(data?.reveal?.parentName || "Parents");
-      setRevealAtIso(data?.reveal?.revealAtIso || null);
-      setIsLive(Boolean(data?.reveal?.isLive));
-      setVideoUrl(data?.reveal?.videoUrl || null);
-
-      if (data?.response?.prediction === "boy" || data?.response?.prediction === "girl") {
-        setPrediction(data.response.prediction);
-        setMessage(data?.response?.message || "");
-        setDone(true);
-      }
-      setLoading(false);
+      await loadInvite();
     })();
+    const refresh = setInterval(() => {
+      loadInvite().catch(() => {});
+    }, 30000);
+    return () => clearInterval(refresh);
   }, [token]);
 
   const countdownParts = useMemo(() => {
@@ -112,6 +126,7 @@ export default function GuestInvitePage() {
             {parentName}&apos;s Virtual Gender Reveal
           </h1>
           <p style={{ margin: "4px 0 0", color: "#6b7280" }}>Hi {guestName}, welcome to the celebration ✨</p>
+          <p style={{ margin: "4px 0 0", color: "#9ca3af", fontSize: 13 }}>Reveal timezone: {revealTimezone}</p>
         </header>
 
         <section
@@ -181,6 +196,8 @@ export default function GuestInvitePage() {
 
             {loading ? (
               <p style={{ color: "#6b7280" }}>Loading invite…</p>
+            ) : isCompleted ? (
+              <p style={{ color: "#6b7280" }}>This reveal event has completed. Thanks for joining 💛</p>
             ) : done ? (
               <div style={{ background: "#f0fdf4", border: "1px solid #bbf7d0", borderRadius: 12, padding: 12 }}>
                 <p style={{ margin: 0, color: "#166534", fontWeight: 700 }}>Thanks! Your response is saved.</p>
@@ -243,6 +260,22 @@ export default function GuestInvitePage() {
               </>
             )}
             {error && <p style={{ color: "#b91c1c", marginTop: 8 }}>{error}</p>}
+          </div>
+        </section>
+
+        <section style={{ marginTop: 14, background: "#fff", border: "1px solid #ece6ee", borderRadius: 14, padding: 14 }}>
+          <h3 style={{ margin: 0, fontSize: 18 }}>Guest messages</h3>
+          <p style={{ color: "#6b7280", marginTop: 6 }}>Live congratulatory feed from invited guests.</p>
+          <div style={{ maxHeight: 220, overflowY: "auto", paddingRight: 4 }}>
+            {feed.length === 0 ? (
+              <p style={{ color: "#9ca3af" }}>No guest messages yet.</p>
+            ) : (
+              feed.map((item, idx) => (
+                <div key={`${item.name}-${idx}`} style={{ borderBottom: "1px solid #f3f4f6", padding: "8px 0" }}>
+                  <strong>{item.name}:</strong> {item.message}
+                </div>
+              ))
+            )}
           </div>
         </section>
       </div>
