@@ -854,7 +854,16 @@ export default function AdminPage() {
         />
       )}
 
-      {showVideoModal && <VideoUploadModal onClose={() => setShowVideoModal(false)} />}
+      {showVideoModal && selectedUser?.latestEnquiry && user && (
+        <VideoUploadModal
+          enquiryId={selectedUser.latestEnquiry.id}
+          user={user}
+          onClose={() => {
+            setShowVideoModal(false);
+            setRefreshKey((k) => k + 1);
+          }}
+        />
+      )}
 
       <style jsx global>{`
         @import url("https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap");
@@ -2115,7 +2124,74 @@ function UserProfileOverlay({
 
 // ─── Video upload placeholder modal ─────────────────────────────────────────
 
-function VideoUploadModal({ onClose }: { onClose: () => void }) {
+function VideoUploadModal({
+  onClose,
+  enquiryId,
+  user,
+}: {
+  onClose: () => void;
+  enquiryId: string;
+  user: { getIdToken: () => Promise<string> };
+}) {
+  const [file, setFile] = useState<File | null>(null);
+  const [busy, setBusy] = useState(false);
+  const [status, setStatus] = useState<string | null>(null);
+  const [progress, setProgress] = useState(0);
+
+  async function uploadNow() {
+    if (!file) return;
+    setBusy(true);
+    setProgress(0);
+    setStatus("Initializing upload…");
+    try {
+      const token = await user.getIdToken();
+      const initRes = await fetch("/api/admin/video/init-upload", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ enquiryId }),
+      });
+      const initData = await initRes.json().catch(() => ({}));
+      if (!initRes.ok || !initData?.uploadURL || !initData?.uid) {
+        throw new Error(initData?.error || "Failed to initialize upload.");
+      }
+
+      setStatus("Uploading video to Cloudflare…");
+      const form = new FormData();
+      form.append("file", file);
+      const uploadData = await new Promise<Record<string, unknown>>((resolve, reject) => {
+        const xhr = new XMLHttpRequest();
+        xhr.open("POST", initData.uploadURL);
+        xhr.upload.onprogress = (e) => {
+          if (e.lengthComputable) {
+            const pct = Math.min(100, Math.round((e.loaded / e.total) * 100));
+            setProgress(pct);
+            setStatus(`Uploading video to Cloudflare… ${pct}%`);
+          }
+        };
+        xhr.onerror = () => reject(new Error("Cloudflare upload failed."));
+        xhr.onload = () => {
+          try {
+            const parsed = JSON.parse(xhr.responseText || "{}");
+            if (xhr.status >= 200 && xhr.status < 300 && parsed?.success !== false) resolve(parsed);
+            else reject(new Error(parsed?.errors?.[0]?.message || "Cloudflare upload failed."));
+          } catch {
+            reject(new Error("Cloudflare upload failed."));
+          }
+        };
+        xhr.send(form);
+      });
+      if (!uploadData) throw new Error("Cloudflare upload failed.");
+
+      setProgress(100);
+      setStatus("Upload complete. Cloudflare is processing the video. It will auto-mark ready shortly.");
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "Upload failed.";
+      setStatus(msg);
+    } finally {
+      setBusy(false);
+    }
+  }
+
   return (
     <div className="vgr-video-modal" onClick={onClose}>
       <div
@@ -2124,13 +2200,10 @@ function VideoUploadModal({ onClose }: { onClose: () => void }) {
       >
         <div className="vgr-video-modal-icon">📤</div>
         <h3>Video Upload</h3>
-        <p>
-          Cloudflare Stream integration is coming soon. Once enabled, you&apos;ll
-          be able to upload videos directly from this dialog and watch real-time
-          upload progress.
-        </p>
+        <p>Upload a video file and we&apos;ll push it directly to Cloudflare Stream.</p>
+        <input type="file" accept="video/*" onChange={(e) => setFile(e.target.files?.[0] ?? null)} />
         <div className="vgr-progress-bar">
-          <div className="vgr-progress-fill" />
+          <div className="vgr-progress-fill" style={{ width: `${progress}%` }} />
         </div>
         <div
           style={{
@@ -2139,8 +2212,11 @@ function VideoUploadModal({ onClose }: { onClose: () => void }) {
             marginBottom: 20,
           }}
         >
-          Upload pipeline: pending Cloudflare setup
+          {status ?? "Choose a video file to begin upload"}
         </div>
+        <button className="vgr-btn vgr-btn-primary" onClick={uploadNow} disabled={!file || busy} style={{ marginBottom: 10 }}>
+          {busy ? "Uploading..." : "Upload Video"}
+        </button>
         <button className="vgr-btn" onClick={onClose}>
           Close
         </button>
