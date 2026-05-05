@@ -2154,12 +2154,16 @@ function VideoUploadModal({
       }
 
       setStatus("Uploading video to Cloudflare…");
+      const form = new FormData();
+      form.append("file", file);
       const uploadRes = await fetch(initData.uploadURL, {
-        method: "PUT",
-        headers: { "Content-Type": file.type || "application/octet-stream" },
-        body: file,
+        method: "POST",
+        body: form,
       });
-      if (!uploadRes.ok) throw new Error("Cloudflare upload failed.");
+      const uploadData = await uploadRes.json().catch(() => ({}));
+      if (!uploadRes.ok || uploadData?.success === false) {
+        throw new Error(uploadData?.errors?.[0]?.message || "Cloudflare upload failed.");
+      }
 
       setStatus("Finalizing video record…");
       const markRes = await fetch("/api/admin/video/mark-ready", {
