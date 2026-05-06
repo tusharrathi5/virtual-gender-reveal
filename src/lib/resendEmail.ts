@@ -41,6 +41,13 @@ export interface SendGuestInviteEmailParams {
   inviteUrl: string;
 }
 
+export interface SendGuestDigestEmailParams {
+  to: string;
+  parentName: string;
+  revealDateLabel: string;
+  responses: Array<{ name: string; prediction: string; message: string | null }>;
+}
+
 
 function isTrue(value: string | undefined): boolean {
   if (!value) return false;
@@ -191,4 +198,22 @@ export async function sendGuestInviteEmail(params: SendGuestInviteEmailParams): 
   `;
 
   await sendEmail({ to: params.to, subject: "You're invited to a Gender Reveal", html });
+}
+
+export async function sendGuestDigestEmail(params: SendGuestDigestEmailParams): Promise<void> {
+  const parentName = escapeHtml(params.parentName || "there");
+  const revealDateLabel = escapeHtml(params.revealDateLabel);
+  const rows = params.responses
+    .map((r) => `<li><strong>${escapeHtml(r.name)}</strong> guessed <strong>${escapeHtml(r.prediction)}</strong>${r.message ? ` — “${escapeHtml(r.message)}”` : ""}</li>`)
+    .join("");
+
+  const html = `
+    <div style="font-family:Arial,sans-serif;line-height:1.6;color:#111">
+      <h2 style="margin:0 0 12px">Your guest predictions are in 🎉</h2>
+      <p>Hi ${parentName}, here are the guest responses for your reveal (${revealDateLabel}).</p>
+      <ul>${rows || "<li>No responses yet.</li>"}</ul>
+    </div>
+  `;
+
+  await sendEmail({ to: params.to, subject: "Guest predictions & notes", html });
 }
