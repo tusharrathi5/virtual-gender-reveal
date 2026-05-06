@@ -10,7 +10,10 @@ const DAILY_LIMIT = 3;
 type OtpLimitBody = { phone?: string; action?: "check" | "consume" };
 
 function normalizePhone(phone: string): string {
-  return phone.replace(/\s+/g, "");
+  const trimmed = phone.trim();
+  const digits = trimmed.replace(/\D/g, "");
+  if (!digits) return "";
+  return trimmed.startsWith("+") ? `+${digits}` : digits;
 }
 
 export async function POST(req: NextRequest) {
