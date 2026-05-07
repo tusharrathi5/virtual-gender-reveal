@@ -9,6 +9,38 @@ import { verifyGuestInviteToken } from "@/lib/guestInviteAuth";
 const MAX_CHAT_MESSAGE_LENGTH = 500;
 const CHAT_COOLDOWN_MS = 2000;
 
+type ChatDoc = {
+  name?: string;
+  message?: string;
+  createdAt?: { toDate?: () => Date };
+};
+
+export async function GET(_: NextRequest, { params }: { params: Promise<{ token: string }> }) {
+  const { token: raw } = await params;
+  const invite = await verifyGuestInviteToken(raw);
+  if (!invite.ok) return NextResponse.json({ error: invite.error }, { status: invite.status });
+
+  const snap = await getAdminDb()
+    .collection("enquiries")
+    .doc(invite.enquiryId)
+    .collection("guest_chats")
+    .orderBy("createdAt", "asc")
+    .limitToLast(50)
+    .get();
+
+  const messages = snap.docs.map((doc) => {
+    const data = doc.data() as ChatDoc;
+    return {
+      id: doc.id,
+      name: data.name || "Guest",
+      message: data.message || "",
+      createdAtIso: data.createdAt?.toDate?.()?.toISOString?.() || null,
+    };
+  });
+
+  return NextResponse.json({ success: true, messages });
+}
+
 export async function POST(req: NextRequest, { params }: { params: Promise<{ token: string }> }) {
   const { token: raw } = await params;
   const invite = await verifyGuestInviteToken(raw);
