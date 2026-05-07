@@ -1,12 +1,27 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import type { FormEvent } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useParams } from "next/navigation";
 
 type Prediction = "boy" | "girl" | null;
+type ChatMessage = {
+  id: string;
+  name: string;
+  message: string;
+  createdAtIso: string | null;
+};
+
+function formatChatTime(iso: string | null) {
+  if (!iso) return "just now";
+  return new Intl.DateTimeFormat("en-US", { hour: "numeric", minute: "2-digit" }).format(new Date(iso));
+}
 
 export default function GuestInvitePage() {
   const { token } = useParams<{ token: string }>();
+  const encodedToken = useMemo(() => encodeURIComponent(token || ""), [token]);
+  const chatEndRef = useRef<HTMLDivElement | null>(null);
+
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -21,6 +36,12 @@ export default function GuestInvitePage() {
   const [videoUrl, setVideoUrl] = useState<string | null>(null);
   const [feed, setFeed] = useState<Array<{ name: string; message: string }>>([]);
 
+  const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
+  const [chatText, setChatText] = useState("");
+  const [chatError, setChatError] = useState<string | null>(null);
+  const [chatSending, setChatSending] = useState(false);
+  const [chatStatus, setChatStatus] = useState<"connecting" | "live" | "reconnecting">("connecting");
+
   const [prediction, setPrediction] = useState<Prediction>(null);
   const [message, setMessage] = useState("");
   const [nowMs, setNowMs] = useState(Date.now());
@@ -31,7 +52,7 @@ export default function GuestInvitePage() {
   }, []);
 
   const loadInvite = async () => {
-    const res = await fetch(`/api/guest/${token}`);
+    const res = await fetch(`/api/guest/${encodedToken}`);
     const data = await res.json().catch(() => ({}));
     if (!res.ok) {
       setError(data?.error || "Invalid invite");
@@ -57,6 +78,7 @@ export default function GuestInvitePage() {
   };
 
   useEffect(() => {
+    if (!encodedToken) return;
     (async () => {
       await loadInvite();
     })();
@@ -64,7 +86,45 @@ export default function GuestInvitePage() {
       loadInvite().catch(() => {});
     }, 30000);
     return () => clearInterval(refresh);
-  }, [token]);
+  }, [encodedToken]);
+
+  useEffect(() => {
+    if (!encodedToken) return;
+
+    let closed = false;
+    const stream = new EventSource(`/api/guest/${encodedToken}/chat/stream`);
+    setChatStatus("connecting");
+
+    stream.onopen = () => {
+      if (!closed) setChatStatus("live");
+    };
+    stream.addEventListener("messages", (event) => {
+      if (closed) return;
+      try {
+        const messages = JSON.parse(event.data) as ChatMessage[];
+        setChatMessages(Array.isArray(messages) ? messages : []);
+        setChatStatus("live");
+        setChatError(null);
+      } catch {
+        setChatError("Chat messages could not be loaded.");
+      }
+    });
+    stream.addEventListener("stream-error", () => {
+      if (!closed) setChatError("Chat temporarily disconnected. Reconnecting...");
+    });
+    stream.onerror = () => {
+      if (!closed) setChatStatus("reconnecting");
+    };
+
+    return () => {
+      closed = true;
+      stream.close();
+    };
+  }, [encodedToken]);
+
+  useEffect(() => {
+    chatEndRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
+  }, [chatMessages.length]);
 
   const countdownParts = useMemo(() => {
     if (!revealAtIso) return { d: 0, h: 0, m: 0, s: 0, live: false };
@@ -87,7 +147,7 @@ export default function GuestInvitePage() {
     if (!prediction) return;
     setSubmitting(true);
     setError(null);
-    const res = await fetch(`/api/guest/${token}`, {
+    const res = await fetch(`/api/guest/${encodedToken}`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ prediction, message }),
@@ -100,6 +160,28 @@ export default function GuestInvitePage() {
     }
     setDone(true);
     setSubmitting(false);
+  }
+
+  async function submitChat(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const nextMessage = chatText.trim();
+    if (!nextMessage || chatSending || isCompleted) return;
+
+    setChatSending(true);
+    setChatError(null);
+    const res = await fetch(`/api/guest/${encodedToken}/chat`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ message: nextMessage }),
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      setChatError(data?.error || "Could not send that message.");
+      setChatSending(false);
+      return;
+    }
+    setChatText("");
+    setChatSending(false);
   }
 
   return (
@@ -264,11 +346,83 @@ export default function GuestInvitePage() {
         </section>
 
         <section style={{ marginTop: 14, background: "#fff", border: "1px solid #ece6ee", borderRadius: 14, padding: 14 }}>
-          <h3 style={{ margin: 0, fontSize: 18 }}>Guest messages</h3>
-          <p style={{ color: "#6b7280", marginTop: 6 }}>Live congratulatory feed from invited guests.</p>
+          <div style={{ display: "flex", justifyContent: "space-between", gap: 12, alignItems: "center" }}>
+            <div>
+              <h3 style={{ margin: 0, fontSize: 18 }}>Live party chat</h3>
+              <p style={{ color: "#6b7280", margin: "6px 0 0" }}>Realtime messages from invited guests in this reveal room.</p>
+            </div>
+            <span
+              style={{
+                flexShrink: 0,
+                borderRadius: 999,
+                padding: "5px 9px",
+                fontSize: 12,
+                color: chatStatus === "live" ? "#166534" : "#92400e",
+                background: chatStatus === "live" ? "#dcfce7" : "#fef3c7",
+              }}
+            >
+              {chatStatus === "live" ? "Live" : chatStatus === "connecting" ? "Connecting" : "Reconnecting"}
+            </span>
+          </div>
+
+          <div style={{ height: 260, overflowY: "auto", padding: "8px 4px 8px 0", marginTop: 10 }}>
+            {chatMessages.length === 0 ? (
+              <p style={{ color: "#9ca3af" }}>No chat messages yet.</p>
+            ) : (
+              chatMessages.map((item) => (
+                <div key={item.id} style={{ borderBottom: "1px solid #f3f4f6", padding: "9px 0" }}>
+                  <div style={{ display: "flex", justifyContent: "space-between", gap: 10 }}>
+                    <strong style={{ color: "#1f2937" }}>{item.name}</strong>
+                    <span style={{ color: "#9ca3af", fontSize: 12 }}>{formatChatTime(item.createdAtIso)}</span>
+                  </div>
+                  <p style={{ margin: "4px 0 0", color: "#374151", overflowWrap: "anywhere" }}>{item.message}</p>
+                </div>
+              ))
+            )}
+            <div ref={chatEndRef} />
+          </div>
+
+          <form onSubmit={submitChat} style={{ display: "flex", gap: 8, marginTop: 10 }}>
+            <input
+              type="text"
+              value={chatText}
+              maxLength={500}
+              onChange={(e) => setChatText(e.target.value)}
+              disabled={isCompleted}
+              placeholder={isCompleted ? "Chat is closed" : "Send a message to the party"}
+              style={{
+                flex: 1,
+                minWidth: 0,
+                borderRadius: 12,
+                border: "1px solid #e5e7eb",
+                padding: "11px 12px",
+              }}
+            />
+            <button
+              type="submit"
+              disabled={!chatText.trim() || chatSending || isCompleted}
+              style={{
+                border: 0,
+                borderRadius: 12,
+                padding: "0 16px",
+                color: "#fff",
+                fontWeight: 700,
+                background: "#1f2937",
+                opacity: !chatText.trim() || chatSending || isCompleted ? 0.6 : 1,
+              }}
+            >
+              {chatSending ? "Sending" : "Send"}
+            </button>
+          </form>
+          {chatError && <p style={{ color: "#b91c1c", margin: "8px 0 0" }}>{chatError}</p>}
+        </section>
+
+        <section style={{ marginTop: 14, background: "#fff", border: "1px solid #ece6ee", borderRadius: 14, padding: 14 }}>
+          <h3 style={{ margin: 0, fontSize: 18 }}>Guest wishes</h3>
+          <p style={{ color: "#6b7280", marginTop: 6 }}>Prediction messages saved for the parents.</p>
           <div style={{ maxHeight: 220, overflowY: "auto", paddingRight: 4 }}>
             {feed.length === 0 ? (
-              <p style={{ color: "#9ca3af" }}>No guest messages yet.</p>
+              <p style={{ color: "#9ca3af" }}>No guest wishes yet.</p>
             ) : (
               feed.map((item, idx) => (
                 <div key={`${item.name}-${idx}`} style={{ borderBottom: "1px solid #f3f4f6", padding: "8px 0" }}>
