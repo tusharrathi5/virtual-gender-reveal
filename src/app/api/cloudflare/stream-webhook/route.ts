@@ -18,11 +18,14 @@ type CloudflareWebhookBody = {
 
 export async function POST(req: NextRequest) {
   const expectedSecret = process.env.CLOUDFLARE_WEBHOOK_SECRET?.trim();
-  if (expectedSecret) {
-    const provided = req.headers.get("x-webhook-secret")?.trim();
-    if (!provided || provided !== expectedSecret) {
-      return NextResponse.json({ error: "Unauthorized webhook" }, { status: 401 });
-    }
+  if (!expectedSecret) {
+    console.error("[cloudflare-webhook] CLOUDFLARE_WEBHOOK_SECRET is not configured.");
+    return NextResponse.json({ error: "Webhook secret is not configured" }, { status: 500 });
+  }
+
+  const provided = req.headers.get("x-webhook-secret")?.trim();
+  if (!provided || provided !== expectedSecret) {
+    return NextResponse.json({ error: "Unauthorized webhook" }, { status: 401 });
   }
 
   const body = (await req.json().catch(() => null)) as CloudflareWebhookBody | null;
@@ -47,4 +50,3 @@ export async function POST(req: NextRequest) {
 
   return NextResponse.json({ success: true });
 }
-
