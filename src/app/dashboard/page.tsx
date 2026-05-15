@@ -215,10 +215,10 @@ function DashboardContent() {
   }, [user]);
 
   useEffect(() => {
-    if (!user || !reveals[0]?.videoReady) return;
+    if (!user || !reveals[0]?.id) return;
     loadGuestList(reveals[0].id).catch(() => {});
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user, reveals[0]?.id, reveals[0]?.videoReady]);
+  }, [user, reveals[0]?.id]);
 
   if (loading || !user) return null;
 
@@ -337,218 +337,6 @@ function DashboardContent() {
     }
   }
 
-  // ─── Actions ──────────────────────────────────────────────
-
-  async function sendGuestInvites(enquiryId: string) {
-    if (!user) return;
-    const rows = guestCsv.split(/\n+/).map((r) => r.trim()).filter(Boolean);
-    const guests = rows.map((r) => { const [name, email] = r.split(",").map((x) => x?.trim()); return { name, email }; }).filter((g) => !!g.name && !!g.email);
-
-    if (guests.length === 0) {
-      setToast({ type: "error", message: "Please add guests as: Name, email@example.com (one per line)." });
-      return;
-    }
-
-    setSendingInvites(true);
-    try {
-      const idToken = await user.getIdToken();
-      const res = await fetch("/api/guest/send-invites", {
-        method: "POST",
-        headers: { "Content-Type": "application/json", Authorization: `Bearer ${idToken}` },
-        body: JSON.stringify({ enquiryId, guests }),
-      });
-      const data = await res.json().catch(() => ({}));
-      if (!res.ok) throw new Error(data?.error || "Failed to send invites.");
-      setGuestCsv("");
-      setToast({ type: "success", message: `Sent ${data.sent ?? guests.length} guest invite(s).` });
-      await loadGuestList(enquiryId);
-    } catch (err) {
-      setToast({ type: "error", message: err instanceof Error ? err.message : "Failed to send invites." });
-    } finally {
-      setSendingInvites(false);
-    }
-  }
-
-  function parseGuestCsv(raw: string): CsvPreview {
-    const lines = raw.split(/\r?\n/).map((l) => l.trim()).filter(Boolean);
-    const seen = new Set<string>();
-    const valid: { name: string; email: string }[] = [];
-    const invalid: string[] = [];
-    const duplicates: string[] = [];
-    for (const line of lines) {
-      const [name, email] = line.split(",").map((x) => x?.trim() || "");
-      const normalizedEmail = email.toLowerCase();
-      const emailOk = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(normalizedEmail);
-      if (!name || !emailOk) {
-        invalid.push(line);
-        continue;
-      }
-      if (seen.has(normalizedEmail)) {
-        duplicates.push(normalizedEmail);
-        continue;
-      }
-      seen.add(normalizedEmail);
-      valid.push({ name, email: normalizedEmail });
-    }
-    return { valid, invalid, duplicates };
-  }
-
-  async function onGuestCsvFile(file: File) {
-    const text = await file.text();
-    const preview = parseGuestCsv(text);
-    setCsvPreview(preview);
-    const normalized = preview.valid.map((g) => `${g.name}, ${g.email}`).join("\n");
-    setGuestCsv(normalized);
-    if (preview.invalid.length > 0) {
-      setToast({ type: "info", message: `Ignored ${preview.invalid.length} invalid row(s).` });
-    }
-  }
-  async function loadGuestList(enquiryId: string) {
-    const idToken = await user!.getIdToken();
-    const res = await fetch(`/api/guest/list?enquiryId=${encodeURIComponent(enquiryId)}`, { headers: { Authorization: `Bearer ${idToken}` } });
-    const data = await res.json().catch(() => ({}));
-    if (!res.ok) throw new Error(data?.error || "Failed to load guest list.");
-    setGuestRows(Array.isArray(data?.guests) ? data.guests : []);
-    setRevealUnlocked(Boolean(data?.revealUnlocked));
-  }
-
-  async function manageGuest(guestId: string, action: "resend" | "revoke", enquiryId: string) {
-    try {
-      const idToken = await user!.getIdToken();
-      const res = await fetch("/api/guest/manage", {
-        method: "POST",
-        headers: { "Content-Type": "application/json", Authorization: `Bearer ${idToken}` },
-        body: JSON.stringify({ guestId, action }),
-      });
-      const data = await res.json().catch(() => ({}));
-      if (!res.ok) throw new Error(data?.error || `Failed to ${action} invite.`);
-      setToast({ type: "success", message: action === "resend" ? "Invite resent." : "Invite revoked." });
-      await loadGuestList(enquiryId);
-    } catch (err) {
-      setToast({ type: "error", message: err instanceof Error ? err.message : "Failed to manage guest." });
-    }
-  }
-
-  // ─── Actions ──────────────────────────────────────────────
-
-  async function sendGuestInvites(enquiryId: string) {
-    if (!user) return;
-    const rows = guestCsv.split(/\n+/).map((r) => r.trim()).filter(Boolean);
-    const guests = rows.map((r) => { const [name, email] = r.split(",").map((x) => x?.trim()); return { name, email }; }).filter((g) => !!g.name && !!g.email);
-
-    if (guests.length === 0) {
-      setToast({ type: "error", message: "Please add guests as: Name, email@example.com (one per line)." });
-      return;
-    }
-
-    setSendingInvites(true);
-    try {
-      const idToken = await user.getIdToken();
-      const res = await fetch("/api/guest/send-invites", {
-        method: "POST",
-        headers: { "Content-Type": "application/json", Authorization: `Bearer ${idToken}` },
-        body: JSON.stringify({ enquiryId, guests }),
-      });
-      const data = await res.json().catch(() => ({}));
-      if (!res.ok) throw new Error(data?.error || "Failed to send invites.");
-      setGuestCsv("");
-      setToast({ type: "success", message: `Sent ${data.sent ?? guests.length} guest invite(s).` });
-      await loadGuestList(enquiryId);
-    } catch (err) {
-      setToast({ type: "error", message: err instanceof Error ? err.message : "Failed to send invites." });
-    } finally {
-      setSendingInvites(false);
-    }
-  }
-  async function loadGuestList(enquiryId: string) {
-    const idToken = await user!.getIdToken();
-    const res = await fetch(`/api/guest/list?enquiryId=${encodeURIComponent(enquiryId)}`, { headers: { Authorization: `Bearer ${idToken}` } });
-    const data = await res.json().catch(() => ({}));
-    if (!res.ok) throw new Error(data?.error || "Failed to load guest list.");
-    setGuestRows(Array.isArray(data?.guests) ? data.guests : []);
-    setRevealUnlocked(Boolean(data?.revealUnlocked));
-  }
-
-  async function manageGuest(guestId: string, action: "resend" | "revoke", enquiryId: string) {
-    try {
-      const idToken = await user!.getIdToken();
-      const res = await fetch("/api/guest/manage", {
-        method: "POST",
-        headers: { "Content-Type": "application/json", Authorization: `Bearer ${idToken}` },
-        body: JSON.stringify({ guestId, action }),
-      });
-      const data = await res.json().catch(() => ({}));
-      if (!res.ok) throw new Error(data?.error || `Failed to ${action} invite.`);
-      setToast({ type: "success", message: action === "resend" ? "Invite resent." : "Invite revoked." });
-      await loadGuestList(enquiryId);
-    } catch (err) {
-      setToast({ type: "error", message: err instanceof Error ? err.message : "Failed to manage guest." });
-    }
-  }
-
-  // ─── Actions ──────────────────────────────────────────────
-
-  async function sendGuestInvites(enquiryId: string) {
-    if (!user) return;
-    const rows = guestCsv.split(/\n+/).map((r) => r.trim()).filter(Boolean);
-    const guests = rows.map((r) => { const [name, email] = r.split(",").map((x) => x?.trim()); return { name, email }; }).filter((g) => !!g.name && !!g.email);
-
-    if (guests.length === 0) {
-      setToast({ type: "error", message: "Please add guests as: Name, email@example.com (one per line)." });
-      return;
-    }
-
-    setSendingInvites(true);
-    try {
-      const idToken = await user.getIdToken();
-      const res = await fetch("/api/guest/send-invites", {
-        method: "POST",
-        headers: { "Content-Type": "application/json", Authorization: `Bearer ${idToken}` },
-        body: JSON.stringify({ enquiryId, guests }),
-      });
-      const data = await res.json().catch(() => ({}));
-      if (!res.ok) throw new Error(data?.error || "Failed to send invites.");
-      setGuestCsv("");
-      setToast({ type: "success", message: `Sent ${data.sent ?? guests.length} guest invite(s).` });
-    } catch (err) {
-      setToast({ type: "error", message: err instanceof Error ? err.message : "Failed to send invites." });
-    } finally {
-      setSendingInvites(false);
-    }
-  }
-
-  // ─── Actions ──────────────────────────────────────────────
-
-  async function sendGuestInvites(enquiryId: string) {
-    if (!user) return;
-    const rows = guestCsv.split(/\n+/).map((r) => r.trim()).filter(Boolean);
-    const guests = rows.map((r) => { const [name, email] = r.split(",").map((x) => x?.trim()); return { name, email }; }).filter((g) => !!g.name && !!g.email);
-
-    if (guests.length === 0) {
-      setToast({ type: "error", message: "Please add guests as: Name, email@example.com (one per line)." });
-      return;
-    }
-
-    setSendingInvites(true);
-    try {
-      const idToken = await user.getIdToken();
-      const res = await fetch("/api/guest/send-invites", {
-        method: "POST",
-        headers: { "Content-Type": "application/json", Authorization: `Bearer ${idToken}` },
-        body: JSON.stringify({ enquiryId, guests }),
-      });
-      const data = await res.json().catch(() => ({}));
-      if (!res.ok) throw new Error(data?.error || "Failed to send invites.");
-      setGuestCsv("");
-      setToast({ type: "success", message: `Sent ${data.sent ?? guests.length} guest invite(s).` });
-    } catch (err) {
-      setToast({ type: "error", message: err instanceof Error ? err.message : "Failed to send invites." });
-    } finally {
-      setSendingInvites(false);
-    }
-  }
-
-  // ─── Actions ──────────────────────────────────────────────
 
  async function handleSelectPlan(plan: PlanDefinition) {
   if (activatingPlan) return;
@@ -678,7 +466,16 @@ function DashboardContent() {
             </section>
           )}
 
-          {reveals[0] && reveals[0].videoReady && (
+          {!reveals[0] && (
+            <section className="dash-section">
+              <p className="section-label">Invite Guests</p>
+              <p className="welcome-sub" style={{ marginTop: 0 }}>
+                Guest list upload will be available here as soon as you create a reveal. You do not need to wait for the reveal video upload.
+              </p>
+            </section>
+          )}
+
+          {reveals[0] && (
             <section className="dash-section">
               <p className="section-label">Invite Guests</p>
               <p className="welcome-sub" style={{ marginTop: 0 }}>Add one guest per line: <code>Name, email@example.com</code></p>
@@ -731,15 +528,6 @@ function DashboardContent() {
               )}
             </section>
           )}
-          {reveals[0] && !reveals[0].videoReady && (
-            <section className="dash-section">
-              <p className="section-label">Invite Guests</p>
-              <p className="welcome-sub" style={{ marginTop: 0 }}>
-                Guest upload will appear here after admin uploads your reveal video.
-              </p>
-            </section>
-          )}
-
           {/* State C: Existing Reveals */}
           {reveals.length > 0 && (
             <section>

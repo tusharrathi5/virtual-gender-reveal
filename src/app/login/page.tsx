@@ -105,8 +105,8 @@ function LoginContent() {
     try {
       const { isNewUser } = await signInWithGoogle();
       if (isNewUser) {
-        showToast("Account created! Please complete your profile.", "success");
-        setTimeout(() => router.push("/complete-profile"), 1000);
+        showToast("Account created! Redirecting to your dashboard.", "success");
+        setTimeout(() => router.push("/dashboard"), 1000);
       } else {
         showToast("Signed in successfully!", "success");
         const target = await getRedirectForUser();

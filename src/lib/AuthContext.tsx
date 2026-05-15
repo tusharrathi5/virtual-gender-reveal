@@ -19,7 +19,6 @@ import {
   reauthenticateWithCredential,
   reauthenticateWithPopup,
   EmailAuthProvider,
-  linkWithCredential,
   fetchSignInMethodsForEmail,
   updateProfile,
 } from "firebase/auth";
@@ -28,8 +27,6 @@ import {
   createUserDoc,
   getUserDoc,
   updateLastLogin,
-  updateUserProvider,
-  updateUserPhone,
   markEmailVerified,
   userDocExists,
   FirestoreUser,
@@ -42,12 +39,10 @@ interface AuthContextType {
   firestoreUser: FirestoreUser | null;
   loading: boolean;
   // Email/Password
-  signUpWithEmail: (email: string, password: string, fullName: string, phone: string) => Promise<void>;
+  signUpWithEmail: (email: string, password: string, fullName: string, phone?: string) => Promise<void>;
   signInWithEmail: (email: string, password: string) => Promise<void>;
   // Google
   signInWithGoogle: () => Promise<{ isNewUser: boolean }>;
-  // Complete Profile (after Google signup)
-  completeGoogleProfile: (phone: string, password: string) => Promise<void>;
   // Password reset
   resetPassword: (email: string) => Promise<void>;
   // Sign out
@@ -147,7 +142,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     email: string,
     password: string,
     fullName: string,
-    phone: string
+    phone = ""
   ): Promise<void> {
     const auth = getFirebaseAuth();
 
@@ -228,7 +223,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const exists = await userDocExists(googleUser.uid);
 
     if (!exists) {
-      // NEW Google user — create minimal Firestore doc (phone/password added in complete-profile)
+      // NEW Google user: create Firestore doc immediately. Phone is optional.
       await createUserDoc({
         uid: googleUser.uid,
         fullName: googleUser.displayName || email.split("@")[0],
@@ -247,28 +242,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const fsUser = await getUserDoc(googleUser.uid);
     setFirestoreUser(fsUser);
     return { isNewUser: false };
-  }
-
-  // ── Complete Google Profile (link email/password) ────────
-
-  async function completeGoogleProfile(phone: string, password: string): Promise<void> {
-    const auth = getFirebaseAuth();
-    const currentUser = auth.currentUser;
-    if (!currentUser || !currentUser.email) {
-      throw new Error("No authenticated user found.");
-    }
-
-    // Link email/password credential to Google account
-    const credential = EmailAuthProvider.credential(currentUser.email, password);
-    await linkWithCredential(currentUser, credential);
-
-    // Update Firestore
-    await updateUserPhone(currentUser.uid, phone);
-    await updateUserProvider(currentUser.uid, "both");
-
-    // Refresh state
-    const fsUser = await getUserDoc(currentUser.uid);
-    setFirestoreUser(fsUser);
   }
 
   // ── Reset Password ───────────────────────────────────────
@@ -360,7 +333,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         signUpWithEmail,
         signInWithEmail,
         signInWithGoogle,
-        completeGoogleProfile,
         resetPassword,
         logout,
         deleteAccount,

@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
  
 // Routes that require authentication
-const PROTECTED_ROUTES = ["/dashboard", "/settings", "/complete-profile"];
+const PROTECTED_ROUTES = ["/dashboard", "/settings"];
  
 // Routes that require admin role (checked server-side via API)
 const ADMIN_ROUTES = ["/admin"];
@@ -47,7 +47,6 @@ export const config = {
   matcher: [
     "/dashboard/:path*",
     "/settings/:path*",
-    "/complete-profile/:path*",
     "/admin/:path*",
     "/login",
     "/signup",
