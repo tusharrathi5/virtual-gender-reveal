@@ -79,6 +79,7 @@ interface DeletedRow {
 }
 
 type SortKey =
+  | "createdAt"
   | "name"
   | "email"
   | "plan"
@@ -89,6 +90,19 @@ type SortKey =
   | "video";
 
 type SortDir = "asc" | "desc";
+type AdminTab = "users" | "deleted";
+
+const DEFAULT_SORT_DIR: Record<SortKey, SortDir> = {
+  createdAt: "desc",
+  name: "asc",
+  email: "asc",
+  plan: "asc",
+  gender: "asc",
+  revealDate: "desc",
+  type: "asc",
+  status: "asc",
+  video: "asc",
+};
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
@@ -200,6 +214,7 @@ export default function AdminPage() {
 
   const [users, setUsers] = useState<UserRow[]>([]);
   const [deleted, setDeleted] = useState<DeletedRow[]>([]);
+  const [activeTab, setActiveTab] = useState<AdminTab>("users");
   const [loadingData, setLoadingData] = useState(true);
   const [selectedUser, setSelectedUser] = useState<UserRow | null>(null);
   const [showVideoModal, setShowVideoModal] = useState(false);
@@ -217,7 +232,7 @@ export default function AdminPage() {
   const [page, setPage] = useState(1);
   const PAGE_SIZE = 8;
 
-  const [sortKey, setSortKey] = useState<SortKey>("revealDate");
+  const [sortKey, setSortKey] = useState<SortKey>("createdAt");
   const [sortDir, setSortDir] = useState<SortDir>("desc");
 
   useEffect(() => {
@@ -462,6 +477,10 @@ export default function AdminPage() {
       let av: string | number = "";
       let bv: string | number = "";
       switch (sortKey) {
+        case "createdAt":
+          av = a.createdAt?.getTime() ?? 0;
+          bv = b.createdAt?.getTime() ?? 0;
+          break;
         case "name": av = a.fullName.toLowerCase(); bv = b.fullName.toLowerCase(); break;
         case "email": av = a.email.toLowerCase(); bv = b.email.toLowerCase(); break;
         case "plan": av = a.activePlan; bv = b.activePlan; break;
@@ -485,7 +504,10 @@ export default function AdminPage() {
       }
       if (av < bv) return sortDir === "asc" ? -1 : 1;
       if (av > bv) return sortDir === "asc" ? 1 : -1;
-      return 0;
+      const aCreated = a.createdAt?.getTime() ?? 0;
+      const bCreated = b.createdAt?.getTime() ?? 0;
+      if (aCreated !== bCreated) return bCreated - aCreated;
+      return a.email.localeCompare(b.email);
     });
     return copy;
   }, [filteredUsers, sortKey, sortDir]);
@@ -501,11 +523,15 @@ export default function AdminPage() {
     setPage(1);
   }, [searchTerm, planFilter, videoStatusFilter, statusFilter, typeFilter, dateFrom, dateTo]);
 
+  useEffect(() => {
+    setPage(1);
+  }, [activeTab, sortKey, sortDir]);
+
   const toggleSort = (key: SortKey) => {
     if (sortKey === key) setSortDir((d) => (d === "asc" ? "desc" : "asc"));
     else {
       setSortKey(key);
-      setSortDir("asc");
+      setSortDir(DEFAULT_SORT_DIR[key]);
     }
   };
 
@@ -611,24 +637,17 @@ export default function AdminPage() {
 
         <nav className="vgr-nav">
           {[
-            { key: "dashboard", label: "Dashboard", icon: "▦" },
-            { key: "users", label: "Users", icon: "◉", active: true },
-            { key: "reveals", label: "Reveals", icon: "❤" },
-            { key: "videos", label: "Videos", icon: "▶" },
-            { key: "orders", label: "Orders", icon: "$" },
-            { key: "settings", label: "Settings", icon: "⚙" },
-            { key: "billing", label: "Billing", icon: "▤" },
-            { key: "support", label: "Support", icon: "?" },
+            { key: "users", label: "User Portal", icon: "U", count: users.length },
+            { key: "deleted", label: "Deleted Users", icon: "D", count: deleted.length },
           ].map((item) => (
             <button
               key={item.key}
-              className={`vgr-nav-item ${item.active ? "active" : "disabled"}`}
-              disabled={!item.active}
-              title={item.active ? undefined : "Coming soon"}
+              className={`vgr-nav-item ${activeTab === item.key ? "active" : ""}`}
+              onClick={() => setActiveTab(item.key as AdminTab)}
             >
               <span className="vgr-nav-icon">{item.icon}</span>
               <span className="vgr-nav-label">{item.label}</span>
-              {!item.active && <span className="vgr-nav-soon">soon</span>}
+              <span className="vgr-nav-count">{item.count}</span>
             </button>
           ))}
         </nav>
@@ -671,18 +690,32 @@ export default function AdminPage() {
       <main className="vgr-main">
         <header className="vgr-page-header">
           <div>
-            <h1 className="vgr-page-title">Users</h1>
-            <p className="vgr-page-sub">Manage all users and their reveal parties</p>
+            <h1 className="vgr-page-title">
+              {activeTab === "users" ? "User Portal" : "Deleted Users"}
+            </h1>
+            <p className="vgr-page-sub">
+              {activeTab === "users"
+                ? "Manage all users and their reveal parties"
+                : "Review deleted user shadow records before purge"}
+            </p>
           </div>
-          <button
-            className="vgr-btn vgr-btn-export"
-            onClick={handleExportCsv}
-            disabled={actionInProgress || sortedUsers.length === 0}
-          >
-            <span className="vgr-btn-icon">↓</span> Export CSV
-          </button>
+          {activeTab === "users" ? (
+            <button
+              className="vgr-btn vgr-btn-export"
+              onClick={handleExportCsv}
+              disabled={actionInProgress || sortedUsers.length === 0}
+            >
+              <span className="vgr-btn-icon">↓</span> Export CSV
+            </button>
+          ) : (
+            <button className="vgr-btn vgr-btn-ghost" onClick={refresh} disabled={loadingData}>
+              {loadingData ? "Loading..." : "Refresh"}
+            </button>
+          )}
         </header>
 
+        {activeTab === "users" ? (
+          <>
         <section className="vgr-filters">
           <div className="vgr-filter-group">
             <label className="vgr-filter-label">Search</label>
@@ -781,6 +814,7 @@ export default function AdminPage() {
                     <tr>
                       <SortHeader label="Name" sortKey="name" currentKey={sortKey} currentDir={sortDir} onClick={toggleSort} />
                       <SortHeader label="Email" sortKey="email" currentKey={sortKey} currentDir={sortDir} onClick={toggleSort} />
+                      <SortHeader label="Joined" sortKey="createdAt" currentKey={sortKey} currentDir={sortDir} onClick={toggleSort} />
                       <SortHeader label="Plan" sortKey="plan" currentKey={sortKey} currentDir={sortDir} onClick={toggleSort} />
                       <SortHeader label="Baby Gender" sortKey="gender" currentKey={sortKey} currentDir={sortDir} onClick={toggleSort} />
                       <SortHeader label="Reveal Date" sortKey="revealDate" currentKey={sortKey} currentDir={sortDir} onClick={toggleSort} />
@@ -814,28 +848,9 @@ export default function AdminPage() {
           )}
         </section>
 
-        {deleted.length > 0 && (
-          <details className="vgr-deleted-section">
-            <summary>{deleted.length} deleted user{deleted.length === 1 ? "" : "s"} (30-day shadow records)</summary>
-            <div className="vgr-deleted-list">
-              {deleted.map((d) => {
-                const days = daysUntil(d.purgeAt);
-                return (
-                  <div key={d.originalUid} className="vgr-deleted-row">
-                    <div>
-                      <strong>{d.parentName || d.email || "—"}</strong>
-                      <span className="vgr-deleted-meta">
-                        {" · "}{d.email || "no email"}{" · deleted by "}{d.deletedBy}{" · "}{fmtDate(d.deletedAt)}
-                      </span>
-                    </div>
-                    <span className={`vgr-pill ${days <= 3 ? "vgr-pill-red" : "vgr-pill-amber"}`}>
-                      Purges in {days} day{days === 1 ? "" : "s"}
-                    </span>
-                  </div>
-                );
-              })}
-            </div>
-          </details>
+          </>
+        ) : (
+          <DeletedUsersPanel deleted={deleted} loadingData={loadingData} />
         )}
       </main>
 
@@ -949,16 +964,15 @@ export default function AdminPage() {
           transition: all 0.15s;
           width: 100%;
         }
-        .vgr-nav-item:hover:not(.disabled):not(.active) { background: rgba(255,255,255,0.5); }
+        .vgr-nav-item:hover:not(.active) { background: rgba(255,255,255,0.5); }
         .vgr-nav-item.active {
           background: rgba(255,255,255,0.85);
           font-weight: 600;
           box-shadow: 0 2px 8px rgba(140,100,200,0.08);
         }
-        .vgr-nav-item.disabled { color: var(--vgr-text-light); cursor: not-allowed; }
         .vgr-nav-icon { font-size: 14px; width: 18px; text-align: center; flex-shrink: 0; }
         .vgr-nav-label { flex: 1; }
-        .vgr-nav-soon {
+        .vgr-nav-count {
           font-size: 9px;
           background: rgba(255,255,255,0.6);
           color: var(--vgr-text-light);
@@ -1219,16 +1233,16 @@ export default function AdminPage() {
         }
         .vgr-page-ellipsis { color: var(--vgr-text-light); padding: 0 4px; }
 
-        .vgr-deleted-section {
-          margin-top: 24px; background: white;
+        .vgr-deleted-card {
+          background: white;
           border: 1px solid var(--vgr-border);
-          border-radius: 14px; padding: 14px 20px;
+          border-radius: 14px; padding: 18px 20px;
         }
-        .vgr-deleted-section summary {
-          font-size: 13px; font-weight: 600;
-          color: var(--vgr-text-muted); cursor: pointer; padding: 4px 0;
+        .vgr-deleted-summary {
+          font-size: 13px; color: var(--vgr-text-muted);
+          margin-bottom: 14px;
         }
-        .vgr-deleted-list { margin-top: 12px; display: flex; flex-direction: column; gap: 8px; }
+        .vgr-deleted-list { display: flex; flex-direction: column; gap: 8px; }
         .vgr-deleted-row {
           display: flex; justify-content: space-between; align-items: center;
           padding: 12px 14px; background: var(--vgr-bg);
@@ -1337,7 +1351,59 @@ export default function AdminPage() {
   );
 }
 
-// ─── Sortable column header ─────────────────────────────────────────────────
+// Deleted users panel
+
+function DeletedUsersPanel({
+  deleted,
+  loadingData,
+}: {
+  deleted: DeletedRow[];
+  loadingData: boolean;
+}) {
+  if (loadingData) {
+    return (
+      <section className="vgr-table-card">
+        <div className="vgr-table-loading">Loading deleted users...</div>
+      </section>
+    );
+  }
+
+  if (deleted.length === 0) {
+    return (
+      <section className="vgr-table-card">
+        <div className="vgr-table-empty">No deleted users found.</div>
+      </section>
+    );
+  }
+
+  return (
+    <section className="vgr-deleted-card">
+      <div className="vgr-deleted-summary">
+        <strong>{deleted.length}</strong> deleted user{deleted.length === 1 ? "" : "s"} in 30-day shadow records
+      </div>
+      <div className="vgr-deleted-list">
+        {deleted.map((d) => {
+          const days = daysUntil(d.purgeAt);
+          return (
+            <div key={d.originalUid} className="vgr-deleted-row">
+              <div>
+                <strong>{d.parentName || d.email || "—"}</strong>
+                <span className="vgr-deleted-meta">
+                  {" · "}{d.email || "no email"}{" · deleted by "}{d.deletedBy}{" · "}{fmtDate(d.deletedAt)}
+                </span>
+              </div>
+              <span className={`vgr-pill ${days <= 3 ? "vgr-pill-red" : "vgr-pill-amber"}`}>
+                Purges in {days} day{days === 1 ? "" : "s"}
+              </span>
+            </div>
+          );
+        })}
+      </div>
+    </section>
+  );
+}
+
+// Sortable column header
 
 function SortHeader({
   label,
@@ -1471,6 +1537,7 @@ function UserTableRow({
         </div>
       </td>
       <td className="vgr-email">{user.email || "—"}</td>
+      <td className="vgr-email">{user.createdAt ? fmtDate(user.createdAt) : "—"}</td>
       <td>
         <span className={`vgr-pill ${planPillClass}`}>
           {planLabel.charAt(0).toUpperCase() + planLabel.slice(1)}
