@@ -42,6 +42,11 @@ export async function GET(_: NextRequest, { params }: { params: Promise<{ token:
     .sort((a, b) => (b.updatedAt?.toDate?.().getTime?.() || 0) - (a.updatedAt?.toDate?.().getTime?.() || 0))
     .slice(0, 20)
     .map((m) => ({ name: m.name || "Guest", message: m.message || "" }));
+  const invitedGuests = feedSnap.docs
+    .map((d) => d.data() as { name?: string; inviteStatus?: string; createdAt?: { toDate?: () => Date } })
+    .filter((m) => m.inviteStatus !== "revoked")
+    .sort((a, b) => (a.createdAt?.toDate?.().getTime?.() || 0) - (b.createdAt?.toDate?.().getTime?.() || 0))
+    .map((m) => ({ name: m.name || "Guest" }));
   return NextResponse.json({
     success: true,
     guest: { name: guest.data()?.name },
@@ -59,6 +64,7 @@ export async function GET(_: NextRequest, { params }: { params: Promise<{ token:
       videoUrl: isLive ? data.videoUrl || null : null,
     },
     feed,
+    invitedGuests,
   });
 }
 

@@ -1,7 +1,7 @@
 "use client";
 
 import type { FormEvent } from "react";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useParams } from "next/navigation";
 
 type Prediction = "boy" | "girl" | null;
@@ -35,6 +35,7 @@ export default function GuestInvitePage() {
   const [isCompleted, setIsCompleted] = useState(false);
   const [videoUrl, setVideoUrl] = useState<string | null>(null);
   const [feed, setFeed] = useState<Array<{ name: string; message: string }>>([]);
+  const [invitedGuests, setInvitedGuests] = useState<Array<{ name: string }>>([]);
 
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
   const [chatText, setChatText] = useState("");
@@ -51,7 +52,7 @@ export default function GuestInvitePage() {
     return () => clearInterval(id);
   }, []);
 
-  const loadInvite = async () => {
+  const loadInvite = useCallback(async () => {
     const res = await fetch(`/api/guest/${encodedToken}`);
     const data = await res.json().catch(() => ({}));
     if (!res.ok) {
@@ -68,6 +69,7 @@ export default function GuestInvitePage() {
     setIsCompleted(Boolean(data?.reveal?.isCompleted));
     setVideoUrl(data?.reveal?.videoUrl || null);
     setFeed(Array.isArray(data?.feed) ? data.feed : []);
+    setInvitedGuests(Array.isArray(data?.invitedGuests) ? data.invitedGuests : []);
 
     if (data?.response?.prediction === "boy" || data?.response?.prediction === "girl") {
       setPrediction(data.response.prediction);
@@ -75,7 +77,7 @@ export default function GuestInvitePage() {
       setDone(true);
     }
     setLoading(false);
-  };
+  }, [encodedToken]);
 
   useEffect(() => {
     if (!encodedToken) return;
@@ -86,7 +88,7 @@ export default function GuestInvitePage() {
       loadInvite().catch(() => {});
     }, 30000);
     return () => clearInterval(refresh);
-  }, [encodedToken]);
+  }, [encodedToken, loadInvite]);
 
   useEffect(() => {
     if (!encodedToken) return;
@@ -343,6 +345,32 @@ export default function GuestInvitePage() {
             )}
             {error && <p style={{ color: "#b91c1c", marginTop: 8 }}>{error}</p>}
           </div>
+        </section>
+
+        <section style={{ marginTop: 14, background: "#fff", border: "1px solid #ece6ee", borderRadius: 14, padding: 14 }}>
+          <h3 style={{ margin: 0, fontSize: 18 }}>Who's invited</h3>
+          <p style={{ color: "#6b7280", marginTop: 6 }}>Everyone on the guest list for this reveal.</p>
+          {invitedGuests.length === 0 ? (
+            <p style={{ color: "#9ca3af" }}>No guest names are available yet.</p>
+          ) : (
+            <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginTop: 10 }}>
+              {invitedGuests.map((guest, idx) => (
+                <span
+                  key={`${guest.name}-${idx}`}
+                  style={{
+                    border: "1px solid #e5e7eb",
+                    borderRadius: 999,
+                    padding: "7px 10px",
+                    background: "#f9fafb",
+                    color: "#374151",
+                    fontSize: 14,
+                  }}
+                >
+                  {guest.name}
+                </span>
+              ))}
+            </div>
+          )}
         </section>
 
         <section style={{ marginTop: 14, background: "#fff", border: "1px solid #ece6ee", borderRadius: 14, padding: 14 }}>
