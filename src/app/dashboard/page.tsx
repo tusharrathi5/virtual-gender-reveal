@@ -586,10 +586,10 @@ function DashboardContent() {
   }, [loadReveals]);
 
   useEffect(() => {
-    if (!user || !latestReveal?.videoReady) return;
+    if (!user || !latestReveal?.id) return;
     void loadGuestList(latestReveal.id);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user, latestReveal?.id, latestReveal?.videoReady]);
+  }, [user, latestReveal?.id]);
 
   const firstName = useMemo(
     () => user?.displayName?.split(" ")[0] || user?.email?.split("@")[0] || "there",
@@ -1178,7 +1178,7 @@ function DashboardContent() {
             </section>
           )}
 
-          {latestReveal?.videoReady && (
+          {latestReveal && (
             <section className="portal-section">
               <p className="section-label">Invite Guests</p>
               <div className="invite-panel">
@@ -1312,13 +1312,6 @@ function DashboardContent() {
                   </div>
                 )}
               </div>
-            </section>
-          )}
-
-          {latestReveal && !latestReveal.videoReady && (
-            <section className="portal-section">
-              <p className="section-label">Invite Guests</p>
-              <div className="notice-panel">Guest invites unlock after the admin uploads your reveal video.</div>
             </section>
           )}
 

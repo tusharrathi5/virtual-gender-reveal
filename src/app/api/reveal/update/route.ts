@@ -213,16 +213,27 @@ export async function POST(req: NextRequest) {
     update.revealerEmail = nextEmail;
     update.revealerRelation = nextRelation;
 
+    const previousEmail = typeof existing.revealerEmail === "string" ? existing.revealerEmail : "";
+    const revealerEmailChanged = previousMode !== "reveal" || previousEmail.toLowerCase() !== nextEmail;
+
     if (previousMode === "announcement") {
       await deleteSecureGender(body.enquiryId.trim()).catch(() => {});
       update.genderStatus = "not_submitted";
       update.status = "awaiting_revealer";
     }
 
-    const previousEmail = typeof existing.revealerEmail === "string" ? existing.revealerEmail : "";
+    if (revealerEmailChanged && existing.genderStatus === "submitted") {
+      await deleteSecureGender(body.enquiryId.trim()).catch(() => {});
+      update.genderStatus = "not_submitted";
+      update.genderEncrypted = FieldValue.delete();
+      update.doctorConfirmedAt = FieldValue.delete();
+      update["stages.revealerSubmitted"] = null;
+      update.status = "awaiting_revealer";
+    }
+
     const shouldSendRevealerLink =
-      existing.genderStatus !== "submitted" &&
-      (previousMode !== "reveal" || previousEmail.toLowerCase() !== nextEmail || !existing.doctorTokenHash);
+      revealerEmailChanged ||
+      (existing.genderStatus !== "submitted" && !existing.doctorTokenHash);
 
     if (shouldSendRevealerLink) {
       const token = generateDoctorToken(body.enquiryId.trim());
