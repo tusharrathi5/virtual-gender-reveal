@@ -821,6 +821,7 @@ export default function AdminPage() {
                       <SortHeader label="Type" sortKey="type" currentKey={sortKey} currentDir={sortDir} onClick={toggleSort} />
                       <SortHeader label="Status" sortKey="status" currentKey={sortKey} currentDir={sortDir} onClick={toggleSort} />
                       <SortHeader label="Video" sortKey="video" currentKey={sortKey} currentDir={sortDir} onClick={toggleSort} />
+                      <th className="vgr-th vgr-th-actions">Party Link</th>
                       <th className="vgr-th vgr-th-actions">Actions</th>
                     </tr>
                   </thead>
@@ -1186,6 +1187,16 @@ export default function AdminPage() {
           cursor: pointer; font-family: inherit;
         }
         .vgr-video-upload-btn:hover { background: rgba(108,142,239,0.15); }
+        .vgr-party-link-btn {
+          display: inline-flex; align-items: center; justify-content: center;
+          padding: 6px 12px; font-size: 11px; font-weight: 700;
+          color: #7c3aed; background: rgba(139,92,246,0.1);
+          border: 1px solid rgba(139,92,246,0.25); border-radius: 999px;
+          cursor: pointer; font-family: inherit; white-space: nowrap;
+          text-transform: uppercase; letter-spacing: 0.7px;
+        }
+        .vgr-party-link-btn:hover:not(:disabled) { background: rgba(139,92,246,0.16); }
+        .vgr-party-link-btn:disabled { opacity: 0.6; cursor: wait; }
 
         .vgr-actions-cell { position: relative; }
         .vgr-actions-btn {
@@ -1505,6 +1516,7 @@ function UserTableRow({
   getIdToken: () => Promise<string>;
 }) {
   const [actionsOpen, setActionsOpen] = useState(false);
+  const [openingParty, setOpeningParty] = useState(false);
   const e = user.latestEnquiry;
   const status = deriveOverallStatus(e);
   const videoStatus = deriveVideoStatus(e);
@@ -1519,6 +1531,46 @@ function UserTableRow({
       : user.activePlan === "spark"
       ? "vgr-pill-pink"
       : "vgr-pill-gray";
+
+  const openPartyLink = async (ev: React.MouseEvent<HTMLButtonElement>) => {
+    ev.stopPropagation();
+    if (!e?.id || openingParty) return;
+
+    const partyWindow = window.open("about:blank", "_blank");
+    setOpeningParty(true);
+
+    try {
+      const token = await getIdToken();
+      const res = await fetch("/api/admin/party-link", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ enquiryId: e.id }),
+      });
+      const data = (await res.json().catch(() => ({}))) as {
+        error?: string;
+        partyUrl?: string;
+      };
+
+      if (!res.ok || !data.partyUrl) {
+        throw new Error(data.error || "Failed to open party link.");
+      }
+
+      if (partyWindow) {
+        partyWindow.opener = null;
+        partyWindow.location.href = data.partyUrl;
+      } else {
+        window.location.href = data.partyUrl;
+      }
+    } catch (err) {
+      partyWindow?.close();
+      alert(err instanceof Error ? err.message : "Failed to open party link.");
+    } finally {
+      setOpeningParty(false);
+    }
+  };
 
   return (
     <tr onClick={onSelect}>
@@ -1593,6 +1645,19 @@ function UserTableRow({
         ) : videoStatus === "pending" ? (
           <button className="vgr-video-upload-btn" onClick={onUploadClick}>
             <span style={{ fontSize: 12 }}>↑</span> Upload Video
+          </button>
+        ) : (
+          <span className="vgr-pill vgr-pill-gray">—</span>
+        )}
+      </td>
+      <td onClick={(ev) => ev.stopPropagation()}>
+        {e ? (
+          <button
+            className="vgr-party-link-btn"
+            onClick={openPartyLink}
+            disabled={openingParty}
+          >
+            {openingParty ? "Opening..." : "Join the Party"}
           </button>
         ) : (
           <span className="vgr-pill vgr-pill-gray">—</span>
