@@ -29,7 +29,9 @@ export async function GET(req: NextRequest) {
     return {
       guestId: d.id,
       name: (data.name as string) ?? "",
+      phone: (data.phone as string) ?? "",
       email: (data.email as string) ?? "",
+      isHost: Boolean(data.isHost),
       inviteStatus: (data.inviteStatus as string) ?? "sent",
       responded: !!prediction,
       prediction: revealUnlocked ? prediction : null,

@@ -6,7 +6,6 @@ import { v4 as uuidv4 } from "uuid";
 import { uploadPhotos, validatePhotoFiles } from "@/lib/storageService";
 import {
   PHOTO_MAX,
-  PHOTO_MIN,
   type EnquiryMode,
   type GenderValue,
   type RevealerRelation,
@@ -379,9 +378,13 @@ async function handleSubmit(e: React.FormEvent) {
     const enquiryId = uuidv4();
 
     try {
-      // 1. Upload photos to Storage first (client-side, direct to Firebase Storage)
-      setUploadProgress(`Uploading ${photoFiles.length} photo${photoFiles.length > 1 ? "s" : ""}…`);
-      const photoUrls = await uploadPhotos(enquiryId, photoFiles);
+      // 1. Upload photos to Storage first if the user selected any.
+      setUploadProgress(
+        photoFiles.length > 0
+          ? `Uploading ${photoFiles.length} photo${photoFiles.length > 1 ? "s" : ""}...`
+          : "Saving without photos..."
+      );
+      const photoUrls = photoFiles.length > 0 ? await uploadPhotos(enquiryId, photoFiles) : [];
 
       // 2. Call server-side API to atomically:
       //    - Verify entitlement
@@ -572,7 +575,7 @@ async function handleSubmit(e: React.FormEvent) {
           <div className="form-divider" />
 
           {/* ── Photos ── */}
-          <div className="form-section-title">Photos (1 to {PHOTO_MAX})</div>
+          <div className="form-section-title">Photos (optional, up to {PHOTO_MAX})</div>
 
           <div className="photo-grid">
             {Array.from({ length: PHOTO_MAX }).map((_, i) => {

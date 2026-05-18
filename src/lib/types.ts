@@ -42,7 +42,7 @@ export interface Enquiry {
   babyNameGirl: string | null;       // reveal mode only
   babyNameBoy: string | null;        // reveal mode only
 
-  // Photos (URLs in Firebase Storage) — 1 to 3 photos, no special distinction
+  // Photos (URLs in Firebase Storage) - optional, up to 3 photos
   photos: string[];
   photoCount: number;                // denormalized, equals photos.length
 
@@ -141,7 +141,7 @@ export interface NewReveal_FormInput {
   revealAt: string;                    // ISO string from datetime-local input
   revealTimezone: string;
 
-  // Photos: 1 to 3 File objects (user picks any number in that range)
+  // Photos: optional File objects (user can skip images entirely)
   photoFiles: File[];
 
   // Announcement mode fields
@@ -169,7 +169,7 @@ export const INITIAL_STAGES: EnquiryStages = {
 
 // ─── Photo constraints (single source of truth) ─────────────
 
-export const PHOTO_MIN = 1;
+export const PHOTO_MIN = 0;
 export const PHOTO_MAX = 3;
 
 // ─── Plan definitions (source of truth for the dashboard + pricing) ──
