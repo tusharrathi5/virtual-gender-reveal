@@ -37,14 +37,14 @@ export async function GET(_: NextRequest, { params }: { params: Promise<{ token:
   const isCompleted = Boolean(data?.stages?.eventCompleted);
   const feedSnap = await getAdminDb().collection("guest_invites").where("enquiryId", "==", payload.enquiryId).get();
   const feed = feedSnap.docs
-    .map((d) => d.data() as { name?: string; message?: string | null; updatedAt?: { toDate?: () => Date } })
-    .filter((m) => m.message)
+    .map((d) => d.data() as { name?: string; message?: string | null; isAdminPartyLink?: boolean; updatedAt?: { toDate?: () => Date } })
+    .filter((m) => !m.isAdminPartyLink && m.message)
     .sort((a, b) => (b.updatedAt?.toDate?.().getTime?.() || 0) - (a.updatedAt?.toDate?.().getTime?.() || 0))
     .slice(0, 20)
     .map((m) => ({ name: m.name || "Guest", message: m.message || "" }));
   const invitedGuests = feedSnap.docs
-    .map((d) => d.data() as { name?: string; inviteStatus?: string; createdAt?: { toDate?: () => Date } })
-    .filter((m) => m.inviteStatus !== "revoked")
+    .map((d) => d.data() as { name?: string; inviteStatus?: string; isAdminPartyLink?: boolean; createdAt?: { toDate?: () => Date } })
+    .filter((m) => !m.isAdminPartyLink && m.inviteStatus !== "revoked")
     .sort((a, b) => (a.createdAt?.toDate?.().getTime?.() || 0) - (b.createdAt?.toDate?.().getTime?.() || 0))
     .map((m) => ({ name: m.name || "Guest" }));
   return NextResponse.json({

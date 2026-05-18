@@ -22,11 +22,12 @@ export async function GET(req: NextRequest) {
   const revealUnlocked = !!revealAt && Date.now() >= revealAt.getTime();
 
   const snap = await getAdminDb().collection("guest_invites").where("enquiryId", "==", enquiryId).get();
-  const guests = snap.docs.map((d) => {
+  const guests = snap.docs.flatMap((d) => {
     const data = d.data() as Record<string, unknown>;
+    if (data.isAdminPartyLink) return [];
     const prediction = typeof data.prediction === "string" ? data.prediction : null;
     const message = typeof data.message === "string" ? data.message : null;
-    return {
+    return [{
       guestId: d.id,
       name: (data.name as string) ?? "",
       phone: (data.phone as string) ?? "",
@@ -39,7 +40,7 @@ export async function GET(req: NextRequest) {
       hasMessage: !!message,
       createdAt: (data.createdAt as { toDate?: () => Date })?.toDate?.()?.toISOString?.() ?? null,
       joinedAt: (data.joinedAt as { toDate?: () => Date })?.toDate?.()?.toISOString?.() ?? null,
-    };
+    }];
   });
 
   return NextResponse.json({ success: true, revealUnlocked, guests });
