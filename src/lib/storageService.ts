@@ -59,13 +59,13 @@ export function validateImageFile(file: File): ValidationResult {
 }
 
 /**
- * Validate an array of files for photo upload (must be 1-3 valid images).
+ * Validate an array of files for photo upload (optional, up to 3 valid images).
  */
 export function validatePhotoFiles(files: File[]): ValidationResult {
   if (!Array.isArray(files) || files.length < PHOTO_MIN) {
     return {
       ok: false,
-      error: `Please upload at least ${PHOTO_MIN} photo.`,
+      error: PHOTO_MIN > 0 ? `Please upload at least ${PHOTO_MIN} photo.` : "Photos are optional.",
     };
   }
   if (files.length > PHOTO_MAX) {
@@ -158,7 +158,7 @@ export async function uploadPhoto(
 }
 
 /**
- * Upload multiple photos (1 to 3) in parallel.
+ * Upload multiple photos in parallel.
  * Returns an array of download URLs in the same order as the input files.
  * If any upload fails, the whole operation rejects — callers should handle cleanup.
  */

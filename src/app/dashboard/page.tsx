@@ -1,19 +1,31 @@
 "use client";
 
-import { useEffect, useState, Suspense } from "react";
+import { Suspense, useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
+import { collection, getDocs, orderBy, query, where } from "firebase/firestore";
 import { useAuth } from "@/lib/AuthContext";
 import { getFirebaseDb } from "@/lib/firebase";
-import { collection, query, where, orderBy, getDocs } from "firebase/firestore";
-import { PLANS, type PlanDefinition } from "@/lib/types";
-
-// ─── Types ──────────────────────────────────────────────────
+import { uploadPhotos, validatePhotoFiles } from "@/lib/storageService";
+import {
+  PHOTO_MAX,
+  PLANS,
+  type EnquiryMode,
+  type GenderValue,
+  type PlanDefinition,
+  type RevealerRelation,
+} from "@/lib/types";
 
 interface RevealSummary {
   id: string;
-  mode: "announcement" | "reveal";
+  mode: EnquiryMode;
   parentName: string;
+  babyName: string | null;
+  babyNameGirl: string | null;
+  babyNameBoy: string | null;
+  revealerEmail: string | null;
+  revealerRelation: RevealerRelation | null;
   revealAt: Date | null;
+  revealTimezone: string;
   status: string;
   genderStatus: string;
   photos: string[];
@@ -21,47 +33,85 @@ interface RevealSummary {
   videoUrl?: string | null;
   videoReady?: boolean;
 }
+
+interface RevealEditForm {
+  id: string;
+  mode: EnquiryMode;
+  parentName: string;
+  babyName: string;
+  announcementGender: "" | GenderValue;
+  babyNameGirl: string;
+  babyNameBoy: string;
+  revealerEmail: string;
+  revealerRelation: RevealerRelation;
+  revealAt: string;
+  revealTimezone: string;
+  photos: string[];
+}
+
 interface GuestRow {
   guestId: string;
   name: string;
+  phone: string;
   email: string;
   inviteStatus: string;
   responded: boolean;
   prediction: string | null;
   message: string | null;
   hasMessage: boolean;
-}
-interface CsvPreview {
-  valid: { name: string; email: string }[];
-  invalid: string[];
-  duplicates: string[];
+  isHost?: boolean;
 }
 
-// ─── Toast ──────────────────────────────────────────────────
+interface EditableGuestRow {
+  rowId: string;
+  name: string;
+  phone: string;
+  email: string;
+}
+
+interface ImportSummary {
+  fileName: string;
+  added: number;
+  invalid: number;
+  duplicates: number;
+}
 
 type ToastType = "success" | "error" | "info";
 
-function Toast({ message, type, onClose }: { message: string; type: ToastType; onClose: () => void }) {
-  const colors = { success: "#22c55e", error: "#ef4444", info: "#2E7DD1" };
+const RELATION_LABELS: Record<RevealerRelation, string> = {
+  doctor: "Doctor / Midwife",
+  relative: "Relative",
+  friend: "Friend",
+  other: "Other",
+};
+
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const EDIT_WINDOW_MS = 24 * 60 * 60 * 1000;
+
+function Toast({
+  message,
+  type,
+  onClose,
+}: {
+  message: string;
+  type: ToastType;
+  onClose: () => void;
+}) {
+  const colors = { success: "#16a34a", error: "#dc2626", info: "#2563eb" };
   useEffect(() => {
     const t = setTimeout(onClose, 5000);
     return () => clearTimeout(t);
   }, [onClose]);
+
   return (
-    <div style={{
-      position: "fixed", top: 20, right: 20, zIndex: 9999,
-      background: "white", borderLeft: `4px solid ${colors[type]}`,
-      borderRadius: 8, padding: "14px 18px", maxWidth: 380,
-      display: "flex", alignItems: "flex-start", gap: 10,
-      boxShadow: "0 10px 30px rgba(0,0,0,0.1)",
-      fontFamily: "'Plus Jakarta Sans',sans-serif", fontSize: 14,
-      animation: "slideIn .3s ease-out",
-    }}>
-      <span style={{ color: colors[type], fontWeight: 700, flexShrink: 0 }}>
-        {type === "success" ? "✓" : type === "error" ? "✕" : "ℹ"}
+    <div className="dash-toast" style={{ borderLeftColor: colors[type] }}>
+      <span style={{ color: colors[type], fontWeight: 700 }}>
+        {type === "success" ? "OK" : type === "error" ? "!" : "i"}
       </span>
-      <span style={{ color: "#111827", lineHeight: 1.5, flex: 1 }}>{message}</span>
-      <button onClick={onClose} style={{ background: "none", border: "none", color: "#9CA3AF", cursor: "pointer", fontSize: 16 }}>×</button>
+      <span>{message}</span>
+      <button onClick={onClose} aria-label="Close notification">
+        x
+      </button>
     </div>
   );
 }
@@ -77,11 +127,22 @@ function timestampToDate(value: unknown): Date | null {
 }
 
 function formatRevealDate(d: Date | null): string {
-  if (!d) return "—";
+  if (!d) return "-";
   return d.toLocaleDateString("en-US", {
-    weekday: "short", month: "short", day: "numeric",
-    hour: "numeric", minute: "2-digit",
+    weekday: "short",
+    month: "short",
+    day: "numeric",
+    hour: "numeric",
+    minute: "2-digit",
   });
+}
+
+function formatDateTimeLocal(d: Date | null): string {
+  if (!d) return "";
+  const pad = (n: number) => String(n).padStart(2, "0");
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(
+    d.getHours()
+  )}:${pad(d.getMinutes())}`;
 }
 
 function statusLabel(status: string): string {
@@ -97,20 +158,327 @@ function statusLabel(status: string): string {
   return map[status] || status;
 }
 
-function statusColor(status: string): string {
+function statusTone(status: string): string {
   const map: Record<string, string> = {
-    pending_payment: "#9CA3AF",
-    awaiting_revealer: "#F59E0B",
-    revealer_confirmed: "#2E7DD1",
-    video_ready: "#8B5CF6",
-    scheduled: "#2E7DD1",
-    live: "#EF4444",
-    completed: "#22C55E",
+    pending_payment: "gray",
+    awaiting_revealer: "yellow",
+    revealer_confirmed: "blue",
+    video_ready: "purple",
+    scheduled: "blue",
+    live: "red",
+    completed: "green",
   };
-  return map[status] || "#6B7280";
+  return map[status] || "gray";
 }
 
-// ─── Dashboard Content ──────────────────────────────────────
+function canEditReveal(reveal: RevealSummary): boolean {
+  return !!reveal.createdAt && Date.now() - reveal.createdAt.getTime() <= EDIT_WINDOW_MS;
+}
+
+function editWindowText(reveal: RevealSummary): string {
+  if (!reveal.createdAt) return "Edit window unavailable";
+  const remaining = reveal.createdAt.getTime() + EDIT_WINDOW_MS - Date.now();
+  if (remaining <= 0) return "Locked after 24 hours";
+  const hours = Math.max(1, Math.ceil(remaining / (60 * 60 * 1000)));
+  return `${hours} hour${hours === 1 ? "" : "s"} left to edit`;
+}
+
+function blankGuestRow(rowId = "draft-1"): EditableGuestRow {
+  return { rowId, name: "", phone: "", email: "" };
+}
+
+function makeGuestRow(): EditableGuestRow {
+  return blankGuestRow(`draft-${Date.now()}-${Math.round(Math.random() * 10000)}`);
+}
+
+function normalizeGuest(row: EditableGuestRow): EditableGuestRow {
+  return {
+    ...row,
+    name: row.name.trim(),
+    phone: row.phone.trim(),
+    email: row.email.trim().toLowerCase(),
+  };
+}
+
+function detectDelimiter(text: string): string {
+  const sample = text.split(/\r?\n/).slice(0, 5).join("\n");
+  const candidates = [",", "\t", ";"];
+  return candidates
+    .map((delimiter) => ({
+      delimiter,
+      count: sample.split(delimiter).length - 1,
+    }))
+    .sort((a, b) => b.count - a.count)[0]?.delimiter || ",";
+}
+
+function parseDelimitedRows(text: string, delimiter = detectDelimiter(text)): string[][] {
+  const rows: string[][] = [];
+  let row: string[] = [];
+  let cell = "";
+  let inQuotes = false;
+
+  for (let i = 0; i < text.length; i += 1) {
+    const ch = text[i];
+    const next = text[i + 1];
+
+    if (ch === '"') {
+      if (inQuotes && next === '"') {
+        cell += '"';
+        i += 1;
+      } else {
+        inQuotes = !inQuotes;
+      }
+      continue;
+    }
+
+    if (ch === delimiter && !inQuotes) {
+      row.push(cell.trim());
+      cell = "";
+      continue;
+    }
+
+    if ((ch === "\n" || ch === "\r") && !inQuotes) {
+      if (ch === "\r" && next === "\n") i += 1;
+      row.push(cell.trim());
+      if (row.some(Boolean)) rows.push(row);
+      row = [];
+      cell = "";
+      continue;
+    }
+
+    cell += ch;
+  }
+
+  row.push(cell.trim());
+  if (row.some(Boolean)) rows.push(row);
+  return rows;
+}
+
+function normalizeHeader(value: string): string {
+  return value.toLowerCase().replace(/[^a-z0-9]/g, "");
+}
+
+function isLikelyPhone(value: string): boolean {
+  const digits = value.replace(/\D/g, "");
+  return digits.length >= 7 && digits.length <= 16;
+}
+
+function columnIndexFromCellRef(ref: string): number {
+  const letters = ref.replace(/[0-9]/g, "").toUpperCase();
+  let index = 0;
+  for (let i = 0; i < letters.length; i += 1) {
+    index = index * 26 + (letters.charCodeAt(i) - 64);
+  }
+  return Math.max(0, index - 1);
+}
+
+function findZipEnd(view: DataView): number {
+  const min = Math.max(0, view.byteLength - 65557);
+  for (let i = view.byteLength - 22; i >= min; i -= 1) {
+    if (view.getUint32(i, true) === 0x06054b50) return i;
+  }
+  throw new Error("Could not read the XLSX file.");
+}
+
+async function inflateRaw(bytes: Uint8Array): Promise<Uint8Array> {
+  if (typeof DecompressionStream === "undefined") {
+    throw new Error("XLSX import is not supported in this browser.");
+  }
+  const arrayBuffer = bytes.buffer.slice(
+    bytes.byteOffset,
+    bytes.byteOffset + bytes.byteLength
+  ) as ArrayBuffer;
+  const stream = new Blob([arrayBuffer]).stream().pipeThrough(
+    new DecompressionStream("deflate-raw" as CompressionFormat)
+  );
+  return new Uint8Array(await new Response(stream).arrayBuffer());
+}
+
+async function parseXlsxRows(file: File): Promise<string[][]> {
+  const buffer = await file.arrayBuffer();
+  const view = new DataView(buffer);
+  const bytes = new Uint8Array(buffer);
+  const decoder = new TextDecoder();
+  const end = findZipEnd(view);
+  const totalEntries = view.getUint16(end + 10, true);
+  let offset = view.getUint32(end + 16, true);
+  const entries = new Map<
+    string,
+    { method: number; compressedSize: number; localHeaderOffset: number }
+  >();
+
+  for (let i = 0; i < totalEntries; i += 1) {
+    if (view.getUint32(offset, true) !== 0x02014b50) break;
+    const method = view.getUint16(offset + 10, true);
+    const compressedSize = view.getUint32(offset + 20, true);
+    const nameLength = view.getUint16(offset + 28, true);
+    const extraLength = view.getUint16(offset + 30, true);
+    const commentLength = view.getUint16(offset + 32, true);
+    const localHeaderOffset = view.getUint32(offset + 42, true);
+    const name = decoder.decode(bytes.slice(offset + 46, offset + 46 + nameLength));
+    entries.set(name, { method, compressedSize, localHeaderOffset });
+    offset += 46 + nameLength + extraLength + commentLength;
+  }
+
+  async function readText(path: string): Promise<string | null> {
+    const entry = entries.get(path);
+    if (!entry) return null;
+    const local = entry.localHeaderOffset;
+    if (view.getUint32(local, true) !== 0x04034b50) return null;
+    const nameLength = view.getUint16(local + 26, true);
+    const extraLength = view.getUint16(local + 28, true);
+    const start = local + 30 + nameLength + extraLength;
+    const compressed = bytes.slice(start, start + entry.compressedSize);
+    const raw =
+      entry.method === 0 ? compressed : entry.method === 8 ? await inflateRaw(compressed) : null;
+    if (!raw) throw new Error("Unsupported XLSX compression method.");
+    return decoder.decode(raw);
+  }
+
+  const parser = new DOMParser();
+  const sharedXml = await readText("xl/sharedStrings.xml");
+  const sharedStrings: string[] = [];
+  if (sharedXml) {
+    const doc = parser.parseFromString(sharedXml, "application/xml");
+    Array.from(doc.getElementsByTagName("si")).forEach((si) => {
+      const text = Array.from(si.getElementsByTagName("t"))
+        .map((node) => node.textContent || "")
+        .join("");
+      sharedStrings.push(text);
+    });
+  }
+
+  let sheetPath = "xl/worksheets/sheet1.xml";
+  const workbookXml = await readText("xl/workbook.xml");
+  const relsXml = await readText("xl/_rels/workbook.xml.rels");
+  if (workbookXml && relsXml) {
+    const workbook = parser.parseFromString(workbookXml, "application/xml");
+    const rels = parser.parseFromString(relsXml, "application/xml");
+    const firstSheet = workbook.getElementsByTagName("sheet")[0];
+    const relId =
+      firstSheet?.getAttribute("r:id") ||
+      firstSheet?.getAttribute("id") ||
+      firstSheet?.getAttribute("relationshipId");
+    if (relId) {
+      const rel = Array.from(rels.getElementsByTagName("Relationship")).find(
+        (node) => node.getAttribute("Id") === relId
+      );
+      const target = rel?.getAttribute("Target");
+      if (target) sheetPath = target.startsWith("/") ? target.slice(1) : `xl/${target}`;
+    }
+  }
+
+  const sheetXml = await readText(sheetPath);
+  if (!sheetXml) throw new Error("Could not find a worksheet in the XLSX file.");
+
+  const sheet = parser.parseFromString(sheetXml, "application/xml");
+  return Array.from(sheet.getElementsByTagName("row")).map((rowNode) => {
+    const row: string[] = [];
+    Array.from(rowNode.getElementsByTagName("c")).forEach((cellNode) => {
+      const cellRef = cellNode.getAttribute("r") || "";
+      const index = cellRef ? columnIndexFromCellRef(cellRef) : row.length;
+      const type = cellNode.getAttribute("t");
+      let value = "";
+      if (type === "inlineStr") {
+        value = Array.from(cellNode.getElementsByTagName("t"))
+          .map((node) => node.textContent || "")
+          .join("");
+      } else {
+        value = cellNode.getElementsByTagName("v")[0]?.textContent || "";
+        if (type === "s") value = sharedStrings[Number(value)] || "";
+      }
+      row[index] = value.trim();
+    });
+    return row;
+  });
+}
+
+function rowsToGuests(rows: string[][]): {
+  valid: EditableGuestRow[];
+  invalid: number;
+  duplicates: number;
+} {
+  const cleanRows = rows
+    .map((row) => row.map((cell) => String(cell || "").trim()))
+    .filter((row) => row.some(Boolean));
+
+  if (cleanRows.length === 0) return { valid: [], invalid: 0, duplicates: 0 };
+
+  const first = cleanRows[0].map(normalizeHeader);
+  const hasHeader = first.some((h) =>
+    ["name", "fullname", "guestname", "email", "emailaddress", "phone", "number", "mobile"].includes(h)
+  );
+
+  const nameIndex = first.findIndex((h) => ["name", "fullname", "guestname"].includes(h));
+  const emailIndex = first.findIndex((h) => ["email", "emailaddress", "mail"].includes(h));
+  const phoneIndex = first.findIndex((h) =>
+    ["phone", "phonenumber", "number", "mobile", "mobilenumber", "contact"].includes(h)
+  );
+  const dataRows = hasHeader ? cleanRows.slice(1) : cleanRows;
+
+  const seen = new Set<string>();
+  let invalid = 0;
+  let duplicates = 0;
+  const valid: EditableGuestRow[] = [];
+
+  dataRows.forEach((row, index) => {
+    let name = hasHeader && nameIndex >= 0 ? row[nameIndex] || "" : "";
+    let email = hasHeader && emailIndex >= 0 ? row[emailIndex] || "" : "";
+    let phone = hasHeader && phoneIndex >= 0 ? row[phoneIndex] || "" : "";
+
+    if (!hasHeader) {
+      const emailCellIndex = row.findIndex((cell) => EMAIL_RE.test(cell.trim().toLowerCase()));
+      email = emailCellIndex >= 0 ? row[emailCellIndex] : "";
+      const remaining = row.filter((_, i) => i !== emailCellIndex).filter(Boolean);
+      const phoneCellIndex = remaining.findIndex(isLikelyPhone);
+      phone = phoneCellIndex >= 0 ? remaining[phoneCellIndex] : "";
+      name = remaining.filter((_, i) => i !== phoneCellIndex).join(" ").trim();
+    }
+
+    const normalizedEmail = email.trim().toLowerCase();
+    if (!name.trim() || !EMAIL_RE.test(normalizedEmail)) {
+      invalid += 1;
+      return;
+    }
+    if (seen.has(normalizedEmail)) {
+      duplicates += 1;
+      return;
+    }
+    seen.add(normalizedEmail);
+    valid.push({
+      rowId: `import-${Date.now()}-${index}`,
+      name: name.trim(),
+      phone: phone.trim(),
+      email: normalizedEmail,
+    });
+  });
+
+  return { valid, invalid, duplicates };
+}
+
+function mergeGuestRows(
+  current: EditableGuestRow[],
+  imported: EditableGuestRow[]
+): { rows: EditableGuestRow[]; duplicates: number } {
+  const existing = current
+    .map(normalizeGuest)
+    .filter((row) => row.name || row.phone || row.email);
+  const seen = new Set(existing.map((row) => row.email).filter(Boolean));
+  let duplicates = 0;
+  const next = [...existing];
+
+  imported.forEach((row) => {
+    const normalized = normalizeGuest(row);
+    if (seen.has(normalized.email)) {
+      duplicates += 1;
+      return;
+    }
+    seen.add(normalized.email);
+    next.push(normalized);
+  });
+
+  return { rows: next.length ? next : [blankGuestRow()], duplicates };
+}
 
 function DashboardContent() {
   const { user, firestoreUser, loading, logout, refreshFirestoreUser } = useAuth();
@@ -122,17 +490,64 @@ function DashboardContent() {
   const [toast, setToast] = useState<{ message: string; type: ToastType } | null>(null);
   const [activatingPlan, setActivatingPlan] = useState<string | null>(null);
   const [loggingOut, setLoggingOut] = useState(false);
-  const [guestCsv, setGuestCsv] = useState("");
+  const [guestDraftRows, setGuestDraftRows] = useState<EditableGuestRow[]>([
+    blankGuestRow(),
+  ]);
+  const [guestImportSummary, setGuestImportSummary] = useState<ImportSummary | null>(null);
   const [sendingInvites, setSendingInvites] = useState(false);
-  const [csvPreview, setCsvPreview] = useState<CsvPreview>({ valid: [], invalid: [], duplicates: [] });
   const [guestRows, setGuestRows] = useState<GuestRow[]>([]);
   const [revealUnlocked, setRevealUnlocked] = useState(false);
+  const [editingRevealId, setEditingRevealId] = useState<string | null>(null);
+  const [editForm, setEditForm] = useState<RevealEditForm | null>(null);
+  const [editPhotoFiles, setEditPhotoFiles] = useState<File[]>([]);
+  const [savingReveal, setSavingReveal] = useState(false);
 
-  // Redirect if not logged in
+  const latestReveal = reveals[0];
+
+  const loadReveals = useCallback(async () => {
+    if (!user) return;
+    setRevealsLoading(true);
+    try {
+      const db = getFirebaseDb();
+      const q = query(
+        collection(db, "enquiries"),
+        where("userId", "==", user.uid),
+        orderBy("createdAt", "desc")
+      );
+      const snap = await getDocs(q);
+      const items: RevealSummary[] = snap.docs.map((d) => {
+        const data = d.data();
+        return {
+          id: d.id,
+          mode: data.mode === "announcement" ? "announcement" : "reveal",
+          parentName: data.parentName ?? "",
+          babyName: typeof data.babyName === "string" ? data.babyName : null,
+          babyNameGirl: typeof data.babyNameGirl === "string" ? data.babyNameGirl : null,
+          babyNameBoy: typeof data.babyNameBoy === "string" ? data.babyNameBoy : null,
+          revealerEmail: typeof data.revealerEmail === "string" ? data.revealerEmail : null,
+          revealerRelation: (data.revealerRelation as RevealerRelation | null) ?? null,
+          revealAt: timestampToDate(data.revealAt),
+          revealTimezone: typeof data.revealTimezone === "string" ? data.revealTimezone : "UTC",
+          status: data.status ?? "pending_payment",
+          genderStatus: data.genderStatus ?? "not_submitted",
+          photos: Array.isArray(data.photos) ? data.photos.filter(Boolean) : [],
+          createdAt: timestampToDate(data.createdAt),
+          videoUrl: typeof data.videoUrl === "string" ? data.videoUrl : null,
+          videoReady: Boolean(data.videoUrl) || Boolean(data?.stages?.videoGenerated),
+        };
+      });
+      setReveals(items);
+    } catch (err) {
+      console.error("Failed to load reveals:", err);
+      setToast({ type: "error", message: "Failed to load your reveals." });
+    } finally {
+      setRevealsLoading(false);
+    }
+  }, [user]);
+
   useEffect(() => {
     if (!loading && !user) router.push("/login");
   }, [loading, user, router]);
-
 
   useEffect(() => {
     if (!loading && firestoreUser?.role?.toLowerCase() === "admin") {
@@ -140,7 +555,6 @@ function DashboardContent() {
     }
   }, [loading, firestoreUser, router]);
 
-  // Handle redirect params (from Stripe + from new-reveal form)
   useEffect(() => {
     const payment = searchParams.get("payment");
     const plan = searchParams.get("plan");
@@ -148,103 +562,117 @@ function DashboardContent() {
     if (payment === "success") {
       setToast({
         message: plan
-          ? `Payment successful! ${plan.charAt(0).toUpperCase() + plan.slice(1)} plan activated.`
-          : "Payment successful!",
+          ? `Payment successful. ${plan.charAt(0).toUpperCase() + plan.slice(1)} plan activated.`
+          : "Payment successful.",
         type: "success",
       });
-      // Refresh user doc to pick up new entitlement
-      refreshFirestoreUser();
-      // Clean the URL
+      void refreshFirestoreUser();
       router.replace("/dashboard");
     } else if (payment === "cancelled") {
       setToast({ message: "Payment cancelled. You can try again anytime.", type: "info" });
       router.replace("/dashboard");
-  } else if (created) {
-      setToast({
-        message: "Your reveal was created successfully! ✨",
-        type: "success",
-      });
-      refreshFirestoreUser();
+    } else if (created) {
+      setToast({ message: "Your reveal was created successfully.", type: "success" });
+      void refreshFirestoreUser();
       router.replace("/dashboard");
     } else if (searchParams.get("noEntitlement") === "1") {
-      setToast({
-        message: "Please choose a plan before creating a reveal.",
-        type: "info",
-      });
+      setToast({ message: "Please choose a plan before creating a reveal.", type: "info" });
       router.replace("/dashboard");
     }
   }, [searchParams, router, refreshFirestoreUser]);
 
-  // Load user's reveals
   useEffect(() => {
-    if (!user) return;
-    let cancelled = false;
-    (async () => {
-      try {
-        const db = getFirebaseDb();
-        const q = query(
-          collection(db, "enquiries"),
-          where("userId", "==", user.uid),
-          orderBy("createdAt", "desc")
-        );
-        const snap = await getDocs(q);
-        if (cancelled) return;
-        const items: RevealSummary[] = snap.docs.map((d) => {
-          const data = d.data();
-          return {
-            id: d.id,
-            mode: data.mode,
-            parentName: data.parentName ?? "",
-            revealAt: timestampToDate(data.revealAt),
-            status: data.status ?? "pending_payment",
-            genderStatus: data.genderStatus ?? "not_submitted",
-            photos: Array.isArray(data.photos) ? data.photos : [],
-            createdAt: timestampToDate(data.createdAt),
-            videoUrl: typeof data.videoUrl === "string" ? data.videoUrl : null,
-            videoReady: Boolean(data.videoUrl) || Boolean(data?.stages?.videoGenerated),
-          };
-        });
-        setReveals(items);
-      } catch (err) {
-        console.error("Failed to load reveals:", err);
-      } finally {
-        if (!cancelled) setRevealsLoading(false);
-      }
-    })();
-    return () => { cancelled = true; };
-  }, [user]);
+    void loadReveals();
+  }, [loadReveals]);
 
   useEffect(() => {
-    if (!user || !reveals[0]?.id) return;
-    loadGuestList(reveals[0].id).catch(() => {});
+    if (!user || !latestReveal?.videoReady) return;
+    void loadGuestList(latestReveal.id);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user, reveals[0]?.id]);
+  }, [user, latestReveal?.id, latestReveal?.videoReady]);
 
-  if (loading || !user) return null;
+  const firstName = useMemo(
+    () => user?.displayName?.split(" ")[0] || user?.email?.split("@")[0] || "there",
+    [user]
+  );
 
-  const firstName = user.displayName?.split(" ")[0] || user.email?.split("@")[0] || "there";
-
-  // Entitlement state
   const activePlan = firestoreUser?.activePlan ?? "none";
   const revealsAllowed = firestoreUser?.revealsAllowed ?? 0;
   const revealsCreated = firestoreUser?.revealsCreated ?? 0;
   const hasPlan = activePlan !== "none";
   const canCreateReveal = revealsAllowed > 0;
 
+  if (loading || !user) return null;
+
+  async function loadGuestList(enquiryId: string) {
+    const idToken = await user!.getIdToken();
+    const res = await fetch(`/api/guest/list?enquiryId=${encodeURIComponent(enquiryId)}`, {
+      headers: { Authorization: `Bearer ${idToken}` },
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(data?.error || "Failed to load guest list.");
+    setGuestRows(Array.isArray(data?.guests) ? data.guests : []);
+    setRevealUnlocked(Boolean(data?.revealUnlocked));
+  }
+
+  async function handleGuestFile(file: File) {
+    try {
+      const rows = file.name.toLowerCase().endsWith(".xlsx")
+        ? await parseXlsxRows(file)
+        : parseDelimitedRows(await file.text());
+      const parsed = rowsToGuests(rows);
+      const merged = mergeGuestRows(guestDraftRows, parsed.valid);
+      setGuestDraftRows(merged.rows);
+      setGuestImportSummary({
+        fileName: file.name,
+        added: merged.rows.length,
+        invalid: parsed.invalid,
+        duplicates: parsed.duplicates + merged.duplicates,
+      });
+      if (parsed.invalid > 0 || parsed.duplicates + merged.duplicates > 0) {
+        setToast({
+          type: "info",
+          message: `Imported guests with ${parsed.invalid} invalid and ${
+            parsed.duplicates + merged.duplicates
+          } duplicate row(s) skipped.`,
+        });
+      }
+    } catch (err) {
+      setToast({
+        type: "error",
+        message: err instanceof Error ? err.message : "Failed to import guest file.",
+      });
+    }
+  }
+
+  function updateGuestDraft(rowId: string, field: keyof Omit<EditableGuestRow, "rowId">, value: string) {
+    setGuestDraftRows((rows) =>
+      rows.map((row) => (row.rowId === rowId ? { ...row, [field]: value } : row))
+    );
+  }
+
+  function removeGuestDraft(rowId: string) {
+    setGuestDraftRows((rows) => {
+      const next = rows.filter((row) => row.rowId !== rowId);
+      return next.length ? next : [blankGuestRow()];
+    });
+  }
 
   async function sendGuestInvites(enquiryId: string) {
-    if (!user) return;
-    const rows = guestCsv.split(/\n+/).map((r) => r.trim()).filter(Boolean);
-    const guests = rows.map((r) => { const [name, email] = r.split(",").map((x) => x?.trim()); return { name, email }; }).filter((g) => !!g.name && !!g.email);
-
+    const guests = guestDraftRows.map(normalizeGuest).filter((row) => row.name || row.email || row.phone);
+    const invalid = guests.filter((row) => !row.name || !EMAIL_RE.test(row.email));
     if (guests.length === 0) {
-      setToast({ type: "error", message: "Please add guests as: Name, email@example.com (one per line)." });
+      setToast({ type: "error", message: "Add at least one guest with a name and email." });
+      return;
+    }
+    if (invalid.length > 0) {
+      setToast({ type: "error", message: "Each guest needs a name and valid email before sending." });
       return;
     }
 
     setSendingInvites(true);
     try {
-      const idToken = await user.getIdToken();
+      const idToken = await user!.getIdToken();
       const res = await fetch("/api/guest/send-invites", {
         method: "POST",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${idToken}` },
@@ -252,57 +680,20 @@ function DashboardContent() {
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(data?.error || "Failed to send invites.");
-      setGuestCsv("");
-      setToast({ type: "success", message: `Sent ${data.sent ?? guests.length} guest invite(s).` });
+      setGuestDraftRows([blankGuestRow()]);
+      setGuestImportSummary(null);
+      setToast({
+        type: "success",
+        message: `Sent ${data.sent ?? guests.length} invite(s). Host copy ${
+          data.hostSent ? "sent" : "not sent"
+        }.`,
+      });
       await loadGuestList(enquiryId);
     } catch (err) {
       setToast({ type: "error", message: err instanceof Error ? err.message : "Failed to send invites." });
     } finally {
       setSendingInvites(false);
     }
-  }
-
-  function parseGuestCsv(raw: string): CsvPreview {
-    const lines = raw.split(/\r?\n/).map((l) => l.trim()).filter(Boolean);
-    const seen = new Set<string>();
-    const valid: { name: string; email: string }[] = [];
-    const invalid: string[] = [];
-    const duplicates: string[] = [];
-    for (const line of lines) {
-      const [name, email] = line.split(",").map((x) => x?.trim() || "");
-      const normalizedEmail = email.toLowerCase();
-      const emailOk = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(normalizedEmail);
-      if (!name || !emailOk) {
-        invalid.push(line);
-        continue;
-      }
-      if (seen.has(normalizedEmail)) {
-        duplicates.push(normalizedEmail);
-        continue;
-      }
-      seen.add(normalizedEmail);
-      valid.push({ name, email: normalizedEmail });
-    }
-    return { valid, invalid, duplicates };
-  }
-
-  async function onGuestCsvFile(file: File) {
-    const text = await file.text();
-    const preview = parseGuestCsv(text);
-    setCsvPreview(preview);
-    const normalized = preview.valid.map((g) => `${g.name}, ${g.email}`).join("\n");
-    setGuestCsv(normalized);
-    if (preview.invalid.length > 0) {
-      setToast({ type: "info", message: `Ignored ${preview.invalid.length} invalid row(s).` });
-    }
-  }
-  async function loadGuestList(enquiryId: string) {
-    const idToken = await user!.getIdToken();
-    const res = await fetch(`/api/guest/list?enquiryId=${encodeURIComponent(enquiryId)}`, { headers: { Authorization: `Bearer ${idToken}` } });
-    const data = await res.json().catch(() => ({}));
-    if (!res.ok) throw new Error(data?.error || "Failed to load guest list.");
-    setGuestRows(Array.isArray(data?.guests) ? data.guests : []);
-    setRevealUnlocked(Boolean(data?.revealUnlocked));
   }
 
   async function manageGuest(guestId: string, action: "resend" | "revoke", enquiryId: string) {
@@ -321,6 +712,7 @@ function DashboardContent() {
       setToast({ type: "error", message: err instanceof Error ? err.message : "Failed to manage guest." });
     }
   }
+
   async function sendGuestDigest(enquiryId: string) {
     try {
       const idToken = await user!.getIdToken();
@@ -337,57 +729,122 @@ function DashboardContent() {
     }
   }
 
-
- async function handleSelectPlan(plan: PlanDefinition) {
-  if (activatingPlan) return;
-  setActivatingPlan(plan.id);
-
-  try {
-    const token = await user!.getIdToken();
-
-    const res = await fetch("/api/create-checkout", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
-      },
-      body: JSON.stringify({ planId: plan.id }),
-    });
-
-    const data = await res.json().catch(() => ({}));
-
-    if (!res.ok) {
-      setToast({ message: data.error || "Failed to activate plan.", type: "error" });
-      return;
+  async function handleSelectPlan(plan: PlanDefinition) {
+    if (activatingPlan) return;
+    setActivatingPlan(plan.id);
+    try {
+      const token = await user!.getIdToken();
+      const res = await fetch("/api/create-checkout", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ planId: plan.id }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        setToast({ message: data.error || "Failed to activate plan.", type: "error" });
+        return;
+      }
+      if (data.url) {
+        window.location.href = data.url;
+        return;
+      }
+      setToast({ message: data.message || `${plan.name} plan activated.`, type: "success" });
+      await refreshFirestoreUser();
+      if (plan.id === "free") setTimeout(() => router.push("/new-reveal"), 800);
+    } catch {
+      setToast({ message: "Something went wrong. Please try again.", type: "error" });
+    } finally {
+      setActivatingPlan(null);
     }
-
-    if (data.url) {
-      // Real Stripe flow — redirect
-      window.location.href = data.url;
-      return;
-    }
-
-    // Dev mode — plan activated directly
-    setToast({
-      message: data.message || `${plan.name} plan activated.`,
-      type: "success",
-    });
-
-    await refreshFirestoreUser();
-
-    // If this is the free plan activation, redirect to the form
-    if (plan.id === "free") {
-      setTimeout(() => router.push("/new-reveal"), 800);
-    }
-
-  } catch (err) {
-    setToast({ message: "Something went wrong. Please try again.", type: "error" });
-  } finally {
-    setActivatingPlan(null);
   }
-}
 
-  // ─── Render ───────────────────────────────────────────────
+  function startEditingReveal(reveal: RevealSummary) {
+    setEditingRevealId(reveal.id);
+    setEditPhotoFiles([]);
+    setEditForm({
+      id: reveal.id,
+      mode: reveal.mode,
+      parentName: reveal.parentName,
+      babyName: reveal.babyName || "",
+      announcementGender: "",
+      babyNameGirl: reveal.babyNameGirl || "",
+      babyNameBoy: reveal.babyNameBoy || "",
+      revealerEmail: reveal.revealerEmail || "",
+      revealerRelation: reveal.revealerRelation || "doctor",
+      revealAt: formatDateTimeLocal(reveal.revealAt),
+      revealTimezone: reveal.revealTimezone || "UTC",
+      photos: reveal.photos,
+    });
+  }
+
+  function updateEditForm<K extends keyof RevealEditForm>(field: K, value: RevealEditForm[K]) {
+    setEditForm((form) => (form ? { ...form, [field]: value } : form));
+  }
+
+  async function saveRevealEdits() {
+    if (!editForm) return;
+    if (!editForm.parentName.trim()) {
+      setToast({ type: "error", message: "Parent name is required." });
+      return;
+    }
+    const revealAtMs = new Date(editForm.revealAt).getTime();
+    if (!editForm.revealAt || Number.isNaN(revealAtMs)) {
+      setToast({ type: "error", message: "Reveal date and time are required." });
+      return;
+    }
+    if (editForm.mode === "reveal" && !EMAIL_RE.test(editForm.revealerEmail.trim())) {
+      setToast({ type: "error", message: "A valid revealer email is required." });
+      return;
+    }
+
+    setSavingReveal(true);
+    try {
+      let photoUrls = editForm.photos;
+      if (editPhotoFiles.length > 0) {
+        const validation = validatePhotoFiles(editPhotoFiles);
+        if (!validation.ok) throw new Error(validation.error);
+        photoUrls = await uploadPhotos(editForm.id, editPhotoFiles);
+      }
+
+      const idToken = await user!.getIdToken();
+      const res = await fetch("/api/reveal/update", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${idToken}` },
+        body: JSON.stringify({
+          enquiryId: editForm.id,
+          mode: editForm.mode,
+          parentName: editForm.parentName.trim(),
+          photos: photoUrls,
+          revealAtMs,
+          revealTimezone: editForm.revealTimezone.trim() || "UTC",
+          babyName: editForm.mode === "announcement" ? editForm.babyName.trim() || null : null,
+          announcementGender:
+            editForm.mode === "announcement" && editForm.announcementGender
+              ? editForm.announcementGender
+              : undefined,
+          babyNameGirl: editForm.mode === "reveal" ? editForm.babyNameGirl.trim() || null : null,
+          babyNameBoy: editForm.mode === "reveal" ? editForm.babyNameBoy.trim() || null : null,
+          revealerEmail:
+            editForm.mode === "reveal" ? editForm.revealerEmail.trim().toLowerCase() : undefined,
+          revealerRelation: editForm.mode === "reveal" ? editForm.revealerRelation : undefined,
+        }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data?.error || "Failed to update reveal.");
+      setToast({ type: "success", message: "Reveal details updated." });
+      setEditingRevealId(null);
+      setEditForm(null);
+      setEditPhotoFiles([]);
+      await loadReveals();
+    } catch (err) {
+      setToast({ type: "error", message: err instanceof Error ? err.message : "Failed to update reveal." });
+    } finally {
+      setSavingReveal(false);
+    }
+  }
 
   return (
     <>
@@ -403,51 +860,51 @@ function DashboardContent() {
           <div className="dash-user">
             <div className="dash-avatar">{firstName.charAt(0).toUpperCase()}</div>
             <span className="dash-user-name">{user.displayName || user.email}</span>
-            <button className="btn-ghost-sm" onClick={() => router.push("/settings")}>Settings</button>
+            <button className="btn-ghost-sm" onClick={() => router.push("/settings")}>
+              Settings
+            </button>
             <button
-  className="btn-ghost-sm"
-  disabled={loggingOut}
-  onClick={async () => {
-    setLoggingOut(true);
-    try {
-      await logout();
-      router.push("/");
-    } catch {
-      setLoggingOut(false);
-    }
-  }}
->
-  {loggingOut ? "Signing out…" : "Sign Out"}
-</button>
+              className="btn-ghost-sm"
+              disabled={loggingOut}
+              onClick={async () => {
+                setLoggingOut(true);
+                try {
+                  await logout();
+                  router.push("/");
+                } catch {
+                  setLoggingOut(false);
+                }
+              }}
+            >
+              {loggingOut ? "Signing out..." : "Sign Out"}
+            </button>
           </div>
         </header>
 
         <main className="dash-main">
-          {/* Welcome */}
           <section className="welcome">
             <p className="welcome-tag">Your Dashboard</p>
             <h1 className="welcome-title">
-              Hello, <em>{firstName}</em> ✦
+              Hello, <em>{firstName}</em>
             </h1>
             <p className="welcome-sub">
               {!hasPlan && "Choose a plan to get started creating your reveal."}
-              {hasPlan && canCreateReveal && reveals.length === 0 && "You're all set — let's create your reveal."}
-              {hasPlan && canCreateReveal && reveals.length > 0 && "You can create another reveal whenever you're ready."}
-              {hasPlan && !canCreateReveal && reveals.length > 0 && "Here are your reveals. Buy another plan to create more."}
+              {hasPlan && canCreateReveal && reveals.length === 0 && "You're all set. Let's create your reveal."}
+              {hasPlan && canCreateReveal && reveals.length > 0 && "Your reveal details, guests, and plans are here."}
+              {hasPlan && !canCreateReveal && reveals.length > 0 && "Your reveal details, guests, and plans are here."}
             </p>
             {hasPlan && (
               <div className="plan-badge">
                 <span className="plan-badge-dot" />
                 Active Plan: <strong>{PLANS.find((p) => p.id === activePlan)?.name ?? activePlan}</strong>
-                <span className="plan-badge-sep">•</span>
-                <span>{revealsAllowed} reveal{revealsAllowed === 1 ? "" : "s"} remaining</span>
-                <span className="plan-badge-sep">•</span>
+                <span className="plan-badge-sep">/</span>
+                <span>{revealsAllowed} remaining</span>
+                <span className="plan-badge-sep">/</span>
                 <span>{revealsCreated} created</span>
               </div>
             )}
           </section>
 
-          {/* State B/C: Create Reveal CTA (when plan active) */}
           {hasPlan && canCreateReveal && (
             <section className="cta-card">
               <div className="cta-card-inner">
@@ -455,227 +912,446 @@ function DashboardContent() {
                   <p className="section-label">Ready When You Are</p>
                   <h2 className="cta-title">Create Your Reveal</h2>
                   <p className="cta-desc">
-                    We&apos;ll walk you through a few simple questions — photos, names, your revealer&apos;s email —
-                    and have everything ready in under five minutes.
+                    Start a new reveal, send a secure revealer link, and bring guests into the party room.
                   </p>
                 </div>
                 <button className="btn-primary-lg" onClick={() => router.push("/new-reveal")}>
-                  ✦ Start New Reveal →
+                  Start New Reveal
                 </button>
               </div>
             </section>
           )}
 
-          {!reveals[0] && (
-            <section className="dash-section">
-              <p className="section-label">Invite Guests</p>
-              <p className="welcome-sub" style={{ marginTop: 0 }}>
-                Guest list upload will be available here as soon as you create a reveal. You do not need to wait for the reveal video upload.
-              </p>
+          {reveals.length > 0 && (
+            <section className="portal-section">
+              <p className="section-label">Your Reveals</p>
+              <div className="reveal-stack">
+                {reveals.map((reveal) => {
+                  const editable = canEditReveal(reveal);
+                  const isEditing = editingRevealId === reveal.id && editForm;
+                  return (
+                    <article key={reveal.id} className="detail-panel">
+                      <div className="detail-panel-header">
+                        <div className="detail-title-wrap">
+                          <div className="reveal-photo">
+                            {reveal.photos[0] ? (
+                              <img src={reveal.photos[0]} alt="" />
+                            ) : (
+                              <div className="reveal-photo-placeholder">No photo</div>
+                            )}
+                          </div>
+                          <div>
+                            <div className="reveal-mode-tag">
+                              {reveal.mode === "announcement" ? "Announcement" : "Gender Reveal"}
+                            </div>
+                            <h2 className="detail-title">{reveal.parentName || "Untitled reveal"}</h2>
+                            <p className="detail-sub">{formatRevealDate(reveal.revealAt)}</p>
+                          </div>
+                        </div>
+                        <div className="detail-actions">
+                          <span className={`status-pill ${statusTone(reveal.status)}`}>
+                            {statusLabel(reveal.status)}
+                          </span>
+                          <span className={`edit-pill ${editable ? "open" : "locked"}`}>
+                            {editWindowText(reveal)}
+                          </span>
+                          {editable && !isEditing && (
+                            <button className="btn-ghost-sm" onClick={() => startEditingReveal(reveal)}>
+                              Edit Details
+                            </button>
+                          )}
+                        </div>
+                      </div>
+
+                      {!isEditing && (
+                        <div className="detail-grid">
+                          <div>
+                            <span>Mode</span>
+                            <strong>{reveal.mode === "announcement" ? "Announcement" : "Reveal"}</strong>
+                          </div>
+                          <div>
+                            <span>Reveal Time</span>
+                            <strong>{formatRevealDate(reveal.revealAt)}</strong>
+                          </div>
+                          <div>
+                            <span>Timezone</span>
+                            <strong>{reveal.revealTimezone}</strong>
+                          </div>
+                          <div>
+                            <span>Photos</span>
+                            <strong>{reveal.photos.length}</strong>
+                          </div>
+                          {reveal.mode === "announcement" ? (
+                            <div>
+                              <span>Baby Name</span>
+                              <strong>{reveal.babyName || "-"}</strong>
+                            </div>
+                          ) : (
+                            <>
+                              <div>
+                                <span>Girl Name</span>
+                                <strong>{reveal.babyNameGirl || "-"}</strong>
+                              </div>
+                              <div>
+                                <span>Boy Name</span>
+                                <strong>{reveal.babyNameBoy || "-"}</strong>
+                              </div>
+                              <div>
+                                <span>Revealer</span>
+                                <strong>{reveal.revealerEmail || "-"}</strong>
+                              </div>
+                            </>
+                          )}
+                        </div>
+                      )}
+
+                      {isEditing && editForm && (
+                        <div className="edit-form">
+                          <div className="mode-row">
+                            <button
+                              type="button"
+                              className={`mode-chip${editForm.mode === "reveal" ? " selected" : ""}`}
+                              onClick={() => updateEditForm("mode", "reveal")}
+                            >
+                              Gender Reveal
+                            </button>
+                            <button
+                              type="button"
+                              className={`mode-chip${editForm.mode === "announcement" ? " selected" : ""}`}
+                              onClick={() => updateEditForm("mode", "announcement")}
+                            >
+                              Announcement
+                            </button>
+                          </div>
+
+                          <div className="form-grid">
+                            <label>
+                              <span>Parent Name(s)</span>
+                              <input
+                                value={editForm.parentName}
+                                onChange={(e) => updateEditForm("parentName", e.target.value)}
+                              />
+                            </label>
+                            <label>
+                              <span>Reveal Date & Time</span>
+                              <input
+                                type="datetime-local"
+                                value={editForm.revealAt}
+                                onChange={(e) => updateEditForm("revealAt", e.target.value)}
+                              />
+                            </label>
+                            <label>
+                              <span>Timezone</span>
+                              <input
+                                value={editForm.revealTimezone}
+                                onChange={(e) => updateEditForm("revealTimezone", e.target.value)}
+                              />
+                            </label>
+                          </div>
+
+                          {editForm.mode === "announcement" ? (
+                            <div className="form-grid">
+                              <label>
+                                <span>Baby Name</span>
+                                <input
+                                  value={editForm.babyName}
+                                  onChange={(e) => updateEditForm("babyName", e.target.value)}
+                                />
+                              </label>
+                              <label>
+                                <span>Gender Update</span>
+                                <select
+                                  value={editForm.announcementGender}
+                                  onChange={(e) =>
+                                    updateEditForm("announcementGender", e.target.value as "" | GenderValue)
+                                  }
+                                >
+                                  <option value="">Keep current gender</option>
+                                  <option value="boy">Boy</option>
+                                  <option value="girl">Girl</option>
+                                </select>
+                              </label>
+                            </div>
+                          ) : (
+                            <div className="form-grid">
+                              <label>
+                                <span>If It's a Girl</span>
+                                <input
+                                  value={editForm.babyNameGirl}
+                                  onChange={(e) => updateEditForm("babyNameGirl", e.target.value)}
+                                />
+                              </label>
+                              <label>
+                                <span>If It's a Boy</span>
+                                <input
+                                  value={editForm.babyNameBoy}
+                                  onChange={(e) => updateEditForm("babyNameBoy", e.target.value)}
+                                />
+                              </label>
+                              <label>
+                                <span>Revealer Email</span>
+                                <input
+                                  type="email"
+                                  value={editForm.revealerEmail}
+                                  onChange={(e) => updateEditForm("revealerEmail", e.target.value)}
+                                />
+                              </label>
+                              <label>
+                                <span>Relation</span>
+                                <select
+                                  value={editForm.revealerRelation}
+                                  onChange={(e) =>
+                                    updateEditForm("revealerRelation", e.target.value as RevealerRelation)
+                                  }
+                                >
+                                  {(Object.keys(RELATION_LABELS) as RevealerRelation[]).map((key) => (
+                                    <option key={key} value={key}>
+                                      {RELATION_LABELS[key]}
+                                    </option>
+                                  ))}
+                                </select>
+                              </label>
+                            </div>
+                          )}
+
+                          <div className="photo-edit-row">
+                            <div>
+                              <span className="mini-label">Current Photos</span>
+                              <div className="photo-strip">
+                                {editForm.photos.length === 0 && <span className="empty-note">None selected</span>}
+                                {editForm.photos.map((url, index) => (
+                                  <div key={url} className="photo-thumb">
+                                    <img src={url} alt="" />
+                                    <button
+                                      type="button"
+                                      onClick={() =>
+                                        updateEditForm(
+                                          "photos",
+                                          editForm.photos.filter((_, i) => i !== index)
+                                        )
+                                      }
+                                    >
+                                      x
+                                    </button>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                            <label className="file-input-label">
+                              <span>Replace Photos</span>
+                              <input
+                                type="file"
+                                accept="image/jpeg,image/jpg,image/png,image/webp,image/gif,image/heic,image/heif"
+                                multiple
+                                onChange={(e) => setEditPhotoFiles(Array.from(e.target.files || []).slice(0, PHOTO_MAX))}
+                              />
+                              <small>
+                                {editPhotoFiles.length > 0
+                                  ? `${editPhotoFiles.length} new file(s) selected`
+                                  : `Optional, up to ${PHOTO_MAX}`}
+                              </small>
+                            </label>
+                          </div>
+
+                          <div className="edit-actions">
+                            <button className="btn-primary-lg" onClick={saveRevealEdits} disabled={savingReveal}>
+                              {savingReveal ? "Saving..." : "Save Changes"}
+                            </button>
+                            <button
+                              className="btn-ghost-sm"
+                              onClick={() => {
+                                setEditingRevealId(null);
+                                setEditForm(null);
+                                setEditPhotoFiles([]);
+                              }}
+                              disabled={savingReveal}
+                            >
+                              Cancel
+                            </button>
+                          </div>
+                        </div>
+                      )}
+                    </article>
+                  );
+                })}
+              </div>
             </section>
           )}
 
-          {reveals[0] && (
-            <section className="dash-section">
+          {latestReveal?.videoReady && (
+            <section className="portal-section">
               <p className="section-label">Invite Guests</p>
-              <p className="welcome-sub" style={{ marginTop: 0 }}>Add one guest per line: <code>Name, email@example.com</code></p>
-              <div style={{ marginBottom: 10 }}>
-                <input
-                  type="file"
-                  accept=".csv,text/csv"
-                  onChange={(e) => {
-                    const file = e.target.files?.[0];
-                    if (file) void onGuestCsvFile(file);
-                  }}
-                />
-              </div>
-              <textarea value={guestCsv} onChange={(e) => setGuestCsv(e.target.value)} placeholder={`Ava, ava@example.com\nNoah, noah@example.com`} style={{ width: "100%", minHeight: 120, border: "1px solid #d1d5db", borderRadius: 10, padding: 12, fontFamily: "inherit" }} />
-              {(csvPreview.valid.length > 0 || csvPreview.invalid.length > 0 || csvPreview.duplicates.length > 0) && (
-                <div style={{ marginTop: 8, fontSize: 13, color: "#374151" }}>
-                  <div>Preview: {csvPreview.valid.length} valid row(s).</div>
-                  {csvPreview.duplicates.length > 0 && <div>{csvPreview.duplicates.length} duplicate email(s) skipped.</div>}
-                  {csvPreview.invalid.length > 0 && <div>{csvPreview.invalid.length} invalid row(s) skipped.</div>}
+              <div className="invite-panel">
+                <div className="invite-toolbar">
+                  <label className="upload-button">
+                    Import CSV/XLSX
+                    <input
+                      type="file"
+                      accept=".csv,text/csv,.xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+                      onChange={(e) => {
+                        const file = e.target.files?.[0];
+                        if (file) void handleGuestFile(file);
+                        e.currentTarget.value = "";
+                      }}
+                    />
+                  </label>
+                  <button className="btn-ghost-sm" onClick={() => setGuestDraftRows((rows) => [...rows, makeGuestRow()])}>
+                    Add Guest Row
+                  </button>
+                  <button className="btn-ghost-sm" onClick={() => loadGuestList(latestReveal.id)}>
+                    Refresh List
+                  </button>
+                  <button className="btn-ghost-sm" onClick={() => sendGuestDigest(latestReveal.id)}>
+                    Send Parent Digest
+                  </button>
                 </div>
-              )}
-              <button className="btn-primary-lg" style={{ marginTop: 10 }} onClick={() => sendGuestInvites(reveals[0].id)} disabled={sendingInvites}>
-                {sendingInvites ? "Sending invites..." : "Send Guest Invites"}
-              </button>
-              <button className="btn-ghost-sm" style={{ marginTop: 10, marginLeft: 10 }} onClick={() => loadGuestList(reveals[0].id)}>
-                Refresh Guest List
-              </button>
-              <button className="btn-ghost-sm" style={{ marginTop: 10, marginLeft: 10 }} onClick={() => sendGuestDigest(reveals[0].id)}>
-                Send Parent Digest
-              </button>
-              {guestRows.length > 0 && (
-                <div style={{ marginTop: 14, overflowX: "auto" }}>
-                  <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 14 }}>
-                    <thead><tr><th>Name</th><th>Email</th><th>Status</th><th>Prediction</th><th>Message</th><th>Actions</th></tr></thead>
+
+                {guestImportSummary && (
+                  <div className="import-summary">
+                    {guestImportSummary.fileName}: {guestImportSummary.added} row(s) in table,
+                    {guestImportSummary.invalid} invalid, {guestImportSummary.duplicates} duplicate.
+                  </div>
+                )}
+
+                <div className="table-wrap">
+                  <table className="portal-table">
+                    <thead>
+                      <tr>
+                        <th>Name</th>
+                        <th>Number</th>
+                        <th>Email</th>
+                        <th></th>
+                      </tr>
+                    </thead>
                     <tbody>
-                      {guestRows.map((g) => (
-                        <tr key={g.guestId}>
-                          <td>{g.name}</td><td>{g.email}</td><td>{g.responded ? "Responded" : "Pending"} ({g.inviteStatus})</td>
-                          <td>{revealUnlocked ? (g.prediction || "—") : "Locked until reveal day"}</td>
-                          <td>{revealUnlocked ? (g.message || "—") : g.hasMessage ? "Locked until reveal day" : "—"}</td>
+                      {guestDraftRows.map((row) => (
+                        <tr key={row.rowId}>
                           <td>
-                            <button className="btn-ghost-sm" onClick={() => manageGuest(g.guestId, "resend", reveals[0].id)}>Resend</button>
-                            <button className="btn-ghost-sm" onClick={() => manageGuest(g.guestId, "revoke", reveals[0].id)}>Revoke</button>
+                            <input
+                              value={row.name}
+                              onChange={(e) => updateGuestDraft(row.rowId, "name", e.target.value)}
+                              placeholder="Guest name"
+                            />
+                          </td>
+                          <td>
+                            <input
+                              value={row.phone}
+                              onChange={(e) => updateGuestDraft(row.rowId, "phone", e.target.value)}
+                              placeholder="Phone number"
+                            />
+                          </td>
+                          <td>
+                            <input
+                              type="email"
+                              value={row.email}
+                              onChange={(e) => updateGuestDraft(row.rowId, "email", e.target.value)}
+                              placeholder="guest@example.com"
+                            />
+                          </td>
+                          <td>
+                            <button className="btn-ghost-sm" onClick={() => removeGuestDraft(row.rowId)}>
+                              Remove
+                            </button>
                           </td>
                         </tr>
                       ))}
                     </tbody>
                   </table>
                 </div>
-              )}
-            </section>
-          )}
-          {/* State C: Existing Reveals */}
-          {reveals.length > 0 && (
-            <section>
-              <p className="section-label">Your Reveals</p>
-              <div className="reveals-list">
-                {reveals.map((r) => (
-                  <div key={r.id} className="reveal-card">
-                    <div className="reveal-photo">
-                      {r.photos[0] ? (
-                        <img src={r.photos[0]} alt="" />
-                      ) : (
-                        <div className="reveal-photo-placeholder">✦</div>
-                      )}
-                    </div>
-                    <div className="reveal-info">
-                      <div className="reveal-mode-tag">
-                        {r.mode === "announcement" ? "📣 Announcement" : "🎀 Gender Reveal"}
-                      </div>
-                      <div className="reveal-parent">{r.parentName || "Untitled"}</div>
-                      <div className="reveal-date">{formatRevealDate(r.revealAt)}</div>
-                    </div>
-                    <div className="reveal-status">
-                      <span
-                        className="status-dot"
-                        style={{ background: statusColor(r.status) }}
-                      />
-                      <span>{statusLabel(r.status)}</span>
+
+                <div className="invite-submit-row">
+                  <button className="btn-primary-lg" onClick={() => sendGuestInvites(latestReveal.id)} disabled={sendingInvites}>
+                    {sendingInvites ? "Sending..." : "Submit & Send Links"}
+                  </button>
+                  <span>The account email also receives a host party link.</span>
+                </div>
+
+                {guestRows.length > 0 && (
+                  <div className="sent-list">
+                    <h3>Sent Invites</h3>
+                    <div className="table-wrap">
+                      <table className="portal-table readonly">
+                        <thead>
+                          <tr>
+                            <th>Name</th>
+                            <th>Number</th>
+                            <th>Email</th>
+                            <th>Status</th>
+                            <th>Prediction</th>
+                            <th>Message</th>
+                            <th>Actions</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {guestRows.map((guest) => (
+                            <tr key={guest.guestId}>
+                              <td>
+                                {guest.name}
+                                {guest.isHost && <span className="host-badge">Host</span>}
+                              </td>
+                              <td>{guest.phone || "-"}</td>
+                              <td>{guest.email}</td>
+                              <td>
+                                {guest.responded ? "Responded" : "Pending"} ({guest.inviteStatus})
+                              </td>
+                              <td>{revealUnlocked ? guest.prediction || "-" : "Locked"}</td>
+                              <td>{revealUnlocked ? guest.message || "-" : guest.hasMessage ? "Locked" : "-"}</td>
+                              <td>
+                                <button className="btn-ghost-sm" onClick={() => manageGuest(guest.guestId, "resend", latestReveal.id)}>
+                                  Resend
+                                </button>
+                                <button className="btn-ghost-sm" onClick={() => manageGuest(guest.guestId, "revoke", latestReveal.id)}>
+                                  Revoke
+                                </button>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
                     </div>
                   </div>
-                ))}
+                )}
               </div>
+            </section>
+          )}
+
+          {latestReveal && !latestReveal.videoReady && (
+            <section className="portal-section">
+              <p className="section-label">Invite Guests</p>
+              <div className="notice-panel">Guest invites unlock after the admin uploads your reveal video.</div>
             </section>
           )}
 
           {revealsLoading && reveals.length === 0 && hasPlan && (
-            <div className="reveals-loading">Loading your reveals…</div>
+            <div className="reveals-loading">Loading your reveals...</div>
           )}
 
-          {/* State A: No Plan — Show Pricing */}
           {!hasPlan && (
-            <section>
-              <p className="section-label">Choose Your Plan</p>
-              <div className="plans-grid">
-                {PLANS.map((plan) => (
-                  <div key={plan.id} className={`plan-card${plan.id === "premium" ? " plan-popular" : ""}`}>
-                    {plan.id === "premium" && <div className="plan-badge-top">Most Popular</div>}
-                    <div className="plan-name">{plan.name}</div>
-                    <div className="plan-price">
-                      <span className="plan-curr">{plan.priceCents === 0 ? "" : "$"}</span>
-                      <span className="plan-amount">
-                        {plan.priceCents === 0 ? "Free" : (plan.priceCents / 100).toFixed(0)}
-                      </span>
-                      {plan.priceCents > 0 && <span className="plan-per"> one-time</span>}
-                    </div>
-                    <p className="plan-desc">{plan.description}</p>
-                    <div className="plan-divider" />
-                    <ul className="plan-feats">
-                      <li>✓ {plan.revealsGranted} reveal{plan.revealsGranted === 1 ? "" : "s"}</li>
-                      <li>✓ Secure revealer link</li>
-                      <li>✓ Live broadcast to guests</li>
-                      {plan.id === "premium" && <li>✓ Custom cinematic video</li>}
-                      {plan.id === "custom" && <li>✓ Bespoke video + concierge support</li>}
-                    </ul>
-                    <button
-                      className={`plan-btn${plan.id === "premium" ? " plan-btn-primary" : ""}`}
-                      onClick={() => handleSelectPlan(plan)}
-                      disabled={!!activatingPlan}
-                    >
-                      {activatingPlan === plan.id ? "Activating…" : `Choose ${plan.name}`}
-                    </button>
-                  </div>
-                ))}
-              </div>
-              <p className="dev-note">
-                Payment system is in preview mode. Plans activate immediately for now.
-              </p>
-            </section>
+            <PlanSection
+              title="Choose Your Plan"
+              plans={PLANS}
+              activatingPlan={activatingPlan}
+              onSelect={handleSelectPlan}
+            />
           )}
 
-{/* Upgrade section — only for users currently on FREE plan */}
           {activePlan === "free" && (
-            <section>
-              <p className="section-label">Unlock More</p>
-              <div className="upgrade-intro">
-                <p className="upgrade-intro-text">
-                  You&apos;re on the <strong>Spark</strong> plan. Upgrade anytime for a cinematic,
-                  curated reveal experience.
-                </p>
-              </div>
-              <div className="plans-grid">
-                {PLANS.filter((p) => p.id !== "free").map((plan) => (
-                  <div key={plan.id} className={`plan-card${plan.id === "premium" ? " plan-popular" : ""}`}>
-                    {plan.id === "premium" && <div className="plan-badge-top">Most Popular</div>}
-                    <div className="plan-name">{plan.name}</div>
-                    <div className="plan-price">
-                      <span className="plan-curr">$</span>
-                      <span className="plan-amount">{(plan.priceCents / 100).toFixed(0)}</span>
-                      <span className="plan-per"> one-time</span>
-                    </div>
-                    <p className="plan-desc">{plan.description}</p>
-                    <div className="plan-divider" />
-                    <ul className="plan-feats">
-                      <li>✓ {plan.revealsGranted} reveal{plan.revealsGranted === 1 ? "" : "s"}</li>
-                      <li>✓ Secure revealer link</li>
-                      <li>✓ Live broadcast to guests</li>
-                      {plan.id === "premium" && <li>✓ Custom cinematic video</li>}
-                      {plan.id === "custom" && <li>✓ Bespoke video + concierge support</li>}
-                    </ul>
-                    <button
-                      className={`plan-btn${plan.id === "premium" ? " plan-btn-primary" : ""}`}
-                      onClick={() => handleSelectPlan(plan)}
-                      disabled={!!activatingPlan}
-                    >
-                      {activatingPlan === plan.id ? "Activating…" : `Upgrade to ${plan.name}`}
-                    </button>
-                  </div>
-                ))}
-              </div>
-            </section>
+            <PlanSection
+              title="Unlock More"
+              plans={PLANS.filter((p) => p.id !== "free")}
+              activatingPlan={activatingPlan}
+              onSelect={handleSelectPlan}
+              upgrade
+            />
           )}
-          
-          {/* State B: Plan but no revealsAllowed — offer to buy more */}
+
           {hasPlan && !canCreateReveal && (
-            <section>
-              <p className="section-label">Need Another Reveal?</p>
-              <div className="plans-grid">
-                {PLANS.filter((p) => p.id !== "free").map((plan) => (
-                  <div key={plan.id} className={`plan-card${plan.id === "premium" ? " plan-popular" : ""}`}>
-                    {plan.id === "premium" && <div className="plan-badge-top">Most Popular</div>}
-                    <div className="plan-name">{plan.name}</div>
-                    <div className="plan-price">
-                      <span className="plan-curr">$</span>
-                      <span className="plan-amount">{(plan.priceCents / 100).toFixed(0)}</span>
-                      <span className="plan-per"> one-time</span>
-                    </div>
-                    <p className="plan-desc">{plan.description}</p>
-                    <div className="plan-divider" />
-                    <button
-                      className={`plan-btn${plan.id === "premium" ? " plan-btn-primary" : ""}`}
-                      onClick={() => handleSelectPlan(plan)}
-                      disabled={!!activatingPlan}
-                    >
-                      {activatingPlan === plan.id ? "Activating…" : `Buy ${plan.name}`}
-                    </button>
-                  </div>
-                ))}
-              </div>
-            </section>
+            <PlanSection
+              title="Need Another Reveal?"
+              plans={PLANS.filter((p) => p.id !== "free")}
+              activatingPlan={activatingPlan}
+              onSelect={handleSelectPlan}
+            />
           )}
         </main>
       </div>
@@ -683,229 +1359,202 @@ function DashboardContent() {
   );
 }
 
+function PlanSection({
+  title,
+  plans,
+  activatingPlan,
+  onSelect,
+  upgrade,
+}: {
+  title: string;
+  plans: PlanDefinition[];
+  activatingPlan: string | null;
+  onSelect: (plan: PlanDefinition) => void;
+  upgrade?: boolean;
+}) {
+  return (
+    <section className="portal-section">
+      <p className="section-label">{title}</p>
+      {upgrade && (
+        <div className="notice-panel">
+          You are on the Spark plan. Upgrade anytime for a cinematic reveal experience.
+        </div>
+      )}
+      <div className="plans-grid">
+        {plans.map((plan) => (
+          <div key={plan.id} className={`plan-card${plan.id === "premium" ? " plan-popular" : ""}`}>
+            {plan.id === "premium" && <div className="plan-badge-top">Most Popular</div>}
+            <div className="plan-name">{plan.name}</div>
+            <div className="plan-price">
+              <span className="plan-curr">{plan.priceCents === 0 ? "" : "$"}</span>
+              <span className="plan-amount">
+                {plan.priceCents === 0 ? "Free" : (plan.priceCents / 100).toFixed(0)}
+              </span>
+              {plan.priceCents > 0 && <span className="plan-per"> one-time</span>}
+            </div>
+            <p className="plan-desc">{plan.description}</p>
+            <div className="plan-divider" />
+            <ul className="plan-feats">
+              <li>{plan.revealsGranted} reveal{plan.revealsGranted === 1 ? "" : "s"}</li>
+              <li>Secure revealer link</li>
+              <li>Live broadcast to guests</li>
+              {plan.id === "premium" && <li>Custom cinematic video</li>}
+              {plan.id === "custom" && <li>Bespoke video and concierge support</li>}
+            </ul>
+            <button
+              className={`plan-btn${plan.id === "premium" ? " plan-btn-primary" : ""}`}
+              onClick={() => onSelect(plan)}
+              disabled={!!activatingPlan}
+            >
+              {activatingPlan === plan.id ? "Activating..." : plan.priceCents === 0 ? `Choose ${plan.name}` : `Buy ${plan.name}`}
+            </button>
+          </div>
+        ))}
+      </div>
+    </section>
+  );
+}
+
 export default function DashboardPage() {
   return (
-    <Suspense fallback={<div style={{ minHeight: "100vh", background: "#F4F3F0" }} />}>
+    <Suspense fallback={<div style={{ minHeight: "100vh", background: "#f6f4f1" }} />}>
       <DashboardContent />
     </Suspense>
   );
 }
 
-// ─── Styles ─────────────────────────────────────────────────
-
 const CSS = `
 @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,300;0,400;1,300;1,400&family=Plus+Jakarta+Sans:wght@300;400;500;600&display=swap');
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
 @keyframes slideIn{from{opacity:0;transform:translateX(20px);}to{opacity:1;transform:translateX(0);}}
-@keyframes fadeUp{from{opacity:0;transform:translateY(20px);}to{opacity:1;transform:translateY(0);}}
-
-body{font-family:'Plus Jakarta Sans',sans-serif;background:#F4F3F0;color:#111827;min-height:100vh;}
-
+body{font-family:'Plus Jakarta Sans',sans-serif;background:#f6f4f1;color:#171717;min-height:100vh;}
+button,input,select{font-family:'Plus Jakarta Sans',sans-serif;}
 .dash-root{min-height:100vh;}
-
-/* Header */
-.dash-header{
-  position:sticky;top:0;z-index:50;height:64px;
-  display:flex;align-items:center;justify-content:space-between;
-  padding:0 2rem;background:rgba(244,243,240,0.92);backdrop-filter:blur(14px);
-  border-bottom:1px solid rgba(0,0,0,0.06);
-}
-.dash-logo{
-  font-family:'Playfair Display',serif;font-size:1.1rem;font-weight:400;
-  color:#111827;text-decoration:none;line-height:1.2;
-}
-.logo-tag{
-  display:block;font-size:0.58rem;font-family:'Plus Jakarta Sans',sans-serif;
-  letter-spacing:0.22em;text-transform:uppercase;color:#C2527A;font-weight:400;
-}
+.dash-header{position:sticky;top:0;z-index:50;height:64px;display:flex;align-items:center;justify-content:space-between;padding:0 2rem;background:rgba(246,244,241,0.92);backdrop-filter:blur(14px);border-bottom:1px solid rgba(0,0,0,0.08);}
+.dash-logo{font-family:'Playfair Display',serif;font-size:1.1rem;font-weight:400;color:#111827;text-decoration:none;line-height:1.2;}
+.logo-tag{display:block;font-size:0.58rem;font-family:'Plus Jakarta Sans',sans-serif;letter-spacing:0.22em;text-transform:uppercase;color:#b5476d;font-weight:400;}
 .dash-user{display:flex;align-items:center;gap:0.7rem;}
-.dash-avatar{
-  width:32px;height:32px;border-radius:50%;
-  background:linear-gradient(135deg,#2E7DD1,#C2527A);
-  display:flex;align-items:center;justify-content:center;
-  color:white;font-size:13px;font-weight:500;flex-shrink:0;
-}
-.dash-user-name{font-size:0.82rem;color:#6B7280;display:none;}
-@media(min-width:640px){.dash-user-name{display:inline;}}
-.btn-ghost-sm{
-  padding:6px 14px;background:transparent;
-  border:1px solid rgba(0,0,0,0.12);border-radius:6px;
-  font-family:'Plus Jakarta Sans',sans-serif;font-size:0.78rem;
-  color:#374151;cursor:pointer;transition:all 0.2s;
-}
-.btn-ghost-sm:hover:not(:disabled){border-color:#2E7DD1;color:#2E7DD1;}
+.dash-avatar{width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,#2e7dd1,#c2527a);display:flex;align-items:center;justify-content:center;color:white;font-size:13px;font-weight:600;flex-shrink:0;}
+.dash-user-name{font-size:0.82rem;color:#6b7280;display:none;}
+@media(min-width:760px){.dash-user-name{display:inline;}}
+.dash-main{max-width:1180px;margin:0 auto;padding:3rem 2rem 4rem;}
+.welcome{margin-bottom:2.4rem;}
+.welcome-tag,.section-label{font-size:0.68rem;letter-spacing:0.32em;text-transform:uppercase;color:#b5476d;font-weight:600;margin-bottom:0.8rem;}
+.welcome-title{font-family:'Playfair Display',serif;font-size:2.8rem;font-weight:300;color:#111827;line-height:1.12;margin-bottom:0.6rem;}
+.welcome-title em{font-style:italic;color:#1b4f8c;}
+.welcome-sub{font-size:0.95rem;font-weight:300;color:#6b7280;line-height:1.7;max-width:620px;margin-bottom:1.2rem;}
+.plan-badge{display:inline-flex;align-items:center;gap:0.5rem;flex-wrap:wrap;padding:0.5rem 1rem;background:white;border:1px solid rgba(0,0,0,0.08);border-radius:999px;font-size:0.82rem;color:#374151;box-shadow:0 1px 4px rgba(0,0,0,0.04);}
+.plan-badge strong{color:#1b4f8c;font-weight:600;}
+.plan-badge-dot{width:8px;height:8px;border-radius:50%;background:#16a34a;box-shadow:0 0 10px rgba(22,163,74,0.5);}
+.plan-badge-sep{color:#d1d5db;}
+.portal-section{margin-bottom:2.2rem;}
+.section-label{display:flex;align-items:center;gap:0.9rem;color:#8a8f98;}
+.section-label::after{content:'';flex:1;height:1px;background:rgba(0,0,0,0.07);}
+.cta-card{background:linear-gradient(135deg,#143d6e 0%,#2e7dd1 58%,#c2527a 100%);border-radius:8px;padding:2rem 2.2rem;margin-bottom:2.4rem;box-shadow:0 14px 36px rgba(27,79,140,0.18);}
+.cta-card-inner{display:flex;align-items:center;justify-content:space-between;gap:2rem;flex-wrap:wrap;}
+.cta-card .section-label{color:rgba(255,255,255,0.72);margin-bottom:0.5rem;}
+.cta-card .section-label::after{background:rgba(255,255,255,0.16);}
+.cta-title{font-family:'Playfair Display',serif;font-size:2rem;font-weight:300;color:white;line-height:1.2;margin-bottom:0.5rem;}
+.cta-desc{font-size:0.88rem;font-weight:300;color:rgba(255,255,255,0.84);line-height:1.7;max-width:540px;}
+.btn-primary-lg{padding:0.9rem 1.5rem;background:#111827;color:white;border:none;border-radius:4px;cursor:pointer;font-size:0.78rem;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;box-shadow:0 6px 20px rgba(0,0,0,0.12);transition:transform 0.2s,box-shadow 0.2s;white-space:nowrap;}
+.btn-primary-lg:hover:not(:disabled){transform:translateY(-1px);box-shadow:0 10px 28px rgba(0,0,0,0.18);}
+.btn-primary-lg:disabled{opacity:0.55;cursor:not-allowed;}
+.btn-ghost-sm{padding:7px 12px;background:white;border:1px solid rgba(0,0,0,0.12);border-radius:5px;font-size:0.76rem;color:#374151;cursor:pointer;transition:all 0.2s;white-space:nowrap;}
+.btn-ghost-sm:hover:not(:disabled){border-color:#2e7dd1;color:#1b4f8c;background:#f8fbff;}
 .btn-ghost-sm:disabled{opacity:0.5;cursor:not-allowed;}
-
-/* Main layout */
-.dash-main{max-width:1060px;margin:0 auto;padding:3.5rem 2rem 4rem;}
-
-/* Welcome */
-.welcome{margin-bottom:3rem;animation:fadeUp 0.5s ease-out;}
-.welcome-tag{
-  font-size:0.68rem;letter-spacing:0.32em;text-transform:uppercase;
-  color:#C2527A;font-weight:500;margin-bottom:0.7rem;
-}
-.welcome-title{
-  font-family:'Playfair Display',serif;font-size:2.8rem;font-weight:300;
-  color:#111827;line-height:1.15;margin-bottom:0.6rem;
-}
-.welcome-title em{font-style:italic;color:#1B4F8C;}
-.welcome-sub{
-  font-size:0.95rem;font-weight:300;color:#6B7280;
-  line-height:1.7;max-width:500px;margin-bottom:1.3rem;
-}
-.plan-badge{
-  display:inline-flex;align-items:center;gap:0.5rem;flex-wrap:wrap;
-  padding:0.5rem 1rem;background:white;border:1px solid rgba(0,0,0,0.08);
-  border-radius:100px;font-size:0.82rem;color:#374151;
-  box-shadow:0 1px 4px rgba(0,0,0,0.04);
-}
-.plan-badge strong{color:#1B4F8C;font-weight:600;}
-.plan-badge-dot{
-  width:8px;height:8px;border-radius:50%;
-  background:#22C55E;box-shadow:0 0 10px rgba(34,197,94,0.6);
-}
-.plan-badge-sep{color:#D1D5DB;margin:0 0.2rem;}
-
-/* Section labels */
-.section-label{
-  font-size:0.68rem;letter-spacing:0.32em;text-transform:uppercase;
-  color:#9CA3AF;font-weight:500;margin-bottom:1.2rem;
-  display:flex;align-items:center;gap:0.9rem;
-}
-.section-label::after{content:'';flex:1;height:1px;background:rgba(0,0,0,0.06);}
-
-/* CTA card (create reveal) */
-.cta-card{
-  background:linear-gradient(135deg,#1B4F8C 0%,#2E7DD1 60%,#C2527A 100%);
-  border-radius:12px;padding:2.2rem 2.5rem;margin-bottom:3rem;
-  box-shadow:0 10px 30px rgba(27,79,140,0.18);
-  animation:fadeUp 0.6s ease-out;
-}
-.cta-card-inner{
-  display:flex;align-items:center;justify-content:space-between;gap:2rem;flex-wrap:wrap;
-}
-.cta-card .section-label{color:rgba(255,255,255,0.7);margin-bottom:0.5rem;}
-.cta-card .section-label::after{background:rgba(255,255,255,0.15);}
-.cta-title{
-  font-family:'Playfair Display',serif;font-size:2rem;font-weight:300;
-  color:white;line-height:1.2;margin-bottom:0.5rem;
-}
-.cta-desc{
-  font-size:0.88rem;font-weight:300;color:rgba(255,255,255,0.8);
-  line-height:1.7;max-width:460px;
-}
-.btn-primary-lg{
-  padding:1rem 2.2rem;background:white;color:#1B4F8C;
-  border:none;border-radius:4px;cursor:pointer;
-  font-family:'Plus Jakarta Sans',sans-serif;font-size:0.82rem;font-weight:600;
-  letter-spacing:0.1em;text-transform:uppercase;
-  box-shadow:0 6px 20px rgba(0,0,0,0.12);
-  transition:transform 0.2s,box-shadow 0.2s;white-space:nowrap;
-}
-.btn-primary-lg:hover{transform:translateY(-2px);box-shadow:0 10px 28px rgba(0,0,0,0.18);}
-
-/* Reveals list */
-.reveals-list{display:flex;flex-direction:column;gap:0.8rem;margin-bottom:3rem;}
-.reveal-card{
-  background:white;border:1px solid rgba(0,0,0,0.06);border-radius:10px;
-  padding:1rem 1.2rem;display:flex;align-items:center;gap:1.2rem;
-  box-shadow:0 1px 4px rgba(0,0,0,0.03);transition:transform 0.2s,box-shadow 0.2s;
-}
-.reveal-card:hover{transform:translateY(-2px);box-shadow:0 6px 18px rgba(0,0,0,0.06);}
-.reveal-photo{
-  width:64px;height:64px;border-radius:8px;overflow:hidden;
-  background:#F4F3F0;flex-shrink:0;display:flex;align-items:center;justify-content:center;
-}
+.reveal-stack{display:flex;flex-direction:column;gap:0.9rem;}
+.detail-panel,.invite-panel,.notice-panel{background:white;border:1px solid rgba(0,0,0,0.08);border-radius:8px;box-shadow:0 1px 8px rgba(0,0,0,0.04);}
+.detail-panel{padding:1.2rem;}
+.detail-panel-header{display:flex;align-items:flex-start;justify-content:space-between;gap:1.2rem;margin-bottom:1rem;}
+.detail-title-wrap{display:flex;align-items:center;gap:1rem;min-width:0;}
+.reveal-photo{width:64px;height:64px;border-radius:8px;overflow:hidden;background:#f2f0ed;flex-shrink:0;display:flex;align-items:center;justify-content:center;}
 .reveal-photo img{width:100%;height:100%;object-fit:cover;}
-.reveal-photo-placeholder{font-size:1.5rem;color:#C2527A;opacity:0.5;}
-.reveal-info{flex:1;min-width:0;}
-.reveal-mode-tag{
-  font-size:0.7rem;letter-spacing:0.1em;text-transform:uppercase;
-  color:#9CA3AF;margin-bottom:0.2rem;
-}
-.reveal-parent{
-  font-family:'Playfair Display',serif;font-size:1.1rem;font-weight:400;
-  color:#111827;margin-bottom:0.2rem;
-}
-.reveal-date{font-size:0.8rem;color:#6B7280;}
-.reveal-status{
-  display:flex;align-items:center;gap:0.5rem;
-  font-size:0.82rem;color:#374151;font-weight:500;white-space:nowrap;
-}
-.status-dot{width:8px;height:8px;border-radius:50%;}
-.reveals-loading{text-align:center;color:#9CA3AF;padding:2rem;font-size:0.88rem;}
-
-/* Plans grid */
-.plans-grid{
-  display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));
-  gap:1.2rem;margin-bottom:1.5rem;
-}
-.plan-card{
-  position:relative;background:white;border:1px solid rgba(0,0,0,0.08);
-  border-radius:10px;padding:2rem 1.7rem;
-  box-shadow:0 2px 10px rgba(0,0,0,0.03);
-  transition:transform 0.25s,box-shadow 0.25s;
-}
-.plan-card:hover{transform:translateY(-4px);box-shadow:0 10px 28px rgba(0,0,0,0.08);}
-.plan-popular{border:1.5px solid #2E7DD1;box-shadow:0 10px 28px rgba(46,125,209,0.12);}
-.plan-badge-top{
-  position:absolute;top:-10px;left:50%;transform:translateX(-50%);
-  background:linear-gradient(135deg,#2E7DD1,#C2527A);color:white;
-  font-size:0.62rem;letter-spacing:0.2em;text-transform:uppercase;
-  padding:0.3rem 0.8rem;border-radius:100px;font-weight:600;white-space:nowrap;
-}
-.plan-name{
-  font-family:'Playfair Display',serif;font-size:1.4rem;font-weight:400;
-  color:#111827;margin-bottom:0.8rem;
-}
-.plan-price{
-  font-family:'Playfair Display',serif;font-weight:300;
-  color:#111827;margin-bottom:0.6rem;line-height:1;
-}
-.plan-curr{font-size:1.4rem;vertical-align:super;}
-.plan-amount{font-size:3.2rem;}
-.plan-per{font-size:0.8rem;font-family:'Plus Jakarta Sans',sans-serif;color:#9CA3AF;}
-.plan-desc{font-size:0.85rem;color:#6B7280;line-height:1.6;margin-bottom:1.2rem;font-weight:300;}
-.plan-divider{height:1px;background:rgba(0,0,0,0.06);margin-bottom:1.2rem;}
-.plan-feats{list-style:none;margin-bottom:1.8rem;}
-.plan-feats li{
-  font-size:0.83rem;color:#374151;padding:0.3rem 0;
-  display:flex;align-items:flex-start;gap:0.5rem;
-}
-.plan-btn{
-  width:100%;padding:0.85rem;background:white;color:#374151;
-  border:1.5px solid rgba(0,0,0,0.12);border-radius:4px;cursor:pointer;
-  font-family:'Plus Jakarta Sans',sans-serif;font-size:0.78rem;font-weight:500;
-  letter-spacing:0.12em;text-transform:uppercase;transition:all 0.2s;
-}
-.plan-btn:hover:not(:disabled){border-color:#2E7DD1;color:#2E7DD1;}
-.plan-btn-primary{
-  background:linear-gradient(135deg,#2E7DD1,#C2527A);color:white;border:none;
-  box-shadow:0 4px 16px rgba(46,125,209,0.22);
-}
-.plan-btn-primary:hover:not(:disabled){
-  transform:translateY(-1px);box-shadow:0 8px 22px rgba(46,125,209,0.3);color:white;
-}
+.reveal-photo-placeholder{font-size:0.68rem;color:#8a8f98;text-align:center;padding:0.4rem;}
+.reveal-mode-tag{font-size:0.68rem;letter-spacing:0.16em;text-transform:uppercase;color:#8a8f98;margin-bottom:0.25rem;}
+.detail-title{font-family:'Playfair Display',serif;font-size:1.35rem;font-weight:400;color:#111827;}
+.detail-sub{font-size:0.82rem;color:#6b7280;margin-top:0.2rem;}
+.detail-actions{display:flex;align-items:center;justify-content:flex-end;gap:0.5rem;flex-wrap:wrap;}
+.status-pill,.edit-pill,.host-badge{display:inline-flex;align-items:center;border-radius:999px;padding:0.32rem 0.62rem;font-size:0.7rem;font-weight:700;letter-spacing:0.04em;text-transform:uppercase;white-space:nowrap;}
+.status-pill.gray{background:#f3f4f6;color:#4b5563;}
+.status-pill.yellow{background:#fffbeb;color:#92400e;}
+.status-pill.blue{background:#eff6ff;color:#1d4ed8;}
+.status-pill.purple{background:#f5f3ff;color:#6d28d9;}
+.status-pill.red{background:#fef2f2;color:#b91c1c;}
+.status-pill.green{background:#ecfdf5;color:#047857;}
+.edit-pill.open{background:#eefaf2;color:#15803d;}
+.edit-pill.locked{background:#f4f4f5;color:#71717a;}
+.detail-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:0.75rem;border-top:1px solid rgba(0,0,0,0.06);padding-top:1rem;}
+.detail-grid div{background:#faf9f7;border:1px solid rgba(0,0,0,0.05);border-radius:6px;padding:0.8rem;min-width:0;}
+.detail-grid span,.mini-label,.edit-form label span,.file-input-label span{display:block;font-size:0.68rem;letter-spacing:0.12em;text-transform:uppercase;color:#8a8f98;font-weight:700;margin-bottom:0.35rem;}
+.detail-grid strong{font-size:0.9rem;color:#111827;font-weight:600;word-break:break-word;}
+.edit-form{border-top:1px solid rgba(0,0,0,0.06);padding-top:1rem;}
+.mode-row{display:flex;gap:0.6rem;margin-bottom:1rem;flex-wrap:wrap;}
+.mode-chip{padding:0.75rem 1rem;border:1px solid rgba(0,0,0,0.14);background:white;border-radius:5px;cursor:pointer;font-size:0.78rem;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:#374151;}
+.mode-chip.selected{border-color:#2e7dd1;background:#eff6ff;color:#1b4f8c;}
+.form-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:1rem;margin-bottom:1rem;}
+.edit-form input,.edit-form select,.portal-table input{width:100%;border:1px solid rgba(0,0,0,0.12);border-radius:4px;background:white;color:#111827;padding:0.76rem 0.8rem;font-size:0.88rem;outline:none;}
+.edit-form input:focus,.edit-form select:focus,.portal-table input:focus{border-color:#2e7dd1;box-shadow:0 0 0 3px rgba(46,125,209,0.1);}
+.photo-edit-row{display:grid;grid-template-columns:1fr 260px;gap:1rem;margin:0.5rem 0 1rem;}
+.photo-strip{display:flex;align-items:center;gap:0.6rem;flex-wrap:wrap;}
+.photo-thumb{width:68px;height:68px;border-radius:6px;overflow:hidden;position:relative;background:#f4f4f5;border:1px solid rgba(0,0,0,0.08);}
+.photo-thumb img{width:100%;height:100%;object-fit:cover;}
+.photo-thumb button{position:absolute;top:4px;right:4px;width:20px;height:20px;border:none;border-radius:50%;background:rgba(17,24,39,0.78);color:white;cursor:pointer;}
+.empty-note{font-size:0.84rem;color:#8a8f98;}
+.file-input-label{display:block;border:1px dashed rgba(0,0,0,0.2);border-radius:6px;padding:0.8rem;background:#faf9f7;}
+.file-input-label input{padding:0;border:none;margin-top:0.4rem;box-shadow:none;}
+.file-input-label small{display:block;color:#8a8f98;font-size:0.75rem;margin-top:0.45rem;}
+.edit-actions{display:flex;align-items:center;gap:0.6rem;flex-wrap:wrap;}
+.invite-panel{padding:1rem;}
+.invite-toolbar{display:flex;align-items:center;gap:0.6rem;flex-wrap:wrap;margin-bottom:0.8rem;}
+.upload-button{position:relative;display:inline-flex;align-items:center;justify-content:center;padding:7px 12px;border:1px solid rgba(0,0,0,0.12);border-radius:5px;background:white;color:#374151;cursor:pointer;font-size:0.76rem;font-weight:500;}
+.upload-button input{position:absolute;inset:0;opacity:0;cursor:pointer;}
+.import-summary{font-size:0.8rem;color:#4b5563;background:#f8fafc;border:1px solid rgba(0,0,0,0.06);border-radius:6px;padding:0.65rem 0.8rem;margin-bottom:0.8rem;}
+.table-wrap{overflow-x:auto;}
+.portal-table{width:100%;border-collapse:separate;border-spacing:0;font-size:0.84rem;min-width:760px;}
+.portal-table th{background:#f5f3f0;color:#6b7280;text-align:left;font-size:0.68rem;letter-spacing:0.13em;text-transform:uppercase;padding:0.72rem;border-top:1px solid rgba(0,0,0,0.07);border-bottom:1px solid rgba(0,0,0,0.07);}
+.portal-table td{padding:0.68rem;border-bottom:1px solid rgba(0,0,0,0.06);vertical-align:middle;color:#374151;}
+.portal-table th:first-child{border-left:1px solid rgba(0,0,0,0.07);border-top-left-radius:6px;}
+.portal-table th:last-child{border-right:1px solid rgba(0,0,0,0.07);border-top-right-radius:6px;}
+.portal-table.readonly td{background:white;}
+.invite-submit-row{display:flex;align-items:center;gap:1rem;flex-wrap:wrap;margin-top:1rem;}
+.invite-submit-row span{font-size:0.8rem;color:#6b7280;}
+.sent-list{margin-top:1.2rem;border-top:1px solid rgba(0,0,0,0.06);padding-top:1rem;}
+.sent-list h3{font-size:0.86rem;text-transform:uppercase;letter-spacing:0.16em;color:#6b7280;margin-bottom:0.8rem;}
+.host-badge{margin-left:0.45rem;background:#eff6ff;color:#1d4ed8;font-size:0.62rem;padding:0.22rem 0.45rem;}
+.notice-panel{padding:1rem 1.1rem;color:#4b5563;font-size:0.9rem;line-height:1.6;margin-bottom:1rem;}
+.reveals-loading{text-align:center;color:#8a8f98;padding:2rem;font-size:0.88rem;}
+.plans-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:1rem;}
+.plan-card{position:relative;background:white;border:1px solid rgba(0,0,0,0.08);border-radius:8px;padding:1.6rem;box-shadow:0 1px 8px rgba(0,0,0,0.04);}
+.plan-popular{border:1.5px solid #2e7dd1;box-shadow:0 10px 28px rgba(46,125,209,0.12);}
+.plan-badge-top{position:absolute;top:-10px;left:50%;transform:translateX(-50%);background:linear-gradient(135deg,#2e7dd1,#c2527a);color:white;font-size:0.62rem;letter-spacing:0.2em;text-transform:uppercase;padding:0.3rem 0.8rem;border-radius:999px;font-weight:700;white-space:nowrap;}
+.plan-name{font-family:'Playfair Display',serif;font-size:1.35rem;font-weight:400;color:#111827;margin-bottom:0.8rem;}
+.plan-price{font-family:'Playfair Display',serif;font-weight:300;color:#111827;margin-bottom:0.6rem;line-height:1;}
+.plan-curr{font-size:1.3rem;vertical-align:super;}
+.plan-amount{font-size:3rem;}
+.plan-per{font-size:0.8rem;font-family:'Plus Jakarta Sans',sans-serif;color:#8a8f98;}
+.plan-desc{font-size:0.85rem;color:#6b7280;line-height:1.6;margin-bottom:1.1rem;font-weight:300;}
+.plan-divider{height:1px;background:rgba(0,0,0,0.06);margin-bottom:1rem;}
+.plan-feats{list-style:none;margin-bottom:1.4rem;}
+.plan-feats li{font-size:0.83rem;color:#374151;padding:0.28rem 0;}
+.plan-btn{width:100%;padding:0.82rem;background:white;color:#374151;border:1.5px solid rgba(0,0,0,0.12);border-radius:4px;cursor:pointer;font-size:0.76rem;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;transition:all 0.2s;}
+.plan-btn:hover:not(:disabled){border-color:#2e7dd1;color:#1b4f8c;}
+.plan-btn-primary{background:linear-gradient(135deg,#2e7dd1,#c2527a);color:white;border:none;box-shadow:0 4px 16px rgba(46,125,209,0.22);}
+.plan-btn-primary:hover:not(:disabled){color:white;transform:translateY(-1px);}
 .plan-btn:disabled{opacity:0.5;cursor:not-allowed;}
-.dev-note{
-  text-align:center;font-size:0.78rem;color:#9CA3AF;
-  font-style:italic;margin-top:1.2rem;
+.dash-toast{position:fixed;top:20px;right:20px;z-index:9999;background:white;border-left:4px solid #2563eb;border-radius:8px;padding:14px 16px;max-width:390px;display:flex;align-items:flex-start;gap:10px;box-shadow:0 10px 30px rgba(0,0,0,0.12);font-size:14px;animation:slideIn .3s ease-out;}
+.dash-toast span:nth-child(2){color:#111827;line-height:1.5;flex:1;}
+.dash-toast button{background:none;border:none;color:#8a8f98;cursor:pointer;font-size:14px;}
+@media(max-width:900px){
+  .detail-panel-header{flex-direction:column;}
+  .detail-actions{justify-content:flex-start;}
+  .detail-grid,.form-grid,.photo-edit-row{grid-template-columns:1fr;}
 }
-.upgrade-intro{
-  background:white;border:1px solid rgba(0,0,0,0.06);
-  border-radius:10px;padding:1.1rem 1.4rem;margin-bottom:1.3rem;
-  box-shadow:0 1px 4px rgba(0,0,0,0.03);
-}
-.upgrade-intro-text{
-  font-size:0.88rem;color:#374151;line-height:1.6;font-weight:300;
-}
-.upgrade-intro-text strong{color:#1B4F8C;font-weight:600;}
 @media(max-width:640px){
-  .dash-main{padding:2rem 1.2rem 3rem;}
+  .dash-header{height:auto;align-items:flex-start;gap:1rem;padding:1rem;flex-direction:column;}
+  .dash-user{width:100%;flex-wrap:wrap;}
+  .dash-main{padding:2rem 1rem 3rem;}
   .welcome-title{font-size:2.2rem;}
-  .cta-card{padding:1.8rem 1.5rem;}
-  .cta-card-inner{flex-direction:column;align-items:flex-start;}
+  .cta-card{padding:1.5rem;}
   .btn-primary-lg{width:100%;}
 }
 `;

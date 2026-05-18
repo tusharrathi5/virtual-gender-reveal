@@ -12,7 +12,6 @@ import { sendDoctorInviteEmail } from "@/lib/resendEmail";
 import { deleteEnquiryPhotosAdmin } from "@/lib/storageServiceAdmin";
 import {
   INITIAL_STAGES,
-  PHOTO_MIN,
   PHOTO_MAX,
   type EnquiryMode,
   type GenderValue,
@@ -294,10 +293,10 @@ function validateCreateRevealInput(input: {
   if (!parentName || typeof parentName !== "string" || !parentName.trim()) {
     return "Parent name is required.";
   }
-  if (!Array.isArray(photos) || photos.length < PHOTO_MIN || photos.length > PHOTO_MAX) {
-    return `Please include between ${PHOTO_MIN} and ${PHOTO_MAX} photos.`;
+  if (!Array.isArray(photos) || photos.length > PHOTO_MAX) {
+    return `Please include no more than ${PHOTO_MAX} photos.`;
   }
-  if (photos.some((url) => typeof url !== "string" || !url.startsWith("https://"))) {
+  if (photos.some((url) => typeof url !== "string" || !/^https?:\/\//.test(url))) {
     return "Invalid photo URL format.";
   }
   if (typeof revealAtMs !== "number" || isNaN(revealAtMs)) {

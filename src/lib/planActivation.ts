@@ -62,7 +62,7 @@ export async function activatePlan(params: ActivatePlanParams): Promise<Purchase
   const purchase: Purchase = {
     purchaseId: uuidv4(),
     plan: planId,
-    purchasedAt: Timestamp.now(),
+    purchasedAt: Timestamp.now() as unknown as Purchase["purchasedAt"],
     amountPaid: amountPaidCents,
     currency,
     stripeSessionId,
