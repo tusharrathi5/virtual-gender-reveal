@@ -30,9 +30,9 @@ export async function POST(req: NextRequest) {
     // 2. Parse body
     const body = await req.json().catch(() => null);
     const planId = body?.planId;
-    if (!planId || !["free", "premium", "custom"].includes(planId)) {
+    if (!planId || !["basic", "premium"].includes(planId)) {
       return NextResponse.json(
-        { error: "Invalid plan. Must be 'free', 'premium', or 'custom'." },
+        { error: "Invalid plan. Must be 'basic' or 'premium'." },
         { status: 400 }
       );
     }

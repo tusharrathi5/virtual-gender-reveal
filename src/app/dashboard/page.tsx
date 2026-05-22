@@ -26,6 +26,7 @@ interface RevealSummary {
   revealerRelation: RevealerRelation | null;
   revealAt: Date | null;
   revealTimezone: string;
+  dueDate: string | null;
   status: string;
   genderStatus: string;
   photos: string[];
@@ -46,6 +47,7 @@ interface RevealEditForm {
   revealerRelation: RevealerRelation;
   revealAt: string;
   revealTimezone: string;
+  dueDate: string | null;
   photos: string[];
 }
 
@@ -753,7 +755,7 @@ function DashboardContent() {
       }
       setToast({ message: data.message || `${plan.name} plan activated.`, type: "success" });
       await refreshFirestoreUser();
-      if (plan.id === "free") setTimeout(() => router.push("/new-reveal"), 800);
+      if (plan.id === "basic") setTimeout(() => router.push("/new-reveal"), 800);
     } catch {
       setToast({ message: "Something went wrong. Please try again.", type: "error" });
     } finally {
@@ -1328,10 +1330,10 @@ function DashboardContent() {
             />
           )}
 
-          {activePlan === "free" && (
+          {activePlan === "basic" && (
             <PlanSection
               title="Unlock More"
-              plans={PLANS.filter((p) => p.id !== "free")}
+              plans={PLANS.filter((p) => p.id !== "basic")}
               activatingPlan={activatingPlan}
               onSelect={handleSelectPlan}
               upgrade
@@ -1341,7 +1343,7 @@ function DashboardContent() {
           {hasPlan && !canCreateReveal && (
             <PlanSection
               title="Need Another Reveal?"
-              plans={PLANS.filter((p) => p.id !== "free")}
+              plans={PLANS.filter((p) => p.id !== "basic")}
               activatingPlan={activatingPlan}
               onSelect={handleSelectPlan}
             />
@@ -1392,7 +1394,7 @@ function PlanSection({
               <li>Secure revealer link</li>
               <li>Live broadcast to guests</li>
               {plan.id === "premium" && <li>Custom cinematic video</li>}
-              {plan.id === "custom" && <li>Bespoke video and concierge support</li>}
+              {}
             </ul>
             <button
               className={`plan-btn${plan.id === "premium" ? " plan-btn-primary" : ""}`}
