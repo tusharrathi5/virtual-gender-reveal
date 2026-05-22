@@ -985,18 +985,18 @@ function DashboardContent() {
                           </div>
                           {reveal.mode === "announcement" ? (
                             <div>
-                              <span>Baby Name</span>
-                              <strong>{reveal.babyName || "-"}</strong>
+                              <span>Due Date</span>
+                              <strong>{reveal.dueDate ? new Date(reveal.dueDate).toLocaleDateString("en-US", { year: "numeric", month: "short", day: "numeric" }) : "-"}</strong>
                             </div>
                           ) : (
                             <>
                               <div>
-                                <span>Girl Name</span>
-                                <strong>{reveal.babyNameGirl || "-"}</strong>
+                                <span>Due Date</span>
+                                <strong>{reveal.dueDate ? new Date(reveal.dueDate).toLocaleDateString("en-US", { year: "numeric", month: "short", day: "numeric" }) : "-"}</strong>
                               </div>
                               <div>
-                                <span>Boy Name</span>
-                                <strong>{reveal.babyNameBoy || "-"}</strong>
+                                <span>Timezone</span>
+                                <strong>{reveal.revealTimezone || "-"}</strong>
                               </div>
                               <div>
                                 <span>Revealer</span>

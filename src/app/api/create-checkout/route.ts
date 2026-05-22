@@ -14,6 +14,14 @@ function isStripeConfigured(): boolean {
   return !!key && !key.startsWith("placeholder") && key.length > 10;
 }
 
+
+function isBasicLaunchOfferActive(now: Date = new Date()): boolean {
+  const endIso = process.env.BASIC_LAUNCH_OFFER_END_ISO?.trim() || "2026-06-30T23:59:59Z";
+  const end = new Date(endIso);
+  if (Number.isNaN(end.getTime())) return false;
+  return now.getTime() <= end.getTime();
+}
+
 // ─── POST /api/create-checkout ──────────────────────────────
 
 export async function POST(req: NextRequest) {
@@ -38,18 +46,20 @@ export async function POST(req: NextRequest) {
     }
 
     const plan = getPlanById(planId);
+    const launchOfferActive = planId === "basic" && isBasicLaunchOfferActive();
+    const effectivePriceCents = launchOfferActive ? 0 : plan?.priceCents;
     if (!plan) {
       return NextResponse.json({ error: "Plan not found." }, { status: 400 });
     }
 
     // 3. Free plan OR Stripe not configured → activate directly (dev mode)
-    if (plan.priceCents === 0 || !isStripeConfigured()) {
+    if (effectivePriceCents === 0 || !isStripeConfigured()) {
       const purchase = await activatePlan({
         uid: session.uid,
         planId: plan.id,
         stripeSessionId: null,
         stripePaymentIntentId: null,
-        amountPaidCents: plan.priceCents,
+        amountPaidCents: effectivePriceCents ?? 0,
         currency: "usd",
         status: "completed",
       });
@@ -60,8 +70,8 @@ export async function POST(req: NextRequest) {
         purchaseId: purchase.purchaseId,
         plan: plan.id,
         message:
-          plan.priceCents === 0
-            ? "Free plan activated."
+          effectivePriceCents === 0
+            ? (launchOfferActive ? "Launch offer applied: Basic activated for free." : "Free plan activated.")
             : "Dev mode: plan activated without payment. Stripe integration pending.",
       });
     }
@@ -86,7 +96,7 @@ export async function POST(req: NextRequest) {
         {
           price_data: {
             currency: "usd",
-            unit_amount: plan.priceCents,
+            unit_amount: effectivePriceCents ?? plan.priceCents,
             product_data: {
               name: `Virtual Gender Reveal — ${plan.name}`,
               description: plan.description,

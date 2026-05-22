@@ -2038,23 +2038,23 @@ function UserProfileOverlay({
                   </div>
                   {e.mode === "announcement" ? (
                     <div>
-                      <div className="vgr-field-label">Baby Name</div>
+                      <div className="vgr-field-label">Due Date</div>
                       <div className="vgr-field-value">
-                        {e.babyName || "—"}
+                        {e.dueDate ? fmtDate(new Date(e.dueDate)) : "—"}
                       </div>
                     </div>
                   ) : (
                     <>
                       <div>
-                        <div className="vgr-field-label">Girl Name</div>
+                        <div className="vgr-field-label">Due Date</div>
                         <div className="vgr-field-value">
-                          {e.babyNameGirl || "—"}
+                          {e.dueDate ? fmtDate(new Date(e.dueDate)) : "—"}
                         </div>
                       </div>
                       <div>
-                        <div className="vgr-field-label">Boy Name</div>
+                        <div className="vgr-field-label">Timezone</div>
                         <div className="vgr-field-value">
-                          {e.babyNameBoy || "—"}
+                          {e.revealTimezone || "—"}
                         </div>
                       </div>
                     </>
