@@ -27,6 +27,7 @@ interface CreateRevealBody {
   photos?: string[];
   revealAtMs?: number;
   revealTimezone?: string;
+  dueDate?: string | null;
   // Announcement mode
   babyName?: string | null;
   announcementGender?: GenderValue;
@@ -89,6 +90,7 @@ export async function POST(req: NextRequest) {
     photos,
     revealAtMs,
     revealTimezone,
+    dueDate,
     babyName,
     announcementGender,
     babyNameGirl,
@@ -139,6 +141,7 @@ export async function POST(req: NextRequest) {
       photos: validatedPhotos,
       revealAtMs: revealAtMs!,
       revealTimezone: revealTimezone!,
+      dueDate: dueDate?.trim() || null,
       initialStages: INITIAL_STAGES,
       babyName: validatedMode === "announcement" ? (babyName?.trim() || null) : null,
       babyNameGirl: validatedMode === "reveal" ? (babyNameGirl?.trim() || null) : null,
@@ -267,6 +270,7 @@ function validateCreateRevealInput(input: {
   photos?: string[];
   revealAtMs?: number;
   revealTimezone?: string;
+  dueDate?: string | null;
   announcementGender?: GenderValue;
   revealerEmail?: string;
   revealerRelation?: RevealerRelation;
