@@ -26,6 +26,7 @@ interface RevealSummary {
   revealerRelation: RevealerRelation | null;
   revealAt: Date | null;
   revealTimezone: string;
+  dueDate: string | null;
   status: string;
   genderStatus: string;
   photos: string[];
@@ -44,6 +45,7 @@ interface RevealEditForm {
   revealerRelation: RevealerRelation;
   revealAt: string;
   revealTimezone: string;
+  dueDate: string | null;
   photos: string[];
 }
 
