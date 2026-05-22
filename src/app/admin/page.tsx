@@ -31,6 +31,7 @@ interface EnquiryData {
   revealerName: string | null;
   revealAt: Date | null;
   revealTimezone: string;
+  dueDate: string | null;
   guestCount: number;
   photos: string[];
   videoUrl: string | null;

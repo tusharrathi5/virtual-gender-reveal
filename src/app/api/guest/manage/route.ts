@@ -25,7 +25,7 @@ export async function POST(req: NextRequest) {
   const enquiryRef = getAdminDb().collection("enquiries").doc(guest.enquiryId);
   const enquirySnap = await enquiryRef.get();
   if (!enquirySnap.exists) return NextResponse.json({ error: "Enquiry not found." }, { status: 404 });
-  const enquiry = enquirySnap.data() as { userId: string; parentName?: string; revealAt?: { toDate: () => Date } };
+  const enquiry = enquirySnap.data() as { userId: string; parentName?: string; revealAt?: { toDate: () => Date }; revealTimezone?: string };
   if (enquiry.userId !== session.uid) return NextResponse.json({ error: "Forbidden." }, { status: 403 });
 
   if (action === "revoke") {
@@ -45,6 +45,7 @@ export async function POST(req: NextRequest) {
     guestName: guest.name,
     parentName: enquiry.parentName || "the parents",
     revealAtIso: enquiry.revealAt?.toDate?.().toISOString?.() || new Date().toISOString(),
+    revealTimezone: enquiry.revealTimezone || "UTC",
     inviteUrl,
   });
   return NextResponse.json({ success: true });
