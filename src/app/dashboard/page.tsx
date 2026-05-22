@@ -39,10 +39,8 @@ interface RevealEditForm {
   id: string;
   mode: EnquiryMode;
   parentName: string;
-  babyName: string;
+  dueDate: string;
   announcementGender: "" | GenderValue;
-  babyNameGirl: string;
-  babyNameBoy: string;
   revealerEmail: string;
   revealerRelation: RevealerRelation;
   revealAt: string;
@@ -770,10 +768,8 @@ function DashboardContent() {
       id: reveal.id,
       mode: reveal.mode,
       parentName: reveal.parentName,
-      babyName: reveal.babyName || "",
+      dueDate: reveal.dueDate ? new Date(reveal.dueDate).toISOString().slice(0,10) : "",
       announcementGender: "",
-      babyNameGirl: reveal.babyNameGirl || "",
-      babyNameBoy: reveal.babyNameBoy || "",
       revealerEmail: reveal.revealerEmail || "",
       revealerRelation: reveal.revealerRelation || "doctor",
       revealAt: formatDateTimeLocal(reveal.revealAt),
@@ -822,6 +818,7 @@ function DashboardContent() {
           photos: photoUrls,
           revealAtMs,
           revealTimezone: editForm.revealTimezone.trim() || "UTC",
+          dueDate: editForm.dueDate || null,
           babyName: null,
           announcementGender:
             editForm.mode === "announcement" && editForm.announcementGender
@@ -1054,11 +1051,8 @@ function DashboardContent() {
                           {editForm.mode === "announcement" ? (
                             <div className="form-grid">
                               <label>
-                                <span>Baby Name</span>
-                                <input
-                                  value={editForm.babyName}
-                                  onChange={(e) => updateEditForm("babyName", e.target.value)}
-                                />
+                                <span>Due Date</span>
+                                <input type="date" value={editForm.dueDate} onChange={(e) => updateEditForm("dueDate", e.target.value)} />
                               </label>
                               <label>
                                 <span>Gender Update</span>
@@ -1077,18 +1071,8 @@ function DashboardContent() {
                           ) : (
                             <div className="form-grid">
                               <label>
-                                <span>If It's a Girl</span>
-                                <input
-                                  value={editForm.babyNameGirl}
-                                  onChange={(e) => updateEditForm("babyNameGirl", e.target.value)}
-                                />
-                              </label>
-                              <label>
-                                <span>If It's a Boy</span>
-                                <input
-                                  value={editForm.babyNameBoy}
-                                  onChange={(e) => updateEditForm("babyNameBoy", e.target.value)}
-                                />
+                                <span>Due Date</span>
+                                <input type="date" value={editForm.dueDate} onChange={(e) => updateEditForm("dueDate", e.target.value)} />
                               </label>
                               <label>
                                 <span>Revealer Email</span>
