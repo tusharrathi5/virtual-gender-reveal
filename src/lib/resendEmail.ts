@@ -38,6 +38,7 @@ export interface SendGuestInviteEmailParams {
   guestName: string;
   parentName: string;
   revealAtIso: string;
+  revealTimezone: string;
   inviteUrl: string;
 }
 export interface SendGuestDigestEmailParams {
@@ -184,13 +185,17 @@ export async function sendGuestInviteEmail(params: SendGuestInviteEmailParams): 
   const guestName = escapeHtml(params.guestName || "there");
   const parentName = escapeHtml(params.parentName);
   const inviteUrl = escapeHtml(params.inviteUrl);
-  const revealAt = new Date(params.revealAtIso).toLocaleString("en-US", { dateStyle: "full", timeStyle: "short" });
+  const revealAt = new Date(params.revealAtIso).toLocaleString("en-US", {
+    dateStyle: "full",
+    timeStyle: "short",
+    timeZone: params.revealTimezone,
+  });
 
   const html = `
     <div style="font-family:Arial,sans-serif;line-height:1.6;color:#111">
       <h2 style="margin:0 0 12px">You're invited to a Virtual Gender Reveal 🎉</h2>
       <p>Hi ${guestName}, ${parentName} invited you to their reveal celebration.</p>
-      <p><strong>Scheduled for:</strong> ${escapeHtml(revealAt)}</p>
+      <p><strong>Scheduled for:</strong> ${escapeHtml(revealAt)} (${escapeHtml(params.revealTimezone)})</p>
       <p>Open your secure invite link:</p>
       <p><a href="${inviteUrl}">${inviteUrl}</a></p>
     </div>
