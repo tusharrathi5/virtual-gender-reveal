@@ -13,6 +13,7 @@ export interface CreateRevealParams {
   photos: string[];              // download URLs (already uploaded client-side)
   revealAtMs: number;            // parent-provided reveal time as epoch ms
   revealTimezone: string;
+  dueDate: string | null;
   initialStages: EnquiryStages;
   // Announcement mode fields
   babyName: string | null;
@@ -56,6 +57,7 @@ export async function createRevealAndConsumeEntitlement(
     photos,
     revealAtMs,
     revealTimezone,
+    dueDate,
     initialStages,
     babyName,
     babyNameGirl,
@@ -147,6 +149,7 @@ export async function createRevealAndConsumeEntitlement(
       photoCount: photos.length,
       revealAt: Timestamp.fromMillis(revealAtMs),
       revealTimezone,
+      dueDate: dueDate ? Timestamp.fromDate(new Date(dueDate)) : null,
       stages: initialStages,
       guestCount: 0,
       genderStatus: "not_submitted",
