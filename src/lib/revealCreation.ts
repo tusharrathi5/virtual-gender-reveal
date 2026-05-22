@@ -57,6 +57,7 @@ export async function createRevealAndConsumeEntitlement(
     photos,
     revealAtMs,
     revealTimezone,
+    dueDate,
     initialStages,
     babyName,
     babyNameGirl,
