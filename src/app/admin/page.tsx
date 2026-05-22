@@ -1645,7 +1645,7 @@ function UserTableRow({
           </div>
         ) : videoStatus === "pending" ? (
           <button className="vgr-video-upload-btn" onClick={onUploadClick}>
-            <span style={{ fontSize: 12 }}>↑</span> Upload Video
+            <span style={{ fontSize: 12 }}>↑</span> Configure Livestream
           </button>
         ) : (
           <span className="vgr-pill vgr-pill-gray">—</span>
@@ -2153,14 +2153,14 @@ function UserProfileOverlay({
                     >
                       {e.videoUrl
                         ? "Click to replace the current video."
-                        : "Cloudflare Stream upload integration coming soon."}
+                        : "Cloudflare livestream integration coming soon."}
                     </div>
                   </div>
                   <button
                     className="vgr-btn vgr-btn-primary"
                     onClick={onUploadClick}
                   >
-                    {e.videoUrl ? "Replace Video" : "Upload Video"}
+                    {e.videoUrl ? "Update Livestream" : "Configure Livestream"}
                   </button>
                 </div>
               </div>
@@ -2348,7 +2348,7 @@ function VideoUploadModal({
           {status ?? "Choose a video file to begin upload"}
         </div>
         <button className="vgr-btn vgr-btn-primary" onClick={uploadNow} disabled={!file || busy} style={{ marginBottom: 10 }}>
-          {busy ? "Uploading..." : "Upload Video"}
+          {busy ? "Uploading..." : "Configure Livestream"}
         </button>
         <button className="vgr-btn" onClick={onClose}>
           Close

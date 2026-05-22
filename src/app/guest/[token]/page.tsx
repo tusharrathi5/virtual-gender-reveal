@@ -221,7 +221,7 @@ export default function GuestInvitePage() {
           </h1>
           <p style={{ margin: "4px 0 0", color: "#6b7280" }}>Hi {guestName}, welcome to the celebration ✨</p>
           <p style={{ margin: "4px 0 0", color: "#9ca3af", fontSize: 13 }}>Reveal timezone: {revealTimezone}</p>
-          {googleCalendarUrl && (<p style={{ margin: "6px 0 0" }}><a href={googleCalendarUrl} target="_blank" rel="noreferrer" style={{ color: "#1d4ed8", fontSize: 13 }}>Add to Calendar</a></p>)}
+          {googleCalendarUrl && (<p style={{ margin: "6px 0 0", display: "flex", gap: 10, justifyContent: "center" }}><a href={googleCalendarUrl} target="_blank" rel="noreferrer" style={{ color: "#1d4ed8", fontSize: 13 }}>Add to Google Calendar</a><a href={`/api/guest/${encodedToken}/calendar.ics`} style={{ color: "#1d4ed8", fontSize: 13 }}>Download ICS (Apple/Outlook)</a></p>)}
         </header>
 
         <section

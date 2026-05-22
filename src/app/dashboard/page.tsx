@@ -822,13 +822,13 @@ function DashboardContent() {
           photos: photoUrls,
           revealAtMs,
           revealTimezone: editForm.revealTimezone.trim() || "UTC",
-          babyName: editForm.mode === "announcement" ? editForm.babyName.trim() || null : null,
+          babyName: null,
           announcementGender:
             editForm.mode === "announcement" && editForm.announcementGender
               ? editForm.announcementGender
               : undefined,
-          babyNameGirl: editForm.mode === "reveal" ? editForm.babyNameGirl.trim() || null : null,
-          babyNameBoy: editForm.mode === "reveal" ? editForm.babyNameBoy.trim() || null : null,
+          babyNameGirl: null,
+          babyNameBoy: null,
           revealerEmail:
             editForm.mode === "reveal" ? editForm.revealerEmail.trim().toLowerCase() : undefined,
           revealerRelation: editForm.mode === "reveal" ? editForm.revealerRelation : undefined,
