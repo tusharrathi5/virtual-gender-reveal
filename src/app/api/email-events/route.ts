@@ -4,11 +4,12 @@ export const runtime = "nodejs";
 import { createHash } from "crypto";
 import { NextRequest, NextResponse } from "next/server";
 import { FieldValue } from "firebase-admin/firestore";
-import { sendPasswordResetLinkEmail } from "@/lib/resendEmail";
+import { sendPasswordResetLinkEmail, sendWelcomeEmail } from "@/lib/resendEmail";
 import { getAdminAuth, getAdminDb } from "@/lib/firebase-admin";
 
 type EmailEventBody =
-  | { type: "forgot_password"; email: string };
+  | { type: "forgot_password"; email: string }
+  | { type: "signup"; email: string; fullName?: string };
 
 const FORGOT_PASSWORD_EMAIL_DAILY_LIMIT = 3;
 const FORGOT_PASSWORD_IP_HOURLY_LIMIT = 10;
@@ -99,6 +100,16 @@ export async function POST(req: NextRequest) {
       });
 
       await sendPasswordResetLinkEmail({ to: email, resetUrl });
+      return NextResponse.json({ success: true });
+    }
+
+    if (body.type === "signup") {
+      if (!body.email || !isValidEmail(body.email)) {
+        return NextResponse.json({ error: "Invalid email." }, { status: 400 });
+      }
+      const email = body.email.trim().toLowerCase();
+      const fullName = (body.fullName || "there").trim();
+      await sendWelcomeEmail({ to: email, fullName });
       return NextResponse.json({ success: true });
     }
 
