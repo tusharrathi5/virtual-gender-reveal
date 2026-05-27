@@ -10,11 +10,14 @@ type ReminderWindow = "7d" | "24h";
 
 const SEVEN_DAYS_MS = 7 * 24 * 60 * 60 * 1000;
 const TWENTY_FOUR_HOURS_MS = 24 * 60 * 60 * 1000;
-const WINDOW_TOLERANCE_MS = 60 * 60 * 1000; // 1 hour tolerance around exact milestone
+const DAILY_CRON_WINDOW_MS = 24 * 60 * 60 * 1000;
 
 function pickReminderWindow(diffMs: number): ReminderWindow | null {
-  if (Math.abs(diffMs - SEVEN_DAYS_MS) <= WINDOW_TOLERANCE_MS) return "7d";
-  if (Math.abs(diffMs - TWENTY_FOUR_HOURS_MS) <= WINDOW_TOLERANCE_MS) return "24h";
+  // Hobby Vercel cron runs once per day, so use rolling 24h windows.
+  // 7d reminder: reveal is between 6 and 7 days away.
+  if (diffMs > SEVEN_DAYS_MS - DAILY_CRON_WINDOW_MS && diffMs <= SEVEN_DAYS_MS) return "7d";
+  // 24h reminder: reveal is within the next 24 hours.
+  if (diffMs > 0 && diffMs <= TWENTY_FOUR_HOURS_MS) return "24h";
   return null;
 }
 
@@ -31,7 +34,7 @@ export async function GET(req: NextRequest) {
 
   const db = getAdminDb();
   const nowMs = Date.now();
-  const maxLookaheadMs = nowMs + SEVEN_DAYS_MS + WINDOW_TOLERANCE_MS;
+  const maxLookaheadMs = nowMs + SEVEN_DAYS_MS;
 
   const enquiriesSnap = await db
     .collection("enquiries")
