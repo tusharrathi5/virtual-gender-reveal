@@ -38,10 +38,8 @@ interface RevealEditForm {
   id: string;
   mode: EnquiryMode;
   parentName: string;
-  babyName: string;
+  dueDate: string;
   announcementGender: "" | GenderValue;
-  babyNameGirl: string;
-  babyNameBoy: string;
   revealerEmail: string;
   revealerRelation: RevealerRelation;
   revealAt: string;
@@ -753,7 +751,7 @@ function DashboardContent() {
       }
       setToast({ message: data.message || `${plan.name} plan activated.`, type: "success" });
       await refreshFirestoreUser();
-      if (plan.id === "free") setTimeout(() => router.push("/new-reveal"), 800);
+      if (plan.id === "basic") setTimeout(() => router.push("/new-reveal"), 800);
     } catch {
       setToast({ message: "Something went wrong. Please try again.", type: "error" });
     } finally {
@@ -768,10 +766,8 @@ function DashboardContent() {
       id: reveal.id,
       mode: reveal.mode,
       parentName: reveal.parentName,
-      babyName: reveal.babyName || "",
+      dueDate: reveal.dueDate ? new Date(reveal.dueDate).toISOString().slice(0,10) : "",
       announcementGender: "",
-      babyNameGirl: reveal.babyNameGirl || "",
-      babyNameBoy: reveal.babyNameBoy || "",
       revealerEmail: reveal.revealerEmail || "",
       revealerRelation: reveal.revealerRelation || "doctor",
       revealAt: formatDateTimeLocal(reveal.revealAt),
@@ -820,13 +816,14 @@ function DashboardContent() {
           photos: photoUrls,
           revealAtMs,
           revealTimezone: editForm.revealTimezone.trim() || "UTC",
-          babyName: editForm.mode === "announcement" ? editForm.babyName.trim() || null : null,
+          dueDate: editForm.dueDate || null,
+          babyName: null,
           announcementGender:
             editForm.mode === "announcement" && editForm.announcementGender
               ? editForm.announcementGender
               : undefined,
-          babyNameGirl: editForm.mode === "reveal" ? editForm.babyNameGirl.trim() || null : null,
-          babyNameBoy: editForm.mode === "reveal" ? editForm.babyNameBoy.trim() || null : null,
+          babyNameGirl: null,
+          babyNameBoy: null,
           revealerEmail:
             editForm.mode === "reveal" ? editForm.revealerEmail.trim().toLowerCase() : undefined,
           revealerRelation: editForm.mode === "reveal" ? editForm.revealerRelation : undefined,
@@ -983,18 +980,18 @@ function DashboardContent() {
                           </div>
                           {reveal.mode === "announcement" ? (
                             <div>
-                              <span>Baby Name</span>
-                              <strong>{reveal.babyName || "-"}</strong>
+                              <span>Due Date</span>
+                              <strong>{reveal.dueDate ? new Date(reveal.dueDate).toLocaleDateString("en-US", { year: "numeric", month: "short", day: "numeric" }) : "-"}</strong>
                             </div>
                           ) : (
                             <>
                               <div>
-                                <span>Girl Name</span>
-                                <strong>{reveal.babyNameGirl || "-"}</strong>
+                                <span>Due Date</span>
+                                <strong>{reveal.dueDate ? new Date(reveal.dueDate).toLocaleDateString("en-US", { year: "numeric", month: "short", day: "numeric" }) : "-"}</strong>
                               </div>
                               <div>
-                                <span>Boy Name</span>
-                                <strong>{reveal.babyNameBoy || "-"}</strong>
+                                <span>Timezone</span>
+                                <strong>{reveal.revealTimezone || "-"}</strong>
                               </div>
                               <div>
                                 <span>Revealer</span>
@@ -1052,11 +1049,8 @@ function DashboardContent() {
                           {editForm.mode === "announcement" ? (
                             <div className="form-grid">
                               <label>
-                                <span>Baby Name</span>
-                                <input
-                                  value={editForm.babyName}
-                                  onChange={(e) => updateEditForm("babyName", e.target.value)}
-                                />
+                                <span>Due Date</span>
+                                <input type="date" value={editForm.dueDate} onChange={(e) => updateEditForm("dueDate", e.target.value)} />
                               </label>
                               <label>
                                 <span>Gender Update</span>
@@ -1075,18 +1069,8 @@ function DashboardContent() {
                           ) : (
                             <div className="form-grid">
                               <label>
-                                <span>If It's a Girl</span>
-                                <input
-                                  value={editForm.babyNameGirl}
-                                  onChange={(e) => updateEditForm("babyNameGirl", e.target.value)}
-                                />
-                              </label>
-                              <label>
-                                <span>If It's a Boy</span>
-                                <input
-                                  value={editForm.babyNameBoy}
-                                  onChange={(e) => updateEditForm("babyNameBoy", e.target.value)}
-                                />
+                                <span>Due Date</span>
+                                <input type="date" value={editForm.dueDate} onChange={(e) => updateEditForm("dueDate", e.target.value)} />
                               </label>
                               <label>
                                 <span>Revealer Email</span>
@@ -1328,10 +1312,10 @@ function DashboardContent() {
             />
           )}
 
-          {activePlan === "free" && (
+          {activePlan === "basic" && (
             <PlanSection
               title="Unlock More"
-              plans={PLANS.filter((p) => p.id !== "free")}
+              plans={PLANS.filter((p) => p.id !== "basic")}
               activatingPlan={activatingPlan}
               onSelect={handleSelectPlan}
               upgrade
@@ -1341,7 +1325,7 @@ function DashboardContent() {
           {hasPlan && !canCreateReveal && (
             <PlanSection
               title="Need Another Reveal?"
-              plans={PLANS.filter((p) => p.id !== "free")}
+              plans={PLANS.filter((p) => p.id !== "basic")}
               activatingPlan={activatingPlan}
               onSelect={handleSelectPlan}
             />
@@ -1392,7 +1376,7 @@ function PlanSection({
               <li>Secure revealer link</li>
               <li>Live broadcast to guests</li>
               {plan.id === "premium" && <li>Custom cinematic video</li>}
-              {plan.id === "custom" && <li>Bespoke video and concierge support</li>}
+              {}
             </ul>
             <button
               className={`plan-btn${plan.id === "premium" ? " plan-btn-primary" : ""}`}

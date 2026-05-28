@@ -145,6 +145,16 @@ export default function GuestInvitePage() {
     ? "Reveal is live now 🎉"
     : `Reveal in ${countdownParts.d}d ${countdownParts.h}h ${countdownParts.m}m ${countdownParts.s}s`;
 
+
+  const googleCalendarUrl = useMemo(() => {
+    if (!revealAtIso) return null;
+    const start = new Date(revealAtIso);
+    const end = new Date(start.getTime() + 60 * 60 * 1000);
+    const fmt = (d: Date) => d.toISOString().replace(/[-:]/g, "").replace(/\.\d{3}Z$/, "Z");
+    const text = encodeURIComponent(`${parentName}'s Virtual Gender Reveal`);
+    const details = encodeURIComponent(`Join the reveal: ${window?.location?.href || ""}`);
+    return `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${text}&dates=${fmt(start)}/${fmt(end)}&ctz=${encodeURIComponent(revealTimezone)}&details=${details}`;
+  }, [revealAtIso, parentName, revealTimezone]);
   async function submitPrediction() {
     if (!prediction) return;
     setSubmitting(true);
@@ -211,6 +221,7 @@ export default function GuestInvitePage() {
           </h1>
           <p style={{ margin: "4px 0 0", color: "#6b7280" }}>Hi {guestName}, welcome to the celebration ✨</p>
           <p style={{ margin: "4px 0 0", color: "#9ca3af", fontSize: 13 }}>Reveal timezone: {revealTimezone}</p>
+          {googleCalendarUrl && (<p style={{ margin: "6px 0 0", display: "flex", gap: 10, justifyContent: "center" }}><a href={googleCalendarUrl} target="_blank" rel="noreferrer" style={{ color: "#1d4ed8", fontSize: 13 }}>Add to Google Calendar</a><a href={`/api/guest/${encodedToken}/calendar.ics`} style={{ color: "#1d4ed8", fontSize: 13 }}>Download ICS (Apple/Outlook)</a></p>)}
         </header>
 
         <section
