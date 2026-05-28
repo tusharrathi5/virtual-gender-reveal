@@ -54,6 +54,7 @@ export interface Enquiry {
   // Event timing
   revealAt: Timestamp;
   revealTimezone: string;            // IANA e.g. "Asia/Kolkata"
+  dueDate: Timestamp | null;
 
   // Progress
   stages: EnquiryStages;
@@ -140,6 +141,7 @@ export interface NewReveal_FormInput {
   parentName: string;
   revealAt: string;                    // ISO string from datetime-local input
   revealTimezone: string;
+  dueDate?: string;
 
   // Photos: optional File objects (user can skip images entirely)
   photoFiles: File[];
@@ -175,7 +177,7 @@ export const PHOTO_MAX = 3;
 // ─── Plan definitions (source of truth for the dashboard + pricing) ──
 
 export interface PlanDefinition {
-  id: "free" | "premium" | "custom";
+  id: "basic" | "premium";
   name: string;
   priceCents: number;             // 0 for free
   priceLabel: string;
@@ -185,28 +187,20 @@ export interface PlanDefinition {
 
 export const PLANS: PlanDefinition[] = [
   {
-    id: "free",
-    name: "Spark",
-    priceCents: 0,
-    priceLabel: "Free",
+    id: "basic",
+    name: "Basic",
+    priceCents: 8000,
+    priceLabel: "$80",
     revealsGranted: 1,
-    description: "Try the magic — one free reveal to get started.",
+    description: "Launch offer: free for your first 30 days, then $80.",
   },
   {
     id: "premium",
-    name: "Lumière",
-    priceCents: 19900,
-    priceLabel: "$199",
+    name: "Premium",
+    priceCents: 29900,
+    priceLabel: "$299",
     revealsGranted: 1,
-    description: "Full cinematic reveal with live broadcast.",
-  },
-  {
-    id: "custom",
-    name: "Maison",
-    priceCents: 65000,
-    priceLabel: "$650",
-    revealsGranted: 1,
-    description: "Bespoke reveal with dedicated concierge.",
+    description: "Full cinematic reveal with livestream for guests.",
   },
 ];
 

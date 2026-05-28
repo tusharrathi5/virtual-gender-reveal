@@ -251,13 +251,11 @@ export default function NewRevealPage() {
   const [photoFiles, setPhotoFiles] = useState<File[]>([]);
 
   // Announcement mode fields
-  const [babyName, setBabyName] = useState("");
+  const [dueDate, setDueDate] = useState("");
   const [announcementGender, setAnnouncementGender] = useState<GenderValue | null>(null);
 
   // Reveal mode fields
-  const [babyNameGirl, setBabyNameGirl] = useState("");
-  const [babyNameBoy, setBabyNameBoy] = useState("");
-  const [revealerEmail, setRevealerEmail] = useState("");
+    const [revealerEmail, setRevealerEmail] = useState("");
   const [revealerRelation, setRevealerRelation] = useState<RevealerRelation>("doctor");
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [timezone, setTimezone] = useState<string>(() => getInitialTimezone());
@@ -343,6 +341,8 @@ export default function NewRevealPage() {
     const photoValidation = validatePhotoFiles(photoFiles);
     if (!photoValidation.ok) return photoValidation.error;
 
+    if (!dueDate) return "Please add the due date.";
+
     if (mode === "announcement") {
       if (!announcementGender) return "Please select the baby's gender.";
     } else {
@@ -410,12 +410,13 @@ async function handleSubmit(e: React.FormEvent) {
           photos: photoUrls,
           revealAtMs: new Date(revealAt).getTime(),
           revealTimezone: timezone,
+          dueDate,
           // Announcement mode
-          babyName: mode === "announcement" ? (babyName.trim() || null) : null,
+          babyName: null,
           announcementGender: mode === "announcement" ? announcementGender : undefined,
           // Reveal mode
-          babyNameGirl: mode === "reveal" ? (babyNameGirl.trim() || null) : null,
-          babyNameBoy: mode === "reveal" ? (babyNameBoy.trim() || null) : null,
+          babyNameGirl: null,
+          babyNameBoy: null,
           revealerEmail: mode === "reveal" ? revealerEmail.trim().toLowerCase() : undefined,
           revealerRelation: mode === "reveal" ? revealerRelation : undefined,
         }),
@@ -508,15 +509,13 @@ async function handleSubmit(e: React.FormEvent) {
           {mode === "announcement" && (
             <>
               <div className="form-group">
-                <label className="form-label">Baby&apos;s Name (optional)</label>
+                <label className="form-label">Due Date</label>
                 <input
                   className="form-input"
-                  type="text"
-                  placeholder="e.g. Sophia"
-                  value={babyName}
-                  onChange={(e) => setBabyName(e.target.value)}
+                  type="date"
+                  value={dueDate}
+                  onChange={(e) => setDueDate(e.target.value)}
                   disabled={loading}
-                  maxLength={80}
                 />
               </div>
 
@@ -544,31 +543,15 @@ async function handleSubmit(e: React.FormEvent) {
           )}
 
           {mode === "reveal" && (
-            <div className="form-grid">
-              <div className="form-group" style={{ marginBottom: 0 }}>
-                <label className="form-label">If it&apos;s a girl (optional)</label>
-                <input
-                  className="form-input"
-                  type="text"
-                  placeholder="e.g. Sophia"
-                  value={babyNameGirl}
-                  onChange={(e) => setBabyNameGirl(e.target.value)}
-                  disabled={loading}
-                  maxLength={80}
-                />
-              </div>
-              <div className="form-group" style={{ marginBottom: 0 }}>
-                <label className="form-label">If it&apos;s a boy (optional)</label>
-                <input
-                  className="form-input"
-                  type="text"
-                  placeholder="e.g. Michael"
-                  value={babyNameBoy}
-                  onChange={(e) => setBabyNameBoy(e.target.value)}
-                  disabled={loading}
-                  maxLength={80}
-                />
-              </div>
+            <div className="form-group" style={{ marginBottom: 0 }}>
+              <label className="form-label">Due Date</label>
+              <input
+                className="form-input"
+                type="date"
+                value={dueDate}
+                onChange={(e) => setDueDate(e.target.value)}
+                disabled={loading}
+              />
             </div>
           )}
 
