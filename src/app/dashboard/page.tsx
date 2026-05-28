@@ -495,6 +495,7 @@ function DashboardContent() {
   ]);
   const [guestImportSummary, setGuestImportSummary] = useState<ImportSummary | null>(null);
   const [sendingInvites, setSendingInvites] = useState(false);
+  const [openingPartyId, setOpeningPartyId] = useState<string | null>(null);
   const [guestRows, setGuestRows] = useState<GuestRow[]>([]);
   const [revealUnlocked, setRevealUnlocked] = useState(false);
   const [editingRevealId, setEditingRevealId] = useState<string | null>(null);
@@ -845,6 +846,26 @@ function DashboardContent() {
     }
   }
 
+  async function joinParty(enquiryId: string) {
+    if (!user) return;
+    setOpeningPartyId(enquiryId);
+    try {
+      const idToken = await user.getIdToken();
+      const res = await fetch("/api/guest/host-link", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${idToken}` },
+        body: JSON.stringify({ enquiryId }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok || !data?.partyUrl) throw new Error(data?.error || "Failed to open party.");
+      window.open(data.partyUrl, "_blank", "noopener,noreferrer");
+    } catch (err) {
+      setToast({ type: "error", message: err instanceof Error ? err.message : "Failed to open party." });
+    } finally {
+      setOpeningPartyId(null);
+    }
+  }
+
   return (
     <>
       <style>{CSS}</style>
@@ -959,6 +980,9 @@ function DashboardContent() {
                               Edit Details
                             </button>
                           )}
+                          <button className="btn-ghost-sm" onClick={() => joinParty(reveal.id)} disabled={openingPartyId === reveal.id}>
+                            {openingPartyId === reveal.id ? "Opening..." : "Join Party"}
+                          </button>
                         </div>
                       </div>
 

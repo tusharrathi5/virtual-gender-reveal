@@ -229,6 +229,7 @@ export default function NewRevealPage() {
   const [loading, setLoading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState<string>("");
   const [error, setError] = useState("");
+  const isBasicPlan = (firestoreUser?.activePlan ?? "none") === "basic";
 
   // Entitlement guard: redirect if user can't create a reveal
   //   - Not logged in → /login
@@ -338,8 +339,12 @@ export default function NewRevealPage() {
       return "Reveal time must be at least 30 minutes in the future.";
     }
 
-    const photoValidation = validatePhotoFiles(photoFiles);
-    if (!photoValidation.ok) return photoValidation.error;
+    if (!isBasicPlan) {
+      const photoValidation = validatePhotoFiles(photoFiles);
+      if (!photoValidation.ok) return photoValidation.error;
+    }
+
+    if (!isBasicPlan && !dueDate) return "Please add the due date.";
 
     if (!dueDate) return "Please add the due date.";
 
@@ -379,12 +384,13 @@ async function handleSubmit(e: React.FormEvent) {
 
     try {
       // 1. Upload photos to Storage first if the user selected any.
+      const effectivePhotoFiles = isBasicPlan ? [] : photoFiles;
       setUploadProgress(
-        photoFiles.length > 0
-          ? `Uploading ${photoFiles.length} photo${photoFiles.length > 1 ? "s" : ""}...`
+        effectivePhotoFiles.length > 0
+          ? `Uploading ${effectivePhotoFiles.length} photo${effectivePhotoFiles.length > 1 ? "s" : ""}...`
           : "Saving without photos..."
       );
-      const photoUrls = photoFiles.length > 0 ? await uploadPhotos(enquiryId, photoFiles) : [];
+      const photoUrls = effectivePhotoFiles.length > 0 ? await uploadPhotos(enquiryId, effectivePhotoFiles) : [];
 
       // 2. Call server-side API to atomically:
       //    - Verify entitlement
@@ -410,7 +416,7 @@ async function handleSubmit(e: React.FormEvent) {
           photos: photoUrls,
           revealAtMs: new Date(revealAt).getTime(),
           revealTimezone: timezone,
-          dueDate,
+          dueDate: isBasicPlan ? null : dueDate,
           // Announcement mode
           babyName: null,
           announcementGender: mode === "announcement" ? announcementGender : undefined,
@@ -508,7 +514,7 @@ async function handleSubmit(e: React.FormEvent) {
 
           {mode === "announcement" && (
             <>
-              <div className="form-group">
+              {!isBasicPlan && <div className="form-group">
                 <label className="form-label">Due Date</label>
                 <input
                   className="form-input"
@@ -517,7 +523,7 @@ async function handleSubmit(e: React.FormEvent) {
                   onChange={(e) => setDueDate(e.target.value)}
                   disabled={loading}
                 />
-              </div>
+              </div>}
 
               <div className="form-group">
                 <label className="form-label">Baby&apos;s Gender</label>
@@ -542,7 +548,7 @@ async function handleSubmit(e: React.FormEvent) {
             </>
           )}
 
-          {mode === "reveal" && (
+          {mode === "reveal" && !isBasicPlan && (
             <div className="form-group" style={{ marginBottom: 0 }}>
               <label className="form-label">Due Date</label>
               <input
@@ -555,8 +561,10 @@ async function handleSubmit(e: React.FormEvent) {
             </div>
           )}
 
-          <div className="form-divider" />
+          {!isBasicPlan && <div className="form-divider" />}
 
+          {!isBasicPlan && (
+            <>
           {/* ── Photos ── */}
           <div className="form-section-title">Photos (optional, up to {PHOTO_MAX})</div>
 
@@ -611,6 +619,8 @@ async function handleSubmit(e: React.FormEvent) {
             {photoFiles.length} of {PHOTO_MAX} photos selected. Max 5 MB each.
             We recommend including a sonogram if you have one.
           </div>
+          </>
+          )}
 
           <div className="form-divider" />
 
