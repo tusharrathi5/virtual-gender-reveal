@@ -231,3 +231,26 @@ export async function sendGuestDigestEmail(params: SendGuestDigestEmailParams): 
 
   await sendEmail({ to: params.to, subject: "Guest predictions & notes", html });
 }
+
+
+export async function sendRevealReminderEmail(params: SendRevealReminderEmailParams): Promise<void> {
+  const guestName = escapeHtml(params.guestName || "there");
+  const parentName = escapeHtml(params.parentName || "the parents");
+  const revealAt = new Date(params.revealAtIso).toLocaleString("en-US", {
+    dateStyle: "full",
+    timeStyle: "short",
+    timeZone: params.revealTimezone,
+  });
+  const reminderLabel = params.reminderWindow === "7d" ? "in 7 days" : "in 24 hours";
+
+  const html = `
+    <div style="font-family:Arial,sans-serif;line-height:1.6;color:#111">
+      <h2 style="margin:0 0 12px">Reminder: Virtual Gender Reveal ${params.reminderWindow === "7d" ? "next week" : "tomorrow"} 🎉</h2>
+      <p>Hi ${guestName}, this is a reminder that ${parentName}'s reveal is ${reminderLabel}.</p>
+      <p><strong>Reveal time:</strong> ${escapeHtml(revealAt)} (${escapeHtml(params.revealTimezone)})</p>
+      <p>We can't wait to celebrate with you.</p>
+    </div>
+  `;
+
+  await sendEmail({ to: params.to, subject: `Reminder: Reveal ${reminderLabel}`, html });
+}
