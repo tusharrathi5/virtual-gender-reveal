@@ -43,15 +43,6 @@ export interface SendGuestInviteEmailParams {
   googleCalendarUrl?: string;
   icsUrl?: string;
 }
-
-export interface SendRevealReminderEmailParams {
-  to: string;
-  guestName: string;
-  parentName: string;
-  revealAtIso: string;
-  revealTimezone: string;
-  reminderWindow: "7d" | "24h";
-}
 export interface SendGuestDigestEmailParams {
   to: string;
   parentName: string;
