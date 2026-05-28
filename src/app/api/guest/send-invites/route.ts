@@ -116,6 +116,11 @@ export async function POST(req: NextRequest) {
     await guestRef.set(payload, { merge: true });
 
     const inviteUrl = `${appUrl.replace(/\/$/, "")}/guest/${encodeURIComponent(token)}`;
+    const start = enquiry.revealAt?.toDate?.() || new Date();
+    const end = new Date(start.getTime() + 60 * 60 * 1000);
+    const fmt = (d: Date) => d.toISOString().replace(/[-:]/g, "").replace(/\.\d{3}Z$/, "Z");
+    const googleCalendarUrl = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(`${enquiry.parentName || "Parents"}'s Virtual Gender Reveal`)}&dates=${fmt(start)}/${fmt(end)}&ctz=${encodeURIComponent(enquiry.revealTimezone || "UTC")}&details=${encodeURIComponent(`Join the reveal: ${inviteUrl}`)}`;
+    const icsUrl = `${appUrl.replace(/\/$/, "")}/api/guest/${encodeURIComponent(token)}/calendar.ics`;
     try {
       await sendGuestInviteEmail({
         to: input.email,
@@ -124,6 +129,8 @@ export async function POST(req: NextRequest) {
         revealAtIso: enquiry.revealAt?.toDate?.().toISOString?.() || new Date().toISOString(),
         revealTimezone: enquiry.revealTimezone || "UTC",
         inviteUrl,
+        googleCalendarUrl,
+        icsUrl,
       });
       return true;
     } catch (err) {

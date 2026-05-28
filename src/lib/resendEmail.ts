@@ -40,6 +40,8 @@ export interface SendGuestInviteEmailParams {
   revealAtIso: string;
   revealTimezone: string;
   inviteUrl: string;
+  googleCalendarUrl?: string;
+  icsUrl?: string;
 }
 
 export interface SendRevealReminderEmailParams {
@@ -194,6 +196,8 @@ export async function sendGuestInviteEmail(params: SendGuestInviteEmailParams): 
   const guestName = escapeHtml(params.guestName || "there");
   const parentName = escapeHtml(params.parentName);
   const inviteUrl = escapeHtml(params.inviteUrl);
+  const googleCalendarUrl = params.googleCalendarUrl ? escapeHtml(params.googleCalendarUrl) : null;
+  const icsUrl = params.icsUrl ? escapeHtml(params.icsUrl) : null;
   const revealAt = new Date(params.revealAtIso).toLocaleString("en-US", {
     dateStyle: "full",
     timeStyle: "short",
@@ -207,6 +211,12 @@ export async function sendGuestInviteEmail(params: SendGuestInviteEmailParams): 
       <p><strong>Scheduled for:</strong> ${escapeHtml(revealAt)} (${escapeHtml(params.revealTimezone)})</p>
       <p>Open your secure invite link:</p>
       <p><a href="${inviteUrl}">${inviteUrl}</a></p>
+      <p><strong>Add to calendar:</strong></p>
+      <p>
+        ${googleCalendarUrl ? `<a href="${googleCalendarUrl}">Google Calendar</a>` : ""}
+        ${googleCalendarUrl && icsUrl ? " | " : ""}
+        ${icsUrl ? `<a href="${icsUrl}">Apple/Outlook (ICS)</a>` : ""}
+      </p>
     </div>
   `;
 
