@@ -25,7 +25,7 @@ export async function POST(req: NextRequest) {
   const enquiryRef = getAdminDb().collection("enquiries").doc(guest.enquiryId);
   const enquirySnap = await enquiryRef.get();
   if (!enquirySnap.exists) return NextResponse.json({ error: "Enquiry not found." }, { status: 404 });
-  const enquiry = enquirySnap.data() as { userId: string; parentName?: string; revealAt?: { toDate: () => Date } };
+  const enquiry = enquirySnap.data() as { userId: string; parentName?: string; revealAt?: { toDate: () => Date }; revealTimezone?: string };
   if (enquiry.userId !== session.uid) return NextResponse.json({ error: "Forbidden." }, { status: 403 });
 
   if (action === "revoke") {
@@ -40,13 +40,20 @@ export async function POST(req: NextRequest) {
   const appUrl = process.env.NEXT_PUBLIC_APP_URL || req.headers.get("origin") || "";
   if (!appUrl) return NextResponse.json({ error: "Missing app URL." }, { status: 500 });
   const inviteUrl = `${appUrl.replace(/\/$/, "")}/guest/${encodeURIComponent(token)}`;
+  const start = enquiry.revealAt?.toDate?.() || new Date();
+  const end = new Date(start.getTime() + 60 * 60 * 1000);
+  const fmt = (d: Date) => d.toISOString().replace(/[-:]/g, "").replace(/\.\d{3}Z$/, "Z");
+  const googleCalendarUrl = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(`${enquiry.parentName || "Parents"}'s Virtual Gender Reveal`)}&dates=${fmt(start)}/${fmt(end)}&ctz=${encodeURIComponent(enquiry.revealTimezone || "UTC")}&details=${encodeURIComponent(`Join the reveal: ${inviteUrl}`)}`;
+  const icsUrl = `${appUrl.replace(/\/$/, "")}/api/guest/${encodeURIComponent(token)}/calendar.ics`;
   await sendGuestInviteEmail({
     to: guest.email,
     guestName: guest.name,
     parentName: enquiry.parentName || "the parents",
     revealAtIso: enquiry.revealAt?.toDate?.().toISOString?.() || new Date().toISOString(),
+    revealTimezone: enquiry.revealTimezone || "UTC",
     inviteUrl,
+    googleCalendarUrl,
+    icsUrl,
   });
   return NextResponse.json({ success: true });
 }
-

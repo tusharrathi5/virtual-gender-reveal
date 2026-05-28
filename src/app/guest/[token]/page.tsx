@@ -42,6 +42,7 @@ export default function GuestInvitePage() {
   const [chatError, setChatError] = useState<string | null>(null);
   const [chatSending, setChatSending] = useState(false);
   const [chatStatus, setChatStatus] = useState<"connecting" | "live" | "reconnecting">("connecting");
+  const [showCalendarOptions, setShowCalendarOptions] = useState(false);
 
   const [prediction, setPrediction] = useState<Prediction>(null);
   const [message, setMessage] = useState("");
@@ -145,6 +146,17 @@ export default function GuestInvitePage() {
     ? "Reveal is live now 🎉"
     : `Reveal in ${countdownParts.d}d ${countdownParts.h}h ${countdownParts.m}m ${countdownParts.s}s`;
 
+
+  const googleCalendarUrl = useMemo(() => {
+    if (!revealAtIso) return null;
+    const start = new Date(revealAtIso);
+    const end = new Date(start.getTime() + 60 * 60 * 1000);
+    const fmt = (d: Date) => d.toISOString().replace(/[-:]/g, "").replace(/\.\d{3}Z$/, "Z");
+    const text = encodeURIComponent(`${parentName}'s Virtual Gender Reveal`);
+    const details = encodeURIComponent(`Join the reveal: ${window?.location?.href || ""}`);
+    return `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${text}&dates=${fmt(start)}/${fmt(end)}&ctz=${encodeURIComponent(revealTimezone)}&details=${details}`;
+  }, [revealAtIso, parentName, revealTimezone]);
+  const icsUrl = useMemo(() => `/api/guest/${encodedToken}/calendar.ics`, [encodedToken]);
   async function submitPrediction() {
     if (!prediction) return;
     setSubmitting(true);
@@ -211,7 +223,70 @@ export default function GuestInvitePage() {
           </h1>
           <p style={{ margin: "4px 0 0", color: "#6b7280" }}>Hi {guestName}, welcome to the celebration ✨</p>
           <p style={{ margin: "4px 0 0", color: "#9ca3af", fontSize: 13 }}>Reveal timezone: {revealTimezone}</p>
+          {googleCalendarUrl && (
+            <p style={{ margin: "8px 0 0" }}>
+              <button
+                type="button"
+                onClick={() => setShowCalendarOptions(true)}
+                style={{ color: "#1d4ed8", fontSize: 14, background: "transparent", border: 0, cursor: "pointer" }}
+              >
+                Add to Calendar
+              </button>
+            </p>
+          )}
         </header>
+        {showCalendarOptions && (
+          <div
+            onClick={() => setShowCalendarOptions(false)}
+            style={{
+              position: "fixed",
+              inset: 0,
+              background: "rgba(15,23,42,0.45)",
+              display: "grid",
+              placeItems: "center",
+              zIndex: 60,
+              padding: 16,
+            }}
+          >
+            <div
+              onClick={(e) => e.stopPropagation()}
+              style={{
+                width: "min(480px, 100%)",
+                background: "#fff",
+                borderRadius: 14,
+                padding: 16,
+                border: "1px solid #e5e7eb",
+                boxShadow: "0 20px 40px rgba(0,0,0,.18)",
+              }}
+            >
+              <h3 style={{ margin: 0, fontSize: 20, color: "#111827" }}>Add to Calendar</h3>
+              <p style={{ margin: "8px 0 12px", color: "#6b7280" }}>
+                Choose your calendar app.
+              </p>
+              <div style={{ display: "grid", gap: 8 }}>
+                <a href={googleCalendarUrl!} target="_blank" rel="noreferrer" style={{ color: "#1d4ed8" }}>
+                  Google Calendar
+                </a>
+                <a href={icsUrl} style={{ color: "#1d4ed8" }}>
+                  Apple Calendar (ICS)
+                </a>
+                <a href={icsUrl} style={{ color: "#1d4ed8" }}>
+                  Outlook (ICS)
+                </a>
+                <a href={icsUrl} style={{ color: "#1d4ed8" }}>
+                  Download ICS file
+                </a>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowCalendarOptions(false)}
+                style={{ marginTop: 14, border: "1px solid #d1d5db", borderRadius: 8, padding: "8px 12px", background: "#fff", cursor: "pointer" }}
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        )}
 
         <section
           style={{
