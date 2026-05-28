@@ -346,6 +346,8 @@ export default function NewRevealPage() {
 
     if (!isBasicPlan && !dueDate) return "Please add the due date.";
 
+    if (!dueDate) return "Please add the due date.";
+
     if (mode === "announcement") {
       if (!announcementGender) return "Please select the baby's gender.";
     } else {
