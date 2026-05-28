@@ -57,6 +57,7 @@ export interface SendGuestReminderEmailParams {
   revealTimezone: string;
   inviteUrl: string;
 }
+export interface SendRevealReminderEmailParams extends SendGuestReminderEmailParams {}
 
 
 function isTrue(value: string | undefined): boolean {
@@ -258,4 +259,9 @@ export async function sendGuestReminderEmail(params: SendGuestReminderEmailParam
     </div>
   `;
   await sendEmail({ to: params.to, subject: "Reminder: Virtual Gender Reveal tomorrow", html });
+}
+
+// Backward-compatible alias for older cron route imports.
+export async function sendRevealReminderEmail(params: SendRevealReminderEmailParams): Promise<void> {
+  return sendGuestReminderEmail(params);
 }
