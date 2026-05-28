@@ -38,13 +38,24 @@ export interface SendGuestInviteEmailParams {
   guestName: string;
   parentName: string;
   revealAtIso: string;
+  revealTimezone: string;
   inviteUrl: string;
+  googleCalendarUrl?: string;
+  icsUrl?: string;
 }
 export interface SendGuestDigestEmailParams {
   to: string;
   parentName: string;
   revealDateLabel: string;
   responses: Array<{ name: string; prediction: string; message: string | null }>;
+}
+export interface SendGuestReminderEmailParams {
+  to: string;
+  guestName: string;
+  parentName: string;
+  revealAtIso: string;
+  revealTimezone: string;
+  inviteUrl: string;
 }
 
 
@@ -184,15 +195,27 @@ export async function sendGuestInviteEmail(params: SendGuestInviteEmailParams): 
   const guestName = escapeHtml(params.guestName || "there");
   const parentName = escapeHtml(params.parentName);
   const inviteUrl = escapeHtml(params.inviteUrl);
-  const revealAt = new Date(params.revealAtIso).toLocaleString("en-US", { dateStyle: "full", timeStyle: "short" });
+  const googleCalendarUrl = params.googleCalendarUrl ? escapeHtml(params.googleCalendarUrl) : null;
+  const icsUrl = params.icsUrl ? escapeHtml(params.icsUrl) : null;
+  const revealAt = new Date(params.revealAtIso).toLocaleString("en-US", {
+    dateStyle: "full",
+    timeStyle: "short",
+    timeZone: params.revealTimezone,
+  });
 
   const html = `
     <div style="font-family:Arial,sans-serif;line-height:1.6;color:#111">
       <h2 style="margin:0 0 12px">You're invited to a Virtual Gender Reveal 🎉</h2>
       <p>Hi ${guestName}, ${parentName} invited you to their reveal celebration.</p>
-      <p><strong>Scheduled for:</strong> ${escapeHtml(revealAt)}</p>
+      <p><strong>Scheduled for:</strong> ${escapeHtml(revealAt)} (${escapeHtml(params.revealTimezone)})</p>
       <p>Open your secure invite link:</p>
       <p><a href="${inviteUrl}">${inviteUrl}</a></p>
+      <p><strong>Add to calendar:</strong></p>
+      <p>
+        ${googleCalendarUrl ? `<a href="${googleCalendarUrl}">Google Calendar</a>` : ""}
+        ${googleCalendarUrl && icsUrl ? " | " : ""}
+        ${icsUrl ? `<a href="${icsUrl}">Apple/Outlook (ICS)</a>` : ""}
+      </p>
     </div>
   `;
 
@@ -215,4 +238,24 @@ export async function sendGuestDigestEmail(params: SendGuestDigestEmailParams): 
   `;
 
   await sendEmail({ to: params.to, subject: "Guest predictions & notes", html });
+}
+
+export async function sendGuestReminderEmail(params: SendGuestReminderEmailParams): Promise<void> {
+  const guestName = escapeHtml(params.guestName || "there");
+  const parentName = escapeHtml(params.parentName || "the parents");
+  const inviteUrl = escapeHtml(params.inviteUrl);
+  const revealAt = new Date(params.revealAtIso).toLocaleString("en-US", {
+    dateStyle: "full",
+    timeStyle: "short",
+    timeZone: params.revealTimezone,
+  });
+  const html = `
+    <div style="font-family:Arial,sans-serif;line-height:1.6;color:#111">
+      <h2 style="margin:0 0 12px">Reminder: Reveal is tomorrow 🎉</h2>
+      <p>Hi ${guestName}, this is a reminder from ${parentName}.</p>
+      <p><strong>Scheduled for:</strong> ${escapeHtml(revealAt)} (${escapeHtml(params.revealTimezone)})</p>
+      <p><a href="${inviteUrl}">Join the party link</a></p>
+    </div>
+  `;
+  await sendEmail({ to: params.to, subject: "Reminder: Virtual Gender Reveal tomorrow", html });
 }

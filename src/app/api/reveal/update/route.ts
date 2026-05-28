@@ -23,6 +23,7 @@ interface UpdateRevealBody {
   photos?: string[];
   revealAtMs?: number;
   revealTimezone?: string;
+  dueDate?: string | null;
   babyName?: string | null;
   announcementGender?: GenderValue;
   babyNameGirl?: string | null;
@@ -179,13 +180,14 @@ export async function POST(req: NextRequest) {
     photoCount: nextPhotos.length,
     revealAt: nextRevealAt,
     revealTimezone: nextTimezone,
+    dueDate: body.dueDate?.trim() ? Timestamp.fromDate(new Date(body.dueDate.trim())) : null,
     updatedAt: FieldValue.serverTimestamp(),
   };
 
   let revealerEmailSent = false;
 
   if (nextMode === "announcement") {
-    update.babyName = body.babyName?.trim() || null;
+    update.babyName = null;
     update.babyNameGirl = null;
     update.babyNameBoy = null;
     update.revealerEmail = null;
@@ -208,8 +210,8 @@ export async function POST(req: NextRequest) {
     const nextEmail = body.revealerEmail!.trim().toLowerCase();
     const nextRelation = body.revealerRelation!;
     update.babyName = null;
-    update.babyNameGirl = body.babyNameGirl?.trim() || null;
-    update.babyNameBoy = body.babyNameBoy?.trim() || null;
+    update.babyNameGirl = null;
+    update.babyNameBoy = null;
     update.revealerEmail = nextEmail;
     update.revealerRelation = nextRelation;
 

@@ -153,7 +153,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
 
     // Create Firebase Auth account
-    const cred = await createUserWithEmailAndPassword(auth, email, password);
+    let cred;
+    try {
+      cred = await createUserWithEmailAndPassword(auth, email, password);
+    } catch (err) {
+      const code = (err as { code?: string })?.code || "";
+      if (code.includes("email-already-in-use")) throw new Error("This email is already registered. Please sign in instead.");
+      if (code.includes("weak-password")) throw new Error("Password is too weak. Please use at least 6 characters.");
+      if (code.includes("invalid-email")) throw new Error("Please enter a valid email address.");
+      throw new Error("Signup failed. Please verify your details and try again.");
+    }
     const { user: newUser } = cred;
 
     // Update display name
