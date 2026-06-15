@@ -229,6 +229,7 @@ export default function NewRevealPage() {
   const [loading, setLoading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState<string>("");
   const [error, setError] = useState("");
+  const [entitlementChecked, setEntitlementChecked] = useState(false);
   const isBasicPlan = (firestoreUser?.activePlan ?? "none") === "basic";
 
   // Entitlement guard: redirect if user can't create a reveal
@@ -237,13 +238,36 @@ export default function NewRevealPage() {
   useEffect(() => {
     if (authLoading) return; // wait for auth to resolve
     if (!user) {
+      setEntitlementChecked(false);
       router.replace("/login?redirect=/new-reveal");
       return;
     }
-    if (firestoreUser && (firestoreUser.revealsAllowed ?? 0) <= 0) {
-      router.replace("/dashboard?noEntitlement=1");
-    }
-  }, [authLoading, user, firestoreUser, router]);
+
+    let cancelled = false;
+    setEntitlementChecked(false);
+
+    void (async () => {
+      try {
+        const token = await user.getIdToken();
+        const res = await fetch("/api/entitlement/can-create", {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        const data = await res.json().catch(() => ({}));
+        if (cancelled) return;
+        if (!res.ok || !data?.canCreate) {
+          router.replace("/dashboard?noEntitlement=1");
+          return;
+        }
+        setEntitlementChecked(true);
+      } catch {
+        if (!cancelled) router.replace("/dashboard?noEntitlement=1");
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [authLoading, user, router]);
 
   // Shared fields
   const [mode, setMode] = useState<EnquiryMode>("reveal");
@@ -447,6 +471,17 @@ async function handleSubmit(e: React.FormEvent) {
   }
 
   // ─── Render ──────────────────────────────────────────────
+
+  if (authLoading || !user || !entitlementChecked) {
+    return (
+      <>
+        <style>{CSS}</style>
+        <div className="page-wrap">
+          <p className="page-sub">Checking your payment status…</p>
+        </div>
+      </>
+    );
+  }
 
   return (
     <>

@@ -298,6 +298,7 @@ function LandingPage() {
   const router = useRouter();
   const [toast, setToast] = useState<{ message: string; type: "success" | "error" | "info" } | null>(null);
   const [confirmPlan, setConfirmPlan] = useState<PlanMeta | null>(null);
+  const [checkingEntitlement, setCheckingEntitlement] = useState(false);
 
   function handleConfirm() {
     if (!confirmPlan) return;
@@ -305,7 +306,7 @@ function LandingPage() {
     routeToReveal(confirmPlan.id);
   }
 
-  const routeToReveal = (plan?: string) => {
+  const routeToReveal = async (plan?: string) => {
     const checkoutTarget = plan ? `/dashboard?checkout=${plan}` : null;
     const targetReveal = "/new-reveal";
 
@@ -327,20 +328,23 @@ function LandingPage() {
       return;
     }
 
-    const activePlan = firestoreUser?.activePlan ?? "none";
-    const revealsAllowed = firestoreUser?.revealsAllowed ?? 0;
-
-    if (activePlan === "none") {
+    setCheckingEntitlement(true);
+    try {
+      const token = await user.getIdToken();
+      const res = await fetch("/api/entitlement/can-create", {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const data = await res.json().catch(() => ({}));
+      if (res.ok && data?.canCreate) {
+        router.push(targetReveal);
+        return;
+      }
+      router.push(data?.activePlan && data.activePlan !== "none" ? "/dashboard?needsRepurchase=1" : "/dashboard?noEntitlement=1");
+    } catch {
       router.push("/dashboard?noEntitlement=1");
-      return;
+    } finally {
+      setCheckingEntitlement(false);
     }
-
-    if (revealsAllowed > 0) {
-      router.push(targetReveal);
-      return;
-    }
-
-    router.push("/dashboard?needsRepurchase=1");
   };
 
   return (
@@ -383,7 +387,7 @@ function LandingPage() {
               className="hero-title-img"
             />
             <p className="hero-sub-new">Celebrate your big moment together,<br />no matter where you are! 💗</p>
-            <button type="button" className="btn-create-party" onClick={() => routeToReveal()}>🎉 Create Your Party</button>
+            <button type="button" className="btn-create-party" onClick={() => routeToReveal()} disabled={checkingEntitlement}>{checkingEntitlement ? "Checking..." : "🎉 Create Your Party"}</button>
             <div className="hero-tagline">👥 Invite. Reveal. Celebrate!</div>
           </div>
           <div className="hero-right">
@@ -563,7 +567,7 @@ function LandingPage() {
           </h2>
           <p className="cta-new-sub">Book your reveal today and your doctor link will be ready within the hour.</p>
           <p className="cta-new-sub2">Grandma in Florida and your best friend in New York will both be there.</p>
-          <button type="button" className="cta-new-btn" onClick={() => routeToReveal()}>🎉 Start Your Reveal</button>
+          <button type="button" className="cta-new-btn" onClick={() => routeToReveal()} disabled={checkingEntitlement}>{checkingEntitlement ? "Checking..." : "🎉 Start Your Reveal"}</button>
           <div className="cta-new-box">
             <p>Virtual Baby Reveal is designed to make your special moment joyful, seamless, and completely stress-free.</p>
             <p><em>Because moments like these deserve to be felt together.</em></p>

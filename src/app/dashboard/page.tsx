@@ -496,6 +496,7 @@ function DashboardContent() {
   const [guestImportSummary, setGuestImportSummary] = useState<ImportSummary | null>(null);
   const [sendingInvites, setSendingInvites] = useState(false);
   const [openingPartyId, setOpeningPartyId] = useState<string | null>(null);
+  const [startingReveal, setStartingReveal] = useState(false);
   const [guestRows, setGuestRows] = useState<GuestRow[]>([]);
   const [revealUnlocked, setRevealUnlocked] = useState(false);
   const [editingRevealId, setEditingRevealId] = useState<string | null>(null);
@@ -569,17 +570,20 @@ function DashboardContent() {
 
       void (async () => {
         try {
-          if (sessionId && user) {
-            const token = await user.getIdToken();
-            const res = await fetch(`/api/checkout-status?session_id=${encodeURIComponent(sessionId)}`, {
-              headers: { Authorization: `Bearer ${token}` },
-            });
-            const data = await res.json().catch(() => ({}));
-            if (!res.ok) throw new Error(data?.error || "Unable to confirm payment.");
-            if (data.paymentStatus !== "paid") {
-              setToast({ message: "Payment was not completed. Please try again.", type: "error" });
-              return;
-            }
+          if (!sessionId || !user) {
+            setToast({ message: "Payment could not be confirmed. Please try checkout again.", type: "error" });
+            return;
+          }
+
+          const token = await user.getIdToken();
+          const res = await fetch(`/api/checkout-status?session_id=${encodeURIComponent(sessionId)}`, {
+            headers: { Authorization: `Bearer ${token}` },
+          });
+          const data = await res.json().catch(() => ({}));
+          if (!res.ok) throw new Error(data?.error || "Unable to confirm payment.");
+          if (data.paymentStatus !== "paid") {
+            setToast({ message: "Payment was not completed. Please try again.", type: "error" });
+            return;
           }
 
           await refreshFirestoreUser();
@@ -598,7 +602,8 @@ function DashboardContent() {
         }
       })();
     } else if (payment === "cancelled") {
-      setToast({ message: "Payment was cancelled or declined. You can try again anytime.", type: "info" });
+      setToast({ message: "Payment was cancelled or declined. Choose a plan to continue.", type: "info" });
+      void refreshFirestoreUser();
       router.replace("/dashboard");
     } else if (checkoutPlan) {
       const selectedPlan = PLANS.find((p) => p.id === checkoutPlan);
@@ -885,6 +890,29 @@ function DashboardContent() {
     }
   }
 
+
+  async function startNewReveal() {
+    if (!user || startingReveal) return;
+    setStartingReveal(true);
+    try {
+      const token = await user.getIdToken();
+      const res = await fetch("/api/entitlement/can-create", {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok || !data?.canCreate) {
+        setToast({ message: "Please complete payment before starting your reveal.", type: "info" });
+        await refreshFirestoreUser();
+        return;
+      }
+      router.push("/new-reveal");
+    } catch {
+      setToast({ message: "We could not confirm your payment status. Please try again.", type: "error" });
+    } finally {
+      setStartingReveal(false);
+    }
+  }
+
   async function joinParty(enquiryId: string) {
     if (!user) return;
     setOpeningPartyId(enquiryId);
@@ -974,8 +1002,8 @@ function DashboardContent() {
                     Start a new reveal, send a secure revealer link, and bring guests into the party room.
                   </p>
                 </div>
-                <button className="btn-primary-lg" onClick={() => router.push("/new-reveal")}>
-                  Start New Reveal
+                <button className="btn-primary-lg" onClick={startNewReveal} disabled={startingReveal}>
+                  {startingReveal ? "Checking payment..." : "Start New Reveal"}
                 </button>
               </div>
             </section>
