@@ -38,16 +38,16 @@ export async function POST(req: NextRequest) {
     // 2. Parse body
     const body = await req.json().catch(() => null);
     const planId = body?.planId;
-    if (!planId || !["basic", "premium"].includes(planId)) {
+    if (!planId || !["basic", "premium", "custom"].includes(planId)) {
       return NextResponse.json(
-        { error: "Invalid plan. Must be 'basic' or 'premium'." },
+        { error: "Invalid plan. Must be 'basic', 'premium', or 'custom'." },
         { status: 400 }
       );
     }
 
     const plan = getPlanById(planId);
     const launchOfferActive = planId === "basic" && isBasicLaunchOfferActive();
-    const effectivePriceCents = launchOfferActive ? 0 : plan?.priceCents;
+    const effectivePriceCents = plan?.priceCents === 0 || launchOfferActive ? 0 : plan?.priceCents;
     if (!plan) {
       return NextResponse.json({ error: "Plan not found." }, { status: 400 });
     }
@@ -111,7 +111,7 @@ export async function POST(req: NextRequest) {
         planId: plan.id,
       },
       customer_email: session.email ?? undefined,
-      success_url: `${appUrl}/dashboard?payment=success&plan=${plan.id}`,
+      success_url: `${appUrl}/dashboard?payment=success&plan=${plan.id}&session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${appUrl}/dashboard?payment=cancelled`,
     });
 
