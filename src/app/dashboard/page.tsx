@@ -559,19 +559,51 @@ function DashboardContent() {
   useEffect(() => {
     const payment = searchParams.get("payment");
     const plan = searchParams.get("plan");
+    const sessionId = searchParams.get("session_id");
+    const checkoutPlan = searchParams.get("checkout");
     const created = searchParams.get("created");
+
     if (payment === "success") {
-      setToast({
-        message: plan
-          ? `Payment successful. ${plan.charAt(0).toUpperCase() + plan.slice(1)} plan activated.`
-          : "Payment successful.",
-        type: "success",
-      });
-      void refreshFirestoreUser();
       router.replace("/dashboard");
+      setToast({ message: "Payment completed. Confirming your plan now...", type: "info" });
+
+      void (async () => {
+        try {
+          if (sessionId && user) {
+            const token = await user.getIdToken();
+            const res = await fetch(`/api/checkout-status?session_id=${encodeURIComponent(sessionId)}`, {
+              headers: { Authorization: `Bearer ${token}` },
+            });
+            const data = await res.json().catch(() => ({}));
+            if (!res.ok) throw new Error(data?.error || "Unable to confirm payment.");
+            if (data.paymentStatus !== "paid") {
+              setToast({ message: "Payment was not completed. Please try again.", type: "error" });
+              return;
+            }
+          }
+
+          await refreshFirestoreUser();
+          setToast({
+            message: plan
+              ? `Payment successful. ${plan.charAt(0).toUpperCase() + plan.slice(1)} plan activated.`
+              : "Payment successful. Your plan is active.",
+            type: "success",
+          });
+          router.push("/new-reveal");
+        } catch (err) {
+          setToast({
+            message: err instanceof Error ? err.message : "Payment completed, but confirmation failed. Please refresh your dashboard.",
+            type: "error",
+          });
+        }
+      })();
     } else if (payment === "cancelled") {
-      setToast({ message: "Payment cancelled. You can try again anytime.", type: "info" });
+      setToast({ message: "Payment was cancelled or declined. You can try again anytime.", type: "info" });
       router.replace("/dashboard");
+    } else if (checkoutPlan) {
+      const selectedPlan = PLANS.find((p) => p.id === checkoutPlan);
+      router.replace("/dashboard");
+      if (selectedPlan) void handleSelectPlan(selectedPlan);
     } else if (created) {
       setToast({ message: "Your reveal was created successfully.", type: "success" });
       void refreshFirestoreUser();
@@ -580,7 +612,9 @@ function DashboardContent() {
       setToast({ message: "Please choose a plan before creating a reveal.", type: "info" });
       router.replace("/dashboard");
     }
-  }, [searchParams, router, refreshFirestoreUser]);
+  // handleSelectPlan is intentionally omitted so dashboard checkout links only run once per URL change.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams, router, refreshFirestoreUser, user]);
 
   useEffect(() => {
     void loadReveals();
@@ -733,6 +767,10 @@ function DashboardContent() {
   async function handleSelectPlan(plan: PlanDefinition) {
     if (activatingPlan) return;
     setActivatingPlan(plan.id);
+    setToast({
+      message: plan.priceCents > 0 ? "Taking you to the payment gateway..." : "Activating your free plan...",
+      type: "info",
+    });
     try {
       const token = await user!.getIdToken();
       const res = await fetch("/api/create-checkout", {
@@ -749,12 +787,13 @@ function DashboardContent() {
         return;
       }
       if (data.url) {
+        setToast({ message: "Taking you to the payment gateway...", type: "info" });
         window.location.href = data.url;
         return;
       }
       setToast({ message: data.message || `${plan.name} plan activated.`, type: "success" });
       await refreshFirestoreUser();
-      if (plan.id === "basic") setTimeout(() => router.push("/new-reveal"), 800);
+      setTimeout(() => router.push("/new-reveal"), 800);
     } catch {
       setToast({ message: "Something went wrong. Please try again.", type: "error" });
     } finally {

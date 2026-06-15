@@ -306,11 +306,18 @@ function LandingPage() {
   }
 
   const routeToReveal = (plan?: string) => {
-    const targetReveal = plan ? `/new-reveal?plan=${plan}` : "/new-reveal";
+    const checkoutTarget = plan ? `/dashboard?checkout=${plan}` : null;
+    const targetReveal = "/new-reveal";
 
     if (!user) {
-      const redirect = encodeURIComponent(targetReveal);
+      const redirect = encodeURIComponent(checkoutTarget ?? targetReveal);
       router.push(`/login?redirect=${redirect}`);
+      return;
+    }
+
+    if (checkoutTarget) {
+      setToast({ message: "Taking you to the payment gateway...", type: "info" });
+      router.push(checkoutTarget);
       return;
     }
 
@@ -471,7 +478,7 @@ function LandingPage() {
           </div>
           <div className="pricing-grid fade-up">
             {[
-              { cardCls: "pnew-basic",   iconCls: "pic-pink",   icon: "🎈", nameCls: "pn-pink", name: "Free Plan", desc: "Everything you need for a simple & fun reveal!",   priceCls: "pp-pink", price: "0",   priceSub: "Free forever",     checkCls: "pnew-check-pink", feats: ["Basic reveal page", "Doctor secure link", "Up to 20 guests", "Email invitations", "7-day replay"], btnCls: "pbtn-pink",     btnLabel: "Start Free",           planId: "free",    popular: false },
+              { cardCls: "pnew-basic",   iconCls: "pic-pink",   icon: "🎈", nameCls: "pn-pink", name: "Free Plan", desc: "Everything you need for a simple & fun reveal!",   priceCls: "pp-pink", price: "0",   priceSub: "Free forever",     checkCls: "pnew-check-pink", feats: ["Basic reveal page", "Doctor secure link", "Up to 20 guests", "Email invitations", "7-day replay"], btnCls: "pbtn-pink",     btnLabel: "Start Free",           planId: "basic",    popular: false },
               { cardCls: "pnew-premium", iconCls: "pic-purple", icon: "👑", nameCls: "pn-blue", name: "Premium", desc: "The most loved plan for unforgettable memories!", priceCls: "pp-blue", price: "199", priceSub: "One-time payment", checkCls: "pnew-check-blue", feats: ["Cinematic reveal video — made by us", "Live virtual party room", "Up to 200 guests", "Live chat & Boy/Girl polls", "Personalized guest invitations", "30-day replay window", "Custom overlay"], btnCls: "pbtn-gradient", btnLabel: "Choose Premium",        planId: "premium", popular: true  },
               { cardCls: "pnew-custom",  iconCls: "pic-blue",   icon: "💎", nameCls: "pn-blue", name: "Custom",   desc: "The ultimate experience for big celebrations!",   priceCls: "pp-blue", price: "650", priceSub: "One-time payment", checkCls: "pnew-check-blue", feats: ["Bespoke reveal video story", "Unlimited guests", "Dedicated concierge", "Custom soundtrack", "Live on-call support", "Permanent family archive"],                                              btnCls: "pbtn-blue",     btnLabel: "Create Custom Reveal", planId: "custom",  popular: false },
             ].map((p, i) => (
