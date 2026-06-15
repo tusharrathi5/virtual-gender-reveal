@@ -6,6 +6,16 @@ import { AuthSyncWrapper } from "@/components/AuthSyncWrapper";
 export const metadata: Metadata = {
   title: "Virtual Gender Reveal — Crafted for Moments That Matter",
   description: "Create a cinematic gender reveal and share the moment live with everyone you love, wherever they are.",
+  icons: {
+    icon: [
+      {
+        url: "/Favicon-VGR.png",
+        type: "image/png",
+      },
+    ],
+    shortcut: "/Favicon-VGR.png",
+    apple: "/Favicon-VGR.png",
+  },
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
