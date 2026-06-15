@@ -102,6 +102,14 @@ export default function CinematicEntry() {
 
   if (scene === 6) return <LandingPage />;
 
+  function handlePricingPlanClick(plan: PlanMeta) {
+    if (plan.price > 0) {
+      setConfirmPlan(plan);
+      return;
+    }
+    void routeToReveal(plan.id);
+  }
+
   return (
     <>
       <style>{CINEMA_CSS}</style>
@@ -272,19 +280,17 @@ function ConfirmDialog({ plan, onConfirm, onCancel }: { plan: PlanMeta; onConfir
     <div style={{ position: "fixed", inset: 0, zIndex: 10000, display: "flex", alignItems: "center", justifyContent: "center", background: "rgba(5,3,5,0.88)", backdropFilter: "blur(14px)", fontFamily: "'Plus Jakarta Sans',sans-serif", animation: "fadeOverlay .2s ease-out" }}>
       <div style={{ background: "linear-gradient(145deg,#140e14,#0e1218)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 20, padding: "40px 36px", maxWidth: 420, width: "90%", boxShadow: "0 30px 80px rgba(0,0,0,0.7)", animation: "slideUpDlg .3s ease-out" }}>
         <div style={{ width: 10, height: 10, borderRadius: "50%", background: plan.color, boxShadow: `0 0 16px ${plan.color}80`, marginBottom: 20 }} />
-        <p style={{ fontSize: 11, letterSpacing: 3, textTransform: "uppercase", color: "rgba(245,239,245,0.4)", marginBottom: 12, fontFamily: "'Playfair Display',serif" }}>Confirm Your Plan</p>
+        <p style={{ fontSize: 11, letterSpacing: 3, textTransform: "uppercase", color: "rgba(245,239,245,0.4)", marginBottom: 12, fontFamily: "'Playfair Display',serif" }}>Payment Gateway</p>
         <h2 style={{ fontFamily: "'Playfair Display',serif", fontSize: 28, fontWeight: 300, color: "#f5eff5", marginBottom: 8, lineHeight: 1.2 }}>
-          {plan.name} — <em style={{ fontStyle: "italic", color: plan.color }}>{plan.priceLabel}</em>
+          Taking you to payment gateway
         </h2>
         <p style={{ fontSize: 13, fontWeight: 300, color: "rgba(245,239,245,0.45)", lineHeight: 1.7, marginBottom: 32 }}>
-          {plan.price === 0
-            ? "You're choosing the free plan. You can upgrade anytime from your dashboard."
-            : `You're about to proceed with the ${plan.name} plan at ${plan.priceLabel} (one-time payment). Continue?`}
+          You selected the {plan.name} plan at {plan.priceLabel}. Proceed to secure payment or cancel to return to the pricing plans.
         </p>
         <div style={{ display: "flex", gap: 12 }}>
           <button onClick={onCancel} style={{ flex: 1, padding: "13px", background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.09)", borderRadius: 10, color: "rgba(245,239,245,0.45)", fontFamily: "'Plus Jakarta Sans',sans-serif", fontSize: 11, fontWeight: 400, letterSpacing: 1.5, textTransform: "uppercase", cursor: "pointer" }}>Go Back</button>
           <button onClick={onConfirm} style={{ flex: 1, padding: "13px", background: `linear-gradient(135deg,${plan.color}e0,${plan.color}90)`, border: "none", borderRadius: 10, color: "#0a0608", fontFamily: "'Plus Jakarta Sans',sans-serif", fontSize: 11, fontWeight: 600, letterSpacing: 2, textTransform: "uppercase", cursor: "pointer" }}>
-            {plan.price === 0 ? "Activate Free" : "Go to Payment"}
+            Proceed
           </button>
         </div>
       </div>
@@ -303,11 +309,11 @@ function LandingPage() {
   function handleConfirm() {
     if (!confirmPlan) return;
     setConfirmPlan(null);
-    routeToReveal(confirmPlan.id);
+    routeToReveal(confirmPlan.id, true);
   }
 
-  const routeToReveal = async (plan?: string) => {
-    const checkoutTarget = plan ? `/dashboard?checkout=${plan}` : null;
+  const routeToReveal = async (plan?: string, confirmedPayment = false) => {
+    const checkoutTarget = plan ? `/dashboard?checkout=${plan}${confirmedPayment ? "&confirmed=1" : ""}` : null;
     const targetReveal = "/new-reveal";
 
     if (!user) {
@@ -346,6 +352,14 @@ function LandingPage() {
       setCheckingEntitlement(false);
     }
   };
+
+  function handlePricingPlanClick(plan: PlanMeta) {
+    if (plan.price > 0) {
+      setConfirmPlan(plan);
+      return;
+    }
+    void routeToReveal(plan.id);
+  }
 
   return (
     <>
@@ -501,7 +515,18 @@ function LandingPage() {
                 <ul className="pnew-feats">
                   {p.feats.map((f, j) => <li key={j}><span className={p.checkCls}>✓</span>{f}</li>)}
                 </ul>
-                <button className={`pnew-btn ${p.btnCls}`} onClick={() => routeToReveal(p.planId)}>{p.btnLabel}</button>
+                <button
+                  className={`pnew-btn ${p.btnCls}`}
+                  onClick={() => handlePricingPlanClick({
+                    id: p.planId,
+                    name: p.name,
+                    price: Number(p.price),
+                    priceLabel: p.price === "0" ? "Free" : `$${p.price}`,
+                    color: p.popular ? "#82B8E8" : "#E8449A",
+                  })}
+                >
+                  {p.btnLabel}
+                </button>
               </div>
             ))}
           </div>
