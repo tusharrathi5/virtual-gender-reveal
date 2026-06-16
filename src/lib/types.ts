@@ -177,7 +177,7 @@ export const PHOTO_MAX = 3;
 // ─── Plan definitions (source of truth for the dashboard + pricing) ──
 
 export interface PlanDefinition {
-  id: "basic" | "premium";
+  id: "basic" | "premium" | "custom";
   name: string;
   priceCents: number;             // 0 for free
   priceLabel: string;
@@ -188,19 +188,27 @@ export interface PlanDefinition {
 export const PLANS: PlanDefinition[] = [
   {
     id: "basic",
-    name: "Basic",
-    priceCents: 8000,
-    priceLabel: "$80",
+    name: "Free Plan",
+    priceCents: 0,
+    priceLabel: "Free",
     revealsGranted: 1,
-    description: "Launch offer: free for your first 30 days, then $80.",
+    description: "Everything you need for a simple & fun reveal.",
   },
   {
     id: "premium",
     name: "Premium",
-    priceCents: 29900,
-    priceLabel: "$299",
+    priceCents: 103,
+    priceLabel: "$1.03",
     revealsGranted: 1,
-    description: "Full cinematic reveal with livestream for guests.",
+    description: "The most loved plan for unforgettable memories.",
+  },
+  {
+    id: "custom",
+    name: "Custom",
+    priceCents: 65000,
+    priceLabel: "$650",
+    revealsGranted: 1,
+    description: "The ultimate experience for big celebrations.",
   },
 ];
 

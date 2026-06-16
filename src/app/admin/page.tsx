@@ -93,6 +93,23 @@ type SortKey =
 type SortDir = "asc" | "desc";
 type AdminTab = "users" | "deleted";
 
+const SITE_LOGO_SRC = "/Logo%201.png";
+const FALLBACK_LOGO_SRC = "/Favicon-VGR.png";
+
+function SiteLogo({ className }: { className: string }) {
+  return (
+    <img
+      src={SITE_LOGO_SRC}
+      alt="Virtual Gender Reveal logo"
+      className={className}
+      onError={(event) => {
+        if (event.currentTarget.src.endsWith(FALLBACK_LOGO_SRC)) return;
+        event.currentTarget.src = FALLBACK_LOGO_SRC;
+      }}
+    />
+  );
+}
+
 const DEFAULT_SORT_DIR: Record<SortKey, SortDir> = {
   createdAt: "desc",
   name: "asc",
@@ -624,8 +641,7 @@ export default function AdminPage() {
       <aside className="vgr-sidebar">
         <div className="vgr-brand">
           <div className="vgr-brand-icon">
-            <span className="balloon balloon-blue">●</span>
-            <span className="balloon balloon-pink">●</span>
+            <SiteLogo className="vgr-brand-logo" />
           </div>
           <div className="vgr-brand-text">
             <div className="vgr-brand-name">
@@ -638,15 +654,14 @@ export default function AdminPage() {
 
         <nav className="vgr-nav">
           {[
-            { key: "users", label: "User Portal", icon: "U", count: users.length },
-            { key: "deleted", label: "Deleted Users", icon: "D", count: deleted.length },
+            { key: "users", label: "User Portal", count: users.length },
+            { key: "deleted", label: "Deleted Users", count: deleted.length },
           ].map((item) => (
             <button
               key={item.key}
               className={`vgr-nav-item ${activeTab === item.key ? "active" : ""}`}
               onClick={() => setActiveTab(item.key as AdminTab)}
             >
-              <span className="vgr-nav-icon">{item.icon}</span>
               <span className="vgr-nav-label">{item.label}</span>
               <span className="vgr-nav-count">{item.count}</span>
             </button>
@@ -933,10 +948,8 @@ export default function AdminPage() {
           border-bottom: 1px solid rgba(255,255,255,0.4);
           margin-bottom: 16px;
         }
-        .vgr-brand-icon { position: relative; width: 36px; height: 36px; flex-shrink: 0; }
-        .balloon { position: absolute; font-size: 20px; line-height: 1; }
-        .balloon-blue { color: #6c8eef; top: 0; left: 0; }
-        .balloon-pink { color: #ec90c6; bottom: 0; right: 0; }
+        .vgr-brand-icon { width: 58px; height: 58px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; }
+        .vgr-brand-logo { width: 58px; height: 58px; object-fit: contain; display: block; }
         .vgr-brand-text { flex: 1; min-width: 0; }
         .vgr-brand-name {
           font-family: "Playfair Display", serif;
@@ -972,7 +985,6 @@ export default function AdminPage() {
           font-weight: 600;
           box-shadow: 0 2px 8px rgba(140,100,200,0.08);
         }
-        .vgr-nav-icon { font-size: 14px; width: 18px; text-align: center; flex-shrink: 0; }
         .vgr-nav-label { flex: 1; }
         .vgr-nav-count {
           font-size: 9px;

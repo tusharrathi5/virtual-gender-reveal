@@ -17,12 +17,12 @@ import { getFirebaseDb } from "./firebase";
  
 export type UserRole = "user" | "admin";
 export type UserProvider = "email" | "google" | "both";
-export type ActivePlan = "none" | "basic" | "premium";
+export type ActivePlan = "none" | "basic" | "premium" | "custom";
 export type PurchaseStatus = "completed" | "refunded" | "disputed";
 
 export interface Purchase {
   purchaseId: string;
-  plan: "basic" | "premium";
+  plan: "basic" | "premium" | "custom";
   purchasedAt: Timestamp | null;
   amountPaid: number;           // cents; 0 for free
   currency: string;             // e.g. "usd"

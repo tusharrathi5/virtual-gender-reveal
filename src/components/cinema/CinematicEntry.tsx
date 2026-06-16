@@ -4,6 +4,23 @@ import { useRouter } from "next/navigation";
 import { useAuth } from "@/lib/AuthContext";
 
 const SCENE_DURATIONS = [3800, 3200, 3200, 4000, 4500, 0];
+const SITE_LOGO_SRC = "/Logo%201.png";
+const FALLBACK_LOGO_SRC = "/Favicon-VGR.png";
+
+function SiteLogo({ className }: { className: string }) {
+  return (
+    <img
+      src={SITE_LOGO_SRC}
+      alt="Virtual Gender Reveal logo"
+      className={className}
+      onError={(event) => {
+        if (event.currentTarget.src.endsWith(FALLBACK_LOGO_SRC)) return;
+        event.currentTarget.src = FALLBACK_LOGO_SRC;
+      }}
+    />
+  );
+}
+
 const INTRO_KEY = "vgr_intro_seen";
 const INTRO_TTL = 24 * 60 * 60 * 1000; // 24 hours in ms
 
@@ -101,6 +118,14 @@ export default function CinematicEntry() {
   }, [scene]);
 
   if (scene === 6) return <LandingPage />;
+
+  function handlePricingPlanClick(plan: PlanMeta) {
+    if (plan.price > 0) {
+      setConfirmPlan(plan);
+      return;
+    }
+    void routeToReveal(plan.id);
+  }
 
   return (
     <>
@@ -272,19 +297,17 @@ function ConfirmDialog({ plan, onConfirm, onCancel }: { plan: PlanMeta; onConfir
     <div style={{ position: "fixed", inset: 0, zIndex: 10000, display: "flex", alignItems: "center", justifyContent: "center", background: "rgba(5,3,5,0.88)", backdropFilter: "blur(14px)", fontFamily: "'Plus Jakarta Sans',sans-serif", animation: "fadeOverlay .2s ease-out" }}>
       <div style={{ background: "linear-gradient(145deg,#140e14,#0e1218)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 20, padding: "40px 36px", maxWidth: 420, width: "90%", boxShadow: "0 30px 80px rgba(0,0,0,0.7)", animation: "slideUpDlg .3s ease-out" }}>
         <div style={{ width: 10, height: 10, borderRadius: "50%", background: plan.color, boxShadow: `0 0 16px ${plan.color}80`, marginBottom: 20 }} />
-        <p style={{ fontSize: 11, letterSpacing: 3, textTransform: "uppercase", color: "rgba(245,239,245,0.4)", marginBottom: 12, fontFamily: "'Playfair Display',serif" }}>Confirm Your Plan</p>
+        <p style={{ fontSize: 11, letterSpacing: 3, textTransform: "uppercase", color: "rgba(245,239,245,0.4)", marginBottom: 12, fontFamily: "'Playfair Display',serif" }}>Payment Gateway</p>
         <h2 style={{ fontFamily: "'Playfair Display',serif", fontSize: 28, fontWeight: 300, color: "#f5eff5", marginBottom: 8, lineHeight: 1.2 }}>
-          {plan.name} — <em style={{ fontStyle: "italic", color: plan.color }}>{plan.priceLabel}</em>
+          Taking you to payment gateway
         </h2>
         <p style={{ fontSize: 13, fontWeight: 300, color: "rgba(245,239,245,0.45)", lineHeight: 1.7, marginBottom: 32 }}>
-          {plan.price === 0
-            ? "You're choosing the free plan. You can upgrade anytime from your dashboard."
-            : `You're about to proceed with the ${plan.name} plan at ${plan.priceLabel} (one-time payment). Continue?`}
+          You selected the {plan.name} plan at {plan.priceLabel}. Proceed to secure payment or cancel to return to the pricing plans.
         </p>
         <div style={{ display: "flex", gap: 12 }}>
           <button onClick={onCancel} style={{ flex: 1, padding: "13px", background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.09)", borderRadius: 10, color: "rgba(245,239,245,0.45)", fontFamily: "'Plus Jakarta Sans',sans-serif", fontSize: 11, fontWeight: 400, letterSpacing: 1.5, textTransform: "uppercase", cursor: "pointer" }}>Go Back</button>
           <button onClick={onConfirm} style={{ flex: 1, padding: "13px", background: `linear-gradient(135deg,${plan.color}e0,${plan.color}90)`, border: "none", borderRadius: 10, color: "#0a0608", fontFamily: "'Plus Jakarta Sans',sans-serif", fontSize: 11, fontWeight: 600, letterSpacing: 2, textTransform: "uppercase", cursor: "pointer" }}>
-            {plan.price === 0 ? "Activate Free" : "Go to Payment"}
+            Proceed
           </button>
         </div>
       </div>
@@ -298,19 +321,27 @@ function LandingPage() {
   const router = useRouter();
   const [toast, setToast] = useState<{ message: string; type: "success" | "error" | "info" } | null>(null);
   const [confirmPlan, setConfirmPlan] = useState<PlanMeta | null>(null);
+  const [checkingEntitlement, setCheckingEntitlement] = useState(false);
 
   function handleConfirm() {
     if (!confirmPlan) return;
     setConfirmPlan(null);
-    routeToReveal(confirmPlan.id);
+    routeToReveal(confirmPlan.id, true);
   }
 
-  const routeToReveal = (plan?: string) => {
-    const targetReveal = plan ? `/new-reveal?plan=${plan}` : "/new-reveal";
+  const routeToReveal = async (plan?: string, confirmedPayment = false) => {
+    const checkoutTarget = plan ? `/dashboard?checkout=${plan}${confirmedPayment ? "&confirmed=1" : ""}` : null;
+    const targetReveal = "/new-reveal";
 
     if (!user) {
-      const redirect = encodeURIComponent(targetReveal);
+      const redirect = encodeURIComponent(checkoutTarget ?? targetReveal);
       router.push(`/login?redirect=${redirect}`);
+      return;
+    }
+
+    if (checkoutTarget) {
+      setToast({ message: "Taking you to the payment gateway...", type: "info" });
+      router.push(checkoutTarget);
       return;
     }
 
@@ -320,21 +351,32 @@ function LandingPage() {
       return;
     }
 
-    const activePlan = firestoreUser?.activePlan ?? "none";
-    const revealsAllowed = firestoreUser?.revealsAllowed ?? 0;
-
-    if (activePlan === "none") {
+    setCheckingEntitlement(true);
+    try {
+      const token = await user.getIdToken();
+      const res = await fetch("/api/entitlement/can-create", {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const data = await res.json().catch(() => ({}));
+      if (res.ok && data?.canCreate) {
+        router.push(targetReveal);
+        return;
+      }
+      router.push(data?.activePlan && data.activePlan !== "none" ? "/dashboard?needsRepurchase=1" : "/dashboard?noEntitlement=1");
+    } catch {
       router.push("/dashboard?noEntitlement=1");
-      return;
+    } finally {
+      setCheckingEntitlement(false);
     }
-
-    if (revealsAllowed > 0) {
-      router.push(targetReveal);
-      return;
-    }
-
-    router.push("/dashboard?needsRepurchase=1");
   };
+
+  function handlePricingPlanClick(plan: PlanMeta) {
+    if (plan.price > 0) {
+      setConfirmPlan(plan);
+      return;
+    }
+    void routeToReveal(plan.id);
+  }
 
   return (
     <>
@@ -343,8 +385,8 @@ function LandingPage() {
       {confirmPlan && <ConfirmDialog plan={confirmPlan} onConfirm={handleConfirm} onCancel={() => setConfirmPlan(null)} />}
 
       <nav id="main-nav">
-        <a href="/" className="nav-logo">
-          <span className="nav-logo-icons">💙🩷</span>
+        <a href="/" className="nav-logo" aria-label="Virtual Gender Reveal home">
+          <SiteLogo className="nav-logo-img" />
           <span className="nav-logo-text">VGR</span>
         </a>
         <div className="nav-links">
@@ -376,7 +418,7 @@ function LandingPage() {
               className="hero-title-img"
             />
             <p className="hero-sub-new">Celebrate your big moment together,<br />no matter where you are! 💗</p>
-            <button type="button" className="btn-create-party" onClick={() => routeToReveal()}>🎉 Create Your Party</button>
+            <button type="button" className="btn-create-party" onClick={() => routeToReveal()} disabled={checkingEntitlement}>{checkingEntitlement ? "Checking..." : "🎉 Create Your Party"}</button>
             <div className="hero-tagline">👥 Invite. Reveal. Celebrate!</div>
           </div>
           <div className="hero-right">
@@ -471,8 +513,8 @@ function LandingPage() {
           </div>
           <div className="pricing-grid fade-up">
             {[
-              { cardCls: "pnew-basic",   iconCls: "pic-pink",   icon: "🎈", nameCls: "pn-pink", name: "Free Plan", desc: "Everything you need for a simple & fun reveal!",   priceCls: "pp-pink", price: "0",   priceSub: "Free forever",     checkCls: "pnew-check-pink", feats: ["Basic reveal page", "Doctor secure link", "Up to 20 guests", "Email invitations", "7-day replay"], btnCls: "pbtn-pink",     btnLabel: "Start Free",           planId: "free",    popular: false },
-              { cardCls: "pnew-premium", iconCls: "pic-purple", icon: "👑", nameCls: "pn-blue", name: "Premium", desc: "The most loved plan for unforgettable memories!", priceCls: "pp-blue", price: "199", priceSub: "One-time payment", checkCls: "pnew-check-blue", feats: ["Cinematic reveal video — made by us", "Live virtual party room", "Up to 200 guests", "Live chat & Boy/Girl polls", "Personalized guest invitations", "30-day replay window", "Custom overlay"], btnCls: "pbtn-gradient", btnLabel: "Choose Premium",        planId: "premium", popular: true  },
+              { cardCls: "pnew-basic",   iconCls: "pic-pink",   icon: "🎈", nameCls: "pn-pink", name: "Free Plan", desc: "Everything you need for a simple & fun reveal!",   priceCls: "pp-pink", price: "0",   priceSub: "Free forever",     checkCls: "pnew-check-pink", feats: ["Basic reveal page", "Doctor secure link", "Up to 20 guests", "Email invitations", "7-day replay"], btnCls: "pbtn-pink",     btnLabel: "Start Free",           planId: "basic",    popular: false },
+              { cardCls: "pnew-premium", iconCls: "pic-purple", icon: "👑", nameCls: "pn-blue", name: "Premium", desc: "The most loved plan for unforgettable memories!", priceCls: "pp-blue", price: "1.03", priceSub: "One-time payment", checkCls: "pnew-check-blue", feats: ["Cinematic reveal video — made by us", "Live virtual party room", "Up to 200 guests", "Live chat & Boy/Girl polls", "Personalized guest invitations", "30-day replay window", "Custom overlay"], btnCls: "pbtn-gradient", btnLabel: "Choose Premium",        planId: "premium", popular: true  },
               { cardCls: "pnew-custom",  iconCls: "pic-blue",   icon: "💎", nameCls: "pn-blue", name: "Custom",   desc: "The ultimate experience for big celebrations!",   priceCls: "pp-blue", price: "650", priceSub: "One-time payment", checkCls: "pnew-check-blue", feats: ["Bespoke reveal video story", "Unlimited guests", "Dedicated concierge", "Custom soundtrack", "Live on-call support", "Permanent family archive"],                                              btnCls: "pbtn-blue",     btnLabel: "Create Custom Reveal", planId: "custom",  popular: false },
             ].map((p, i) => (
               <div className={`pnew-card ${p.cardCls}`} key={i}>
@@ -490,7 +532,18 @@ function LandingPage() {
                 <ul className="pnew-feats">
                   {p.feats.map((f, j) => <li key={j}><span className={p.checkCls}>✓</span>{f}</li>)}
                 </ul>
-                <button className={`pnew-btn ${p.btnCls}`} onClick={() => routeToReveal(p.planId)}>{p.btnLabel}</button>
+                <button
+                  className={`pnew-btn ${p.btnCls}`}
+                  onClick={() => handlePricingPlanClick({
+                    id: p.planId,
+                    name: p.name,
+                    price: Number(p.price),
+                    priceLabel: p.price === "0" ? "Free" : `$${p.price}`,
+                    color: p.popular ? "#82B8E8" : "#E8449A",
+                  })}
+                >
+                  {p.btnLabel}
+                </button>
               </div>
             ))}
           </div>
@@ -556,7 +609,7 @@ function LandingPage() {
           </h2>
           <p className="cta-new-sub">Book your reveal today and your doctor link will be ready within the hour.</p>
           <p className="cta-new-sub2">Grandma in Florida and your best friend in New York will both be there.</p>
-          <button type="button" className="cta-new-btn" onClick={() => routeToReveal()}>🎉 Start Your Reveal</button>
+          <button type="button" className="cta-new-btn" onClick={() => routeToReveal()} disabled={checkingEntitlement}>{checkingEntitlement ? "Checking..." : "🎉 Start Your Reveal"}</button>
           <div className="cta-new-box">
             <p>Virtual Baby Reveal is designed to make your special moment joyful, seamless, and completely stress-free.</p>
             <p><em>Because moments like these deserve to be felt together.</em></p>
@@ -842,8 +895,8 @@ footer{background:#111827;padding:4rem 2rem 2rem;}
 /* ── Navbar Redesign ── */
 nav#main-nav{position:fixed;top:1rem;left:50%;transform:translateX(-50%);width:calc(100% - 3rem);max-width:880px;height:62px;display:flex;align-items:center;justify-content:space-between;padding:0 1.4rem;background:rgba(255,255,255,0.96);backdrop-filter:blur(20px);border-radius:50px;box-shadow:0 4px 20px rgba(0,0,0,0.1);border:1px solid rgba(255,255,255,0.9);transition:box-shadow 0.3s;}
 nav#main-nav.solid{box-shadow:0 6px 28px rgba(0,0,0,0.14);}
-.nav-logo{display:flex;align-items:center;gap:0.35rem;text-decoration:none;}
-.nav-logo-icons{font-size:1.25rem;line-height:1;}
+.nav-logo{display:flex;align-items:center;gap:0.4rem;text-decoration:none;}
+.nav-logo-img{width:56px;height:44px;object-fit:contain;display:block;}
 .nav-logo-text{font-family:'Nunito',sans-serif;font-size:1.5rem;font-weight:900;color:#E8449A;line-height:1;}
 .nav-links{display:flex;gap:0.2rem;align-items:center;}
 .nav-link{font-family:'Plus Jakarta Sans',sans-serif;font-size:0.87rem;font-weight:500;text-decoration:none;color:#555;padding:0.38rem 1rem;border-radius:50px;transition:color 0.2s,background 0.2s;background:none;border:none;cursor:pointer;}
