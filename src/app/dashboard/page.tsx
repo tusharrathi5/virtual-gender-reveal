@@ -1,6 +1,6 @@
 "use client";
 
-import { Suspense, useCallback, useEffect, useMemo, useState } from "react";
+import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { collection, getDocs, orderBy, query, where } from "firebase/firestore";
 import { useAuth } from "@/lib/AuthContext";
@@ -489,6 +489,7 @@ function DashboardContent() {
   const [revealsLoading, setRevealsLoading] = useState(true);
   const [toast, setToast] = useState<{ message: string; type: ToastType } | null>(null);
   const [activatingPlan, setActivatingPlan] = useState<string | null>(null);
+  const [pendingPaymentPlan, setPendingPaymentPlan] = useState<PlanDefinition | null>(null);
   const [loggingOut, setLoggingOut] = useState(false);
   const [guestDraftRows, setGuestDraftRows] = useState<EditableGuestRow[]>([
     blankGuestRow(),
@@ -496,12 +497,14 @@ function DashboardContent() {
   const [guestImportSummary, setGuestImportSummary] = useState<ImportSummary | null>(null);
   const [sendingInvites, setSendingInvites] = useState(false);
   const [openingPartyId, setOpeningPartyId] = useState<string | null>(null);
+  const [startingReveal, setStartingReveal] = useState(false);
   const [guestRows, setGuestRows] = useState<GuestRow[]>([]);
   const [revealUnlocked, setRevealUnlocked] = useState(false);
   const [editingRevealId, setEditingRevealId] = useState<string | null>(null);
   const [editForm, setEditForm] = useState<RevealEditForm | null>(null);
   const [editPhotoFiles, setEditPhotoFiles] = useState<File[]>([]);
   const [savingReveal, setSavingReveal] = useState(false);
+  const handledDashboardQueryRef = useRef<string | null>(null);
 
   const latestReveal = reveals[0];
 
@@ -559,28 +562,78 @@ function DashboardContent() {
   useEffect(() => {
     const payment = searchParams.get("payment");
     const plan = searchParams.get("plan");
+    const sessionId = searchParams.get("session_id");
+    const checkoutPlan = searchParams.get("checkout");
+    const confirmedCheckout = searchParams.get("confirmed") === "1";
     const created = searchParams.get("created");
+    const noEntitlement = searchParams.get("noEntitlement") === "1";
+    const actionKey = searchParams.toString();
+    const hasDashboardAction = Boolean(payment || checkoutPlan || created || noEntitlement);
+
+    if (!hasDashboardAction) return;
+    if ((payment === "success" || checkoutPlan) && !user) return;
+    if (handledDashboardQueryRef.current === actionKey) return;
+    handledDashboardQueryRef.current = actionKey;
+
     if (payment === "success") {
-      setToast({
-        message: plan
-          ? `Payment successful. ${plan.charAt(0).toUpperCase() + plan.slice(1)} plan activated.`
-          : "Payment successful.",
-        type: "success",
-      });
+      router.replace("/dashboard");
+      setToast({ message: "Payment completed. Confirming your plan now...", type: "info" });
+
+      void (async () => {
+        try {
+          if (!sessionId || !user) {
+            setToast({ message: "Payment could not be confirmed. Please try checkout again.", type: "error" });
+            return;
+          }
+
+          const token = await user.getIdToken();
+          const res = await fetch(`/api/checkout-status?session_id=${encodeURIComponent(sessionId)}`, {
+            headers: { Authorization: `Bearer ${token}` },
+          });
+          const data = await res.json().catch(() => ({}));
+          if (!res.ok) throw new Error(data?.error || "Unable to confirm payment.");
+          if (data.paymentStatus !== "paid") {
+            setToast({ message: "Payment was not completed. Please try again.", type: "error" });
+            return;
+          }
+
+          await refreshFirestoreUser();
+          setToast({
+            message: plan
+              ? `Payment successful. ${plan.charAt(0).toUpperCase() + plan.slice(1)} plan activated.`
+              : "Payment successful. Your plan is active.",
+            type: "success",
+          });
+          router.push("/new-reveal");
+        } catch (err) {
+          setToast({
+            message: err instanceof Error ? err.message : "Payment completed, but confirmation failed. Please refresh your dashboard.",
+            type: "error",
+          });
+        }
+      })();
+    } else if (payment === "cancelled") {
+      setToast({ message: "Payment was cancelled or declined. Choose a plan to continue.", type: "info" });
       void refreshFirestoreUser();
       router.replace("/dashboard");
-    } else if (payment === "cancelled") {
-      setToast({ message: "Payment cancelled. You can try again anytime.", type: "info" });
+    } else if (checkoutPlan) {
+      const selectedPlan = PLANS.find((p) => p.id === checkoutPlan);
       router.replace("/dashboard");
+      if (selectedPlan) {
+        if (confirmedCheckout || selectedPlan.priceCents === 0) void handleSelectPlan(selectedPlan);
+        else requestPlanCheckout(selectedPlan);
+      }
     } else if (created) {
       setToast({ message: "Your reveal was created successfully.", type: "success" });
       void refreshFirestoreUser();
       router.replace("/dashboard");
-    } else if (searchParams.get("noEntitlement") === "1") {
+    } else if (noEntitlement) {
       setToast({ message: "Please choose a plan before creating a reveal.", type: "info" });
       router.replace("/dashboard");
     }
-  }, [searchParams, router, refreshFirestoreUser]);
+  // handleSelectPlan is intentionally omitted so dashboard checkout links only run once per URL change.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams, router, refreshFirestoreUser, user]);
 
   useEffect(() => {
     void loadReveals();
@@ -730,9 +783,36 @@ function DashboardContent() {
     }
   }
 
+
+  function requestPlanCheckout(plan: PlanDefinition) {
+    if (activatingPlan) return;
+    if (plan.priceCents > 0) {
+      setPendingPaymentPlan(plan);
+      return;
+    }
+    void handleSelectPlan(plan);
+  }
+
+  function cancelPaymentPrompt() {
+    setPendingPaymentPlan(null);
+    setToast({ message: "Payment cancelled. You can choose another plan anytime.", type: "info" });
+    router.replace("/dashboard");
+  }
+
+  function proceedToPaymentGateway() {
+    if (!pendingPaymentPlan) return;
+    const plan = pendingPaymentPlan;
+    setPendingPaymentPlan(null);
+    void handleSelectPlan(plan);
+  }
+
   async function handleSelectPlan(plan: PlanDefinition) {
     if (activatingPlan) return;
     setActivatingPlan(plan.id);
+    setToast({
+      message: plan.priceCents > 0 ? "Taking you to the payment gateway..." : "Activating your free plan...",
+      type: "info",
+    });
     try {
       const token = await user!.getIdToken();
       const res = await fetch("/api/create-checkout", {
@@ -749,12 +829,13 @@ function DashboardContent() {
         return;
       }
       if (data.url) {
+        setToast({ message: "Taking you to the payment gateway...", type: "info" });
         window.location.href = data.url;
         return;
       }
       setToast({ message: data.message || `${plan.name} plan activated.`, type: "success" });
       await refreshFirestoreUser();
-      if (plan.id === "basic") setTimeout(() => router.push("/new-reveal"), 800);
+      setTimeout(() => router.push("/new-reveal"), 800);
     } catch {
       setToast({ message: "Something went wrong. Please try again.", type: "error" });
     } finally {
@@ -846,6 +927,29 @@ function DashboardContent() {
     }
   }
 
+
+  async function startNewReveal() {
+    if (!user || startingReveal) return;
+    setStartingReveal(true);
+    try {
+      const token = await user.getIdToken();
+      const res = await fetch("/api/entitlement/can-create", {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok || !data?.canCreate) {
+        setToast({ message: "Please complete payment before starting your reveal.", type: "info" });
+        await refreshFirestoreUser();
+        return;
+      }
+      router.push("/new-reveal");
+    } catch {
+      setToast({ message: "We could not confirm your payment status. Please try again.", type: "error" });
+    } finally {
+      setStartingReveal(false);
+    }
+  }
+
   async function joinParty(enquiryId: string) {
     if (!user) return;
     setOpeningPartyId(enquiryId);
@@ -870,6 +974,13 @@ function DashboardContent() {
     <>
       <style>{CSS}</style>
       {toast && <Toast message={toast.message} type={toast.type} onClose={() => setToast(null)} />}
+      {pendingPaymentPlan && (
+        <PaymentGatewayPrompt
+          plan={pendingPaymentPlan}
+          onProceed={proceedToPaymentGateway}
+          onCancel={cancelPaymentPrompt}
+        />
+      )}
 
       <div className="dash-root">
         <header className="dash-header">
@@ -935,8 +1046,8 @@ function DashboardContent() {
                     Start a new reveal, send a secure revealer link, and bring guests into the party room.
                   </p>
                 </div>
-                <button className="btn-primary-lg" onClick={() => router.push("/new-reveal")}>
-                  Start New Reveal
+                <button className="btn-primary-lg" onClick={startNewReveal} disabled={startingReveal}>
+                  {startingReveal ? "Checking payment..." : "Start New Reveal"}
                 </button>
               </div>
             </section>
@@ -1334,7 +1445,7 @@ function DashboardContent() {
               title="Choose Your Plan"
               plans={PLANS}
               activatingPlan={activatingPlan}
-              onSelect={handleSelectPlan}
+              onSelect={requestPlanCheckout}
             />
           )}
 
@@ -1343,7 +1454,7 @@ function DashboardContent() {
               title="Unlock More"
               plans={PLANS.filter((p) => p.id !== "basic")}
               activatingPlan={activatingPlan}
-              onSelect={handleSelectPlan}
+              onSelect={requestPlanCheckout}
               upgrade
             />
           )}
@@ -1353,12 +1464,44 @@ function DashboardContent() {
               title="Need Another Reveal?"
               plans={PLANS.filter((p) => p.id !== "basic")}
               activatingPlan={activatingPlan}
-              onSelect={handleSelectPlan}
+              onSelect={requestPlanCheckout}
             />
           )}
         </main>
       </div>
     </>
+  );
+}
+
+function PaymentGatewayPrompt({
+  plan,
+  onProceed,
+  onCancel,
+}: {
+  plan: PlanDefinition;
+  onProceed: () => void;
+  onCancel: () => void;
+}) {
+  return (
+    <div className="payment-prompt-backdrop" role="dialog" aria-modal="true" aria-labelledby="payment-prompt-title">
+      <div className="payment-prompt-card">
+        <p className="section-label">Payment Gateway</p>
+        <h2 id="payment-prompt-title" className="payment-prompt-title">
+          Taking you to payment gateway
+        </h2>
+        <p className="payment-prompt-copy">
+          You selected the {plan.name} plan for {plan.priceLabel}. Proceed to secure Stripe Checkout or cancel to return to the pricing plans.
+        </p>
+        <div className="payment-prompt-actions">
+          <button type="button" className="btn-ghost-sm" onClick={onCancel}>
+            Cancel
+          </button>
+          <button type="button" className="btn-primary-sm" onClick={onProceed}>
+            Proceed
+          </button>
+        </div>
+      </div>
+    </div>
   );
 }
 
@@ -1544,6 +1687,13 @@ button,input,select{font-family:'Plus Jakarta Sans',sans-serif;}
 .plan-btn-primary{background:linear-gradient(135deg,#2e7dd1,#c2527a);color:white;border:none;box-shadow:0 4px 16px rgba(46,125,209,0.22);}
 .plan-btn-primary:hover:not(:disabled){color:white;transform:translateY(-1px);}
 .plan-btn:disabled{opacity:0.5;cursor:not-allowed;}
+.payment-prompt-backdrop{position:fixed;inset:0;z-index:9998;background:rgba(17,24,39,0.58);backdrop-filter:blur(6px);display:flex;align-items:center;justify-content:center;padding:1.5rem;}
+.payment-prompt-card{width:min(440px,100%);background:white;border-radius:12px;border:1px solid rgba(0,0,0,0.08);box-shadow:0 24px 70px rgba(0,0,0,0.24);padding:1.8rem;}
+.payment-prompt-title{font-family:'Playfair Display',serif;font-size:1.8rem;font-weight:300;color:#111827;margin-bottom:0.65rem;}
+.payment-prompt-copy{font-size:0.92rem;color:#4b5563;line-height:1.7;margin-bottom:1.4rem;}
+.payment-prompt-actions{display:flex;align-items:center;justify-content:flex-end;gap:0.75rem;flex-wrap:wrap;}
+.btn-primary-sm{padding:8px 14px;background:#111827;color:white;border:1px solid #111827;border-radius:5px;font-size:0.76rem;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;cursor:pointer;transition:all 0.2s;white-space:nowrap;}
+.btn-primary-sm:hover{background:#1b4f8c;border-color:#1b4f8c;transform:translateY(-1px);}
 .dash-toast{position:fixed;top:20px;right:20px;z-index:9999;background:white;border-left:4px solid #2563eb;border-radius:8px;padding:14px 16px;max-width:390px;display:flex;align-items:flex-start;gap:10px;box-shadow:0 10px 30px rgba(0,0,0,0.12);font-size:14px;animation:slideIn .3s ease-out;}
 .dash-toast span:nth-child(2){color:#111827;line-height:1.5;flex:1;}
 .dash-toast button{background:none;border:none;color:#8a8f98;cursor:pointer;font-size:14px;}
