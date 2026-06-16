@@ -387,6 +387,7 @@ function LandingPage() {
       <nav id="main-nav">
         <a href="/" className="nav-logo" aria-label="Virtual Gender Reveal home">
           <SiteLogo className="nav-logo-img" />
+          <span className="nav-logo-text">VGR</span>
         </a>
         <div className="nav-links">
           <a href="/" className="nav-link nav-link-active">Home</a>
@@ -894,8 +895,9 @@ footer{background:#111827;padding:4rem 2rem 2rem;}
 /* ── Navbar Redesign ── */
 nav#main-nav{position:fixed;top:1rem;left:50%;transform:translateX(-50%);width:calc(100% - 3rem);max-width:880px;height:62px;display:flex;align-items:center;justify-content:space-between;padding:0 1.4rem;background:rgba(255,255,255,0.96);backdrop-filter:blur(20px);border-radius:50px;box-shadow:0 4px 20px rgba(0,0,0,0.1);border:1px solid rgba(255,255,255,0.9);transition:box-shadow 0.3s;}
 nav#main-nav.solid{box-shadow:0 6px 28px rgba(0,0,0,0.14);}
-.nav-logo{display:flex;align-items:center;text-decoration:none;}
-.nav-logo-img{width:84px;height:48px;object-fit:contain;display:block;}
+.nav-logo{display:flex;align-items:center;gap:0.4rem;text-decoration:none;}
+.nav-logo-img{width:56px;height:44px;object-fit:contain;display:block;}
+.nav-logo-text{font-family:'Nunito',sans-serif;font-size:1.5rem;font-weight:900;color:#E8449A;line-height:1;}
 .nav-links{display:flex;gap:0.2rem;align-items:center;}
 .nav-link{font-family:'Plus Jakarta Sans',sans-serif;font-size:0.87rem;font-weight:500;text-decoration:none;color:#555;padding:0.38rem 1rem;border-radius:50px;transition:color 0.2s,background 0.2s;background:none;border:none;cursor:pointer;}
 .nav-link:hover{color:#E8449A;background:rgba(232,68,154,0.07);}
