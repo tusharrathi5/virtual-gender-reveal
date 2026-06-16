@@ -197,8 +197,8 @@ export const PLANS: PlanDefinition[] = [
   {
     id: "premium",
     name: "Premium",
-    priceCents: 19900,
-    priceLabel: "$199",
+    priceCents: 103,
+    priceLabel: "$1.03",
     revealsGranted: 1,
     description: "The most loved plan for unforgettable memories.",
   },

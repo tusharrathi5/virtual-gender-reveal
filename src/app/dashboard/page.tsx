@@ -1534,7 +1534,11 @@ function PlanSection({
             <div className="plan-price">
               <span className="plan-curr">{plan.priceCents === 0 ? "" : "$"}</span>
               <span className="plan-amount">
-                {plan.priceCents === 0 ? "Free" : (plan.priceCents / 100).toFixed(0)}
+                {plan.priceCents === 0
+                  ? "Free"
+                  : plan.priceCents % 100 === 0
+                    ? (plan.priceCents / 100).toFixed(0)
+                    : (plan.priceCents / 100).toFixed(2)}
               </span>
               {plan.priceCents > 0 && <span className="plan-per"> one-time</span>}
             </div>

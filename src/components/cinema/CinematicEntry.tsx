@@ -4,6 +4,23 @@ import { useRouter } from "next/navigation";
 import { useAuth } from "@/lib/AuthContext";
 
 const SCENE_DURATIONS = [3800, 3200, 3200, 4000, 4500, 0];
+const SITE_LOGO_SRC = "/Logo%201.png";
+const FALLBACK_LOGO_SRC = "/Favicon-VGR.png";
+
+function SiteLogo({ className }: { className: string }) {
+  return (
+    <img
+      src={SITE_LOGO_SRC}
+      alt="Virtual Gender Reveal logo"
+      className={className}
+      onError={(event) => {
+        if (event.currentTarget.src.endsWith(FALLBACK_LOGO_SRC)) return;
+        event.currentTarget.src = FALLBACK_LOGO_SRC;
+      }}
+    />
+  );
+}
+
 const INTRO_KEY = "vgr_intro_seen";
 const INTRO_TTL = 24 * 60 * 60 * 1000; // 24 hours in ms
 
@@ -368,9 +385,8 @@ function LandingPage() {
       {confirmPlan && <ConfirmDialog plan={confirmPlan} onConfirm={handleConfirm} onCancel={() => setConfirmPlan(null)} />}
 
       <nav id="main-nav">
-        <a href="/" className="nav-logo">
-          <span className="nav-logo-icons">💙🩷</span>
-          <span className="nav-logo-text">VGR</span>
+        <a href="/" className="nav-logo" aria-label="Virtual Gender Reveal home">
+          <SiteLogo className="nav-logo-img" />
         </a>
         <div className="nav-links">
           <a href="/" className="nav-link nav-link-active">Home</a>
@@ -497,7 +513,7 @@ function LandingPage() {
           <div className="pricing-grid fade-up">
             {[
               { cardCls: "pnew-basic",   iconCls: "pic-pink",   icon: "🎈", nameCls: "pn-pink", name: "Free Plan", desc: "Everything you need for a simple & fun reveal!",   priceCls: "pp-pink", price: "0",   priceSub: "Free forever",     checkCls: "pnew-check-pink", feats: ["Basic reveal page", "Doctor secure link", "Up to 20 guests", "Email invitations", "7-day replay"], btnCls: "pbtn-pink",     btnLabel: "Start Free",           planId: "basic",    popular: false },
-              { cardCls: "pnew-premium", iconCls: "pic-purple", icon: "👑", nameCls: "pn-blue", name: "Premium", desc: "The most loved plan for unforgettable memories!", priceCls: "pp-blue", price: "199", priceSub: "One-time payment", checkCls: "pnew-check-blue", feats: ["Cinematic reveal video — made by us", "Live virtual party room", "Up to 200 guests", "Live chat & Boy/Girl polls", "Personalized guest invitations", "30-day replay window", "Custom overlay"], btnCls: "pbtn-gradient", btnLabel: "Choose Premium",        planId: "premium", popular: true  },
+              { cardCls: "pnew-premium", iconCls: "pic-purple", icon: "👑", nameCls: "pn-blue", name: "Premium", desc: "The most loved plan for unforgettable memories!", priceCls: "pp-blue", price: "1.03", priceSub: "One-time payment", checkCls: "pnew-check-blue", feats: ["Cinematic reveal video — made by us", "Live virtual party room", "Up to 200 guests", "Live chat & Boy/Girl polls", "Personalized guest invitations", "30-day replay window", "Custom overlay"], btnCls: "pbtn-gradient", btnLabel: "Choose Premium",        planId: "premium", popular: true  },
               { cardCls: "pnew-custom",  iconCls: "pic-blue",   icon: "💎", nameCls: "pn-blue", name: "Custom",   desc: "The ultimate experience for big celebrations!",   priceCls: "pp-blue", price: "650", priceSub: "One-time payment", checkCls: "pnew-check-blue", feats: ["Bespoke reveal video story", "Unlimited guests", "Dedicated concierge", "Custom soundtrack", "Live on-call support", "Permanent family archive"],                                              btnCls: "pbtn-blue",     btnLabel: "Create Custom Reveal", planId: "custom",  popular: false },
             ].map((p, i) => (
               <div className={`pnew-card ${p.cardCls}`} key={i}>
@@ -878,9 +894,8 @@ footer{background:#111827;padding:4rem 2rem 2rem;}
 /* ── Navbar Redesign ── */
 nav#main-nav{position:fixed;top:1rem;left:50%;transform:translateX(-50%);width:calc(100% - 3rem);max-width:880px;height:62px;display:flex;align-items:center;justify-content:space-between;padding:0 1.4rem;background:rgba(255,255,255,0.96);backdrop-filter:blur(20px);border-radius:50px;box-shadow:0 4px 20px rgba(0,0,0,0.1);border:1px solid rgba(255,255,255,0.9);transition:box-shadow 0.3s;}
 nav#main-nav.solid{box-shadow:0 6px 28px rgba(0,0,0,0.14);}
-.nav-logo{display:flex;align-items:center;gap:0.35rem;text-decoration:none;}
-.nav-logo-icons{font-size:1.25rem;line-height:1;}
-.nav-logo-text{font-family:'Nunito',sans-serif;font-size:1.5rem;font-weight:900;color:#E8449A;line-height:1;}
+.nav-logo{display:flex;align-items:center;text-decoration:none;}
+.nav-logo-img{width:84px;height:48px;object-fit:contain;display:block;}
 .nav-links{display:flex;gap:0.2rem;align-items:center;}
 .nav-link{font-family:'Plus Jakarta Sans',sans-serif;font-size:0.87rem;font-weight:500;text-decoration:none;color:#555;padding:0.38rem 1rem;border-radius:50px;transition:color 0.2s,background 0.2s;background:none;border:none;cursor:pointer;}
 .nav-link:hover{color:#E8449A;background:rgba(232,68,154,0.07);}
