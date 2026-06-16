@@ -8,7 +8,7 @@ import type { Purchase, PurchaseStatus } from "@/lib/userService";
 
 export interface ActivatePlanParams {
   uid: string;
-  planId: "basic" | "premium";
+  planId: "basic" | "premium" | "custom";
   stripeSessionId: string | null;       // null for dev-mode / free
   stripePaymentIntentId: string | null; // null for dev-mode / free
   amountPaidCents: number;              // 0 for free
