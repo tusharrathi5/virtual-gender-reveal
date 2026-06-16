@@ -1,6 +1,6 @@
 "use client";
 
-import { Suspense, useCallback, useEffect, useMemo, useState } from "react";
+import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { collection, getDocs, orderBy, query, where } from "firebase/firestore";
 import { useAuth } from "@/lib/AuthContext";
@@ -504,6 +504,7 @@ function DashboardContent() {
   const [editForm, setEditForm] = useState<RevealEditForm | null>(null);
   const [editPhotoFiles, setEditPhotoFiles] = useState<File[]>([]);
   const [savingReveal, setSavingReveal] = useState(false);
+  const handledDashboardQueryRef = useRef<string | null>(null);
 
   const latestReveal = reveals[0];
 
@@ -565,6 +566,14 @@ function DashboardContent() {
     const checkoutPlan = searchParams.get("checkout");
     const confirmedCheckout = searchParams.get("confirmed") === "1";
     const created = searchParams.get("created");
+    const noEntitlement = searchParams.get("noEntitlement") === "1";
+    const actionKey = searchParams.toString();
+    const hasDashboardAction = Boolean(payment || checkoutPlan || created || noEntitlement);
+
+    if (!hasDashboardAction) return;
+    if ((payment === "success" || checkoutPlan) && !user) return;
+    if (handledDashboardQueryRef.current === actionKey) return;
+    handledDashboardQueryRef.current = actionKey;
 
     if (payment === "success") {
       router.replace("/dashboard");
@@ -618,7 +627,7 @@ function DashboardContent() {
       setToast({ message: "Your reveal was created successfully.", type: "success" });
       void refreshFirestoreUser();
       router.replace("/dashboard");
-    } else if (searchParams.get("noEntitlement") === "1") {
+    } else if (noEntitlement) {
       setToast({ message: "Please choose a plan before creating a reveal.", type: "info" });
       router.replace("/dashboard");
     }
