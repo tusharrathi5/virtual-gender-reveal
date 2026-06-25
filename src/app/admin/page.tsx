@@ -12,8 +12,15 @@ import {
 import { getAuth, signOut } from "firebase/auth";
 import { getFirebaseDb } from "@/lib/firebase";
 import { useAuth } from "@/lib/AuthContext";
+import {
+  derivePaymentStatusFromPurchases,
+  getAdminVideoLabel,
+  getAdminVideoStatus,
+  getPaymentStatusLabel,
+  normalizePaymentStatus,
+} from "@/lib/statusLabels";
 
-// ─── Types ───────────────────────────────────────────────────────────────────
+// â”€â”€â”€ Types â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 interface EnquiryData {
   id: string;
@@ -35,7 +42,9 @@ interface EnquiryData {
   guestCount: number;
   photos: string[];
   videoUrl: string | null;
-  videoStatus: "uploaded" | "pending" | "none";
+  streamUid: string | null;
+  paymentStatus: "pending" | "completed";
+  videoStatus: "uploaded" | "not_uploaded";
   stages: {
     paymentReceived: Date | null;
     revealerLinkSent: Date | null;
@@ -63,6 +72,7 @@ interface UserRow {
   revealsCreated: number;
   totalSpentCents: number;
   totalPurchases: number;
+  paymentStatus: "pending" | "completed";
   purchases: Array<Record<string, unknown>>;
   createdAt: Date | null;
   lastLogin: Date | null;
@@ -84,6 +94,7 @@ type SortKey =
   | "name"
   | "email"
   | "plan"
+  | "payment"
   | "gender"
   | "revealDate"
   | "type"
@@ -115,6 +126,7 @@ const DEFAULT_SORT_DIR: Record<SortKey, SortDir> = {
   name: "asc",
   email: "asc",
   plan: "asc",
+  payment: "asc",
   gender: "asc",
   revealDate: "desc",
   type: "asc",
@@ -122,7 +134,7 @@ const DEFAULT_SORT_DIR: Record<SortKey, SortDir> = {
   video: "asc",
 };
 
-// ─── Helpers ─────────────────────────────────────────────────────────────────
+// â”€â”€â”€ Helpers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 function tsToDate(v: unknown): Date | null {
   if (!v) return null;
@@ -143,7 +155,7 @@ function tsToDate(v: unknown): Date | null {
 }
 
 function fmtDate(d: Date | null): string {
-  if (!d) return "—";
+  if (!d) return "â€”";
   return d.toLocaleDateString("en-US", {
     year: "numeric",
     month: "short",
@@ -152,7 +164,7 @@ function fmtDate(d: Date | null): string {
 }
 
 function fmtDateTime(d: Date | null): string {
-  if (!d) return "—";
+  if (!d) return "â€”";
   return d.toLocaleString("en-US", {
     year: "numeric",
     month: "short",
@@ -198,11 +210,8 @@ function avatarTextColor(seed: string): string {
   return palette[Math.abs(hash) % palette.length];
 }
 
-function deriveVideoStatus(e: EnquiryData | null): "uploaded" | "pending" | "none" {
-  if (!e) return "none";
-  if (e.videoUrl) return "uploaded";
-  if (e.stages.paymentReceived) return "pending";
-  return "none";
+function deriveVideoStatus(e: EnquiryData | null): "uploaded" | "not_uploaded" {
+  return getAdminVideoStatus(e);
 }
 
 function deriveOverallStatus(e: EnquiryData | null): {
@@ -210,13 +219,13 @@ function deriveOverallStatus(e: EnquiryData | null): {
   tone: "green" | "yellow" | "blue" | "gray";
 } {
   if (!e) return { label: "No reveal", tone: "gray" };
+  if (e.paymentStatus !== "completed") return { label: "Payment Pending", tone: "gray" };
   if (e.stages.eventCompleted) return { label: "Completed", tone: "green" };
   if (e.videoUrl || e.stages.videoGenerated)
-    return { label: "Video Completed", tone: "green" };
+    return { label: "Video Uploaded", tone: "green" };
   if (e.mode === "reveal" && e.genderStatus !== "submitted")
     return { label: "Reveal Pending", tone: "blue" };
-  if (e.stages.paymentReceived) return { label: "Video Pending", tone: "yellow" };
-  return { label: "Pending Payment", tone: "gray" };
+  return { label: "Awaiting Video Upload", tone: "yellow" };
 }
 
 function daysUntil(target: Date): number {
@@ -224,7 +233,7 @@ function daysUntil(target: Date): number {
   return Math.ceil(ms / (24 * 60 * 60 * 1000));
 }
 
-// ─── Component ───────────────────────────────────────────────────────────────
+// â”€â”€â”€ Component â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 export default function AdminPage() {
   const router = useRouter();
@@ -236,6 +245,7 @@ export default function AdminPage() {
   const [loadingData, setLoadingData] = useState(true);
   const [selectedUser, setSelectedUser] = useState<UserRow | null>(null);
   const [showVideoModal, setShowVideoModal] = useState(false);
+  const [videoModalMode, setVideoModalMode] = useState<"upload" | "delete">("upload");
   const [actionInProgress, setActionInProgress] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
 
@@ -279,7 +289,7 @@ export default function AdminPage() {
         const enq: EnquiryData = {
           id: d.id,
           userId: (data.userId as string) ?? "",
-          parentName: (data.parentName as string) ?? "—",
+          parentName: (data.parentName as string) ?? "â€”",
           mode: (data.mode as "announcement" | "reveal") ?? "reveal",
           plan: (data.plan as string) ?? null,
           status: (data.status as string) ?? "pending",
@@ -294,10 +304,15 @@ export default function AdminPage() {
           revealerName: (data.revealerName as string) ?? null,
           revealAt: tsToDate(data.revealAt),
           revealTimezone: (data.revealTimezone as string) ?? "UTC",
+          dueDate: tsToDate(data.dueDate)?.toISOString() ?? null,
           guestCount: (data.guestCount as number) ?? 0,
           photos: (data.photos as string[]) ?? [],
           videoUrl: (data.videoUrl as string) ?? null,
-          videoStatus: "none",
+          streamUid: (data.streamUid as string) ?? null,
+          paymentStatus: normalizePaymentStatus(
+            data.paymentStatus ?? (stages.paymentReceived ? "completed" : "pending")
+          ),
+          videoStatus: "not_uploaded",
           stages: {
             paymentReceived: tsToDate(stages.paymentReceived),
             revealerLinkSent: tsToDate(stages.revealerLinkSent),
@@ -338,6 +353,10 @@ export default function AdminPage() {
           (sum, p) => sum + ((p.amountPaid as number) ?? 0),
           0
         );
+        const latestEnquiry = enquiryByUser.get(d.id) ?? null;
+        const paymentStatus = normalizePaymentStatus(
+          latestEnquiry?.paymentStatus ?? derivePaymentStatusFromPurchases(purchases, latestEnquiry?.id)
+        );
         return {
           uid: d.id,
           email: (data.email as string) ?? "",
@@ -353,10 +372,11 @@ export default function AdminPage() {
           revealsCreated: (data.revealsCreated as number) ?? 0,
           totalSpentCents,
           totalPurchases: completed.length,
+          paymentStatus,
           purchases,
           createdAt: tsToDate(data.createdAt),
           lastLogin: tsToDate(data.lastLogin),
-          latestEnquiry: enquiryByUser.get(d.id) ?? null,
+          latestEnquiry,
         };
       });
       setUsers(usersList);
@@ -502,6 +522,7 @@ export default function AdminPage() {
         case "name": av = a.fullName.toLowerCase(); bv = b.fullName.toLowerCase(); break;
         case "email": av = a.email.toLowerCase(); bv = b.email.toLowerCase(); break;
         case "plan": av = a.activePlan; bv = b.activePlan; break;
+        case "payment": av = getPaymentStatusLabel(a.paymentStatus); bv = getPaymentStatusLabel(b.paymentStatus); break;
         case "revealDate":
           av = a.latestEnquiry?.revealAt?.getTime() ?? 0;
           bv = b.latestEnquiry?.revealAt?.getTime() ?? 0;
@@ -573,7 +594,7 @@ export default function AdminPage() {
         return /[",\n]/.test(str) ? `"${str.replace(/"/g, '""')}"` : str;
       };
       const rows: string[] = [
-        ["Name","Email","Phone","Plan","Role","Status","Reveals Created","Total Spent (USD)","Reveal ID","Mode","Reveal Date","Baby Gender","Reveal Status","Video Status","Joined"].join(","),
+        ["Name","Email","Phone","Plan","Payment Status","Role","Status","Reveals Created","Total Spent (USD)","Reveal ID","Mode","Reveal Date","Baby Gender","Reveal Status","Video Status","Joined"].join(","),
       ];
       for (const u of sortedUsers) {
         const e = u.latestEnquiry;
@@ -589,7 +610,7 @@ export default function AdminPage() {
         }
         rows.push([
           csvField(u.fullName), csvField(u.email), csvField(u.phone), csvField(u.activePlan),
-          csvField(u.role),
+          csvField(getPaymentStatusLabel(u.paymentStatus)),           csvField(u.role),
           csvField(u.isDeleted || u.status === "disabled" ? "Disabled" : "Active"),
           csvField(u.revealsCreated), csvField((u.totalSpentCents / 100).toFixed(2)),
           csvField(e?.id ?? ""), csvField(e?.mode ?? ""),
@@ -616,7 +637,7 @@ export default function AdminPage() {
   if (authLoading || !firestoreUser) {
     return (
       <div className="vgr-loading">
-        <div className="vgr-loading-text">Loading…</div>
+        <div className="vgr-loading-text">Loadingâ€¦</div>
         <style jsx>{`
           .vgr-loading {
             min-height: 100vh;
@@ -697,7 +718,7 @@ export default function AdminPage() {
               title="Sign out"
               aria-label="Sign out"
             >
-              ⎋
+              âŽ‹
             </button>
           </div>
         </div>
@@ -721,7 +742,7 @@ export default function AdminPage() {
               onClick={handleExportCsv}
               disabled={actionInProgress || sortedUsers.length === 0}
             >
-              <span className="vgr-btn-icon">↓</span> Export CSV
+              <span className="vgr-btn-icon">â†“</span> Export CSV
             </button>
           ) : (
             <button className="vgr-btn vgr-btn-ghost" onClick={refresh} disabled={loadingData}>
@@ -739,11 +760,11 @@ export default function AdminPage() {
               <input
                 className="vgr-input"
                 type="text"
-                placeholder="Search by name, email, or phone…"
+                placeholder="Search by name, email, or phoneâ€¦"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
               />
-              <span className="vgr-search-icon">⌕</span>
+              <span className="vgr-search-icon">âŒ•</span>
             </div>
           </div>
           <div className="vgr-filter-group">
@@ -760,9 +781,8 @@ export default function AdminPage() {
             <label className="vgr-filter-label">Video Status</label>
             <select className="vgr-select" value={videoStatusFilter} onChange={(e) => setVideoStatusFilter(e.target.value)}>
               <option value="all">All</option>
-              <option value="uploaded">Uploaded</option>
-              <option value="pending">Pending</option>
-              <option value="none">Not started</option>
+              <option value="uploaded">Video Uploaded</option>
+              <option value="not_uploaded">Video Not Uploaded</option>
             </select>
           </div>
           <div className="vgr-filter-group">
@@ -770,10 +790,10 @@ export default function AdminPage() {
             <select className="vgr-select" value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)}>
               <option value="all">All</option>
               <option value="completed">Completed</option>
-              <option value="video-completed">Video Completed</option>
-              <option value="video-pending">Video Pending</option>
+              <option value="video-uploaded">Video Uploaded</option>
+              <option value="awaiting-video-upload">Awaiting Video Upload</option>
               <option value="reveal-pending">Reveal Pending</option>
-              <option value="pending-payment">Pending Payment</option>
+              <option value="payment-pending">Payment Pending</option>
             </select>
           </div>
           <div className="vgr-filter-group">
@@ -788,21 +808,21 @@ export default function AdminPage() {
             <label className="vgr-filter-label">Reveal Date</label>
             <div className="vgr-date-range">
               <input className="vgr-input vgr-input-date" type="date" value={dateFrom} onChange={(e) => setDateFrom(e.target.value)} />
-              <span className="vgr-date-sep">→</span>
+              <span className="vgr-date-sep">â†’</span>
               <input className="vgr-input vgr-input-date" type="date" value={dateTo} onChange={(e) => setDateTo(e.target.value)} />
             </div>
           </div>
           <div className="vgr-filter-group vgr-filter-group-reset">
             <label className="vgr-filter-label">&nbsp;</label>
             <button className="vgr-btn vgr-btn-reset" onClick={resetFilters}>
-              <span className="vgr-btn-icon">↺</span> Reset Filters
+              <span className="vgr-btn-icon">â†º</span> Reset Filters
             </button>
           </div>
         </section>
 
         <div className="vgr-total-row">
           <div className="vgr-total">
-            <span className="vgr-total-icon">▦</span>
+            <span className="vgr-total-icon">â–¦</span>
             <span>
               Total Users: <strong>{filteredUsers.length}</strong>
               {filteredUsers.length !== users.length && (
@@ -811,13 +831,13 @@ export default function AdminPage() {
             </span>
           </div>
           <button className="vgr-btn vgr-btn-ghost" onClick={refresh} disabled={loadingData}>
-            {loadingData ? "Loading…" : "↻ Refresh"}
+            {loadingData ? "Loadingâ€¦" : "â†» Refresh"}
           </button>
         </div>
 
         <section className="vgr-table-card">
           {loadingData ? (
-            <div className="vgr-table-loading">Loading users…</div>
+            <div className="vgr-table-loading">Loading usersâ€¦</div>
           ) : sortedUsers.length === 0 ? (
             <div className="vgr-table-empty">
               No users match your filters. <button className="vgr-link" onClick={resetFilters}>Reset filters</button>
@@ -832,6 +852,7 @@ export default function AdminPage() {
                       <SortHeader label="Email" sortKey="email" currentKey={sortKey} currentDir={sortDir} onClick={toggleSort} />
                       <SortHeader label="Joined" sortKey="createdAt" currentKey={sortKey} currentDir={sortDir} onClick={toggleSort} />
                       <SortHeader label="Plan" sortKey="plan" currentKey={sortKey} currentDir={sortDir} onClick={toggleSort} />
+                      <SortHeader label="Payment" sortKey="payment" currentKey={sortKey} currentDir={sortDir} onClick={toggleSort} />
                       <SortHeader label="Baby Gender" sortKey="gender" currentKey={sortKey} currentDir={sortDir} onClick={toggleSort} />
                       <SortHeader label="Reveal Date" sortKey="revealDate" currentKey={sortKey} currentDir={sortDir} onClick={toggleSort} />
                       <SortHeader label="Type" sortKey="type" currentKey={sortKey} currentDir={sortDir} onClick={toggleSort} />
@@ -847,7 +868,8 @@ export default function AdminPage() {
                         key={u.uid}
                         user={u}
                         onSelect={() => setSelectedUser(u)}
-                        onUploadClick={() => setShowVideoModal(true)}
+                        onUploadClick={() => { setVideoModalMode("upload"); setShowVideoModal(true); }}
+          onDeleteClick={() => { setVideoModalMode("delete"); setShowVideoModal(true); }}
                         getIdToken={async () => (user ? await user.getIdToken() : "")}
                       />
                     ))}
@@ -882,13 +904,15 @@ export default function AdminPage() {
           actionInProgress={actionInProgress}
           isSelf={selectedUser.uid === user?.uid}
           getIdToken={async () => (user ? await user.getIdToken() : "")}
-          onUploadClick={() => setShowVideoModal(true)}
+          onUploadClick={() => { setVideoModalMode("upload"); setShowVideoModal(true); }}
+          onDeleteClick={() => { setVideoModalMode("delete"); setShowVideoModal(true); }}
         />
       )}
 
       {showVideoModal && selectedUser?.latestEnquiry && user && (
         <VideoUploadModal
           enquiryId={selectedUser.latestEnquiry.id}
+          mode={videoModalMode}
           user={user}
           onClose={() => {
             setShowVideoModal(false);
@@ -1411,9 +1435,9 @@ function DeletedUsersPanel({
           return (
             <div key={d.originalUid} className="vgr-deleted-row">
               <div>
-                <strong>{d.parentName || d.email || "—"}</strong>
+                <strong>{d.parentName || d.email || "â€”"}</strong>
                 <span className="vgr-deleted-meta">
-                  {" · "}{d.email || "no email"}{" · deleted by "}{d.deletedBy}{" · "}{fmtDate(d.deletedAt)}
+                  {" Â· "}{d.email || "no email"}{" Â· deleted by "}{d.deletedBy}{" Â· "}{fmtDate(d.deletedAt)}
                 </span>
               </div>
               <span className={`vgr-pill ${days <= 3 ? "vgr-pill-red" : "vgr-pill-amber"}`}>
@@ -1447,13 +1471,13 @@ function SortHeader({
     <th className="vgr-th" onClick={() => onClick(sortKey)}>
       {label}
       <span className={`vgr-sort-arrow ${active ? "active" : ""}`}>
-        {active ? (currentDir === "asc" ? "▲" : "▼") : "↕"}
+        {active ? (currentDir === "asc" ? "â–²" : "â–¼") : "â†•"}
       </span>
     </th>
   );
 }
 
-// ─── Pagination ─────────────────────────────────────────────────────────────
+// â”€â”€â”€ Pagination â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 function Pagination({
   current,
@@ -1465,16 +1489,16 @@ function Pagination({
   onPage: (n: number) => void;
 }) {
   // Compact page list with ellipsis, max ~7 visible
-  const pages: (number | "…")[] = [];
+  const pages: (number | "â€¦")[] = [];
   if (total <= 7) {
     for (let i = 1; i <= total; i++) pages.push(i);
   } else {
     pages.push(1);
-    if (current > 3) pages.push("…");
+    if (current > 3) pages.push("â€¦");
     const start = Math.max(2, current - 1);
     const end = Math.min(total - 1, current + 1);
     for (let i = start; i <= end; i++) pages.push(i);
-    if (current < total - 2) pages.push("…");
+    if (current < total - 2) pages.push("â€¦");
     pages.push(total);
   }
 
@@ -1486,12 +1510,12 @@ function Pagination({
         onClick={() => onPage(current - 1)}
         aria-label="Previous page"
       >
-        ‹
+        â€¹
       </button>
       {pages.map((p, idx) =>
-        p === "…" ? (
+        p === "â€¦" ? (
           <span key={`e-${idx}`} className="vgr-page-ellipsis">
-            …
+            â€¦
           </span>
         ) : (
           <button
@@ -1509,23 +1533,25 @@ function Pagination({
         onClick={() => onPage(current + 1)}
         aria-label="Next page"
       >
-        ›
+        â€º
       </button>
     </div>
   );
 }
 
-// ─── User table row ─────────────────────────────────────────────────────────
+// â”€â”€â”€ User table row â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 function UserTableRow({
   user,
   onSelect,
   onUploadClick,
+  onDeleteClick,
   getIdToken,
 }: {
   user: UserRow;
   onSelect: () => void;
   onUploadClick: () => void;
+  onDeleteClick: () => void;
   getIdToken: () => Promise<string>;
 }) {
   const [actionsOpen, setActionsOpen] = useState(false);
@@ -1598,20 +1624,25 @@ function UserTableRow({
           >
             {getInitials(user.fullName, user.email)}
           </div>
-          <div className="vgr-name-text">{user.fullName || "—"}</div>
+          <div className="vgr-name-text">{user.fullName || "â€”"}</div>
         </div>
       </td>
-      <td className="vgr-email">{user.email || "—"}</td>
-      <td className="vgr-email">{user.createdAt ? fmtDate(user.createdAt) : "—"}</td>
+      <td className="vgr-email">{user.email || "â€”"}</td>
+      <td className="vgr-email">{user.createdAt ? fmtDate(user.createdAt) : "â€”"}</td>
       <td>
         <span className={`vgr-pill ${planPillClass}`}>
           {planLabel.charAt(0).toUpperCase() + planLabel.slice(1)}
         </span>
       </td>
       <td>
+        <span className={`vgr-pill ${user.paymentStatus === "completed" ? "vgr-pill-green" : "vgr-pill-gray"}`}>
+          {getPaymentStatusLabel(user.paymentStatus)}
+        </span>
+      </td>
+      <td>
         <GenderCell enquiry={e} getIdToken={getIdToken} />
       </td>
-      <td className="vgr-email">{e?.revealAt ? fmtDate(e.revealAt) : "—"}</td>
+      <td className="vgr-email">{e?.revealAt ? fmtDate(e.revealAt) : "â€”"}</td>
       <td>
         {e ? (
           <span
@@ -1622,7 +1653,7 @@ function UserTableRow({
             {e.mode === "reveal" ? "Reveal" : "Announcement"}
           </span>
         ) : (
-          <span className="vgr-pill vgr-pill-gray">—</span>
+          <span className="vgr-pill vgr-pill-gray">â€”</span>
         )}
       </td>
       <td>
@@ -1644,20 +1675,20 @@ function UserTableRow({
         {videoStatus === "uploaded" ? (
           <div className="vgr-video-cell">
             <span className="vgr-video-uploaded">
-              <span style={{ fontSize: 10 }}>✓</span> Uploaded
+              <span style={{ fontSize: 10 }}>OK</span> Video Uploaded
             </span>
             <button
               className="vgr-video-edit"
-              onClick={onUploadClick}
-              title="Replace video"
-              aria-label="Replace video"
+              onClick={onDeleteClick}
+              title="Delete video"
+              aria-label="Delete video"
             >
-              ✎
+              Delete Video
             </button>
           </div>
-        ) : videoStatus === "pending" ? (
+        ) : e ? (
           <button className="vgr-video-upload-btn" onClick={onUploadClick}>
-            <span style={{ fontSize: 12 }}>↑</span> Configure Livestream
+            <span style={{ fontSize: 12 }}>↑</span> Upload Video
           </button>
         ) : (
           <span className="vgr-pill vgr-pill-gray">—</span>
@@ -1673,7 +1704,7 @@ function UserTableRow({
             {openingParty ? "Opening..." : "Join the Party"}
           </button>
         ) : (
-          <span className="vgr-pill vgr-pill-gray">—</span>
+          <span className="vgr-pill vgr-pill-gray">â€”</span>
         )}
       </td>
       <td className="vgr-actions-cell" onClick={(ev) => ev.stopPropagation()}>
@@ -1682,7 +1713,7 @@ function UserTableRow({
           onClick={() => setActionsOpen((o) => !o)}
           aria-label="Actions"
         >
-          ⋯
+          â‹¯
         </button>
         {actionsOpen && (
           <>
@@ -1706,7 +1737,7 @@ function UserTableRow({
                   onSelect();
                 }}
               >
-                Manage user…
+                Manage userâ€¦
               </button>
             </div>
           </>
@@ -1716,7 +1747,7 @@ function UserTableRow({
   );
 }
 
-// ─── Gender cell with click-to-reveal ───────────────────────────────────────
+// â”€â”€â”€ Gender cell with click-to-reveal â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 function GenderCell({
   enquiry,
@@ -1733,8 +1764,8 @@ function GenderCell({
   if (!enquiry) {
     return (
       <span className="vgr-gender-cell">
-        <span className="vgr-gender-icon hidden">—</span>
-        <span style={{ color: "#999" }}>—</span>
+        <span className="vgr-gender-icon hidden">â€”</span>
+        <span style={{ color: "#999" }}>â€”</span>
       </span>
     );
   }
@@ -1779,7 +1810,7 @@ function GenderCell({
   if (loading) {
     return (
       <span className="vgr-gender-cell" style={{ color: "#999" }}>
-        Decrypting…
+        Decryptingâ€¦
       </span>
     );
   }
@@ -1800,7 +1831,7 @@ function GenderCell({
         title="Click to hide"
       >
         <span className={`vgr-gender-icon ${isGirl ? "girl" : "boy"}`}>
-          {isGirl ? "♀" : "♂"}
+          {isGirl ? "â™€" : "â™‚"}
         </span>
         <span
           style={{
@@ -1825,7 +1856,7 @@ function GenderCell({
   );
 }
 
-// ─── User profile overlay (unified — account + plan + reveal + photos + actions) ───
+// â”€â”€â”€ User profile overlay (unified â€” account + plan + reveal + photos + actions) â”€â”€â”€
 
 function UserProfileOverlay({
   user,
@@ -1838,6 +1869,7 @@ function UserProfileOverlay({
   isSelf,
   getIdToken,
   onUploadClick,
+  onDeleteClick,
 }: {
   user: UserRow;
   onClose: () => void;
@@ -1849,6 +1881,7 @@ function UserProfileOverlay({
   isSelf: boolean;
   getIdToken: () => Promise<string>;
   onUploadClick: () => void;
+  onDeleteClick: () => void;
 }) {
   const e = user.latestEnquiry;
   const status = deriveOverallStatus(e);
@@ -1895,7 +1928,7 @@ function UserProfileOverlay({
               </h2>
               <p className="vgr-overlay-sub">
                 {user.email}
-                {user.phone ? ` · ${user.phone}` : ""}
+                {user.phone ? ` Â· ${user.phone}` : ""}
               </p>
               <div style={{ display: "flex", gap: 6, marginTop: 8 }}>
                 {user.role?.toLowerCase() === "admin" && (
@@ -1921,7 +1954,7 @@ function UserProfileOverlay({
             onClick={onClose}
             aria-label="Close"
           >
-            ×
+            Ã—
           </button>
         </div>
 
@@ -1932,7 +1965,7 @@ function UserProfileOverlay({
             <div className="vgr-grid-3">
               <div>
                 <div className="vgr-field-label">Provider</div>
-                <div className="vgr-field-value">{user.provider || "—"}</div>
+                <div className="vgr-field-value">{user.provider || "â€”"}</div>
               </div>
               <div>
                 <div className="vgr-field-label">Email Verified</div>
@@ -1973,6 +2006,10 @@ function UserProfileOverlay({
                 <div className="vgr-field-value">{user.activePlan}</div>
               </div>
               <div>
+                <div className="vgr-field-label">Payment Status</div>
+                <div className="vgr-field-value">{getPaymentStatusLabel(user.paymentStatus)}</div>
+              </div>
+              <div>
                 <div className="vgr-field-label">Total Spent</div>
                 <div className="vgr-field-value">
                   {fmtMoney(user.totalSpentCents)}
@@ -1998,7 +2035,7 @@ function UserProfileOverlay({
             <>
               <div className="vgr-section">
                 <h3>
-                  Latest Reveal —{" "}
+                  Latest Reveal â€”{" "}
                   <span
                     className={`vgr-pill vgr-pill-${
                       status.tone === "green"
@@ -2030,7 +2067,7 @@ function UserProfileOverlay({
                   </div>
                   <div>
                     <div className="vgr-field-label">Plan</div>
-                    <div className="vgr-field-value">{e.plan || "—"}</div>
+                    <div className="vgr-field-value">{e.plan || "â€”"}</div>
                   </div>
                   <div>
                     <div className="vgr-field-label">Reveal Date</div>
@@ -2052,7 +2089,7 @@ function UserProfileOverlay({
                     <div>
                       <div className="vgr-field-label">Due Date</div>
                       <div className="vgr-field-value">
-                        {e.dueDate ? fmtDate(new Date(e.dueDate)) : "—"}
+                        {e.dueDate ? fmtDate(new Date(e.dueDate)) : "â€”"}
                       </div>
                     </div>
                   ) : (
@@ -2060,13 +2097,13 @@ function UserProfileOverlay({
                       <div>
                         <div className="vgr-field-label">Due Date</div>
                         <div className="vgr-field-value">
-                          {e.dueDate ? fmtDate(new Date(e.dueDate)) : "—"}
+                          {e.dueDate ? fmtDate(new Date(e.dueDate)) : "â€”"}
                         </div>
                       </div>
                       <div>
                         <div className="vgr-field-label">Timezone</div>
                         <div className="vgr-field-value">
-                          {e.revealTimezone || "—"}
+                          {e.revealTimezone || "â€”"}
                         </div>
                       </div>
                     </>
@@ -2091,19 +2128,19 @@ function UserProfileOverlay({
                     <div>
                       <div className="vgr-field-label">Email</div>
                       <div className="vgr-field-value">
-                        {e.revealerEmail || "—"}
+                        {e.revealerEmail || "â€”"}
                       </div>
                     </div>
                     <div>
                       <div className="vgr-field-label">Relation</div>
                       <div className="vgr-field-value">
-                        {e.revealerRelation || "—"}
+                        {e.revealerRelation || "â€”"}
                       </div>
                     </div>
                     <div>
                       <div className="vgr-field-label">Name</div>
                       <div className="vgr-field-value">
-                        {e.revealerName || "—"}
+                        {e.revealerName || "â€”"}
                       </div>
                     </div>
                   </div>
@@ -2150,11 +2187,7 @@ function UserProfileOverlay({
                 >
                   <div>
                     <div style={{ fontSize: 14, fontWeight: 600 }}>
-                      {e.videoUrl
-                        ? "Video uploaded"
-                        : e.stages.paymentReceived
-                        ? "Awaiting upload"
-                        : "Not yet uploaded"}
+                      {getAdminVideoLabel(e)}
                     </div>
                     <div
                       style={{
@@ -2164,23 +2197,26 @@ function UserProfileOverlay({
                       }}
                     >
                       {e.videoUrl
-                        ? "Click to replace the current video."
-                        : "Cloudflare livestream integration coming soon."}
+                        ? "Delete the current video before uploading a replacement."
+                        : "Awaiting Video Upload"}
                     </div>
                   </div>
-                  <button
-                    className="vgr-btn vgr-btn-primary"
-                    onClick={onUploadClick}
-                  >
-                    {e.videoUrl ? "Update Livestream" : "Configure Livestream"}
-                  </button>
+                  {e.videoUrl ? (
+                    <button className="vgr-btn vgr-btn-danger" onClick={onDeleteClick}>
+                      Delete Video
+                    </button>
+                  ) : (
+                    <button className="vgr-btn vgr-btn-primary" onClick={onUploadClick}>
+                      Upload Video
+                    </button>
+                  )}
                 </div>
               </div>
 
               {/* Progress (mode-specific) */}
               <div className="vgr-section">
                 <h3>
-                  Progress — {stages.length} stages (
+                  Progress â€” {stages.length} stages (
                   {e.mode === "reveal" ? "Reveal flow" : "Announcement flow"}
                   )
                 </h3>
@@ -2192,7 +2228,7 @@ function UserProfileOverlay({
                     >
                       <div className="vgr-stage-label">{label}</div>
                       <div className="vgr-stage-when">
-                        {e.stages[key] ? fmtDate(e.stages[key]) : "—"}
+                        {e.stages[key] ? fmtDate(e.stages[key]) : "â€”"}
                       </div>
                     </div>
                   ))}
@@ -2218,7 +2254,7 @@ function UserProfileOverlay({
             <h3>Admin Actions</h3>
             {isSelf && (
               <div className="vgr-self-warning">
-                ⚠️ This is your own account. You can&apos;t disable or delete
+                âš ï¸ This is your own account. You can&apos;t disable or delete
                 yourself.
               </div>
             )}
@@ -2267,15 +2303,17 @@ function UserProfileOverlay({
   );
 }
 
-// ─── Video upload placeholder modal ─────────────────────────────────────────
+// â”€â”€â”€ Video upload placeholder modal â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 function VideoUploadModal({
   onClose,
   enquiryId,
+  mode,
   user,
 }: {
   onClose: () => void;
   enquiryId: string;
+  mode: "upload" | "delete";
   user: { getIdToken: () => Promise<string> };
 }) {
   const [file, setFile] = useState<File | null>(null);
@@ -2284,10 +2322,10 @@ function VideoUploadModal({
   const [progress, setProgress] = useState(0);
 
   async function uploadNow() {
-    if (!file) return;
+    if (!file || busy) return;
     setBusy(true);
     setProgress(0);
-    setStatus("Initializing upload…");
+    setStatus("Initializing upload...");
     try {
       const token = await user.getIdToken();
       const initRes = await fetch("/api/admin/video/init-upload", {
@@ -2300,71 +2338,119 @@ function VideoUploadModal({
         throw new Error(initData?.error || "Failed to initialize upload.");
       }
 
-      setStatus("Uploading video to Cloudflare…");
+      setStatus("Uploading video...");
       const form = new FormData();
       form.append("file", file);
-      const uploadData = await new Promise<Record<string, unknown>>((resolve, reject) => {
+      await new Promise<void>((resolve, reject) => {
         const xhr = new XMLHttpRequest();
         xhr.open("POST", initData.uploadURL);
         xhr.upload.onprogress = (e) => {
           if (e.lengthComputable) {
             const pct = Math.min(100, Math.round((e.loaded / e.total) * 100));
             setProgress(pct);
-            setStatus(`Uploading video to Cloudflare… ${pct}%`);
+            setStatus(`Uploading video... ${pct}%`);
           }
         };
-        xhr.onerror = () => reject(new Error("Cloudflare upload failed."));
+        xhr.onerror = () => reject(new Error("Video upload failed."));
         xhr.onload = () => {
           try {
             const parsed = JSON.parse(xhr.responseText || "{}");
-            if (xhr.status >= 200 && xhr.status < 300 && parsed?.success !== false) resolve(parsed);
-            else reject(new Error(parsed?.errors?.[0]?.message || "Cloudflare upload failed."));
+            if (xhr.status >= 200 && xhr.status < 300 && parsed?.success !== false) resolve();
+            else reject(new Error(parsed?.errors?.[0]?.message || "Video upload failed."));
           } catch {
-            reject(new Error("Cloudflare upload failed."));
+            reject(new Error("Video upload failed."));
           }
         };
         xhr.send(form);
       });
-      if (!uploadData) throw new Error("Cloudflare upload failed.");
 
       setProgress(100);
-      setStatus("Upload complete. Cloudflare is processing the video. It will auto-mark ready shortly.");
+      setStatus("Saving uploaded video...");
+      const readyRes = await fetch("/api/admin/video/mark-ready", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ enquiryId, streamUid: initData.uid }),
+      });
+      const readyData = await readyRes.json().catch(() => ({}));
+      if (!readyRes.ok) throw new Error(readyData?.error || "Failed to save uploaded video.");
+
+      setStatus("Video Uploaded");
+      setTimeout(onClose, 650);
     } catch (err) {
-      const msg = err instanceof Error ? err.message : "Upload failed.";
-      setStatus(msg);
+      setStatus(err instanceof Error ? err.message : "Upload failed.");
     } finally {
       setBusy(false);
     }
   }
 
+  async function deleteVideo() {
+    if (busy) return;
+    setBusy(true);
+    setStatus("Deleting video...");
+    try {
+      const token = await user.getIdToken();
+      const res = await fetch("/api/admin/video/delete", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ enquiryId }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data?.error || "Failed to delete video.");
+      setStatus("Video deleted. Upload Video is available again.");
+      setTimeout(onClose, 650);
+    } catch (err) {
+      setStatus(err instanceof Error ? err.message : "Failed to delete video.");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  const isDelete = mode === "delete";
+
   return (
-    <div className="vgr-video-modal" onClick={onClose}>
+    <div className="vgr-video-modal" onClick={() => { if (!busy) onClose(); }}>
       <div
         className="vgr-video-modal-content"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="vgr-video-modal-icon">📤</div>
-        <h3>Video Upload</h3>
-        <p>Upload a video file and we&apos;ll push it directly to Cloudflare Stream.</p>
-        <input type="file" accept="video/*" onChange={(e) => setFile(e.target.files?.[0] ?? null)} />
-        <div className="vgr-progress-bar">
-          <div className="vgr-progress-fill" style={{ width: `${progress}%` }} />
-        </div>
+        <div className="vgr-video-modal-icon">{isDelete ? "!" : "Upload"}</div>
+        <h3>{isDelete ? "Delete Video" : "Upload Video"}</h3>
+        {isDelete ? (
+          <>
+            <p>Are you sure you want to delete this video? This action cannot be undone.</p>
+            <div className="vgr-actions-row" style={{ justifyContent: "center" }}>
+              <button className="vgr-btn" onClick={onClose} disabled={busy}>
+                Cancel
+              </button>
+              <button className="vgr-btn vgr-btn-danger" onClick={deleteVideo} disabled={busy}>
+                {busy ? "Deleting..." : "Delete Video"}
+              </button>
+            </div>
+          </>
+        ) : (
+          <>
+            <p>Upload a reveal video file. The user dashboard will show Video Ready after it is saved.</p>
+            <input type="file" accept="video/*" onChange={(e) => setFile(e.target.files?.[0] ?? null)} disabled={busy} />
+            <div className="vgr-progress-bar">
+              <div className="vgr-progress-fill" style={{ width: `${progress}%` }} />
+            </div>
+            <button className="vgr-btn vgr-btn-primary" onClick={uploadNow} disabled={!file || busy} style={{ marginBottom: 10 }}>
+              {busy ? "Uploading..." : "Upload Video"}
+            </button>
+            <button className="vgr-btn" onClick={onClose} disabled={busy}>
+              Close
+            </button>
+          </>
+        )}
         <div
           style={{
             fontSize: 11,
             color: "var(--vgr-text-light)",
-            marginBottom: 20,
+            marginTop: 12,
           }}
         >
-          {status ?? "Choose a video file to begin upload"}
+          {status ?? (isDelete ? "Choose Delete Video to confirm" : "Choose a video file to begin upload")}
         </div>
-        <button className="vgr-btn vgr-btn-primary" onClick={uploadNow} disabled={!file || busy} style={{ marginBottom: 10 }}>
-          {busy ? "Uploading..." : "Configure Livestream"}
-        </button>
-        <button className="vgr-btn" onClick={onClose}>
-          Close
-        </button>
       </div>
     </div>
   );

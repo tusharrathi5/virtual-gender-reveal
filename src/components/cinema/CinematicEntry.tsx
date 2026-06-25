@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/lib/AuthContext";
@@ -119,13 +119,6 @@ export default function CinematicEntry() {
 
   if (scene === 6) return <LandingPage />;
 
-  function handlePricingPlanClick(plan: PlanMeta) {
-    if (plan.price > 0) {
-      setConfirmPlan(plan);
-      return;
-    }
-    void routeToReveal(plan.id);
-  }
 
   return (
     <>

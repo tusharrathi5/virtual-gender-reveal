@@ -1,9 +1,10 @@
 import { Timestamp } from "firebase/firestore";
 
-// ─── Enquiry (the main "reveal event" document) ─────────────
+// â”€â”€â”€ Enquiry (the main "reveal event" document) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 export type EnquiryStatus =
   | "pending_payment"
+  | "video_in_progress"
   | "awaiting_revealer"
   | "revealer_confirmed"
   | "video_ready"
@@ -17,7 +18,7 @@ export type RevealerRelation = "doctor" | "relative" | "friend" | "other";
 
 export type GenderStatus = "not_submitted" | "submitted";
 
-// Progress tracker — each stage is either null (not done) or a completion timestamp
+// Progress tracker â€” each stage is either null (not done) or a completion timestamp
 export interface EnquiryStages {
   paymentReceived: Timestamp | null;
   revealerLinkSent: Timestamp | null;
@@ -70,6 +71,13 @@ export interface Enquiry {
   stripeSessionId: string | null;
   stripePaymentIntentId: string | null;
   amountTotal: number | null;
+  paymentStatus?: "pending" | "completed";
+
+  // Reveal video
+  videoUrl?: string | null;
+  streamUid?: string | null;
+  pendingStreamUid?: string | null;
+  videoUploadStatus?: "idle" | "uploading" | "uploaded" | "failed" | null;
 
   // Status
   status: EnquiryStatus;
@@ -78,7 +86,7 @@ export interface Enquiry {
   updatedAt: Timestamp;
 }
 
-// ─── Secure Gender (encrypted, server-only access) ──────────
+// â”€â”€â”€ Secure Gender (encrypted, server-only access) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 export type GenderSubmittedBy = "parent" | "revealer" | "admin";
 
@@ -96,10 +104,10 @@ export interface SecureGender {
   updatedAt: Timestamp;
 }
 
-// The decrypted form — only ever exists in memory on the server
+// The decrypted form â€” only ever exists in memory on the server
 export type GenderValue = "boy" | "girl";
 
-// ─── Guest (reveal event invitees) ──────────────────────────
+// â”€â”€â”€ Guest (reveal event invitees) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 export type GuestInviteStatus = "pending" | "sent" | "failed";
 export type GuestRsvp = "pending" | "accepted" | "declined";
@@ -121,7 +129,7 @@ export interface Guest {
   updatedAt: Timestamp;
 }
 
-// ─── Audit Log (optional, for future use) ───────────────────
+// â”€â”€â”€ Audit Log (optional, for future use) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 export interface AuditLog {
   id: string;
@@ -133,9 +141,9 @@ export interface AuditLog {
   createdAt: Timestamp;
 }
 
-// ─── Form Input Types (used by new-reveal form) ─────────────
+// â”€â”€â”€ Form Input Types (used by new-reveal form) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
-// What the form collects — not yet a Firestore document
+// What the form collects â€” not yet a Firestore document
 export interface NewReveal_FormInput {
   mode: EnquiryMode;
   parentName: string;
@@ -157,7 +165,7 @@ export interface NewReveal_FormInput {
   revealerRelation?: RevealerRelation;
 }
 
-// ─── Helper: initial stages object for new enquiries ────────
+// â”€â”€â”€ Helper: initial stages object for new enquiries â”€â”€â”€â”€â”€â”€â”€â”€
 
 export const INITIAL_STAGES: EnquiryStages = {
   paymentReceived: null,
@@ -169,12 +177,12 @@ export const INITIAL_STAGES: EnquiryStages = {
   eventCompleted: null,
 };
 
-// ─── Photo constraints (single source of truth) ─────────────
+// â”€â”€â”€ Photo constraints (single source of truth) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 export const PHOTO_MIN = 0;
 export const PHOTO_MAX = 3;
 
-// ─── Plan definitions (source of truth for the dashboard + pricing) ──
+// â”€â”€â”€ Plan definitions (source of truth for the dashboard + pricing) â”€â”€
 
 export interface PlanDefinition {
   id: "basic" | "premium" | "custom";

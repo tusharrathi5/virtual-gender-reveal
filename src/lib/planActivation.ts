@@ -1,30 +1,23 @@
-import { FieldValue, Timestamp } from "firebase-admin/firestore";
+﻿import { FieldValue, Timestamp } from "firebase-admin/firestore";
 import { getAdminDb } from "@/lib/firebase-admin";
 import { v4 as uuidv4 } from "uuid";
 import { getPlanById } from "@/lib/types";
 import type { Purchase, PurchaseStatus } from "@/lib/userService";
 
-// ─── Activate a Plan ────────────────────────────────────────
-
 export interface ActivatePlanParams {
   uid: string;
   planId: "basic" | "premium" | "custom";
-  stripeSessionId: string | null;       // null for dev-mode / free
-  stripePaymentIntentId: string | null; // null for dev-mode / free
-  amountPaidCents: number;              // 0 for free
-  currency: string;                     // e.g. "usd"
-  status?: PurchaseStatus;              // default "completed"
+  stripeSessionId: string | null;
+  stripePaymentIntentId: string | null;
+  amountPaidCents: number;
+  currency: string;
+  status?: PurchaseStatus;
 }
 
 /**
- * Add a Purchase entry to the user's Firestore doc and update entitlement fields.
- * Called by:
- *  - create-checkout route (dev mode, or for free plan)
- *  - Stripe webhook (prod mode, when payment confirmed)
- *
- * Note: We use Timestamp.now() for purchasedAt because FieldValue.serverTimestamp()
- * cannot be used inside arrays (Firestore limitation). Timestamp.now() is resolved
- * server-side at call time, which for our use case is equivalent.
+ * Adds a purchase and entitlement exactly once per Stripe session/payment intent.
+ * Stripe webhooks call this as the payment source of truth; checkout-status uses
+ * the same function only after Stripe itself reports the session is paid.
  */
 export async function activatePlan(params: ActivatePlanParams): Promise<Purchase> {
   const {
@@ -45,40 +38,40 @@ export async function activatePlan(params: ActivatePlanParams): Promise<Purchase
   const db = getAdminDb();
   const userRef = db.collection("users").doc(uid);
 
-  // Idempotency: if we have a Stripe session ID, make sure we haven't already processed it
-  if (stripeSessionId) {
-    const existingSnap = await userRef.get();
-    if (existingSnap.exists) {
-      const existing = existingSnap.data();
-      const existingPurchases: Purchase[] = existing?.purchases ?? [];
-      if (existingPurchases.some((p) => p.stripeSessionId === stripeSessionId)) {
-        // Already processed this Stripe session — return the existing purchase
-        const found = existingPurchases.find((p) => p.stripeSessionId === stripeSessionId);
-        if (found) return found;
-      }
-    }
-  }
+  return await db.runTransaction(async (tx) => {
+    const snap = await tx.get(userRef);
+    if (!snap.exists) throw new Error("USER_NOT_FOUND");
 
-  const purchase: Purchase = {
-    purchaseId: uuidv4(),
-    plan: planId,
-    purchasedAt: Timestamp.now() as unknown as Purchase["purchasedAt"],
-    amountPaid: amountPaidCents,
-    currency,
-    stripeSessionId,
-    stripePaymentIntentId,
-    status,
-    revealsGranted: plan.revealsGranted,
-    revealEnquiryId: null,
-  };
+    const data = snap.data() as { purchases?: Purchase[] };
+    const purchases = [...(data.purchases ?? [])];
+    const existing = purchases.find((purchase) => {
+      if (stripeSessionId && purchase.stripeSessionId === stripeSessionId) return true;
+      if (stripePaymentIntentId && purchase.stripePaymentIntentId === stripePaymentIntentId) return true;
+      return false;
+    });
+    if (existing) return existing;
 
-  // Atomically: push to purchases array, increment revealsAllowed, set activePlan
-  await userRef.update({
-    purchases: FieldValue.arrayUnion(purchase),
-    revealsAllowed: FieldValue.increment(plan.revealsGranted),
-    activePlan: planId,
-    updatedAt: FieldValue.serverTimestamp(),
+    const purchase: Purchase = {
+      purchaseId: uuidv4(),
+      plan: planId,
+      purchasedAt: Timestamp.now() as unknown as Purchase["purchasedAt"],
+      amountPaid: amountPaidCents,
+      currency,
+      stripeSessionId,
+      stripePaymentIntentId,
+      status,
+      revealsGranted: plan.revealsGranted,
+      revealEnquiryId: null,
+    };
+
+    purchases.push(purchase);
+    tx.update(userRef, {
+      purchases,
+      revealsAllowed: FieldValue.increment(plan.revealsGranted),
+      activePlan: planId,
+      updatedAt: FieldValue.serverTimestamp(),
+    });
+
+    return purchase;
   });
-
-  return purchase;
 }

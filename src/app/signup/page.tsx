@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/lib/AuthContext";
+import { AuthModalShell } from "@/components/auth/AuthModalShell";
 
 type ToastType = "success" | "error" | "info";
 
@@ -18,10 +19,10 @@ function Toast({ message, type, onClose }: { message: string; type: ToastType; o
       fontSize: 14, animation: "slideIn .3s ease-out",
     }}>
       <span style={{ color: colors[type], fontWeight: 700, flexShrink: 0 }}>
-        {type === "success" ? "✓" : type === "error" ? "✕" : "ℹ"}
+        {type === "success" ? "âœ“" : type === "error" ? "âœ•" : "â„¹"}
       </span>
       <span style={{ color: "#f9fafb", lineHeight: 1.5, flex: 1 }}>{message}</span>
-      <button onClick={onClose} style={{ background: "none", border: "none", color: "#6b7280", cursor: "pointer", fontSize: 16 }}>×</button>
+      <button onClick={onClose} style={{ background: "none", border: "none", color: "#6b7280", cursor: "pointer", fontSize: 16 }}>Ã—</button>
     </div>
   );
 }
@@ -99,10 +100,6 @@ export default function SignupPage() {
         @keyframes slideIn { from { opacity:0; transform:translateX(20px); } to { opacity:1; transform:translateX(0); } }
         @keyframes spin { to { transform:rotate(360deg); } }
         * { box-sizing:border-box; margin:0; padding:0; }
-        .auth-page { min-height:100vh; display:flex; align-items:center; justify-content:center; padding:24px; background:#f3f4f6; }
-        .auth-card { background:white; border-radius:16px; padding:40px; width:100%; max-width:440px; box-shadow:0 4px 24px rgba(0,0,0,0.08); }
-        .auth-logo { font-size:22px; font-weight:700; color:#111827; margin-bottom:8px; }
-        .auth-subtitle { font-size:14px; color:#6b7280; margin-bottom:32px; }
         .form-group { margin-bottom:16px; }
         .form-label { display:block; font-size:13px; font-weight:500; color:#374151; margin-bottom:6px; }
         .form-input { width:100%; padding:11px 14px; border:1.5px solid #e5e7eb; border-radius:8px; font-size:14px; color:#111827; outline:none; transition:border-color .2s; }
@@ -121,6 +118,7 @@ export default function SignupPage() {
         .divider-text { font-size:12px; color:#9ca3af; font-weight:500; }
         .auth-link { color:#2563eb; text-decoration:none; font-weight:500; }
         .auth-link:hover { text-decoration:underline; }
+        .auth-link-button { border:0; background:transparent; padding:0; cursor:pointer; font:inherit; }
         .auth-footer { text-align:center; font-size:13px; color:#6b7280; margin-top:24px; }
         .spinner { display:inline-block; width:14px; height:14px; border:2px solid rgba(255,255,255,.3); border-top-color:white; border-radius:50%; animation:spin .7s linear infinite; vertical-align:middle; margin-right:8px; }
         .spinner-dark { border-color:rgba(55,65,81,.2); border-top-color:#374151; }
@@ -132,10 +130,7 @@ export default function SignupPage() {
 
       {toast && <Toast message={toast.message} type={toast.type} onClose={() => setToast(null)} />}
 
-      <div className="auth-page">
-        <div className="auth-card">
-          <div className="auth-logo">VGR Studio</div>
-          <p className="auth-subtitle">Create your account</p>
+      <AuthModalShell title="VGR Studio" subtitle="Create your account" submitting={isLoading}>
 
           <button className="btn-google" onClick={handleGoogleSignup} disabled={isLoading}>
             {googleLoading ? (
@@ -205,10 +200,9 @@ export default function SignupPage() {
 
           <div className="auth-footer">
             Already have an account?{" "}
-            <a href="/login" className="auth-link">Sign in</a>
+            <button type="button" className="auth-link auth-link-button" onClick={() => router.replace("/login")} disabled={isLoading}>Sign in</button>
           </div>
-        </div>
-      </div>
+      </AuthModalShell>
     </>
   );
 }

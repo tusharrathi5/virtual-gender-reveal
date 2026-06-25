@@ -43,6 +43,9 @@ export interface SendGuestInviteEmailParams {
   googleCalendarUrl?: string;
   icsUrl?: string;
 }
+
+export interface SendHostInvitationConfirmationEmailParams extends SendGuestInviteEmailParams {}
+
 export interface SendGuestDigestEmailParams {
   to: string;
   parentName: string;
@@ -57,7 +60,10 @@ export interface SendGuestReminderEmailParams {
   revealTimezone: string;
   inviteUrl: string;
 }
-export interface SendRevealReminderEmailParams extends SendGuestReminderEmailParams {}
+export interface SendRevealReminderEmailParams extends Omit<SendGuestReminderEmailParams, "inviteUrl"> {
+  inviteUrl?: string;
+  reminderWindow?: "7d" | "24h";
+}
 
 
 function isTrue(value: string | undefined): boolean {
@@ -154,7 +160,7 @@ export async function sendWelcomeEmail(params: SendWelcomeEmailParams): Promise<
   const name = escapeHtml(params.fullName || "there");
   const html = `
     <div style="font-family:Arial,sans-serif;line-height:1.6;color:#111">
-      <h2 style="margin:0 0 12px">Welcome to Virtual Gender Reveal 🎉</h2>
+      <h2 style="margin:0 0 12px">Welcome to Virtual Gender Reveal ðŸŽ‰</h2>
       <p>Hi ${name}, your account is ready.</p>
       <p>Please verify your email from the Firebase verification message we just sent so you can fully secure your account.</p>
       <p>Once verified, you can create your first reveal from your dashboard.</p>
@@ -206,7 +212,7 @@ export async function sendGuestInviteEmail(params: SendGuestInviteEmailParams): 
 
   const html = `
     <div style="font-family:Arial,sans-serif;line-height:1.6;color:#111">
-      <h2 style="margin:0 0 12px">You're invited to a Virtual Gender Reveal 🎉</h2>
+      <h2 style="margin:0 0 12px">You're invited to a Virtual Gender Reveal ðŸŽ‰</h2>
       <p>Hi ${guestName}, ${parentName} invited you to their reveal celebration.</p>
       <p><strong>Scheduled for:</strong> ${escapeHtml(revealAt)} (${escapeHtml(params.revealTimezone)})</p>
       <p>Open your secure invite link:</p>
@@ -223,16 +229,50 @@ export async function sendGuestInviteEmail(params: SendGuestInviteEmailParams): 
   await sendEmail({ to: params.to, subject: "You're invited to a Gender Reveal", html });
 }
 
+export async function sendHostInvitationConfirmationEmail(params: SendHostInvitationConfirmationEmailParams): Promise<void> {
+  const inviteUrl = escapeHtml(params.inviteUrl);
+  const googleCalendarUrl = params.googleCalendarUrl ? escapeHtml(params.googleCalendarUrl) : null;
+  const icsUrl = params.icsUrl ? escapeHtml(params.icsUrl) : null;
+  const revealAt = new Date(params.revealAtIso).toLocaleString("en-US", {
+    dateStyle: "full",
+    timeStyle: "short",
+    timeZone: params.revealTimezone,
+  });
+
+  const html = `
+    <div style="font-family:Arial,sans-serif;line-height:1.6;color:#111;max-width:640px;margin:0 auto;padding:20px">
+      <h2 style="margin:0 0 12px">Congratulations on your upcoming reveal!</h2>
+      <p>Thank you for choosing Virtual Gender Reveal to be part of such a special and unforgettable moment.</p>
+      <p>Your guest invitations have been sent successfully, and everything is being prepared for your celebration. You can continue to manage your reveal, review the event details, and track its progress from your dashboard.</p>
+      <p><strong>Scheduled for:</strong> ${escapeHtml(revealAt)} (${escapeHtml(params.revealTimezone)})</p>
+      <p><a href="${inviteUrl}" style="display:inline-block;background:#111827;color:#fff;text-decoration:none;padding:10px 16px;border-radius:6px">Open your celebration link</a></p>
+      <p><strong>Add to calendar:</strong></p>
+      <p>
+        ${googleCalendarUrl ? `<a href="${googleCalendarUrl}">Google Calendar</a>` : ""}
+        ${googleCalendarUrl && icsUrl ? " | " : ""}
+        ${icsUrl ? `<a href="${icsUrl}">Apple/Outlook (ICS)</a>` : ""}
+      </p>
+      <p>We are honoured to help you share this exciting moment with the people who matter most.</p>
+      <p>Warm wishes,<br><strong>The Virtual Gender Reveal Team</strong></p>
+    </div>
+  `;
+
+  await sendEmail({
+    to: params.to,
+    subject: "Your Virtual Gender Reveal Is Ready to Share!",
+    html,
+  });
+}
 export async function sendGuestDigestEmail(params: SendGuestDigestEmailParams): Promise<void> {
   const parentName = escapeHtml(params.parentName || "there");
   const revealDateLabel = escapeHtml(params.revealDateLabel);
   const rows = params.responses
-    .map((r) => `<li><strong>${escapeHtml(r.name)}</strong> guessed <strong>${escapeHtml(r.prediction)}</strong>${r.message ? ` — “${escapeHtml(r.message)}”` : ""}</li>`)
+    .map((r) => `<li><strong>${escapeHtml(r.name)}</strong> guessed <strong>${escapeHtml(r.prediction)}</strong>${r.message ? ` â€” â€œ${escapeHtml(r.message)}â€` : ""}</li>`)
     .join("");
 
   const html = `
     <div style="font-family:Arial,sans-serif;line-height:1.6;color:#111">
-      <h2 style="margin:0 0 12px">Your guest predictions are in 🎉</h2>
+      <h2 style="margin:0 0 12px">Your guest predictions are in ðŸŽ‰</h2>
       <p>Hi ${parentName}, here are the guest responses for your reveal (${revealDateLabel}).</p>
       <ul>${rows || "<li>No responses yet.</li>"}</ul>
     </div>
@@ -252,7 +292,7 @@ export async function sendGuestReminderEmail(params: SendGuestReminderEmailParam
   });
   const html = `
     <div style="font-family:Arial,sans-serif;line-height:1.6;color:#111">
-      <h2 style="margin:0 0 12px">Reminder: Reveal is tomorrow 🎉</h2>
+      <h2 style="margin:0 0 12px">Reminder: Reveal is tomorrow ðŸŽ‰</h2>
       <p>Hi ${guestName}, this is a reminder from ${parentName}.</p>
       <p><strong>Scheduled for:</strong> ${escapeHtml(revealAt)} (${escapeHtml(params.revealTimezone)})</p>
       <p><a href="${inviteUrl}">Join the party link</a></p>
@@ -263,5 +303,5 @@ export async function sendGuestReminderEmail(params: SendGuestReminderEmailParam
 
 // Backward-compatible alias for older cron route imports.
 export async function sendRevealReminderEmail(params: SendRevealReminderEmailParams): Promise<void> {
-  return sendGuestReminderEmail(params);
+  return sendGuestReminderEmail({ ...params, inviteUrl: params.inviteUrl || "" });
 }

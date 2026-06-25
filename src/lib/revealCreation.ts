@@ -3,7 +3,7 @@ import { getAdminDb } from "@/lib/firebase-admin";
 import type { Purchase } from "@/lib/userService";
 import type { EnquiryMode, EnquiryStages, RevealerRelation } from "@/lib/types";
 
-// ─── Types ──────────────────────────────────────────────────
+// â”€â”€â”€ Types â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 export interface CreateRevealParams {
   uid: string;
@@ -27,10 +27,10 @@ export interface CreateRevealParams {
 export interface CreateRevealResult {
   enquiryId: string;
   consumedPurchaseId: string;
-  newStatus: "awaiting_revealer" | "video_ready";
+  newStatus: "video_in_progress";
 }
 
-// ─── Main transaction ───────────────────────────────────────
+// â”€â”€â”€ Main transaction â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 /**
  * Atomically:
@@ -44,7 +44,7 @@ export interface CreateRevealResult {
  * simultaneous requests could both pass the "revealsAllowed > 0" check
  * before either one decrements.
  *
- * Throws on any failure — caller is responsible for orphaned-photo cleanup.
+ * Throws on any failure â€” caller is responsible for orphaned-photo cleanup.
  */
 export async function createRevealAndConsumeEntitlement(
   params: CreateRevealParams
@@ -70,7 +70,7 @@ export async function createRevealAndConsumeEntitlement(
   const userRef = db.collection("users").doc(uid);
   const enquiryRef = db.collection("enquiries").doc(enquiryId);
 
-  const newStatus = mode === "reveal" ? "awaiting_revealer" : "video_ready";
+  const newStatus = "video_in_progress";
 
   return await db.runTransaction(async (tx) => {
     // 1. Read user doc
@@ -112,7 +112,7 @@ export async function createRevealAndConsumeEntitlement(
     );
 
     if (!target) {
-      // Data integrity issue — revealsAllowed says they can but no Purchase has
+      // Data integrity issue â€” revealsAllowed says they can but no Purchase has
       // capacity. Bail rather than silently creating an untracked reveal.
       throw new Error("NO_UNUSED_PURCHASE");
     }
@@ -121,6 +121,7 @@ export async function createRevealAndConsumeEntitlement(
     // This lets the admin panel show plan without a join. Falls back to null if
     // somehow the purchase has no plan field (shouldn't happen, but defensive).
     const consumedPlan = target.p.plan ?? null;
+    const paymentReceivedAt = Timestamp.now();
 
     // 3 + 4. Update purchase array with enquiryId attached, decrement/increment counters
     purchases[target.idx] = {
@@ -150,13 +151,18 @@ export async function createRevealAndConsumeEntitlement(
       revealAt: Timestamp.fromMillis(revealAtMs),
       revealTimezone,
       dueDate: dueDate ? Timestamp.fromDate(new Date(dueDate)) : null,
-      stages: initialStages,
+      stages: { ...initialStages, paymentReceived: paymentReceivedAt },
       guestCount: 0,
       genderStatus: "not_submitted",
       doctorTokenHash: null,
-      stripeSessionId: null,
-      stripePaymentIntentId: null,
-      amountTotal: null,
+      stripeSessionId: target.p.stripeSessionId ?? null,
+      stripePaymentIntentId: target.p.stripePaymentIntentId ?? null,
+      amountTotal: target.p.amountPaid ?? null,
+      paymentStatus: "completed",
+      videoUrl: null,
+      streamUid: null,
+      pendingStreamUid: null,
+      videoUploadStatus: "idle",
       status: newStatus,
       // Mode-specific fields
       babyName,

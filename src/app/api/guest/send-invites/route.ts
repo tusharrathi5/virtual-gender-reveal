@@ -7,7 +7,7 @@ import CryptoJS from "crypto-js";
 import { verifyAuthHeader } from "@/lib/authServer";
 import { getAdminDb } from "@/lib/firebase-admin";
 import { generateGuestToken } from "@/lib/guestToken";
-import { sendGuestInviteEmail } from "@/lib/resendEmail";
+import { sendGuestInviteEmail, sendHostInvitationConfirmationEmail } from "@/lib/resendEmail";
 
 interface GuestInput {
   name: string;
@@ -21,6 +21,7 @@ interface ExistingInvite {
   phone?: string;
   email?: string;
   isHost?: boolean;
+  inviteStatus?: string;
 }
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -89,6 +90,7 @@ export async function POST(req: NextRequest) {
     phone?: string;
     email: string;
     isHost?: boolean;
+  inviteStatus?: string;
   }): Promise<boolean> {
     const guestRef = input.guestId
       ? getAdminDb().collection("guest_invites").doc(input.guestId)
@@ -122,7 +124,7 @@ export async function POST(req: NextRequest) {
     const googleCalendarUrl = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(`${enquiry.parentName || "Parents"}'s Virtual Gender Reveal`)}&dates=${fmt(start)}/${fmt(end)}&ctz=${encodeURIComponent(enquiry.revealTimezone || "UTC")}&details=${encodeURIComponent(`Join the reveal: ${inviteUrl}`)}`;
     const icsUrl = `${appUrl.replace(/\/$/, "")}/api/guest/${encodeURIComponent(token)}/calendar.ics`;
     try {
-      await sendGuestInviteEmail({
+      const emailParams = {
         to: input.email,
         guestName: input.name,
         parentName: enquiry.parentName || "the parents",
@@ -131,7 +133,12 @@ export async function POST(req: NextRequest) {
         inviteUrl,
         googleCalendarUrl,
         icsUrl,
-      });
+      };
+      if (input.isHost) {
+        await sendHostInvitationConfirmationEmail(emailParams);
+      } else {
+        await sendGuestInviteEmail(emailParams);
+      }
       return true;
     } catch (err) {
       await guestRef.update({
@@ -164,7 +171,8 @@ export async function POST(req: NextRequest) {
   }
 
   let hostSent = false;
-  if (hostEmail && EMAIL_RE.test(hostEmail)) {
+  const hostAlreadySent = existingHost?.inviteStatus === "sent";
+  if (sent > 0 && !hostAlreadySent && hostEmail && EMAIL_RE.test(hostEmail)) {
     hostSent = await writeAndSendInvite({
       guestId: existingHost?.guestId,
       name: hostName,

@@ -6,6 +6,7 @@ import { useAuth } from "@/lib/AuthContext";
 import { getAuth } from "firebase/auth";
 import { doc, getDoc } from "firebase/firestore";
 import { getFirebaseDb } from "@/lib/firebase";
+import { AuthModalShell } from "@/components/auth/AuthModalShell";
 
 type ToastType = "success" | "error" | "info";
 
@@ -22,10 +23,10 @@ function Toast({ message, type, onClose }: { message: string; type: ToastType; o
       animation: "slideIn .3s ease-out",
     }}>
       <span style={{ color: colors[type], fontWeight: 700, flexShrink: 0 }}>
-        {type === "success" ? "✓" : type === "error" ? "✕" : "ℹ"}
+        {type === "success" ? "âœ“" : type === "error" ? "âœ•" : "â„¹"}
       </span>
       <span style={{ color: "#f9fafb", lineHeight: 1.5, flex: 1 }}>{message}</span>
-      <button onClick={onClose} style={{ background: "none", border: "none", color: "#6b7280", cursor: "pointer", fontSize: 16 }}>×</button>
+      <button onClick={onClose} style={{ background: "none", border: "none", color: "#6b7280", cursor: "pointer", fontSize: 16 }}>Ã—</button>
     </div>
   );
 }
@@ -65,7 +66,7 @@ function LoginContent() {
 
   // After sign-in, check the user's Firestore role and route admins to /admin.
   // For everyone else, fall back to redirectTo (default /dashboard or whatever
-  // ?redirect= says). Errors are non-fatal — we just send them to redirectTo.
+  // ?redirect= says). Errors are non-fatal â€” we just send them to redirectTo.
   async function getRedirectForUser(): Promise<string> {
     const auth = getAuth();
     const uid = auth.currentUser?.uid;
@@ -127,10 +128,6 @@ function LoginContent() {
         @keyframes slideIn { from { opacity:0; transform:translateX(20px); } to { opacity:1; transform:translateX(0); } }
         * { box-sizing: border-box; margin: 0; padding: 0; }
         body { font-family: system-ui, -apple-system, sans-serif; background: #f9fafb; }
-        .auth-page { min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 24px; background: #f3f4f6; }
-        .auth-card { background: white; border-radius: 16px; padding: 40px; width: 100%; max-width: 420px; box-shadow: 0 4px 24px rgba(0,0,0,0.08); }
-        .auth-logo { font-size: 22px; font-weight: 700; color: #111827; margin-bottom: 8px; }
-        .auth-subtitle { font-size: 14px; color: #6b7280; margin-bottom: 32px; }
         .form-group { margin-bottom: 16px; }
         .form-label { display: block; font-size: 13px; font-weight: 500; color: #374151; margin-bottom: 6px; }
         .form-input { width: 100%; padding: 11px 14px; border: 1.5px solid #e5e7eb; border-radius: 8px; font-size: 14px; color: #111827; outline: none; transition: border-color .2s; background: white; }
@@ -148,6 +145,7 @@ function LoginContent() {
         .divider-text { font-size: 12px; color: #9ca3af; font-weight: 500; }
         .auth-link { color: #2563eb; text-decoration: none; font-weight: 500; }
         .auth-link:hover { text-decoration: underline; }
+        .auth-link-button { border: 0; background: transparent; padding: 0; cursor: pointer; font: inherit; }
         .auth-footer { text-align: center; font-size: 13px; color: #6b7280; margin-top: 24px; }
         .forgot-link { display: block; text-align: right; font-size: 13px; margin-bottom: 16px; }
         .spinner { display: inline-block; width: 14px; height: 14px; border: 2px solid rgba(255,255,255,.3); border-top-color: white; border-radius: 50%; animation: spin .7s linear infinite; vertical-align: middle; margin-right: 8px; }
@@ -157,10 +155,7 @@ function LoginContent() {
 
       {toast && <Toast message={toast.message} type={toast.type} onClose={() => setToast(null)} />}
 
-      <div className="auth-page">
-        <div className="auth-card">
-          <div className="auth-logo">VGR Studio</div>
-          <p className="auth-subtitle">Sign in to your account</p>
+      <AuthModalShell title="VGR Studio" subtitle="Sign in to your account" submitting={isLoading}>
 
           {/* Google Sign In */}
           <button className="btn-google" onClick={handleGoogleLogin} disabled={isLoading}>
@@ -232,10 +227,9 @@ function LoginContent() {
 
           <div className="auth-footer">
             Don&apos;t have an account?{" "}
-            <a href="/signup" className="auth-link">Create account</a>
+            <button type="button" className="auth-link auth-link-button" onClick={() => router.replace(`/signup?redirect=${encodeURIComponent(redirectTo)}`)} disabled={isLoading}>Create account</button>
           </div>
-        </div>
-      </div>
+      </AuthModalShell>
     </>
   );
 }

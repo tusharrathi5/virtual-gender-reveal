@@ -7,6 +7,13 @@ import { useAuth } from "@/lib/AuthContext";
 import { getFirebaseDb } from "@/lib/firebase";
 import { uploadPhotos, validatePhotoFiles } from "@/lib/storageService";
 import {
+  derivePaymentStatusFromPurchases,
+  getPaymentStatusLabel,
+  getRevealVideoLabel,
+  getRevealVideoStatus,
+  normalizePaymentStatus,
+} from "@/lib/statusLabels";
+import {
   PHOTO_MAX,
   PLANS,
   type EnquiryMode,
@@ -28,6 +35,7 @@ interface RevealSummary {
   revealTimezone: string;
   dueDate: string | null;
   status: string;
+  paymentStatus: "pending" | "completed";
   genderStatus: string;
   photos: string[];
   createdAt: Date | null;
@@ -39,13 +47,12 @@ interface RevealEditForm {
   id: string;
   mode: EnquiryMode;
   parentName: string;
-  dueDate: string;
   announcementGender: "" | GenderValue;
   revealerEmail: string;
   revealerRelation: RevealerRelation;
   revealAt: string;
   revealTimezone: string;
-  dueDate: string | null;
+  dueDate: string;
   photos: string[];
 }
 
@@ -147,7 +154,8 @@ function formatDateTimeLocal(d: Date | null): string {
 
 function statusLabel(status: string): string {
   const map: Record<string, string> = {
-    pending_payment: "Pending Payment",
+    pending_payment: "Payment Pending",
+    video_in_progress: "Video in Progress",
     awaiting_revealer: "Awaiting Revealer",
     revealer_confirmed: "Revealer Confirmed",
     video_ready: "Video Ready",
@@ -161,6 +169,7 @@ function statusLabel(status: string): string {
 function statusTone(status: string): string {
   const map: Record<string, string> = {
     pending_payment: "gray",
+    video_in_progress: "yellow",
     awaiting_revealer: "yellow",
     revealer_confirmed: "blue",
     video_ready: "purple",
@@ -521,6 +530,10 @@ function DashboardContent() {
       const snap = await getDocs(q);
       const items: RevealSummary[] = snap.docs.map((d) => {
         const data = d.data();
+        const stages = data.stages ?? {};
+        const paymentStatus = normalizePaymentStatus(
+          data.paymentStatus ?? (stages.paymentReceived ? "completed" : "pending")
+        );
         return {
           id: d.id,
           mode: data.mode === "announcement" ? "announcement" : "reveal",
@@ -532,12 +545,14 @@ function DashboardContent() {
           revealerRelation: (data.revealerRelation as RevealerRelation | null) ?? null,
           revealAt: timestampToDate(data.revealAt),
           revealTimezone: typeof data.revealTimezone === "string" ? data.revealTimezone : "UTC",
+          dueDate: timestampToDate(data.dueDate)?.toISOString() ?? null,
           status: data.status ?? "pending_payment",
+          paymentStatus,
           genderStatus: data.genderStatus ?? "not_submitted",
           photos: Array.isArray(data.photos) ? data.photos.filter(Boolean) : [],
           createdAt: timestampToDate(data.createdAt),
           videoUrl: typeof data.videoUrl === "string" ? data.videoUrl : null,
-          videoReady: Boolean(data.videoUrl) || Boolean(data?.stages?.videoGenerated),
+          videoReady: getRevealVideoStatus({ videoUrl: data.videoUrl }) === "ready",
         };
       });
       setReveals(items);
@@ -655,6 +670,7 @@ function DashboardContent() {
   const revealsCreated = firestoreUser?.revealsCreated ?? 0;
   const hasPlan = activePlan !== "none";
   const canCreateReveal = revealsAllowed > 0;
+  const accountPaymentStatus = derivePaymentStatusFromPurchases(firestoreUser?.purchases ?? null);
 
   if (loading || !user) return null;
 
@@ -1032,6 +1048,8 @@ function DashboardContent() {
                 <span>{revealsAllowed} remaining</span>
                 <span className="plan-badge-sep">/</span>
                 <span>{revealsCreated} created</span>
+                <span className="plan-badge-sep">/</span>
+                <span>{getPaymentStatusLabel(accountPaymentStatus)}</span>
               </div>
             )}
           </section>
@@ -1080,8 +1098,8 @@ function DashboardContent() {
                           </div>
                         </div>
                         <div className="detail-actions">
-                          <span className={`status-pill ${statusTone(reveal.status)}`}>
-                            {statusLabel(reveal.status)}
+                          <span className={`status-pill ${getRevealVideoStatus(reveal) === "ready" ? "purple" : "yellow"}`}>
+                            {getRevealVideoLabel(reveal)}
                           </span>
                           <span className={`edit-pill ${editable ? "open" : "locked"}`}>
                             {editWindowText(reveal)}
@@ -1114,6 +1132,10 @@ function DashboardContent() {
                           <div>
                             <span>Photos</span>
                             <strong>{reveal.photos.length}</strong>
+                          </div>
+                          <div>
+                            <span>Payment Status</span>
+                            <strong>{getPaymentStatusLabel(reveal.paymentStatus)}</strong>
                           </div>
                           {reveal.mode === "announcement" ? (
                             <div>
