@@ -23,10 +23,10 @@ function Toast({ message, type, onClose }: { message: string; type: ToastType; o
       animation: "slideIn .3s ease-out",
     }}>
       <span style={{ color: colors[type], fontWeight: 700, flexShrink: 0 }}>
-        {type === "success" ? "âœ“" : type === "error" ? "âœ•" : "â„¹"}
+        {type === "success" ? "✓" : type === "error" ? "✕" : "ℹ"}
       </span>
       <span style={{ color: "#f9fafb", lineHeight: 1.5, flex: 1 }}>{message}</span>
-      <button onClick={onClose} style={{ background: "none", border: "none", color: "#6b7280", cursor: "pointer", fontSize: 16 }}>Ã—</button>
+      <button onClick={onClose} style={{ background: "none", border: "none", color: "#6b7280", cursor: "pointer", fontSize: 16 }}>×</button>
     </div>
   );
 }
@@ -66,7 +66,7 @@ function LoginContent() {
 
   // After sign-in, check the user's Firestore role and route admins to /admin.
   // For everyone else, fall back to redirectTo (default /dashboard or whatever
-  // ?redirect= says). Errors are non-fatal â€” we just send them to redirectTo.
+  // ?redirect= says). Errors are non-fatal - we just send them to redirectTo.
   async function getRedirectForUser(): Promise<string> {
     const auth = getAuth();
     const uid = auth.currentUser?.uid;

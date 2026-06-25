@@ -19,10 +19,10 @@ function Toast({ message, type, onClose }: { message: string; type: ToastType; o
       fontSize: 14, animation: "slideIn .3s ease-out",
     }}>
       <span style={{ color: colors[type], fontWeight: 700, flexShrink: 0 }}>
-        {type === "success" ? "âœ“" : type === "error" ? "âœ•" : "â„¹"}
+        {type === "success" ? "✓" : type === "error" ? "✕" : "ℹ"}
       </span>
       <span style={{ color: "#f9fafb", lineHeight: 1.5, flex: 1 }}>{message}</span>
-      <button onClick={onClose} style={{ background: "none", border: "none", color: "#6b7280", cursor: "pointer", fontSize: 16 }}>Ã—</button>
+      <button onClick={onClose} style={{ background: "none", border: "none", color: "#6b7280", cursor: "pointer", fontSize: 16 }}>×</button>
     </div>
   );
 }

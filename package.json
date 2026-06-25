@@ -6,7 +6,8 @@
         "dev": "next dev",
         "build": "next build",
         "start": "next start",
-        "lint": "eslint src --ext .ts,.tsx"
+        "lint": "eslint src --ext .ts,.tsx",
+        "reconcile:stripe-payment": "node scripts/reconcile-stripe-payment.mjs"
     },
     "dependencies": {
         "@stripe/stripe-js": "^3.4.0",

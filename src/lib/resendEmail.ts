@@ -267,7 +267,7 @@ export async function sendGuestDigestEmail(params: SendGuestDigestEmailParams): 
   const parentName = escapeHtml(params.parentName || "there");
   const revealDateLabel = escapeHtml(params.revealDateLabel);
   const rows = params.responses
-    .map((r) => `<li><strong>${escapeHtml(r.name)}</strong> guessed <strong>${escapeHtml(r.prediction)}</strong>${r.message ? ` â€” â€œ${escapeHtml(r.message)}â€` : ""}</li>`)
+    .map((r) => `<li><strong>${escapeHtml(r.name)}</strong> guessed <strong>${escapeHtml(r.prediction)}</strong>${r.message ? ` - "${escapeHtml(r.message)}"` : ""}</li>`)
     .join("");
 
   const html = `

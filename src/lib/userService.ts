@@ -13,7 +13,7 @@
 } from "firebase/firestore";
 import { getFirebaseDb } from "./firebase";
  
-// â”€â”€ Types â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// Types
  
 export type UserRole = "user" | "admin";
 export type UserProvider = "email" | "google" | "both";
@@ -53,7 +53,7 @@ export interface FirestoreUser {
   purchases: Purchase[];         // full purchase history
 }
  
-// â”€â”€ Create User Doc â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// Create User Doc
  
 export async function createUserDoc(data: {
   uid: string;
@@ -79,7 +79,7 @@ await setDoc(userRef, {
     lastLogin: serverTimestamp(),
     isDeleted: false,
     emailVerified: data.emailVerified || false,
-    // Entitlements â€” user starts with no plan, no reveals
+    // Entitlements - user starts with no plan, no reveals
     activePlan: "none",
     revealsAllowed: 0,
     revealsCreated: 0,
@@ -87,7 +87,7 @@ await setDoc(userRef, {
   });
 }
  
-// â”€â”€ Get User Doc â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// Get User Doc
  
 export async function getUserDoc(uid: string): Promise<FirestoreUser | null> {
   const db = getFirebaseDb();
@@ -97,7 +97,7 @@ export async function getUserDoc(uid: string): Promise<FirestoreUser | null> {
   return snap.data() as FirestoreUser;
 }
  
-// â”€â”€ Get User by Email â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// Get User by Email
  
 export async function getUserByEmail(email: string): Promise<FirestoreUser | null> {
   const db = getFirebaseDb();
@@ -111,7 +111,7 @@ export async function getUserByEmail(email: string): Promise<FirestoreUser | nul
   return snap.docs[0].data() as FirestoreUser;
 }
  
-// â”€â”€ Update User Doc â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// Update User Doc
  
 export async function updateUserDoc(
   uid: string,
@@ -125,7 +125,7 @@ export async function updateUserDoc(
   });
 }
  
-// â”€â”€ Update Last Login â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// Update Last Login
  
 export async function updateLastLogin(uid: string): Promise<void> {
   const db = getFirebaseDb();
@@ -136,7 +136,7 @@ export async function updateLastLogin(uid: string): Promise<void> {
   });
 }
  
-// â”€â”€ Soft Delete User Doc â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// Soft Delete User Doc
  
 export async function softDeleteUserDoc(uid: string): Promise<void> {
   const db = getFirebaseDb();
@@ -147,7 +147,7 @@ export async function softDeleteUserDoc(uid: string): Promise<void> {
   });
 }
  
-// â”€â”€ Hard Delete User Doc â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// Hard Delete User Doc
  
 export async function deleteUserDoc(uid: string): Promise<void> {
   const db = getFirebaseDb();
@@ -155,7 +155,7 @@ export async function deleteUserDoc(uid: string): Promise<void> {
   await deleteDoc(userRef);
 }
  
-// â”€â”€ Update Provider â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// Update Provider
  
 export async function updateUserProvider(
   uid: string,
@@ -164,19 +164,19 @@ export async function updateUserProvider(
   await updateUserDoc(uid, { provider });
 }
  
-// â”€â”€ Update Phone â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// Update Phone
  
 export async function updateUserPhone(uid: string, phone: string): Promise<void> {
   await updateUserDoc(uid, { phone });
 }
  
-// â”€â”€ Mark Email Verified â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// Mark Email Verified
  
 export async function markEmailVerified(uid: string): Promise<void> {
   await updateUserDoc(uid, { emailVerified: true });
 }
  
-// â”€â”€ Check if Firestore User Exists â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// Check if Firestore User Exists
 
 export async function userDocExists(uid: string): Promise<boolean> {
   const db = getFirebaseDb();
@@ -185,11 +185,11 @@ export async function userDocExists(uid: string): Promise<boolean> {
   return snap.exists();
 }
 
-// â”€â”€ Entitlement Helpers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// Entitlement Helpers
 
 /**
  * Check if a user is entitled to create a reveal (has revealsAllowed > 0).
- * Fetches fresh data â€” do NOT use cached state for gating checks.
+ * Fetches fresh data - do NOT use cached state for gating checks.
  */
 export async function canCreateReveal(uid: string): Promise<boolean> {
   const user = await getUserDoc(uid);
@@ -257,7 +257,7 @@ export async function consumePurchaseForReveal(
   );
 
   if (!target) {
-    throw new Error("No unused purchase available â€” user needs to buy a plan first.");
+    throw new Error("No unused purchase available - user needs to buy a plan first.");
   }
 
   // Attach enquiry to this purchase

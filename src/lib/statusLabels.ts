@@ -72,7 +72,9 @@ export function derivePaymentStatusFromPurchases(
   const completed = purchases.some((purchase) => {
     if (purchase.status !== "completed") return false;
     if (!revealEnquiryId) return true;
-    return purchase.revealEnquiryId === revealEnquiryId;
+    if (purchase.revealEnquiryId === revealEnquiryId) return true;
+    if (purchase.revealEnquiryId === null || purchase.revealEnquiryId === undefined || purchase.revealEnquiryId === "") return true;
+    return false;
   });
 
   return completed ? "completed" : "pending";

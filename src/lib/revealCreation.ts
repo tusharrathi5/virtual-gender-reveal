@@ -3,7 +3,7 @@ import { getAdminDb } from "@/lib/firebase-admin";
 import type { Purchase } from "@/lib/userService";
 import type { EnquiryMode, EnquiryStages, RevealerRelation } from "@/lib/types";
 
-// â”€â”€â”€ Types â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// Types
 
 export interface CreateRevealParams {
   uid: string;
@@ -30,7 +30,7 @@ export interface CreateRevealResult {
   newStatus: "video_in_progress";
 }
 
-// â”€â”€â”€ Main transaction â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// Main transaction
 
 /**
  * Atomically:
@@ -44,7 +44,7 @@ export interface CreateRevealResult {
  * simultaneous requests could both pass the "revealsAllowed > 0" check
  * before either one decrements.
  *
- * Throws on any failure â€” caller is responsible for orphaned-photo cleanup.
+ * Throws on any failure - caller is responsible for orphaned-photo cleanup.
  */
 export async function createRevealAndConsumeEntitlement(
   params: CreateRevealParams
@@ -112,7 +112,7 @@ export async function createRevealAndConsumeEntitlement(
     );
 
     if (!target) {
-      // Data integrity issue â€” revealsAllowed says they can but no Purchase has
+      // Data integrity issue - revealsAllowed says they can but no Purchase has
       // capacity. Bail rather than silently creating an untracked reveal.
       throw new Error("NO_UNUSED_PURCHASE");
     }

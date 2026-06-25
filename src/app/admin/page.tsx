@@ -20,7 +20,7 @@ import {
   normalizePaymentStatus,
 } from "@/lib/statusLabels";
 
-// â”€â”€â”€ Types â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// Types
 
 interface EnquiryData {
   id: string;
@@ -134,7 +134,7 @@ const DEFAULT_SORT_DIR: Record<SortKey, SortDir> = {
   video: "asc",
 };
 
-// â”€â”€â”€ Helpers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// Helpers
 
 function tsToDate(v: unknown): Date | null {
   if (!v) return null;
@@ -155,7 +155,7 @@ function tsToDate(v: unknown): Date | null {
 }
 
 function fmtDate(d: Date | null): string {
-  if (!d) return "â€”";
+  if (!d) return "-";
   return d.toLocaleDateString("en-US", {
     year: "numeric",
     month: "short",
@@ -164,7 +164,7 @@ function fmtDate(d: Date | null): string {
 }
 
 function fmtDateTime(d: Date | null): string {
-  if (!d) return "â€”";
+  if (!d) return "-";
   return d.toLocaleString("en-US", {
     year: "numeric",
     month: "short",
@@ -233,7 +233,7 @@ function daysUntil(target: Date): number {
   return Math.ceil(ms / (24 * 60 * 60 * 1000));
 }
 
-// â”€â”€â”€ Component â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// Component
 
 export default function AdminPage() {
   const router = useRouter();
@@ -289,7 +289,7 @@ export default function AdminPage() {
         const enq: EnquiryData = {
           id: d.id,
           userId: (data.userId as string) ?? "",
-          parentName: (data.parentName as string) ?? "â€”",
+          parentName: (data.parentName as string) ?? "-",
           mode: (data.mode as "announcement" | "reveal") ?? "reveal",
           plan: (data.plan as string) ?? null,
           status: (data.status as string) ?? "pending",
@@ -354,9 +354,11 @@ export default function AdminPage() {
           0
         );
         const latestEnquiry = enquiryByUser.get(d.id) ?? null;
-        const paymentStatus = normalizePaymentStatus(
-          latestEnquiry?.paymentStatus ?? derivePaymentStatusFromPurchases(purchases, latestEnquiry?.id)
-        );
+        const persistedPaymentStatus = normalizePaymentStatus(latestEnquiry?.paymentStatus);
+        const purchasePaymentStatus = derivePaymentStatusFromPurchases(purchases, latestEnquiry?.id);
+        const paymentStatus = purchasePaymentStatus === "completed"
+          ? "completed"
+          : persistedPaymentStatus;
         return {
           uid: d.id,
           email: (data.email as string) ?? "",
@@ -637,7 +639,7 @@ export default function AdminPage() {
   if (authLoading || !firestoreUser) {
     return (
       <div className="vgr-loading">
-        <div className="vgr-loading-text">Loadingâ€¦</div>
+        <div className="vgr-loading-text">Loading...</div>
         <style jsx>{`
           .vgr-loading {
             min-height: 100vh;
@@ -718,7 +720,7 @@ export default function AdminPage() {
               title="Sign out"
               aria-label="Sign out"
             >
-              âŽ‹
+              Sign out
             </button>
           </div>
         </div>
@@ -742,7 +744,7 @@ export default function AdminPage() {
               onClick={handleExportCsv}
               disabled={actionInProgress || sortedUsers.length === 0}
             >
-              <span className="vgr-btn-icon">â†“</span> Export CSV
+              <span className="vgr-btn-icon">↓</span> Export CSV
             </button>
           ) : (
             <button className="vgr-btn vgr-btn-ghost" onClick={refresh} disabled={loadingData}>
@@ -760,11 +762,11 @@ export default function AdminPage() {
               <input
                 className="vgr-input"
                 type="text"
-                placeholder="Search by name, email, or phoneâ€¦"
+                placeholder="Search by name, email, or phone..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
               />
-              <span className="vgr-search-icon">âŒ•</span>
+              <span className="vgr-search-icon">⌕</span>
             </div>
           </div>
           <div className="vgr-filter-group">
@@ -808,21 +810,21 @@ export default function AdminPage() {
             <label className="vgr-filter-label">Reveal Date</label>
             <div className="vgr-date-range">
               <input className="vgr-input vgr-input-date" type="date" value={dateFrom} onChange={(e) => setDateFrom(e.target.value)} />
-              <span className="vgr-date-sep">â†’</span>
+              <span className="vgr-date-sep">→</span>
               <input className="vgr-input vgr-input-date" type="date" value={dateTo} onChange={(e) => setDateTo(e.target.value)} />
             </div>
           </div>
           <div className="vgr-filter-group vgr-filter-group-reset">
             <label className="vgr-filter-label">&nbsp;</label>
             <button className="vgr-btn vgr-btn-reset" onClick={resetFilters}>
-              <span className="vgr-btn-icon">â†º</span> Reset Filters
+              <span className="vgr-btn-icon">↺</span> Reset Filters
             </button>
           </div>
         </section>
 
         <div className="vgr-total-row">
           <div className="vgr-total">
-            <span className="vgr-total-icon">â–¦</span>
+            <span className="vgr-total-icon">▦</span>
             <span>
               Total Users: <strong>{filteredUsers.length}</strong>
               {filteredUsers.length !== users.length && (
@@ -831,13 +833,13 @@ export default function AdminPage() {
             </span>
           </div>
           <button className="vgr-btn vgr-btn-ghost" onClick={refresh} disabled={loadingData}>
-            {loadingData ? "Loadingâ€¦" : "â†» Refresh"}
+            {loadingData ? "Loading..." : "↻ Refresh"}
           </button>
         </div>
 
         <section className="vgr-table-card">
           {loadingData ? (
-            <div className="vgr-table-loading">Loading usersâ€¦</div>
+            <div className="vgr-table-loading">Loading users...</div>
           ) : sortedUsers.length === 0 ? (
             <div className="vgr-table-empty">
               No users match your filters. <button className="vgr-link" onClick={resetFilters}>Reset filters</button>
@@ -1435,9 +1437,9 @@ function DeletedUsersPanel({
           return (
             <div key={d.originalUid} className="vgr-deleted-row">
               <div>
-                <strong>{d.parentName || d.email || "â€”"}</strong>
+                <strong>{d.parentName || d.email || "-"}</strong>
                 <span className="vgr-deleted-meta">
-                  {" Â· "}{d.email || "no email"}{" Â· deleted by "}{d.deletedBy}{" Â· "}{fmtDate(d.deletedAt)}
+                  {" · "}{d.email || "no email"}{" · deleted by "}{d.deletedBy}{" · "}{fmtDate(d.deletedAt)}
                 </span>
               </div>
               <span className={`vgr-pill ${days <= 3 ? "vgr-pill-red" : "vgr-pill-amber"}`}>
@@ -1471,13 +1473,13 @@ function SortHeader({
     <th className="vgr-th" onClick={() => onClick(sortKey)}>
       {label}
       <span className={`vgr-sort-arrow ${active ? "active" : ""}`}>
-        {active ? (currentDir === "asc" ? "â–²" : "â–¼") : "â†•"}
+        {active ? (currentDir === "asc" ? "▲" : "▼") : "↕"}
       </span>
     </th>
   );
 }
 
-// â”€â”€â”€ Pagination â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// Pagination
 
 function Pagination({
   current,
@@ -1489,16 +1491,16 @@ function Pagination({
   onPage: (n: number) => void;
 }) {
   // Compact page list with ellipsis, max ~7 visible
-  const pages: (number | "â€¦")[] = [];
+  const pages: (number | "...")[] = [];
   if (total <= 7) {
     for (let i = 1; i <= total; i++) pages.push(i);
   } else {
     pages.push(1);
-    if (current > 3) pages.push("â€¦");
+    if (current > 3) pages.push("...");
     const start = Math.max(2, current - 1);
     const end = Math.min(total - 1, current + 1);
     for (let i = start; i <= end; i++) pages.push(i);
-    if (current < total - 2) pages.push("â€¦");
+    if (current < total - 2) pages.push("...");
     pages.push(total);
   }
 
@@ -1510,12 +1512,12 @@ function Pagination({
         onClick={() => onPage(current - 1)}
         aria-label="Previous page"
       >
-        â€¹
+        ‹
       </button>
       {pages.map((p, idx) =>
-        p === "â€¦" ? (
+        p === "..." ? (
           <span key={`e-${idx}`} className="vgr-page-ellipsis">
-            â€¦
+            ...
           </span>
         ) : (
           <button
@@ -1533,13 +1535,13 @@ function Pagination({
         onClick={() => onPage(current + 1)}
         aria-label="Next page"
       >
-        â€º
+        ›
       </button>
     </div>
   );
 }
 
-// â”€â”€â”€ User table row â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// User table row
 
 function UserTableRow({
   user,
@@ -1624,11 +1626,11 @@ function UserTableRow({
           >
             {getInitials(user.fullName, user.email)}
           </div>
-          <div className="vgr-name-text">{user.fullName || "â€”"}</div>
+          <div className="vgr-name-text">{user.fullName || "-"}</div>
         </div>
       </td>
-      <td className="vgr-email">{user.email || "â€”"}</td>
-      <td className="vgr-email">{user.createdAt ? fmtDate(user.createdAt) : "â€”"}</td>
+      <td className="vgr-email">{user.email || "-"}</td>
+      <td className="vgr-email">{user.createdAt ? fmtDate(user.createdAt) : "-"}</td>
       <td>
         <span className={`vgr-pill ${planPillClass}`}>
           {planLabel.charAt(0).toUpperCase() + planLabel.slice(1)}
@@ -1642,7 +1644,7 @@ function UserTableRow({
       <td>
         <GenderCell enquiry={e} getIdToken={getIdToken} />
       </td>
-      <td className="vgr-email">{e?.revealAt ? fmtDate(e.revealAt) : "â€”"}</td>
+      <td className="vgr-email">{e?.revealAt ? fmtDate(e.revealAt) : "-"}</td>
       <td>
         {e ? (
           <span
@@ -1653,7 +1655,7 @@ function UserTableRow({
             {e.mode === "reveal" ? "Reveal" : "Announcement"}
           </span>
         ) : (
-          <span className="vgr-pill vgr-pill-gray">â€”</span>
+          <span className="vgr-pill vgr-pill-gray">-</span>
         )}
       </td>
       <td>
@@ -1704,7 +1706,7 @@ function UserTableRow({
             {openingParty ? "Opening..." : "Join the Party"}
           </button>
         ) : (
-          <span className="vgr-pill vgr-pill-gray">â€”</span>
+          <span className="vgr-pill vgr-pill-gray">-</span>
         )}
       </td>
       <td className="vgr-actions-cell" onClick={(ev) => ev.stopPropagation()}>
@@ -1713,7 +1715,7 @@ function UserTableRow({
           onClick={() => setActionsOpen((o) => !o)}
           aria-label="Actions"
         >
-          â‹¯
+          ⋯
         </button>
         {actionsOpen && (
           <>
@@ -1737,7 +1739,7 @@ function UserTableRow({
                   onSelect();
                 }}
               >
-                Manage userâ€¦
+                Manage user...
               </button>
             </div>
           </>
@@ -1747,7 +1749,7 @@ function UserTableRow({
   );
 }
 
-// â”€â”€â”€ Gender cell with click-to-reveal â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// Gender cell with click-to-reveal
 
 function GenderCell({
   enquiry,
@@ -1764,8 +1766,8 @@ function GenderCell({
   if (!enquiry) {
     return (
       <span className="vgr-gender-cell">
-        <span className="vgr-gender-icon hidden">â€”</span>
-        <span style={{ color: "#999" }}>â€”</span>
+        <span className="vgr-gender-icon hidden">-</span>
+        <span style={{ color: "#999" }}>-</span>
       </span>
     );
   }
@@ -1810,7 +1812,7 @@ function GenderCell({
   if (loading) {
     return (
       <span className="vgr-gender-cell" style={{ color: "#999" }}>
-        Decryptingâ€¦
+        Decrypting...
       </span>
     );
   }
@@ -1831,7 +1833,7 @@ function GenderCell({
         title="Click to hide"
       >
         <span className={`vgr-gender-icon ${isGirl ? "girl" : "boy"}`}>
-          {isGirl ? "â™€" : "â™‚"}
+          {isGirl ? "♀" : "♂"}
         </span>
         <span
           style={{
@@ -1856,7 +1858,7 @@ function GenderCell({
   );
 }
 
-// â”€â”€â”€ User profile overlay (unified â€” account + plan + reveal + photos + actions) â”€â”€â”€
+// User profile overlay (account + plan + reveal + photos + actions)
 
 function UserProfileOverlay({
   user,
@@ -1928,7 +1930,7 @@ function UserProfileOverlay({
               </h2>
               <p className="vgr-overlay-sub">
                 {user.email}
-                {user.phone ? ` Â· ${user.phone}` : ""}
+                {user.phone ? ` · ${user.phone}` : ""}
               </p>
               <div style={{ display: "flex", gap: 6, marginTop: 8 }}>
                 {user.role?.toLowerCase() === "admin" && (
@@ -1954,7 +1956,7 @@ function UserProfileOverlay({
             onClick={onClose}
             aria-label="Close"
           >
-            Ã—
+            ×
           </button>
         </div>
 
@@ -1965,7 +1967,7 @@ function UserProfileOverlay({
             <div className="vgr-grid-3">
               <div>
                 <div className="vgr-field-label">Provider</div>
-                <div className="vgr-field-value">{user.provider || "â€”"}</div>
+                <div className="vgr-field-value">{user.provider || "-"}</div>
               </div>
               <div>
                 <div className="vgr-field-label">Email Verified</div>
@@ -2035,7 +2037,7 @@ function UserProfileOverlay({
             <>
               <div className="vgr-section">
                 <h3>
-                  Latest Reveal â€”{" "}
+                  Latest Reveal -{" "}
                   <span
                     className={`vgr-pill vgr-pill-${
                       status.tone === "green"
@@ -2067,7 +2069,7 @@ function UserProfileOverlay({
                   </div>
                   <div>
                     <div className="vgr-field-label">Plan</div>
-                    <div className="vgr-field-value">{e.plan || "â€”"}</div>
+                    <div className="vgr-field-value">{e.plan || "-"}</div>
                   </div>
                   <div>
                     <div className="vgr-field-label">Reveal Date</div>
@@ -2089,7 +2091,7 @@ function UserProfileOverlay({
                     <div>
                       <div className="vgr-field-label">Due Date</div>
                       <div className="vgr-field-value">
-                        {e.dueDate ? fmtDate(new Date(e.dueDate)) : "â€”"}
+                        {e.dueDate ? fmtDate(new Date(e.dueDate)) : "-"}
                       </div>
                     </div>
                   ) : (
@@ -2097,13 +2099,13 @@ function UserProfileOverlay({
                       <div>
                         <div className="vgr-field-label">Due Date</div>
                         <div className="vgr-field-value">
-                          {e.dueDate ? fmtDate(new Date(e.dueDate)) : "â€”"}
+                          {e.dueDate ? fmtDate(new Date(e.dueDate)) : "-"}
                         </div>
                       </div>
                       <div>
                         <div className="vgr-field-label">Timezone</div>
                         <div className="vgr-field-value">
-                          {e.revealTimezone || "â€”"}
+                          {e.revealTimezone || "-"}
                         </div>
                       </div>
                     </>
@@ -2128,19 +2130,19 @@ function UserProfileOverlay({
                     <div>
                       <div className="vgr-field-label">Email</div>
                       <div className="vgr-field-value">
-                        {e.revealerEmail || "â€”"}
+                        {e.revealerEmail || "-"}
                       </div>
                     </div>
                     <div>
                       <div className="vgr-field-label">Relation</div>
                       <div className="vgr-field-value">
-                        {e.revealerRelation || "â€”"}
+                        {e.revealerRelation || "-"}
                       </div>
                     </div>
                     <div>
                       <div className="vgr-field-label">Name</div>
                       <div className="vgr-field-value">
-                        {e.revealerName || "â€”"}
+                        {e.revealerName || "-"}
                       </div>
                     </div>
                   </div>
@@ -2216,7 +2218,7 @@ function UserProfileOverlay({
               {/* Progress (mode-specific) */}
               <div className="vgr-section">
                 <h3>
-                  Progress â€” {stages.length} stages (
+                  Progress - {stages.length} stages (
                   {e.mode === "reveal" ? "Reveal flow" : "Announcement flow"}
                   )
                 </h3>
@@ -2228,7 +2230,7 @@ function UserProfileOverlay({
                     >
                       <div className="vgr-stage-label">{label}</div>
                       <div className="vgr-stage-when">
-                        {e.stages[key] ? fmtDate(e.stages[key]) : "â€”"}
+                        {e.stages[key] ? fmtDate(e.stages[key]) : "-"}
                       </div>
                     </div>
                   ))}
@@ -2254,7 +2256,7 @@ function UserProfileOverlay({
             <h3>Admin Actions</h3>
             {isSelf && (
               <div className="vgr-self-warning">
-                âš ï¸ This is your own account. You can&apos;t disable or delete
+                ⚠️ This is your own account. You can&apos;t disable or delete
                 yourself.
               </div>
             )}
@@ -2303,7 +2305,7 @@ function UserProfileOverlay({
   );
 }
 
-// â”€â”€â”€ Video upload placeholder modal â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// Video upload modal
 
 function VideoUploadModal({
   onClose,

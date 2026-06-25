@@ -531,9 +531,13 @@ function DashboardContent() {
       const items: RevealSummary[] = snap.docs.map((d) => {
         const data = d.data();
         const stages = data.stages ?? {};
-        const paymentStatus = normalizePaymentStatus(
+        const persistedPaymentStatus = normalizePaymentStatus(
           data.paymentStatus ?? (stages.paymentReceived ? "completed" : "pending")
         );
+        const purchasePaymentStatus = derivePaymentStatusFromPurchases(firestoreUser?.purchases ?? null, d.id);
+        const paymentStatus = purchasePaymentStatus === "completed"
+          ? "completed"
+          : persistedPaymentStatus;
         return {
           id: d.id,
           mode: data.mode === "announcement" ? "announcement" : "reveal",
@@ -562,7 +566,7 @@ function DashboardContent() {
     } finally {
       setRevealsLoading(false);
     }
-  }, [user]);
+  }, [firestoreUser?.purchases, user]);
 
   useEffect(() => {
     if (!loading && !user) router.push("/login");
