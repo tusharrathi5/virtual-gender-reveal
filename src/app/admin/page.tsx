@@ -758,7 +758,7 @@ export default function AdminPage() {
         {isSidebarCollapsed ? <ChevronRight className="w-4 h-4" /> : <ChevronLeft className="w-4 h-4" />}
       </button>
 
-      <div className={`flex-1 flex flex-col relative transition-[padding] duration-300 min-h-screen ${isSidebarCollapsed ? "lg:pl-0" : "lg:pl-[280px]"}`}>
+      <div className={`flex-1 flex flex-col relative transition-[padding] duration-300 min-h-screen min-w-0 overflow-hidden ${isSidebarCollapsed ? "lg:pl-0" : "lg:pl-[280px]"}`}>
         <main className="vgr-main">
         <header className="vgr-page-header">
           <div>
