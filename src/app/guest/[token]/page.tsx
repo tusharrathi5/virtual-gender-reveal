@@ -44,6 +44,7 @@ export default function GuestInvitePage() {
   const [chatSending, setChatSending] = useState(false);
   const [chatStatus, setChatStatus] = useState<"connecting" | "live" | "reconnecting">("connecting");
   const [showCalendarOptions, setShowCalendarOptions] = useState(false);
+  const [showEmojiPicker, setShowEmojiPicker] = useState(false);
 
   const [prediction, setPrediction] = useState<Prediction>(null);
   const [message, setMessage] = useState("");
@@ -443,40 +444,40 @@ export default function GuestInvitePage() {
 
           {/* Row 4: Live Chat & Who's Invited (Two equal-sized boxes side-by-side) */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 w-full items-stretch">
-            {/* Box 4A: Live Party Chat (Dark Slate Glassmorphism) */}
-            <section className="bg-slate-950/40 backdrop-blur-xl border border-white/10 shadow-2xl rounded-[24px] p-5 flex flex-col justify-between gap-3 text-white w-full">
+            {/* Box 4A: Live Party Chat (Glassmorphic White) */}
+            <section className="bg-white/15 backdrop-blur-xl border border-white/25 shadow-2xl rounded-[24px] p-5 flex flex-col justify-between gap-3 text-slate-800 w-full">
               <div className="flex flex-col gap-3 w-full">
                 <div className="flex items-center justify-between border-b border-white/10 pb-2.5">
                   <div className="flex items-center gap-2">
                     <MessageSquare className="w-4.5 h-4.5 text-[#E8449A]" />
-                    <h3 className="text-base font-black text-white drop-shadow-sm">Live chat</h3>
+                    <h3 className="text-base font-black text-slate-900">Live chat</h3>
                   </div>
                   <span
                     className={`inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full ${
                       chatStatus === "live"
-                        ? "bg-emerald-500/20 text-emerald-300 border border-emerald-500/30"
-                        : "bg-amber-500/20 text-amber-300 border border-amber-500/30"
+                        ? "bg-emerald-500/20 text-emerald-850 border border-emerald-500/30"
+                        : "bg-amber-500/20 text-amber-850 border border-amber-500/30"
                     }`}
                   >
-                    <span className={`w-1.5 h-1.5 rounded-full ${chatStatus === "live" ? "bg-emerald-400 animate-pulse" : "bg-amber-400"}`} />
+                    <span className={`w-1.5 h-1.5 rounded-full ${chatStatus === "live" ? "bg-emerald-500 animate-pulse" : "bg-amber-500"}`} />
                     {chatStatus === "live" ? "Live" : chatStatus === "connecting" ? "Connecting" : "Reconnecting"}
                   </span>
                 </div>
 
-                {/* Dark Transparent Chat Feed */}
-                <div className="h-[200px] overflow-y-auto pr-1 flex flex-col gap-2.5 mt-1 bg-black/20 rounded-2xl p-3 border border-white/5">
+                {/* Translucent Chat Feed */}
+                <div className="h-[200px] overflow-y-auto pr-1 flex flex-col gap-2.5 mt-1 bg-white/10 rounded-2xl p-3 border border-white/10">
                   {chatMessages.length === 0 ? (
                     <div className="h-full flex items-center justify-center text-slate-400 text-xs italic">
                       No chat messages yet.
                     </div>
                   ) : (
                     chatMessages.map((item) => (
-                      <div key={item.id} className="text-xs bg-white/10 border border-white/5 p-2.5 rounded-xl shadow-sm text-white">
+                      <div key={item.id} className="text-xs bg-white/25 border border-white/35 p-2.5 rounded-xl shadow-sm text-slate-900">
                         <div className="flex justify-between items-center gap-2">
-                          <strong className="text-pink-300 font-black">{item.name}</strong>
-                          <span className="text-[10px] text-slate-400 font-medium">{formatChatTime(item.createdAtIso)}</span>
+                          <strong className="text-[#c2527a] font-black">{item.name}</strong>
+                          <span className="text-[10px] text-slate-500 font-medium">{formatChatTime(item.createdAtIso)}</span>
                         </div>
-                        <p className="text-slate-100 mt-1 leading-relaxed overflow-wrap-anywhere font-medium">{item.message}</p>
+                        <p className="text-slate-800 mt-1 leading-relaxed overflow-wrap-anywhere font-medium">{item.message}</p>
                       </div>
                     ))
                   )}
@@ -485,25 +486,54 @@ export default function GuestInvitePage() {
               </div>
 
               {/* Message Input Form */}
-              <form onSubmit={submitChat} className="flex gap-2 mt-2 w-full">
-                <input
-                  type="text"
-                  value={chatText}
-                  maxLength={500}
-                  onChange={(e) => setChatText(e.target.value)}
-                  disabled={isCompleted}
-                  placeholder={isCompleted ? "Chat is closed" : "Say something..."}
-                  className="flex-1 text-xs rounded-xl border border-white/15 px-3 py-2.5 bg-black/35 text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-[#E8449A]/50 focus:border-[#E8449A] transition-all disabled:bg-white/5 font-semibold"
-                />
-                <button
-                  type="submit"
-                  disabled={!chatText.trim() || chatSending || isCompleted}
-                  className="px-4 py-2.5 bg-gradient-to-r from-[#E8449A] to-[#3A9FE8] hover:from-[#d13787] hover:to-[#2e8fd1] disabled:opacity-50 text-white text-xs font-black uppercase tracking-wider rounded-xl shadow-md transition-all duration-200 flex items-center justify-center shrink-0"
-                >
-                  {chatSending ? "..." : "Send"}
-                </button>
-              </form>
-              {chatError && <p className="text-[10px] text-red-400 font-bold">⚠️ {chatError}</p>}
+              <div className="relative w-full mt-2">
+                {showEmojiPicker && (
+                  <div className="absolute bottom-full left-0 mb-2 w-full bg-white/70 backdrop-blur-md border border-white/40 p-2 rounded-xl shadow-xl z-30 flex flex-wrap gap-1.5 justify-center animate-fade-in">
+                    {["👶", "🍼", "💙", "🩷", "🎉", "🥳", "✨", "🧸", "👣", "🎈"].map((emoji) => (
+                      <button
+                        key={emoji}
+                        type="button"
+                        onClick={() => {
+                          setChatText((prev) => prev + emoji);
+                          setShowEmojiPicker(false);
+                        }}
+                        className="w-7 h-7 flex items-center justify-center hover:bg-white/90 hover:scale-110 rounded-lg text-base transition-all active:scale-95 cursor-pointer"
+                      >
+                        {emoji}
+                      </button>
+                    ))}
+                  </div>
+                )}
+
+                <form onSubmit={submitChat} className="flex gap-1.5 w-full items-center">
+                  <button
+                    type="button"
+                    onClick={() => setShowEmojiPicker(!showEmojiPicker)}
+                    disabled={isCompleted}
+                    className="h-9 w-9 flex items-center justify-center bg-white/20 hover:bg-white/45 active:scale-95 text-slate-800 hover:text-slate-900 border border-white/35 rounded-xl transition-all shrink-0 cursor-pointer text-sm"
+                    title="Add celebratory emoji"
+                  >
+                    😊
+                  </button>
+                  <input
+                    type="text"
+                    value={chatText}
+                    maxLength={500}
+                    onChange={(e) => setChatText(e.target.value)}
+                    disabled={isCompleted}
+                    placeholder={isCompleted ? "Chat is closed" : "Say something..."}
+                    className="flex-1 text-xs rounded-xl border border-white/30 px-3 py-2 bg-white/25 text-slate-900 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-[#E8449A]/30 focus:border-[#E8449A] transition-all disabled:bg-white/5 font-semibold h-9"
+                  />
+                  <button
+                    type="submit"
+                    disabled={!chatText.trim() || chatSending || isCompleted}
+                    className="px-4 py-2 bg-gradient-to-r from-[#E8449A] to-[#3A9FE8] hover:from-[#d13787] hover:to-[#2e8fd1] disabled:opacity-50 text-white text-xs font-black uppercase tracking-wider rounded-xl shadow-md transition-all duration-200 flex items-center justify-center shrink-0 cursor-pointer h-9"
+                  >
+                    {chatSending ? "..." : "Send"}
+                  </button>
+                </form>
+              </div>
+              {chatError && <p className="text-[10px] text-red-500 font-bold mt-1">⚠️ {chatError}</p>}
             </section>
 
             {/* Box 4B: Who's Invited (Glassmorphic) */}
