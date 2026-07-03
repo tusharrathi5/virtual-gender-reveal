@@ -353,16 +353,6 @@ export default function DashboardShell({
               // High contrast/performance static gradient background fallback for prefers-reduced-motion
               <div className="absolute inset-0 bg-gradient-to-tr from-[#fbcfe8] via-[#e0f2fe] to-[#fafafd] z-0" />
             )}
-            
-            {/* Translucent overlay tint */}
-            <div 
-              className="absolute inset-0 z-10 pointer-events-none" 
-              style={{
-                background: "linear-gradient(135deg, rgba(255, 255, 255, 0.65) 0%, rgba(255, 255, 255, 0.78) 100%)",
-                backdropFilter: "blur(1px)",
-                WebkitBackdropFilter: "blur(1px)"
-              }}
-            />
           </>
         )}
 
@@ -391,9 +381,17 @@ export default function DashboardShell({
         </header>
 
         {/* Dashboard Content Container */}
-        <main className={`flex-1 p-6 md:p-8 lg:px-10 lg:py-6 max-w-5xl mx-auto w-full relative z-20 ${showVideoBackground ? "overflow-y-auto" : ""}`}>
-          {children}
-        </main>
+        {showVideoBackground ? (
+          <div className="flex-1 overflow-y-auto w-full z-20">
+            <main className="p-6 md:p-8 lg:px-10 lg:py-6 max-w-5xl mx-auto w-full relative">
+              {children}
+            </main>
+          </div>
+        ) : (
+          <main className="flex-1 p-6 md:p-8 lg:px-10 lg:py-6 max-w-5xl mx-auto w-full relative z-20">
+            {children}
+          </main>
+        )}
       </div>
 
       {/* Slide-in Keyframe Animation Style */}
