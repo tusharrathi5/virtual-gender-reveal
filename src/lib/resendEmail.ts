@@ -387,7 +387,7 @@ export async function sendGuestInviteEmail(params: SendGuestInviteEmailParams): 
 
   const baseUrl = new URL(params.inviteUrl).origin;
   const logoUrl = `${baseUrl}/Favicon-VGR.png`;
-  const bannerUrl = `${baseUrl}/assets/email-banner.jpg`;
+  const bannerUrl = `${baseUrl}/assets/email-banner.png`;
 
   const html = buildVgrEmailTemplateHtml({
     logoUrl,
@@ -425,7 +425,7 @@ export async function sendHostInvitationConfirmationEmail(params: SendHostInvita
 
   const baseUrl = new URL(params.inviteUrl).origin;
   const logoUrl = `${baseUrl}/Favicon-VGR.png`;
-  const bannerUrl = `${baseUrl}/assets/email-banner.jpg`;
+  const bannerUrl = `${baseUrl}/assets/email-banner.png`;
 
   const html = buildVgrEmailTemplateHtml({
     logoUrl,
@@ -486,7 +486,7 @@ export async function sendGuestReminderEmail(params: SendGuestReminderEmailParam
 
   const baseUrl = new URL(params.inviteUrl).origin;
   const logoUrl = `${baseUrl}/Favicon-VGR.png`;
-  const bannerUrl = `${baseUrl}/assets/email-banner.jpg`;
+  const bannerUrl = `${baseUrl}/assets/email-banner.png`;
 
   // Dynamically build calendar links for reminders
   const token = inviteUrl.substring(inviteUrl.lastIndexOf("/") + 1);
