@@ -3,6 +3,7 @@
 import type { FormEvent } from "react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useParams } from "next/navigation";
+import { Sparkles, Calendar, Send, Heart, Users, MessageSquare, Clock, Globe } from "lucide-react";
 
 type Prediction = "boy" | "girl" | null;
 type ChatMessage = {
@@ -199,343 +200,406 @@ export default function GuestInvitePage() {
   }
 
   return (
-    <main
-      style={{
-        minHeight: "100vh",
-        padding: "24px 16px 48px",
-        background:
-          "radial-gradient(circle at top left, rgba(108,142,239,.18), transparent 40%), radial-gradient(circle at top right, rgba(236,144,198,.18), transparent 35%), #fffefb",
-      }}
-    >
-      <div style={{ maxWidth: 980, margin: "0 auto" }}>
-        <header
-          style={{
-            borderRadius: 14,
-            padding: "14px 18px",
-            background: "linear-gradient(90deg, rgba(108,142,239,.15), rgba(236,144,198,.15))",
-            border: "1px solid rgba(236,144,198,.25)",
-            marginBottom: 20,
-            textAlign: "center",
-          }}
-        >
-          <h1 style={{ margin: 0, fontSize: 30, fontWeight: 800, color: "#1f2937" }}>
-            {parentName}&apos;s Virtual Gender Reveal
-          </h1>
-          <p style={{ margin: "4px 0 0", color: "#6b7280" }}>Hi {guestName}, welcome to the celebration ✨</p>
-          <p style={{ margin: "4px 0 0", color: "#9ca3af", fontSize: 13 }}>Reveal timezone: {revealTimezone}</p>
-          {googleCalendarUrl && (
-            <p style={{ margin: "8px 0 0" }}>
-              <button
-                type="button"
-                onClick={() => setShowCalendarOptions(true)}
-                style={{ color: "#1d4ed8", fontSize: 14, background: "transparent", border: 0, cursor: "pointer" }}
-              >
-                Add to Calendar
-              </button>
+    <>
+      <style>{`
+        .party-bg-video {
+          will-change: transform;
+        }
+        @media (prefers-reduced-motion: reduce) {
+          .party-bg-video {
+            display: none !important;
+          }
+          .party-overlay {
+            background: linear-gradient(135deg, rgba(232, 68, 154, 0.08) 0%, rgba(58, 159, 232, 0.08) 100%), #fffefb !important;
+          }
+        }
+      `}</style>
+
+      <div className="relative min-h-screen overflow-x-hidden w-full font-sans antialiased text-[#1f2937]">
+        {/* Decorative Fixed Video Background */}
+        <video
+          src="/videos/party-page-background.mp4"
+          autoPlay
+          loop
+          muted
+          playsInline
+          controls={false}
+          aria-hidden="true"
+          className="party-bg-video fixed inset-0 w-full h-full object-cover z-0 pointer-events-none"
+        />
+        
+        {/* Premium Overlay Tint */}
+        <div className="party-overlay fixed inset-0 z-10 pointer-events-none bg-gradient-to-tr from-[#E8449A]/5 via-white/70 to-[#3A9FE8]/5" />
+        
+        {/* Main Content (z-index 20) */}
+        <div className="relative z-20 max-w-[1080px] mx-auto px-4 py-8 md:py-12 flex flex-col gap-6">
+          {/* 1. PARTY HERO HEADER */}
+          <header className="relative overflow-hidden bg-white/70 backdrop-blur-xl border border-white/60 shadow-xl rounded-[24px] p-6 md:p-8 text-center flex flex-col items-center gap-4">
+            {/* Ambient Glows */}
+            <div className="absolute top-0 left-0 w-32 h-full bg-[#E8449A]/10 blur-2xl pointer-events-none" />
+            <div className="absolute top-0 right-0 w-32 h-full bg-[#3A9FE8]/10 blur-2xl pointer-events-none" />
+            
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-gradient-to-r from-[#E8449A]/10 to-[#3A9FE8]/10 border border-pink-200/50 text-[11px] font-bold uppercase tracking-wider text-[#c2527a]">
+              ✨ Virtual Celebration ✨
+            </div>
+            
+            <h1 className="font-extrabold text-3xl md:text-4xl text-slate-800 leading-tight">
+              {parentName}&apos;s Virtual Gender Reveal
+            </h1>
+            
+            <p className="text-sm md:text-base text-slate-600 font-medium">
+              Hi <span className="font-bold text-[#c2527a]">{guestName}</span>, welcome to the celebration 🎉
             </p>
-          )}
-        </header>
+            
+            <div className="flex flex-wrap justify-center items-center gap-4 text-xs font-semibold text-slate-500 mt-1">
+              <span className="flex items-center gap-1.5 bg-slate-100/80 px-3 py-1.5 rounded-lg border border-slate-200/40">
+                <Globe className="w-3.5 h-3.5 text-[#3A9FE8]" />
+                Timezone: {revealTimezone}
+              </span>
+              
+              {googleCalendarUrl && (
+                <button
+                  type="button"
+                  onClick={() => setShowCalendarOptions(true)}
+                  className="flex items-center gap-1.5 bg-white hover:bg-slate-50 text-[#3A9FE8] border border-blue-100 hover:border-blue-200 px-3 py-1.5 rounded-lg transition-all duration-200 shadow-sm font-bold"
+                >
+                  <Calendar className="w-3.5 h-3.5" />
+                  Add to Calendar
+                </button>
+              )}
+            </div>
+          </header>
+
+          {/* Double Column Grid on Desktop, Stacked on Mobile */}
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+            {/* Left Column: Video + Prediction Form + Guest Wishes */}
+            <div className="lg:col-span-7 flex flex-col gap-6">
+              {/* 2. REVEAL VIDEO / COUNTDOWN AREA */}
+              <section className="relative overflow-hidden bg-slate-900 border border-slate-800 shadow-2xl rounded-[24px]">
+                {/* Ambient subtle celebratory pink/blue glows in the corners of navy frame */}
+                <div className="absolute top-0 left-0 w-48 h-48 bg-[#E8449A]/15 blur-3xl pointer-events-none" />
+                <div className="absolute bottom-0 right-0 w-48 h-48 bg-[#3A9FE8]/15 blur-3xl pointer-events-none" />
+                
+                <div className="relative aspect-video w-full bg-slate-950">
+                  {isLive && videoUrl ? (
+                    <iframe
+                      src={videoUrl}
+                      title="Reveal Video"
+                      className="w-full h-full border-0"
+                      allow="accelerometer; gyroscope; autoplay; encrypted-media; picture-in-picture;"
+                      allowFullScreen
+                    />
+                  ) : (
+                    <div className="w-full h-full flex flex-col items-center justify-center text-center p-6 bg-gradient-to-b from-slate-900 to-slate-950">
+                      <div className="flex flex-col items-center gap-2">
+                        <div className="flex items-center gap-2 px-3 py-1 rounded-full bg-white/5 border border-white/10 text-xs font-semibold tracking-wider text-slate-300 uppercase">
+                          <Clock className="w-3.5 h-3.5 text-[#3A9FE8] animate-pulse" />
+                          The Reveal Live
+                        </div>
+                        
+                        <h2 className="text-2xl md:text-3xl font-extrabold text-white mt-4 tracking-tight">
+                          {countdownParts.live ? "Reveal is live now 🎉" : "Ready for the big reveal?"}
+                        </h2>
+                        
+                        {!countdownParts.live && (
+                          <div className="flex gap-2.5 md:gap-4 justify-center mt-6">
+                            {[
+                              { val: countdownParts.d, label: "Days" },
+                              { val: countdownParts.h, label: "Hours" },
+                              { val: countdownParts.m, label: "Mins" },
+                              { val: countdownParts.s, label: "Secs" },
+                            ].map((item, idx) => (
+                              <div key={idx} className="flex flex-col items-center bg-white/5 px-3 py-2 md:px-5 md:py-3 rounded-2xl border border-white/10 min-w-[64px] md:min-w-[80px] shadow-lg">
+                                <span className="text-xl md:text-3xl font-extrabold text-white font-mono leading-none">{item.val}</span>
+                                <span className="text-[9px] md:text-[10px] text-white/50 font-bold uppercase tracking-wider mt-1">{item.label}</span>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                        
+                        <p className="mt-6 text-sm text-slate-400 max-w-md">
+                          {countdownParts.live 
+                            ? "We are live! The reveal stream is starting now." 
+                            : "The screen will unlock automatically at the scheduled reveal time. Stay tuned!"}
+                        </p>
+                      </div>
+                    </div>
+                  )}
+                  
+                  {!isLive && (
+                    <div className="absolute left-4 bottom-4 flex items-center gap-2 bg-slate-950/80 backdrop-blur-md px-3 py-1.5 rounded-full border border-white/10 text-[11px] font-bold text-white shadow-md">
+                      <span className="w-2 h-2 rounded-full bg-amber-500 animate-ping" />
+                      Countdown Active
+                    </div>
+                  )}
+                </div>
+              </section>
+
+              {/* 3. PREDICTION & WISHES */}
+              <section className="bg-white/70 backdrop-blur-xl border border-white/60 shadow-xl rounded-[24px] p-6 flex flex-col gap-4">
+                <div className="flex items-center gap-2 border-b border-slate-100 pb-3">
+                  <div className="w-8 h-8 rounded-lg bg-pink-50 flex items-center justify-center">
+                    <Sparkles className="w-4.5 h-4.5 text-[#E8449A]" />
+                  </div>
+                  <div>
+                    <h2 className="text-xl font-bold text-slate-800">Prediction & wishes</h2>
+                    <p className="text-xs text-slate-500">
+                      {isLive
+                        ? "Drop your prediction and blessing for the parents."
+                        : "Prediction form will unlock once the reveal starts."}
+                    </p>
+                  </div>
+                </div>
+
+                {loading ? (
+                  <p className="text-sm text-slate-500">Loading invite details…</p>
+                ) : isCompleted ? (
+                  <div className="bg-slate-50 border border-slate-200/60 rounded-2xl p-4 text-center">
+                    <p className="text-sm text-slate-600 font-semibold">This reveal event has completed. Thanks for joining 💛</p>
+                  </div>
+                ) : done ? (
+                  <div className="bg-emerald-50/70 border border-emerald-200 rounded-2xl p-4 flex flex-col gap-2">
+                    <p className="text-sm font-bold text-emerald-800 flex items-center gap-1.5">
+                      <span>✓</span> Thanks! Your response is saved.
+                    </p>
+                    <div className="text-sm text-emerald-950 mt-1">
+                      Prediction: <strong className={`font-bold px-3 py-0.5 rounded-full text-xs text-white ${prediction === "boy" ? "bg-[#3A9FE8]" : "bg-[#E8449A]"}`}>
+                        {prediction === "boy" ? "Team Boy 💙" : "Team Girl 🩷"}
+                      </strong>
+                    </div>
+                    {message && (
+                      <p className="text-xs text-emerald-800/80 mt-1 italic">
+                        Note: &ldquo;{message}&rdquo;
+                      </p>
+                    )}
+                  </div>
+                ) : !isLive ? (
+                  <div className="bg-slate-50/70 border border-slate-200/40 rounded-2xl p-4 text-center">
+                    <p className="text-sm text-slate-500 font-medium">{countdownLabel}</p>
+                  </div>
+                ) : (
+                  <>
+                    <div className="grid grid-cols-2 gap-4">
+                      <button
+                        onClick={() => setPrediction("boy")}
+                        className={`flex flex-col items-center justify-center gap-2 p-4 rounded-2xl border transition-all duration-300 ${
+                          prediction === "boy"
+                            ? "bg-blue-50 border-[#3A9FE8] text-[#3A9FE8] shadow-md shadow-[#3A9FE8]/10"
+                            : "bg-white hover:bg-slate-50 border-slate-200 text-slate-600"
+                        }`}
+                      >
+                        <span className="text-2xl">💙</span>
+                        <span className="font-extrabold text-sm uppercase tracking-wider">Team Boy</span>
+                      </button>
+                      
+                      <button
+                        onClick={() => setPrediction("girl")}
+                        className={`flex flex-col items-center justify-center gap-2 p-4 rounded-2xl border transition-all duration-300 ${
+                          prediction === "girl"
+                            ? "bg-pink-50 border-[#E8449A] text-[#E8449A] shadow-md shadow-[#E8449A]/10"
+                            : "bg-white hover:bg-slate-50 border-slate-200 text-slate-600"
+                        }`}
+                      >
+                        <span className="text-2xl">🩷</span>
+                        <span className="font-extrabold text-sm uppercase tracking-wider">Team Girl</span>
+                      </button>
+                    </div>
+                    
+                    <textarea
+                      placeholder="Share a message for the parents…"
+                      value={message}
+                      onChange={(e) => setMessage(e.target.value)}
+                      className="w-full min-h-[100px] rounded-2xl border border-slate-200 p-4 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#E8449A]/30 focus:border-[#E8449A] bg-white transition-all resize-none"
+                    />
+                    
+                    <button
+                      onClick={submitPrediction}
+                      disabled={!prediction || submitting}
+                      className="w-full py-3.5 bg-gradient-to-r from-[#E8449A] to-[#3A9FE8] hover:from-[#d13787] hover:to-[#2e8fd1] disabled:opacity-50 text-white font-extrabold text-sm uppercase tracking-wider rounded-full shadow-lg shadow-[#E8449A]/20 transition-all duration-200"
+                    >
+                      {submitting ? "Saving…" : "Submit Prediction"}
+                    </button>
+                  </>
+                )}
+                {error && <p className="text-xs text-red-500 font-bold mt-1">⚠️ {error}</p>}
+              </section>
+
+              {/* 6. GUEST WISHES */}
+              <section className="bg-white/70 backdrop-blur-xl border border-white/60 shadow-xl rounded-[24px] p-6 flex flex-col gap-4">
+                <div className="flex items-center gap-2 border-b border-slate-100 pb-3">
+                  <div className="w-8 h-8 rounded-lg bg-blue-50 flex items-center justify-center">
+                    <Heart className="w-4.5 h-4.5 text-[#3A9FE8] fill-[#3A9FE8]" />
+                  </div>
+                  <div>
+                    <h2 className="text-xl font-bold text-slate-800">Guest wishes</h2>
+                    <p className="text-xs text-slate-500">Prediction messages saved for the parents.</p>
+                  </div>
+                </div>
+
+                {feed.length === 0 ? (
+                  <p className="text-sm text-slate-400 italic text-center py-6">No guest wishes yet.</p>
+                ) : (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3 max-h-[300px] overflow-y-auto pr-1">
+                    {feed.map((item, idx) => (
+                      <div
+                        key={`${item.name}-${idx}`}
+                        className="bg-white/90 border border-slate-100 p-4 rounded-2xl shadow-sm hover:shadow-md transition-shadow duration-200"
+                      >
+                        <div className="flex items-center justify-between border-b border-slate-50 pb-1.5 mb-2">
+                          <span className="font-bold text-sm text-slate-800">{item.name}</span>
+                        </div>
+                        <p className="text-xs text-slate-600 leading-relaxed italic">&ldquo;{item.message}&rdquo;</p>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </section>
+            </div>
+
+            {/* Right Column: Guest List + Chat */}
+            <div className="lg:col-span-5 flex flex-col gap-6">
+              {/* 4. WHO'S INVITED */}
+              <section className="bg-white/70 backdrop-blur-xl border border-white/60 shadow-xl rounded-[24px] p-5 flex flex-col gap-3">
+                <div className="flex items-center gap-2 border-b border-slate-100 pb-2.5">
+                  <Users className="w-4 h-4 text-[#3A9FE8]" />
+                  <h3 className="text-base font-bold text-slate-800">Who&apos;s invited</h3>
+                </div>
+                <p className="text-xs text-slate-500">Everyone on the guest list for this reveal.</p>
+                {invitedGuests.length === 0 ? (
+                  <p className="text-xs text-slate-400 italic">No guest names are available yet.</p>
+                ) : (
+                  <div className="flex flex-wrap gap-1.5 mt-1.5 max-h-[140px] overflow-y-auto pr-1">
+                    {invitedGuests.map((guest, idx) => (
+                      <span
+                        key={`${guest.name}-${idx}`}
+                        className="text-xs font-semibold px-2.5 py-1 rounded-full bg-slate-100/90 border border-slate-200/50 text-slate-700 shadow-sm"
+                      >
+                        {guest.name}
+                      </span>
+                    ))}
+                  </div>
+                )}
+              </section>
+
+              {/* 5. LIVE PARTY CHAT */}
+              <section className="bg-white/70 backdrop-blur-xl border border-white/60 shadow-xl rounded-[24px] p-5 flex flex-col gap-3">
+                <div className="flex items-center justify-between border-b border-slate-100 pb-2.5">
+                  <div className="flex items-center gap-2">
+                    <MessageSquare className="w-4.5 h-4.5 text-[#E8449A]" />
+                    <h3 className="text-base font-bold text-slate-800">Live party chat</h3>
+                  </div>
+                  <span
+                    className={`inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full ${
+                      chatStatus === "live"
+                        ? "bg-emerald-50 text-emerald-700 border border-emerald-200"
+                        : "bg-amber-50 text-amber-700 border border-amber-200"
+                    }`}
+                  >
+                    <span className={`w-1.5 h-1.5 rounded-full ${chatStatus === "live" ? "bg-emerald-500 animate-pulse" : "bg-amber-500"}`} />
+                    {chatStatus === "live" ? "Live" : chatStatus === "connecting" ? "Connecting" : "Reconnecting"}
+                  </span>
+                </div>
+
+                {/* Message List */}
+                <div className="h-[280px] overflow-y-auto pr-1 flex flex-col gap-2.5 mt-1 bg-slate-50/50 rounded-2xl p-3 border border-slate-200/30">
+                  {chatMessages.length === 0 ? (
+                    <div className="h-full flex items-center justify-center text-slate-400 text-xs italic">
+                      No chat messages yet.
+                    </div>
+                  ) : (
+                    chatMessages.map((item) => (
+                      <div key={item.id} className="text-xs bg-white border border-slate-100 p-2.5 rounded-xl shadow-sm">
+                        <div className="flex justify-between items-center gap-2">
+                          <strong className="text-slate-800 font-bold">{item.name}</strong>
+                          <span className="text-[10px] text-slate-400">{formatChatTime(item.createdAtIso)}</span>
+                        </div>
+                        <p className="text-slate-700 mt-1 leading-relaxed overflow-wrap-anywhere">{item.message}</p>
+                      </div>
+                    ))
+                  )}
+                  <div ref={chatEndRef} />
+                </div>
+
+                {/* Send Form */}
+                <form onSubmit={submitChat} className="flex gap-2 mt-1">
+                  <input
+                    type="text"
+                    value={chatText}
+                    maxLength={500}
+                    onChange={(e) => setChatText(e.target.value)}
+                    disabled={isCompleted}
+                    placeholder={isCompleted ? "Chat is closed" : "Send a message to the party"}
+                    className="flex-1 text-xs rounded-xl border border-slate-200 px-3 py-2.5 bg-white focus:outline-none focus:ring-2 focus:ring-[#E8449A]/30 focus:border-[#E8449A] transition-all disabled:bg-slate-50"
+                  />
+                  <button
+                    type="submit"
+                    disabled={!chatText.trim() || chatSending || isCompleted}
+                    className="px-4 py-2.5 bg-gradient-to-r from-[#E8449A] to-[#3A9FE8] disabled:opacity-50 text-white text-xs font-bold uppercase tracking-wider rounded-xl shadow-md transition-all duration-200 flex items-center justify-center shrink-0"
+                  >
+                    {chatSending ? "Sending" : "Send"}
+                  </button>
+                </form>
+                {chatError && <p className="text-[10px] text-red-500 font-bold mt-1">⚠️ {chatError}</p>}
+              </section>
+            </div>
+          </div>
+        </div>
+
+        {/* Calendar Selection Dialog Modal */}
         {showCalendarOptions && (
           <div
             onClick={() => setShowCalendarOptions(false)}
-            style={{
-              position: "fixed",
-              inset: 0,
-              background: "rgba(15,23,42,0.45)",
-              display: "grid",
-              placeItems: "center",
-              zIndex: 60,
-              padding: 16,
-            }}
+            className="fixed inset-0 bg-slate-950/40 backdrop-blur-md flex items-center justify-center z-[999] p-4"
           >
             <div
               onClick={(e) => e.stopPropagation()}
-              style={{
-                width: "min(480px, 100%)",
-                background: "#fff",
-                borderRadius: 14,
-                padding: 16,
-                border: "1px solid #e5e7eb",
-                boxShadow: "0 20px 40px rgba(0,0,0,.18)",
-              }}
+              className="bg-white/95 backdrop-blur-2xl rounded-[24px] border border-white/60 p-6 md:p-8 max-w-sm w-full shadow-2xl animate-fade-in flex flex-col gap-4 text-center"
             >
-              <h3 style={{ margin: 0, fontSize: 20, color: "#111827" }}>Add to Calendar</h3>
-              <p style={{ margin: "8px 0 12px", color: "#6b7280" }}>
+              <h3 className="text-xl font-extrabold text-slate-800">Add to Calendar</h3>
+              <p className="text-xs text-slate-500">
                 Choose your calendar app.
               </p>
-              <div style={{ display: "grid", gap: 8 }}>
-                <a href={googleCalendarUrl!} target="_blank" rel="noreferrer" style={{ color: "#1d4ed8" }}>
+              
+              <div className="flex flex-col gap-2 mt-2">
+                <a
+                  href={googleCalendarUrl!}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="py-2.5 px-4 bg-slate-50 hover:bg-slate-100 text-slate-700 font-bold text-xs uppercase tracking-wider rounded-xl border border-slate-200 transition-colors"
+                >
                   Google Calendar
                 </a>
-                <a href={icsUrl} style={{ color: "#1d4ed8" }}>
+                <a
+                  href={icsUrl}
+                  className="py-2.5 px-4 bg-slate-50 hover:bg-slate-100 text-slate-700 font-bold text-xs uppercase tracking-wider rounded-xl border border-slate-200 transition-colors"
+                >
                   Apple Calendar (ICS)
                 </a>
-                <a href={icsUrl} style={{ color: "#1d4ed8" }}>
+                <a
+                  href={icsUrl}
+                  className="py-2.5 px-4 bg-slate-50 hover:bg-slate-100 text-slate-700 font-bold text-xs uppercase tracking-wider rounded-xl border border-slate-200 transition-colors"
+                >
                   Outlook (ICS)
                 </a>
-                <a href={icsUrl} style={{ color: "#1d4ed8" }}>
+                <a
+                  href={icsUrl}
+                  className="py-2.5 px-4 bg-slate-50 hover:bg-slate-100 text-slate-700 font-bold text-xs uppercase tracking-wider rounded-xl border border-slate-200 transition-colors"
+                >
                   Download ICS file
                 </a>
               </div>
+              
               <button
                 type="button"
                 onClick={() => setShowCalendarOptions(false)}
-                style={{ marginTop: 14, border: "1px solid #d1d5db", borderRadius: 8, padding: "8px 12px", background: "#fff", cursor: "pointer" }}
+                className="mt-2 py-2 px-4 bg-white hover:bg-slate-50 text-slate-500 font-bold text-xs uppercase tracking-wider rounded-full border border-slate-200 transition-colors"
               >
                 Close
               </button>
             </div>
           </div>
         )}
-
-        <section
-          style={{
-            background: "#fff",
-            border: "1px solid #ece6ee",
-            borderRadius: 18,
-            overflow: "hidden",
-            boxShadow: "0 12px 24px rgba(18,18,23,.08)",
-          }}
-        >
-          <div style={{ position: "relative", aspectRatio: "16 / 9", background: "#111827" }}>
-            {isLive && videoUrl ? (
-              <iframe
-                src={videoUrl}
-                title="Reveal Video"
-                style={{ width: "100%", height: "100%", border: 0 }}
-                allow="accelerometer; gyroscope; autoplay; encrypted-media; picture-in-picture;"
-                allowFullScreen
-              />
-            ) : (
-              <div
-                style={{
-                  width: "100%",
-                  height: "100%",
-                  display: "grid",
-                  placeItems: "center",
-                  color: "#fff",
-                  background: "linear-gradient(160deg, #1f2937 0%, #374151 100%)",
-                }}
-              >
-                <div style={{ textAlign: "center", padding: 20 }}>
-                  <div style={{ fontSize: 16, opacity: 0.9 }}>THE REVEAL LIVE</div>
-                  <div style={{ fontSize: 32, fontWeight: 800, marginTop: 6 }}>{countdownLabel}</div>
-                  <div style={{ marginTop: 10, opacity: 0.85 }}>
-                    The video screen unlocks automatically at reveal time.
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {!isLive && (
-              <div
-                style={{
-                  position: "absolute",
-                  left: 14,
-                  bottom: 12,
-                  fontSize: 13,
-                  padding: "6px 10px",
-                  borderRadius: 999,
-                  background: "rgba(0,0,0,.6)",
-                  color: "#fff",
-                }}
-              >
-                Countdown Active
-              </div>
-            )}
-          </div>
-
-          <div style={{ padding: 18, borderTop: "1px solid #f3f4f6" }}>
-            <h2 style={{ margin: 0, fontSize: 22, color: "#1f2937" }}>Prediction & wishes</h2>
-            <p style={{ margin: "8px 0 12px", color: "#6b7280" }}>
-              {isLive
-                ? "Drop your prediction and blessing for the parents."
-                : "Prediction form unlocks at reveal time to keep the suspense alive."}
-            </p>
-
-            {loading ? (
-              <p style={{ color: "#6b7280" }}>Loading invite…</p>
-            ) : isCompleted ? (
-              <p style={{ color: "#6b7280" }}>This reveal event has completed. Thanks for joining 💛</p>
-            ) : done ? (
-              <div style={{ background: "#f0fdf4", border: "1px solid #bbf7d0", borderRadius: 12, padding: 12 }}>
-                <p style={{ margin: 0, color: "#166534", fontWeight: 700 }}>Thanks! Your response is saved.</p>
-                <p style={{ margin: "8px 0 0", color: "#14532d" }}>
-                  Prediction: <strong>{prediction === "boy" ? "Boy 💙" : "Girl 🩷"}</strong>
-                </p>
-                {message ? <p style={{ margin: "6px 0 0", color: "#14532d" }}>Note: {message}</p> : null}
-              </div>
-            ) : !isLive ? (
-              <p style={{ color: "#6b7280" }}>{countdownLabel}</p>
-            ) : (
-              <>
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
-                  <button
-                    onClick={() => setPrediction("boy")}
-                    style={{
-                      border: "1px solid #93c5fd",
-                      borderRadius: 12,
-                      padding: 14,
-                      background: prediction === "boy" ? "#dbeafe" : "#fff",
-                      fontWeight: 700,
-                    }}
-                  >
-                    💙 Team Boy
-                  </button>
-                  <button
-                    onClick={() => setPrediction("girl")}
-                    style={{
-                      border: "1px solid #f9a8d4",
-                      borderRadius: 12,
-                      padding: 14,
-                      background: prediction === "girl" ? "#fce7f3" : "#fff",
-                      fontWeight: 700,
-                    }}
-                  >
-                    🩷 Team Girl
-                  </button>
-                </div>
-                <textarea
-                  placeholder="Share a message for the parents…"
-                  value={message}
-                  onChange={(e) => setMessage(e.target.value)}
-                  style={{ width: "100%", minHeight: 100, marginTop: 12, borderRadius: 12, border: "1px solid #e5e7eb", padding: 10 }}
-                />
-                <button
-                  onClick={submitPrediction}
-                  disabled={!prediction || submitting}
-                  style={{
-                    marginTop: 10,
-                    border: 0,
-                    borderRadius: 12,
-                    padding: "12px 18px",
-                    color: "#fff",
-                    fontWeight: 700,
-                    background: "linear-gradient(90deg,#6c8eef,#ec90c6)",
-                  }}
-                >
-                  {submitting ? "Saving…" : "Submit Prediction"}
-                </button>
-              </>
-            )}
-            {error && <p style={{ color: "#b91c1c", marginTop: 8 }}>{error}</p>}
-          </div>
-        </section>
-
-        <section style={{ marginTop: 14, background: "#fff", border: "1px solid #ece6ee", borderRadius: 14, padding: 14 }}>
-          <h3 style={{ margin: 0, fontSize: 18 }}>Who's invited</h3>
-          <p style={{ color: "#6b7280", marginTop: 6 }}>Everyone on the guest list for this reveal.</p>
-          {invitedGuests.length === 0 ? (
-            <p style={{ color: "#9ca3af" }}>No guest names are available yet.</p>
-          ) : (
-            <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginTop: 10 }}>
-              {invitedGuests.map((guest, idx) => (
-                <span
-                  key={`${guest.name}-${idx}`}
-                  style={{
-                    border: "1px solid #e5e7eb",
-                    borderRadius: 999,
-                    padding: "7px 10px",
-                    background: "#f9fafb",
-                    color: "#374151",
-                    fontSize: 14,
-                  }}
-                >
-                  {guest.name}
-                </span>
-              ))}
-            </div>
-          )}
-        </section>
-
-        <section style={{ marginTop: 14, background: "#fff", border: "1px solid #ece6ee", borderRadius: 14, padding: 14 }}>
-          <div style={{ display: "flex", justifyContent: "space-between", gap: 12, alignItems: "center" }}>
-            <div>
-              <h3 style={{ margin: 0, fontSize: 18 }}>Live party chat</h3>
-              <p style={{ color: "#6b7280", margin: "6px 0 0" }}>Realtime messages from invited guests in this reveal room.</p>
-            </div>
-            <span
-              style={{
-                flexShrink: 0,
-                borderRadius: 999,
-                padding: "5px 9px",
-                fontSize: 12,
-                color: chatStatus === "live" ? "#166534" : "#92400e",
-                background: chatStatus === "live" ? "#dcfce7" : "#fef3c7",
-              }}
-            >
-              {chatStatus === "live" ? "Live" : chatStatus === "connecting" ? "Connecting" : "Reconnecting"}
-            </span>
-          </div>
-
-          <div style={{ height: 260, overflowY: "auto", padding: "8px 4px 8px 0", marginTop: 10 }}>
-            {chatMessages.length === 0 ? (
-              <p style={{ color: "#9ca3af" }}>No chat messages yet.</p>
-            ) : (
-              chatMessages.map((item) => (
-                <div key={item.id} style={{ borderBottom: "1px solid #f3f4f6", padding: "9px 0" }}>
-                  <div style={{ display: "flex", justifyContent: "space-between", gap: 10 }}>
-                    <strong style={{ color: "#1f2937" }}>{item.name}</strong>
-                    <span style={{ color: "#9ca3af", fontSize: 12 }}>{formatChatTime(item.createdAtIso)}</span>
-                  </div>
-                  <p style={{ margin: "4px 0 0", color: "#374151", overflowWrap: "anywhere" }}>{item.message}</p>
-                </div>
-              ))
-            )}
-            <div ref={chatEndRef} />
-          </div>
-
-          <form onSubmit={submitChat} style={{ display: "flex", gap: 8, marginTop: 10 }}>
-            <input
-              type="text"
-              value={chatText}
-              maxLength={500}
-              onChange={(e) => setChatText(e.target.value)}
-              disabled={isCompleted}
-              placeholder={isCompleted ? "Chat is closed" : "Send a message to the party"}
-              style={{
-                flex: 1,
-                minWidth: 0,
-                borderRadius: 12,
-                border: "1px solid #e5e7eb",
-                padding: "11px 12px",
-              }}
-            />
-            <button
-              type="submit"
-              disabled={!chatText.trim() || chatSending || isCompleted}
-              style={{
-                border: 0,
-                borderRadius: 12,
-                padding: "0 16px",
-                color: "#fff",
-                fontWeight: 700,
-                background: "#1f2937",
-                opacity: !chatText.trim() || chatSending || isCompleted ? 0.6 : 1,
-              }}
-            >
-              {chatSending ? "Sending" : "Send"}
-            </button>
-          </form>
-          {chatError && <p style={{ color: "#b91c1c", margin: "8px 0 0" }}>{chatError}</p>}
-        </section>
-
-        <section style={{ marginTop: 14, background: "#fff", border: "1px solid #ece6ee", borderRadius: 14, padding: 14 }}>
-          <h3 style={{ margin: 0, fontSize: 18 }}>Guest wishes</h3>
-          <p style={{ color: "#6b7280", marginTop: 6 }}>Prediction messages saved for the parents.</p>
-          <div style={{ maxHeight: 220, overflowY: "auto", paddingRight: 4 }}>
-            {feed.length === 0 ? (
-              <p style={{ color: "#9ca3af" }}>No guest wishes yet.</p>
-            ) : (
-              feed.map((item, idx) => (
-                <div key={`${item.name}-${idx}`} style={{ borderBottom: "1px solid #f3f4f6", padding: "8px 0" }}>
-                  <strong>{item.name}:</strong> {item.message}
-                </div>
-              ))
-            )}
-          </div>
-        </section>
       </div>
-    </main>
+    </>
   );
 }
