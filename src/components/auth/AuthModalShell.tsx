@@ -1,8 +1,9 @@
-﻿"use client";
+"use client";
 
 import dynamic from "next/dynamic";
 import { useCallback, useEffect, useRef, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
+import { Sparkles, Heart } from "lucide-react";
 
 const VirtualGenderRevealApp = dynamic(
   () => import("@/components/cinema/CinematicEntry"),
@@ -76,19 +77,130 @@ export function AuthModalShell({ title, subtitle, submitting, children }: AuthMo
       <style>{`
         * { box-sizing: border-box; }
         body { margin: 0; }
-        .auth-modal-page { min-height: 100vh; position: relative; overflow: hidden; }
-        .auth-modal-bg { position: fixed; inset: 0; overflow: auto; filter: blur(4px); transform: scale(1.01); pointer-events: none; }
-        .auth-modal-shade { position: fixed; inset: 0; background: rgba(17,24,39,0.56); backdrop-filter: blur(2px); z-index: 20; }
+        .auth-modal-page { min-height: 100vh; position: relative; overflow: hidden; font-family: 'Plus Jakarta Sans', sans-serif; }
+        .auth-modal-bg { position: fixed; inset: 0; overflow: auto; filter: blur(6px); transform: scale(1.02); pointer-events: none; z-index: 5; }
+        .auth-modal-shade { position: fixed; inset: 0; background: rgba(10, 11, 30, 0.72); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); z-index: 20; border: none; cursor: pointer; width: 100vw; height: 100vh; }
         .auth-modal-layer { position: fixed; inset: 0; z-index: 30; display: flex; align-items: center; justify-content: center; padding: 24px; overflow: auto; }
-        .auth-card { position: relative; background: white; border-radius: 16px; padding: 40px; width: min(440px, 100%); box-shadow: 0 24px 70px rgba(0,0,0,0.28); }
-        .auth-close { position: absolute; top: 12px; right: 14px; width: 34px; height: 34px; border: 0; background: transparent; color: #374151; font-size: 28px; line-height: 1; cursor: pointer; border-radius: 50%; }
-        .auth-close:hover:not(:disabled), .auth-close:focus-visible { background: #f3f4f6; outline: none; }
+        
+        .auth-card { 
+          position: relative; 
+          background: rgba(255, 255, 255, 0.95); 
+          border-radius: 28px; 
+          padding: 44px; 
+          width: min(540px, 100%); 
+          box-shadow: 0 25px 60px -15px rgba(0, 0, 0, 0.2), 0 0 40px rgba(232, 68, 154, 0.04); 
+          border: 1px solid rgba(255, 255, 255, 0.7);
+          overflow: hidden;
+          backdrop-filter: blur(8px);
+        }
+
+        /* Ambient Glow Blobs */
+        .glow-pink {
+          position: absolute;
+          top: -30px;
+          left: -30px;
+          width: 140px;
+          height: 140px;
+          background: radial-gradient(circle, rgba(232, 68, 154, 0.18) 0%, rgba(232, 68, 154, 0) 70%);
+          filter: blur(20px);
+          pointer-events: none;
+          z-index: 0;
+        }
+
+        .glow-blue {
+          position: absolute;
+          bottom: -30px;
+          right: -30px;
+          width: 140px;
+          height: 140px;
+          background: radial-gradient(circle, rgba(58, 159, 232, 0.18) 0%, rgba(58, 159, 232, 0) 70%);
+          filter: blur(20px);
+          pointer-events: none;
+          z-index: 0;
+        }
+
+        .auth-close { 
+          position: absolute; 
+          top: 20px; 
+          right: 20px; 
+          width: 32px; 
+          height: 32px; 
+          border: 1px solid #f1f1f5; 
+          background: white; 
+          color: #6b7280; 
+          font-size: 20px; 
+          line-height: 1; 
+          cursor: pointer; 
+          border-radius: 50%; 
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          transition: all 0.2s ease;
+          z-index: 10;
+        }
+        .auth-close:hover:not(:disabled), .auth-close:focus-visible { 
+          background: #fafafd; 
+          color: #111827;
+          border-color: #d1d5db;
+          outline: none; 
+          transform: scale(1.05);
+        }
         .auth-close:disabled { opacity: .45; cursor: not-allowed; }
-        .auth-logo { font-size: 22px; font-weight: 700; color: #111827; margin-bottom: 8px; }
-        .auth-subtitle { font-size: 14px; color: #6b7280; margin-bottom: 32px; }
-        @media (max-width: 520px) {
-          .auth-modal-layer { align-items: flex-start; padding: 16px; }
-          .auth-card { padding: 32px 22px 24px; margin-top: 24px; }
+        
+        .auth-logo-area {
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          justify-content: center;
+          text-align: center;
+          margin-bottom: 28px;
+          position: relative;
+          z-index: 1;
+        }
+
+        .brand-icon-wrap {
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          gap: 6px;
+          margin-bottom: 8px;
+        }
+
+        .auth-logo { 
+          font-family: 'Nunito', sans-serif;
+          font-size: 24px; 
+          font-weight: 800; 
+          color: #111827; 
+          letter-spacing: -0.02em;
+        }
+
+        .auth-brand-badge {
+          font-family: 'Plus Jakarta Sans', sans-serif;
+          font-size: 10px;
+          font-weight: 700;
+          letter-spacing: 0.15em;
+          text-transform: uppercase;
+          background: linear-gradient(135deg, #E8449A, #3A9FE8);
+          -webkit-background-clip: text;
+          -webkit-text-fill-color: transparent;
+          margin-bottom: 6px;
+        }
+
+        .auth-subtitle { 
+          font-size: 13px; 
+          color: #6b7280; 
+          font-weight: 600;
+        }
+
+        .auth-content-body {
+          position: relative;
+          z-index: 1;
+        }
+
+        @media (max-width: 580px) {
+          .auth-modal-layer { align-items: center; padding: 16px; }
+          .auth-card { padding: 36px 24px 28px; border-radius: 24px; }
+          .auth-close { top: 16px; right: 16px; }
         }
       `}</style>
       <div className="auth-modal-page">
@@ -99,14 +211,26 @@ export function AuthModalShell({ title, subtitle, submitting, children }: AuthMo
         <div className="auth-modal-layer" role="presentation">
           <div ref={modalRef} className="auth-card" role="dialog" aria-modal="true" aria-labelledby="auth-modal-title" onClick={(e) => e.stopPropagation()}>
             <button className="auth-close" onClick={close} disabled={submitting} aria-label="Close">×</button>
-            <div id="auth-modal-title" className="auth-logo">{title}</div>
-            <p className="auth-subtitle">{subtitle}</p>
-            {children}
+            
+            <div className="auth-logo-area">
+              <span className="auth-brand-badge">Virtual Gender Reveal</span>
+              <div className="brand-icon-wrap">
+                <Heart className="w-5 h-5 text-[#E8449A] fill-[#E8449A]" />
+                <h1 id="auth-modal-title" className="auth-logo">{title}</h1>
+                <Sparkles className="w-4.5 h-4.5 text-[#3A9FE8]" />
+              </div>
+              <p className="auth-subtitle">{subtitle}</p>
+            </div>
+
+            <div className="glow-pink" />
+            <div className="glow-blue" />
+
+            <div className="auth-content-body">
+              {children}
+            </div>
           </div>
         </div>
       </div>
     </>
   );
 }
-
-
