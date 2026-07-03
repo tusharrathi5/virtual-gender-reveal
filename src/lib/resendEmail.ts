@@ -200,6 +200,7 @@ export async function sendPasswordResetLinkEmail(params: SendPasswordResetLinkEm
 
 interface VgrEmailTemplateProps {
   logoUrl: string;
+  bannerUrl: string;
   badgeText: string;
   headingHtml: string;
   greetingText: string;
@@ -217,6 +218,7 @@ interface VgrEmailTemplateProps {
 function buildVgrEmailTemplateHtml(props: VgrEmailTemplateProps): string {
   const {
     logoUrl,
+    bannerUrl,
     badgeText,
     headingHtml,
     greetingText,
@@ -246,88 +248,84 @@ function buildVgrEmailTemplateHtml(props: VgrEmailTemplateProps): string {
     <tr>
       <td align="center">
         <!-- Main Card Table -->
-        <table width="600" cellpadding="0" cellspacing="0" border="0" style="background-color: #ffffff; border-radius: 24px; border: 1px solid #f1f1f5; box-shadow: 0 10px 30px rgba(0,0,0,0.05); overflow: hidden; width: 100%; max-width: 600px; text-align: left;">
-          <!-- Card Header Logo / Emojis -->
+        <table width="600" cellpadding="0" cellspacing="0" border="0" style="background-color: #ffffff; border-radius: 24px; border: 1px solid #e2e8f0; box-shadow: 0 12px 36px rgba(0,0,0,0.06); overflow: hidden; width: 100%; max-width: 600px; text-align: left;">
+          <!-- Card Header Image Banner -->
           <tr>
-            <td align="center" style="padding: 40px 40px 20px 40px;">
-              <table cellpadding="0" cellspacing="0" border="0" align="center">
+            <td align="center" style="padding: 0; margin: 0; line-height: 0;">
+              <img src="${bannerUrl}" alt="Virtual Gender Reveal" width="600" style="display: block; width: 100%; max-width: 600px; height: auto; border: 0; border-top-left-radius: 24px; border-top-right-radius: 24px;" />
+            </td>
+          </tr>
+
+          <!-- Card Body Content -->
+          <tr>
+            <td style="padding: 40px;">
+              <!-- Small Logo and Brand -->
+              <table cellpadding="0" cellspacing="0" border="0" align="center" style="margin-bottom: 24px;">
                 <tr>
-                  <td align="center" style="font-size: 36px; line-height: 1; vertical-align: middle;">
-                    <span style="margin-right: 16px; display: inline-block;">🎈</span>
+                  <td align="center" style="vertical-align: middle; padding-right: 8px;">
+                    <img src="${logoUrl}" alt="VGR Logo" width="28" height="28" style="display: block; border: 0; outline: none;" />
                   </td>
-                  <td align="center" style="vertical-align: middle;">
-                    <img src="${logoUrl}" alt="VGR Logo" width="48" height="48" style="display: block; border: 0; outline: none; text-decoration: none;" />
-                  </td>
-                  <td align="center" style="font-size: 36px; line-height: 1; vertical-align: middle;">
-                    <span style="margin-left: 16px; display: inline-block;">🎈</span>
+                  <td align="center" style="vertical-align: middle; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; font-size: 11px; font-weight: 800; color: #88889a; letter-spacing: 0.2em; text-transform: uppercase;">
+                    VGR Studio
                   </td>
                 </tr>
               </table>
-            </td>
-          </tr>
 
-          <!-- Header Subtitle & Title -->
-          <tr>
-            <td align="center" style="padding: 0 40px 20px 40px; text-align: center;">
-              <p style="margin: 0 0 8px 0; font-size: 11px; font-weight: 700; color: #E8449A; letter-spacing: 0.15em; text-transform: uppercase;">${escapeHtml(badgeText)}</p>
-              <h1 style="margin: 0; font-size: 28px; font-weight: 800; line-height: 1.2; color: #111827; letter-spacing: -0.02em;">
-                ${headingHtml}
-              </h1>
-            </td>
-          </tr>
+              <!-- Badge and Title -->
+              <div style="text-align: center; margin-bottom: 28px;">
+                <p style="margin: 0 0 6px 0; font-size: 10px; font-weight: 700; color: #E8449A; letter-spacing: 0.2em; text-transform: uppercase;">${escapeHtml(badgeText)}</p>
+                <h1 style="margin: 0; font-family: Georgia, Cambria, 'Times New Roman', serif; font-size: 32px; font-style: italic; font-weight: 900; line-height: 1.15; color: #111827; letter-spacing: -0.01em;">
+                  ${headingHtml}
+                </h1>
+              </div>
 
-          <!-- Horizontal Divider -->
-          <tr>
-            <td style="padding: 0 40px;">
-              <table width="100%" cellpadding="0" cellspacing="0" border="0" style="border-top: 1px solid #f1f1f5;">
+              <!-- Horizontal Separator -->
+              <table width="100%" cellpadding="0" cellspacing="0" border="0" style="border-top: 1.5px solid #f1f1f5; margin-bottom: 28px;">
                 <tr><td></td></tr>
               </table>
-            </td>
-          </tr>
 
-          <!-- Greeting & Main Message -->
-          <tr>
-            <td style="padding: 30px 40px 20px 40px; font-size: 15px; line-height: 1.6; color: #4b5563;">
-              <p style="margin: 0 0 12px 0; font-size: 16px; font-weight: 700; color: #111827;">${escapeHtml(greetingText)}</p>
-              <div style="margin: 0;">${messageHtml}</div>
-            </td>
-          </tr>
+              <!-- Greeting and Message -->
+              <div style="font-size: 15px; line-height: 1.6; color: #4b5563; margin-bottom: 28px;">
+                <p style="margin: 0 0 12px 0; font-size: 16px; font-weight: 700; color: #111827;">${escapeHtml(greetingText)}</p>
+                <div style="margin: 0;">${messageHtml}</div>
+              </div>
 
-          <!-- Schedule Container Box -->
-          <tr>
-            <td style="padding: 0 40px 30px 40px;">
-              <table width="100%" cellpadding="20" cellspacing="0" border="0" style="background: linear-gradient(135deg, #fff5f9 0%, #f0f7ff 100%); background-color: #fafafd; border-radius: 16px; border: 1px solid #f1f1f5;">
+              <!-- Ticket Stub Scheduled Box -->
+              <table width="100%" cellpadding="0" cellspacing="0" border="0" style="background: #fafafd; border-radius: 16px; border: 1.5px dashed #d1d5db; overflow: hidden; margin-bottom: 32px;">
                 <tr>
-                  <td align="center" style="text-align: center;">
-                    <p style="margin: 0 0 6px 0; font-size: 11px; font-weight: 700; color: #3A9FE8; letter-spacing: 0.1em; text-transform: uppercase;">Scheduled For:</p>
-                    <p style="margin: 0 0 4px 0; font-size: 16px; font-weight: 800; color: #111827;">${escapeHtml(revealDateLabel)}</p>
-                    <p style="margin: 0; font-size: 14px; font-weight: 700; color: #4b5563;">${escapeHtml(revealTimeLabel)} (${escapeHtml(revealTimezone)})</p>
+                  <!-- Left Side Stub (Icon / Calendar Emoji) -->
+                  <td width="20%" align="center" style="padding: 16px; border-right: 1.5px dashed #d1d5db; background-color: #f5f8fb; text-align: center; vertical-align: middle;">
+                    <span style="font-size: 26px; line-height: 1; display: inline-block;">📅</span>
+                  </td>
+                  <!-- Right Side Stub (Date & Time details) -->
+                  <td width="80%" style="padding: 16px 20px; text-align: left; vertical-align: middle;">
+                    <p style="margin: 0 0 4px 0; font-size: 9px; font-weight: 700; color: #E8449A; letter-spacing: 0.15em; text-transform: uppercase;">Scheduled Event</p>
+                    <p style="margin: 0 0 2px 0; font-size: 15px; font-weight: 800; color: #111827;">${escapeHtml(revealDateLabel)}</p>
+                    <p style="margin: 0; font-size: 13px; font-weight: 600; color: #4b5563;">${escapeHtml(revealTimeLabel)} <span style="font-size: 11px; font-weight: 700; color: #9ca3af;">(${escapeHtml(revealTimezone)})</span></p>
                   </td>
                 </tr>
               </table>
-            </td>
-          </tr>
 
-          <!-- Primary CTA Button -->
-          <tr>
-            <td align="center" style="padding: 0 40px 20px 40px;">
-              <!--[if mso]>
-              <v:roundrect xmlns:v="urn:schemas-microsoft-com:vml" xmlns:w="urn:schemas-microsoft-com:wml" href="${primaryCtaUrl}" style="height:50px;v-text-anchor:middle;width:280px;" arcsize="50%" stroke="f" fillcolor="#E8449A">
-                <w:anchorlock/>
-                <center style="color:#ffffff;font-family:sans-serif;font-size:16px;font-weight:bold;">${escapeHtml(primaryCtaText)}</center>
-              </v:roundrect>
-              <![endif]-->
-              <a href="${primaryCtaUrl}" style="background: linear-gradient(135deg, #E8449A 0%, #3A9FE8 100%); background-color: #E8449A; color: #ffffff; display: block; font-size: 15px; font-weight: 700; text-align: center; text-decoration: none; line-height: 50px; width: 100%; border-radius: 25px; box-shadow: 0 4px 12px rgba(232, 68, 154, 0.2); outline: none;">${escapeHtml(primaryCtaText)}</a>
-            </td>
-          </tr>
-
-          <!-- Add to Calendar Links -->
-          ${showCalendar ? `
-          <tr>
-            <td align="center" style="padding: 10px 40px 30px 40px; text-align: center;">
-              <table cellpadding="0" cellspacing="0" border="0" align="center">
+              <!-- Primary CTA Button -->
+              <table width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-bottom: 24px;">
                 <tr>
-                  <td align="center" style="font-size: 13px; font-weight: 600; color: #6b7280; padding-bottom: 8px; text-align: center;">
+                  <td align="center">
+                    <!--[if mso]>
+                    <v:roundrect xmlns:v="urn:schemas-microsoft-com:vml" xmlns:w="urn:schemas-microsoft-com:wml" href="${primaryCtaUrl}" style="height:52px;v-text-anchor:middle;width:280px;" arcsize="50%" stroke="f" fillcolor="#E8449A">
+                      <w:anchorlock/>
+                      <center style="color:#ffffff;font-family:sans-serif;font-size:15px;font-weight:bold;">${escapeHtml(primaryCtaText)}</center>
+                    </v:roundrect>
+                    <![endif]-->
+                    <a href="${primaryCtaUrl}" style="background: linear-gradient(135deg, #E8449A 0%, #3A9FE8 100%); background-color: #E8449A; color: #ffffff; display: block; font-size: 15px; font-weight: 700; text-align: center; text-decoration: none; line-height: 52px; width: 100%; border-radius: 26px; box-shadow: 0 5px 15px rgba(232, 68, 154, 0.25); outline: none; letter-spacing: 0.05em;">✨ ${escapeHtml(primaryCtaText)} ✦</a>
+                  </td>
+                </tr>
+              </table>
+
+              <!-- Add to Calendar Link Bar -->
+              ${showCalendar ? `
+              <table width="100%" cellpadding="0" cellspacing="0" border="0" align="center" style="margin-bottom: 12px; text-align: center;">
+                <tr>
+                  <td align="center" style="font-size: 12px; font-weight: 700; color: #88889a; letter-spacing: 0.1em; padding-bottom: 8px; text-align: center;">
                     📅 ADD TO CALENDAR
                   </td>
                 </tr>
@@ -339,24 +337,18 @@ function buildVgrEmailTemplateHtml(props: VgrEmailTemplateProps): string {
                   </td>
                 </tr>
               </table>
-            </td>
-          </tr>
-          ` : ""}
+              ` : ""}
 
-          <!-- Horizontal Divider -->
-          <tr>
-            <td style="padding: 0 40px;">
-              <table width="100%" cellpadding="0" cellspacing="0" border="0" style="border-top: 1px solid #f1f1f5;">
+              <!-- Bottom Separator -->
+              <table width="100%" cellpadding="0" cellspacing="0" border="0" style="border-top: 1.5px solid #f1f1f5; margin: 28px 0;">
                 <tr><td></td></tr>
               </table>
-            </td>
-          </tr>
 
-          <!-- Closing message -->
-          <tr>
-            <td align="center" style="padding: 30px 40px 40px 40px; font-size: 14px; line-height: 1.5; color: #6b7280; text-align: center;">
-              <p style="margin: 0 0 8px 0; font-weight: 600; color: #4b5563;">We can't wait to celebrate with you and share this special moment!</p>
-              <p style="margin: 0; font-size: 16px;">💖 ✨ 💙</p>
+              <!-- Closing Hand-written style signoff -->
+              <div style="text-align: center;">
+                <p style="margin: 0 0 8px 0; font-family: Georgia, Cambria, serif; font-size: 15px; font-style: italic; font-weight: 600; color: #4b5563;">We can't wait to celebrate with you and share this special moment!</p>
+                <p style="margin: 0; font-size: 18px;">💖 ✨ 💙</p>
+              </div>
             </td>
           </tr>
         </table>
@@ -395,9 +387,11 @@ export async function sendGuestInviteEmail(params: SendGuestInviteEmailParams): 
 
   const baseUrl = new URL(params.inviteUrl).origin;
   const logoUrl = `${baseUrl}/Favicon-VGR.png`;
+  const bannerUrl = `${baseUrl}/assets/email-banner.jpg`;
 
   const html = buildVgrEmailTemplateHtml({
     logoUrl,
+    bannerUrl,
     badgeText: "You're invited to a",
     headingHtml: `<span style="color: #E8449A;">Virtual</span> <span style="color: #3A9FE8;">Gender Reveal!</span>`,
     greetingText: `Hi ${guestName},`,
@@ -431,9 +425,11 @@ export async function sendHostInvitationConfirmationEmail(params: SendHostInvita
 
   const baseUrl = new URL(params.inviteUrl).origin;
   const logoUrl = `${baseUrl}/Favicon-VGR.png`;
+  const bannerUrl = `${baseUrl}/assets/email-banner.jpg`;
 
   const html = buildVgrEmailTemplateHtml({
     logoUrl,
+    bannerUrl,
     badgeText: "Congratulations!",
     headingHtml: `<span style="color: #E8449A;">Your Reveal</span> <span style="color: #3A9FE8;">Is Ready!</span>`,
     greetingText: `Hi there,`,
@@ -490,6 +486,7 @@ export async function sendGuestReminderEmail(params: SendGuestReminderEmailParam
 
   const baseUrl = new URL(params.inviteUrl).origin;
   const logoUrl = `${baseUrl}/Favicon-VGR.png`;
+  const bannerUrl = `${baseUrl}/assets/email-banner.jpg`;
 
   // Dynamically build calendar links for reminders
   const token = inviteUrl.substring(inviteUrl.lastIndexOf("/") + 1);
@@ -502,6 +499,7 @@ export async function sendGuestReminderEmail(params: SendGuestReminderEmailParam
 
   const html = buildVgrEmailTemplateHtml({
     logoUrl,
+    bannerUrl,
     badgeText: "Reminder",
     headingHtml: `<span style="color: #E8449A;">Reveal is</span> <span style="color: #3A9FE8;">Tomorrow!</span> 🎈`,
     greetingText: `Hi ${guestName},`,
