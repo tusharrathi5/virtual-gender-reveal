@@ -21,6 +21,26 @@ import {
   type PlanDefinition,
   type RevealerRelation,
 } from "@/lib/types";
+import DashboardShell from "@/components/dashboard/DashboardShell";
+import {
+  Sparkles,
+  Calendar,
+  Mail,
+  User,
+  Plus,
+  Trash2,
+  AlertCircle,
+  Camera,
+  Heart,
+  ChevronDown,
+  Users,
+  Upload,
+  RefreshCw,
+  Clock,
+  ShieldAlert,
+  Edit2,
+  ArrowRight,
+} from "lucide-react";
 
 interface RevealSummary {
   id: string;
@@ -104,20 +124,34 @@ function Toast({
   type: ToastType;
   onClose: () => void;
 }) {
-  const colors = { success: "#16a34a", error: "#dc2626", info: "#2563eb" };
+  const colors = {
+    success: "border-green-500 bg-green-50 text-green-800",
+    error: "border-red-500 bg-red-50 text-red-800",
+    info: "border-blue-500 bg-blue-50 text-blue-800",
+  };
+
   useEffect(() => {
     const t = setTimeout(onClose, 5000);
     return () => clearTimeout(t);
   }, [onClose]);
 
   return (
-    <div className="dash-toast" style={{ borderLeftColor: colors[type] }}>
-      <span style={{ color: colors[type], fontWeight: 700 }}>
-        {type === "success" ? "OK" : type === "error" ? "!" : "i"}
-      </span>
-      <span>{message}</span>
-      <button onClick={onClose} aria-label="Close notification">
-        x
+    <div
+      className={`fixed top-20 right-6 z-[9999] border-l-4 rounded-xl p-4 shadow-lg flex items-center justify-between gap-4 max-w-sm md:max-w-md animate-slide-in font-medium text-sm ${colors[type]}`}
+      role="alert"
+    >
+      <div className="flex items-center gap-2">
+        <span className="font-bold text-xs uppercase bg-white/70 px-2 py-0.5 rounded-full shrink-0">
+          {type === "success" ? "✓" : type === "error" ? "!" : "i"}
+        </span>
+        <span>{message}</span>
+      </div>
+      <button
+        onClick={onClose}
+        className="text-gray-400 hover:text-gray-800 font-bold text-lg leading-none shrink-0"
+        aria-label="Close notification"
+      >
+        ×
       </button>
     </div>
   );
@@ -134,7 +168,7 @@ function timestampToDate(value: unknown): Date | null {
 }
 
 function formatRevealDate(d: Date | null): string {
-  if (!d) return "-";
+  if (!d || isNaN(d.getTime())) return "-";
   return d.toLocaleDateString("en-US", {
     weekday: "short",
     month: "short",
@@ -152,34 +186,6 @@ function formatDateTimeLocal(d: Date | null): string {
   )}:${pad(d.getMinutes())}`;
 }
 
-function statusLabel(status: string): string {
-  const map: Record<string, string> = {
-    pending_payment: "Payment Pending",
-    video_in_progress: "Video in Progress",
-    awaiting_revealer: "Awaiting Revealer",
-    revealer_confirmed: "Revealer Confirmed",
-    video_ready: "Video Ready",
-    scheduled: "Scheduled",
-    live: "Live",
-    completed: "Completed",
-  };
-  return map[status] || status;
-}
-
-function statusTone(status: string): string {
-  const map: Record<string, string> = {
-    pending_payment: "gray",
-    video_in_progress: "yellow",
-    awaiting_revealer: "yellow",
-    revealer_confirmed: "blue",
-    video_ready: "purple",
-    scheduled: "blue",
-    live: "red",
-    completed: "green",
-  };
-  return map[status] || "gray";
-}
-
 function canEditReveal(reveal: RevealSummary): boolean {
   return !!reveal.createdAt && Date.now() - reveal.createdAt.getTime() <= EDIT_WINDOW_MS;
 }
@@ -195,6 +201,8 @@ function editWindowText(reveal: RevealSummary): string {
 function blankGuestRow(rowId = "draft-1"): EditableGuestRow {
   return { rowId, name: "", phone: "", email: "" };
 }
+
+// ─── Custom XLSX & CSV Parser Helper Logic (No library dependency) ───
 
 function makeGuestRow(): EditableGuestRow {
   return blankGuestRow(`draft-${Date.now()}-${Math.round(Math.random() * 10000)}`);
@@ -489,6 +497,8 @@ function mergeGuestRows(
   return { rows: next.length ? next : [blankGuestRow()], duplicates };
 }
 
+// ─── Main Content Component ─────────────────────────────────
+
 function DashboardContent() {
   const { user, firestoreUser, loading, logout, refreshFirestoreUser } = useAuth();
   const router = useRouter();
@@ -650,7 +660,6 @@ function DashboardContent() {
       setToast({ message: "Please choose a plan before creating a reveal.", type: "info" });
       router.replace("/dashboard");
     }
-  // handleSelectPlan is intentionally omitted so dashboard checkout links only run once per URL change.
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchParams, router, refreshFirestoreUser, user]);
 
@@ -803,7 +812,6 @@ function DashboardContent() {
     }
   }
 
-
   function requestPlanCheckout(plan: PlanDefinition) {
     if (activatingPlan) return;
     if (plan.priceCents > 0) {
@@ -870,7 +878,7 @@ function DashboardContent() {
       id: reveal.id,
       mode: reveal.mode,
       parentName: reveal.parentName,
-      dueDate: reveal.dueDate ? new Date(reveal.dueDate).toISOString().slice(0,10) : "",
+      dueDate: reveal.dueDate ? new Date(reveal.dueDate).toISOString().slice(0, 10) : "",
       announcementGender: "",
       revealerEmail: reveal.revealerEmail || "",
       revealerRelation: reveal.revealerRelation || "doctor",
@@ -947,7 +955,6 @@ function DashboardContent() {
     }
   }
 
-
   async function startNewReveal() {
     if (!user || startingReveal) return;
     setStartingReveal(true);
@@ -991,513 +998,669 @@ function DashboardContent() {
   }
 
   return (
-    <>
-      <style>{CSS}</style>
-      {toast && <Toast message={toast.message} type={toast.type} onClose={() => setToast(null)} />}
-      {pendingPaymentPlan && (
-        <PaymentGatewayPrompt
-          plan={pendingPaymentPlan}
-          onProceed={proceedToPaymentGateway}
-          onCancel={cancelPaymentPrompt}
-        />
-      )}
+    <DashboardShell activeTab="dashboard" title="Dashboard">
+      <div className="w-full space-y-8 font-jakarta">
+        {toast && <Toast message={toast.message} type={toast.type} onClose={() => setToast(null)} />}
+        
+        {pendingPaymentPlan && (
+          <PaymentGatewayPrompt
+            plan={pendingPaymentPlan}
+            onProceed={proceedToPaymentGateway}
+            onCancel={cancelPaymentPrompt}
+          />
+        )}
 
-      <div className="dash-root">
-        <header className="dash-header">
-          <a href="/" className="dash-logo">
-            Virtual Gender Reveal
-            <span className="logo-tag">Crafted for Moments That Matter</span>
-          </a>
-          <div className="dash-user">
-            <div className="dash-avatar">{firstName.charAt(0).toUpperCase()}</div>
-            <span className="dash-user-name">{user.displayName || user.email}</span>
-            <button className="btn-ghost-sm" onClick={() => router.push("/settings")}>
-              Settings
-            </button>
+        {/* Welcome Header */}
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div>
+            <span className="text-xs font-bold text-[#E8449A] uppercase tracking-widest block mb-1">Your Dashboard</span>
+            <h1 className="font-nunito font-extrabold text-3xl md:text-4xl tracking-tight bg-gradient-to-r from-[#E8449A] to-[#3A9FE8] bg-clip-text text-transparent">
+              Hello, {firstName}
+            </h1>
+            <p className="text-sm text-gray-500 font-semibold mt-1">
+              {!hasPlan && "Choose a plan below to get started creating your reveal."}
+              {hasPlan && canCreateReveal && reveals.length === 0 && "You&apos;re all set. Let&apos;s create your reveal event!"}
+              {hasPlan && reveals.length > 0 && "Manage details, photos, guest invitations and view live broadcasts."}
+            </p>
+          </div>
+
+          {hasPlan && (
+            <div className="bg-gradient-to-tr from-[#FDE8F2] to-[#D6EAFE] border border-white rounded-2xl px-5 py-4 shadow-sm flex items-center gap-3">
+              <div className="w-2.5 h-2.5 rounded-full bg-green-500 animate-pulse" />
+              <div className="text-xs text-gray-700 font-semibold">
+                <span className="text-gray-400 block uppercase font-bold text-[9px] tracking-wider mb-0.5">Active Account</span>
+                <span className="text-gray-900 font-bold">{PLANS.find((p) => p.id === activePlan)?.name ?? activePlan}</span>
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Overview Stat Cards */}
+        {hasPlan && (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div className="bg-white border border-[#f1f1f5] rounded-2xl p-6 shadow-sm flex flex-col justify-between">
+              <span className="text-[10px] text-gray-400 block uppercase font-bold tracking-wider mb-2">Billing Tier</span>
+              <div className="flex items-center justify-between">
+                <span className="text-lg font-bold text-gray-900">{PLANS.find((p) => p.id === activePlan)?.name ?? activePlan}</span>
+                <span className="text-xs bg-[#FDE8F2] text-[#C2527A] px-2 py-0.5 rounded-full font-bold uppercase tracking-wider">
+                  {getPaymentStatusLabel(accountPaymentStatus)}
+                </span>
+              </div>
+            </div>
+
+            <div className="bg-white border border-[#f1f1f5] rounded-2xl p-6 shadow-sm flex flex-col justify-between">
+              <span className="text-[10px] text-gray-400 block uppercase font-bold tracking-wider mb-2">Reveals Remaining</span>
+              <div className="flex items-baseline gap-1.5">
+                <span className="text-3xl font-extrabold text-gray-900">{revealsAllowed}</span>
+                <span className="text-xs text-gray-400 font-semibold font-jakarta">reveals allowed</span>
+              </div>
+            </div>
+
+            <div className="bg-white border border-[#f1f1f5] rounded-2xl p-6 shadow-sm flex flex-col justify-between">
+              <span className="text-[10px] text-gray-400 block uppercase font-bold tracking-wider mb-2">Reveals Created</span>
+              <div className="flex items-baseline gap-1.5">
+                <span className="text-3xl font-extrabold text-gray-900">{revealsCreated}</span>
+                <span className="text-xs text-gray-400 font-semibold font-jakarta">published to date</span>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Main Create Your Reveal Action Card */}
+        {hasPlan && canCreateReveal && (
+          <div className="bg-gradient-to-r from-[#E8449A] to-[#3A9FE8] rounded-2xl p-6 md:p-8 text-white shadow-lg shadow-[#e8449a1a] flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
+            <div className="space-y-1.5">
+              <span className="text-[9px] font-bold uppercase tracking-wider text-white/80 bg-white/10 px-2.5 py-1 rounded-full w-max block mb-1">Ready to start?</span>
+              <h2 className="font-nunito font-extrabold text-2xl">Create Your Reveal</h2>
+              <p className="text-sm text-white/90 leading-relaxed font-semibold max-w-xl">
+                Configure your parents, timezone, dates, optional sonograms, and invite contacts. We&apos;ll automatically email a secure link to your designated revealer!
+              </p>
+            </div>
             <button
-              className="btn-ghost-sm"
-              disabled={loggingOut}
-              onClick={async () => {
-                setLoggingOut(true);
-                try {
-                  await logout();
-                  router.push("/");
-                } catch {
-                  setLoggingOut(false);
-                }
-              }}
+              onClick={startNewReveal}
+              disabled={startingReveal}
+              className="bg-white text-gray-900 font-extrabold hover:bg-gray-50 active:scale-[0.98] transition-all rounded-xl py-3.5 px-6 text-xs uppercase tracking-wider shrink-0 disabled:opacity-70 disabled:cursor-not-allowed flex items-center gap-1.5 focus:outline-none focus:ring-2 focus:ring-white"
             >
-              {loggingOut ? "Signing out..." : "Sign Out"}
+              {startingReveal ? (
+                <>
+                  <RefreshCw className="w-4 h-4 animate-spin text-[#E8449A]" />
+                  Checking payment...
+                </>
+              ) : (
+                <>
+                  ✦ Start New Reveal
+                  <ArrowRight className="w-3.5 h-3.5" />
+                </>
+              )}
             </button>
           </div>
-        </header>
+        )}
 
-        <main className="dash-main">
-          <section className="welcome">
-            <p className="welcome-tag">Your Dashboard</p>
-            <h1 className="welcome-title">
-              Hello, <em>{firstName}</em>
-            </h1>
-            <p className="welcome-sub">
-              {!hasPlan && "Choose a plan to get started creating your reveal."}
-              {hasPlan && canCreateReveal && reveals.length === 0 && "You're all set. Let's create your reveal."}
-              {hasPlan && canCreateReveal && reveals.length > 0 && "Your reveal details, guests, and plans are here."}
-              {hasPlan && !canCreateReveal && reveals.length > 0 && "Your reveal details, guests, and plans are here."}
-            </p>
-            {hasPlan && (
-              <div className="plan-badge">
-                <span className="plan-badge-dot" />
-                Active Plan: <strong>{PLANS.find((p) => p.id === activePlan)?.name ?? activePlan}</strong>
-                <span className="plan-badge-sep">/</span>
-                <span>{revealsAllowed} remaining</span>
-                <span className="plan-badge-sep">/</span>
-                <span>{revealsCreated} created</span>
-                <span className="plan-badge-sep">/</span>
-                <span>{getPaymentStatusLabel(accountPaymentStatus)}</span>
-              </div>
-            )}
-          </section>
+        {/* Recent Reveals List or Empty State */}
+        {reveals.length > 0 ? (
+          <section className="space-y-6">
+            <h2 className="text-xs font-bold text-gray-400 uppercase tracking-widest border-b border-[#f1f1f5] pb-3 mb-1 flex items-center gap-2">
+              <Heart className="w-4 h-4 text-[#E8449A]" />
+              Your Reveals
+            </h2>
 
-          {hasPlan && canCreateReveal && (
-            <section className="cta-card">
-              <div className="cta-card-inner">
-                <div>
-                  <p className="section-label">Ready When You Are</p>
-                  <h2 className="cta-title">Create Your Reveal</h2>
-                  <p className="cta-desc">
-                    Start a new reveal, send a secure revealer link, and bring guests into the party room.
-                  </p>
-                </div>
-                <button className="btn-primary-lg" onClick={startNewReveal} disabled={startingReveal}>
-                  {startingReveal ? "Checking payment..." : "Start New Reveal"}
-                </button>
-              </div>
-            </section>
-          )}
-
-          {reveals.length > 0 && (
-            <section className="portal-section">
-              <p className="section-label">Your Reveals</p>
-              <div className="reveal-stack">
-                {reveals.map((reveal) => {
-                  const editable = canEditReveal(reveal);
-                  const isEditing = editingRevealId === reveal.id && editForm;
-                  return (
-                    <article key={reveal.id} className="detail-panel">
-                      <div className="detail-panel-header">
-                        <div className="detail-title-wrap">
-                          <div className="reveal-photo">
-                            {reveal.photos[0] ? (
-                              <img src={reveal.photos[0]} alt="" />
-                            ) : (
-                              <div className="reveal-photo-placeholder">No photo</div>
-                            )}
-                          </div>
-                          <div>
-                            <div className="reveal-mode-tag">
-                              {reveal.mode === "announcement" ? "Announcement" : "Gender Reveal"}
-                            </div>
-                            <h2 className="detail-title">{reveal.parentName || "Untitled reveal"}</h2>
-                            <p className="detail-sub">{formatRevealDate(reveal.revealAt)}</p>
-                          </div>
-                        </div>
-                        <div className="detail-actions">
-                          <span className={`status-pill ${getRevealVideoStatus(reveal) === "ready" ? "purple" : "yellow"}`}>
-                            {getRevealVideoLabel(reveal)}
-                          </span>
-                          <span className={`edit-pill ${editable ? "open" : "locked"}`}>
-                            {editWindowText(reveal)}
-                          </span>
-                          {editable && !isEditing && (
-                            <button className="btn-ghost-sm" onClick={() => startEditingReveal(reveal)}>
-                              Edit Details
-                            </button>
+            <div className="space-y-6">
+              {reveals.map((reveal) => {
+                const editable = canEditReveal(reveal);
+                const isEditing = editingRevealId === reveal.id && editForm;
+                return (
+                  <article key={reveal.id} className="bg-white border border-[#f1f1f5] rounded-2xl p-6 md:p-8 shadow-sm space-y-6">
+                    {/* Reveal Card Header */}
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-gray-50 pb-4">
+                      <div className="flex items-center gap-4">
+                        <div className="w-14 h-14 rounded-xl overflow-hidden border border-gray-100 bg-gray-50 flex-shrink-0 flex items-center justify-center">
+                          {reveal.photos[0] ? (
+                            <img src={reveal.photos[0]} alt="" className="w-full h-full object-cover" />
+                          ) : (
+                            <Camera className="w-6 h-6 text-gray-300" />
                           )}
-                          <button className="btn-ghost-sm" onClick={() => joinParty(reveal.id)} disabled={openingPartyId === reveal.id}>
-                            {openingPartyId === reveal.id ? "Opening..." : "Join Party"}
-                          </button>
+                        </div>
+                        <div>
+                          <span className="text-[10px] bg-[#D6EAFE] text-[#1B4F8C] px-2 py-0.5 rounded-full font-bold uppercase tracking-wider">
+                            {reveal.mode === "announcement" ? "Announcement" : "Gender Reveal"}
+                          </span>
+                          <h3 className="font-nunito font-extrabold text-lg text-gray-900 mt-1">{reveal.parentName || "Untitled Reveal"}</h3>
+                          <span className="text-xs text-gray-500 font-semibold flex items-center gap-1 mt-0.5">
+                            <Clock className="w-3.5 h-3.5 text-gray-400" />
+                            {formatRevealDate(reveal.revealAt)}
+                          </span>
                         </div>
                       </div>
 
-                      {!isEditing && (
-                        <div className="detail-grid">
-                          <div>
-                            <span>Mode</span>
-                            <strong>{reveal.mode === "announcement" ? "Announcement" : "Reveal"}</strong>
-                          </div>
-                          <div>
-                            <span>Reveal Time</span>
-                            <strong>{formatRevealDate(reveal.revealAt)}</strong>
-                          </div>
-                          <div>
-                            <span>Timezone</span>
-                            <strong>{reveal.revealTimezone}</strong>
-                          </div>
-                          <div>
-                            <span>Photos</span>
-                            <strong>{reveal.photos.length}</strong>
-                          </div>
-                          <div>
-                            <span>Payment Status</span>
-                            <strong>{getPaymentStatusLabel(reveal.paymentStatus)}</strong>
-                          </div>
-                          {reveal.mode === "announcement" ? (
-                            <div>
-                              <span>Due Date</span>
-                              <strong>{reveal.dueDate ? new Date(reveal.dueDate).toLocaleDateString("en-US", { year: "numeric", month: "short", day: "numeric" }) : "-"}</strong>
-                            </div>
-                          ) : (
-                            <>
-                              <div>
-                                <span>Due Date</span>
-                                <strong>{reveal.dueDate ? new Date(reveal.dueDate).toLocaleDateString("en-US", { year: "numeric", month: "short", day: "numeric" }) : "-"}</strong>
-                              </div>
-                              <div>
-                                <span>Timezone</span>
-                                <strong>{reveal.revealTimezone || "-"}</strong>
-                              </div>
-                              <div>
-                                <span>Revealer</span>
-                                <strong>{reveal.revealerEmail || "-"}</strong>
-                              </div>
-                            </>
-                          )}
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span className={`px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider ${
+                          getRevealVideoStatus(reveal) === "ready" 
+                            ? "bg-purple-100 text-purple-800" 
+                            : "bg-yellow-100 text-yellow-800"
+                        }`}>
+                          {getRevealVideoLabel(reveal)}
+                        </span>
+                        
+                        <span className={`px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider flex items-center gap-1 ${
+                          editable ? "bg-green-100 text-green-800" : "bg-gray-100 text-gray-500"
+                        }`}>
+                          {!editable && <ShieldAlert className="w-3 h-3 shrink-0" />}
+                          {editWindowText(reveal)}
+                        </span>
+
+                        {editable && !isEditing && (
+                          <button
+                            onClick={() => startEditingReveal(reveal)}
+                            className="border border-gray-200 text-[#374151] hover:bg-gray-50 font-bold text-xs uppercase tracking-wider rounded-lg px-3.5 py-2 flex items-center gap-1"
+                          >
+                            <Edit2 className="w-3 h-3" />
+                            Edit
+                          </button>
+                        )}
+
+                        <button
+                          onClick={() => joinParty(reveal.id)}
+                          disabled={openingPartyId === reveal.id}
+                          className="bg-[#3A9FE8] text-white hover:bg-[#2E7DD1] active:scale-[0.98] transition-all font-bold text-xs uppercase tracking-wider rounded-lg px-3.5 py-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                          {openingPartyId === reveal.id ? "Opening..." : "Join Party"}
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* View Details Grid */}
+                    {!isEditing && (
+                      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                        <div className="bg-gray-50/50 rounded-xl p-3 border border-gray-100">
+                          <span className="text-[9px] text-gray-400 block uppercase font-bold tracking-wider mb-0.5">Reveal Mode</span>
+                          <span className="text-xs font-semibold text-gray-800">{reveal.mode === "announcement" ? "Announcement" : "Reveal"}</span>
                         </div>
-                      )}
+                        <div className="bg-gray-50/50 rounded-xl p-3 border border-gray-100">
+                          <span className="text-[9px] text-gray-400 block uppercase font-bold tracking-wider mb-0.5">Reveal Time</span>
+                          <span className="text-xs font-semibold text-gray-800">{formatRevealDate(reveal.revealAt)}</span>
+                        </div>
+                        <div className="bg-gray-50/50 rounded-xl p-3 border border-gray-100">
+                          <span className="text-[9px] text-gray-400 block uppercase font-bold tracking-wider mb-0.5">Selected Timezone</span>
+                          <span className="text-xs font-semibold text-gray-800 truncate block">{reveal.revealTimezone}</span>
+                        </div>
+                        <div className="bg-gray-50/50 rounded-xl p-3 border border-gray-100">
+                          <span className="text-[9px] text-gray-400 block uppercase font-bold tracking-wider mb-0.5">Attached Photos</span>
+                          <span className="text-xs font-semibold text-gray-800">{reveal.photos.length} photos</span>
+                        </div>
+                        <div className="bg-gray-50/50 rounded-xl p-3 border border-gray-100">
+                          <span className="text-[9px] text-gray-400 block uppercase font-bold tracking-wider mb-0.5">Payment Status</span>
+                          <span className="text-xs font-bold text-gray-800">{getPaymentStatusLabel(reveal.paymentStatus)}</span>
+                        </div>
+                        <div className="bg-gray-50/50 rounded-xl p-3 border border-gray-100">
+                          <span className="text-[9px] text-gray-400 block uppercase font-bold tracking-wider mb-0.5">Estimated Due Date</span>
+                          <span className="text-xs font-semibold text-gray-800">
+                            {reveal.dueDate ? new Date(reveal.dueDate + "T00:00:00").toLocaleDateString("en-US", { year: "numeric", month: "short", day: "numeric" }) : "-"}
+                          </span>
+                        </div>
+                        {reveal.mode === "reveal" && (
+                          <div className="bg-gray-50/50 rounded-xl p-3 border border-gray-100 col-span-2">
+                            <span className="text-[9px] text-gray-400 block uppercase font-bold tracking-wider mb-0.5">Revealer Email &amp; Relation</span>
+                            <span className="text-xs font-semibold text-gray-800 truncate block">
+                              {reveal.revealerEmail || "-"} {reveal.revealerRelation ? `(${RELATION_LABELS[reveal.revealerRelation]})` : ""}
+                            </span>
+                          </div>
+                        )}
+                      </div>
+                    )}
 
-                      {isEditing && editForm && (
-                        <div className="edit-form">
-                          <div className="mode-row">
-                            <button
-                              type="button"
-                              className={`mode-chip${editForm.mode === "reveal" ? " selected" : ""}`}
-                              onClick={() => updateEditForm("mode", "reveal")}
-                            >
-                              Gender Reveal
-                            </button>
-                            <button
-                              type="button"
-                              className={`mode-chip${editForm.mode === "announcement" ? " selected" : ""}`}
-                              onClick={() => updateEditForm("mode", "announcement")}
-                            >
-                              Announcement
-                            </button>
+                    {/* Edit Form Sub-section */}
+                    {isEditing && editForm && (
+                      <div className="bg-gray-50 border border-gray-100 rounded-2xl p-5 md:p-6 space-y-6 animate-fade-up">
+                        <div className="flex gap-3 pb-2 border-b border-gray-200/50">
+                          <button
+                            type="button"
+                            className={`px-4 py-2 text-xs font-bold uppercase tracking-wider rounded-lg border transition-all ${
+                              editForm.mode === "reveal"
+                                ? "bg-white border-[#E8449A] text-[#C2527A] shadow-sm"
+                                : "bg-transparent border-gray-200 text-gray-500"
+                            }`}
+                            onClick={() => updateEditForm("mode", "reveal")}
+                          >
+                            Gender Reveal
+                          </button>
+                          <button
+                            type="button"
+                            className={`px-4 py-2 text-xs font-bold uppercase tracking-wider rounded-lg border transition-all ${
+                              editForm.mode === "announcement"
+                                ? "bg-white border-[#3A9FE8] text-[#1B4F8C] shadow-sm"
+                                : "bg-transparent border-gray-200 text-gray-500"
+                            }`}
+                            onClick={() => updateEditForm("mode", "announcement")}
+                          >
+                            Announcement
+                          </button>
+                        </div>
+
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                          <div className="flex flex-col gap-1">
+                            <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Parent Name(s)</label>
+                            <input
+                              className="w-full bg-white border border-gray-200 rounded-xl px-4 py-2.5 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#3A9FE8]"
+                              value={editForm.parentName}
+                              onChange={(e) => updateEditForm("parentName", e.target.value)}
+                            />
                           </div>
 
-                          <div className="form-grid">
-                            <label>
-                              <span>Parent Name(s)</span>
-                              <input
-                                value={editForm.parentName}
-                                onChange={(e) => updateEditForm("parentName", e.target.value)}
-                              />
-                            </label>
-                            <label>
-                              <span>Reveal Date & Time</span>
-                              <input
-                                type="datetime-local"
-                                value={editForm.revealAt}
-                                onChange={(e) => updateEditForm("revealAt", e.target.value)}
-                              />
-                            </label>
-                            <label>
-                              <span>Timezone</span>
-                              <input
-                                value={editForm.revealTimezone}
-                                onChange={(e) => updateEditForm("revealTimezone", e.target.value)}
-                              />
-                            </label>
+                          <div className="flex flex-col gap-1">
+                            <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Reveal Date &amp; Time</label>
+                            <input
+                              className="w-full bg-white border border-gray-200 rounded-xl px-4 py-2.5 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#3A9FE8]"
+                              type="datetime-local"
+                              value={editForm.revealAt}
+                              onChange={(e) => updateEditForm("revealAt", e.target.value)}
+                            />
                           </div>
 
-                          {editForm.mode === "announcement" ? (
-                            <div className="form-grid">
-                              <label>
-                                <span>Due Date</span>
-                                <input type="date" value={editForm.dueDate} onChange={(e) => updateEditForm("dueDate", e.target.value)} />
-                              </label>
-                              <label>
-                                <span>Gender Update</span>
-                                <select
-                                  value={editForm.announcementGender}
-                                  onChange={(e) =>
-                                    updateEditForm("announcementGender", e.target.value as "" | GenderValue)
-                                  }
-                                >
-                                  <option value="">Keep current gender</option>
-                                  <option value="boy">Boy</option>
-                                  <option value="girl">Girl</option>
-                                </select>
-                              </label>
-                            </div>
-                          ) : (
-                            <div className="form-grid">
-                              <label>
-                                <span>Due Date</span>
-                                <input type="date" value={editForm.dueDate} onChange={(e) => updateEditForm("dueDate", e.target.value)} />
-                              </label>
-                              <label>
-                                <span>Revealer Email</span>
-                                <input
-                                  type="email"
-                                  value={editForm.revealerEmail}
-                                  onChange={(e) => updateEditForm("revealerEmail", e.target.value)}
-                                />
-                              </label>
-                              <label>
-                                <span>Relation</span>
-                                <select
-                                  value={editForm.revealerRelation}
-                                  onChange={(e) =>
-                                    updateEditForm("revealerRelation", e.target.value as RevealerRelation)
-                                  }
-                                >
-                                  {(Object.keys(RELATION_LABELS) as RevealerRelation[]).map((key) => (
-                                    <option key={key} value={key}>
-                                      {RELATION_LABELS[key]}
-                                    </option>
-                                  ))}
-                                </select>
-                              </label>
-                            </div>
-                          )}
+                          <div className="flex flex-col gap-1">
+                            <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Timezone</label>
+                            <input
+                              className="w-full bg-white border border-gray-200 rounded-xl px-4 py-2.5 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#3A9FE8]"
+                              value={editForm.revealTimezone}
+                              onChange={(e) => updateEditForm("revealTimezone", e.target.value)}
+                            />
+                          </div>
+                        </div>
 
-                          <div className="photo-edit-row">
-                            <div>
-                              <span className="mini-label">Current Photos</span>
-                              <div className="photo-strip">
-                                {editForm.photos.length === 0 && <span className="empty-note">None selected</span>}
-                                {editForm.photos.map((url, index) => (
-                                  <div key={url} className="photo-thumb">
-                                    <img src={url} alt="" />
-                                    <button
-                                      type="button"
-                                      onClick={() =>
-                                        updateEditForm(
-                                          "photos",
-                                          editForm.photos.filter((_, i) => i !== index)
-                                        )
-                                      }
-                                    >
-                                      x
-                                    </button>
-                                  </div>
+                        {editForm.mode === "announcement" ? (
+                          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            <div className="flex flex-col gap-1">
+                              <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Due Date</label>
+                              <input
+                                className="w-full bg-white border border-gray-200 rounded-xl px-4 py-2.5 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#3A9FE8]"
+                                type="date"
+                                value={editForm.dueDate}
+                                onChange={(e) => updateEditForm("dueDate", e.target.value)}
+                              />
+                            </div>
+                            <div className="flex flex-col gap-1">
+                              <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Gender Update</label>
+                              <select
+                                className="w-full bg-white border border-gray-200 rounded-xl px-4 py-2.5 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#3A9FE8] appearance-none"
+                                value={editForm.announcementGender}
+                                onChange={(e) =>
+                                  updateEditForm("announcementGender", e.target.value as "" | GenderValue)
+                                }
+                              >
+                                <option value="">Keep current gender</option>
+                                <option value="boy">Boy</option>
+                                <option value="girl">Girl</option>
+                              </select>
+                            </div>
+                          </div>
+                        ) : (
+                          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            <div className="flex flex-col gap-1">
+                              <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Due Date</label>
+                              <input
+                                className="w-full bg-white border border-gray-200 rounded-xl px-4 py-2.5 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#3A9FE8]"
+                                type="date"
+                                value={editForm.dueDate}
+                                onChange={(e) => updateEditForm("dueDate", e.target.value)}
+                              />
+                            </div>
+                            <div className="flex flex-col gap-1">
+                              <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Revealer Email</label>
+                              <input
+                                className="w-full bg-white border border-gray-200 rounded-xl px-4 py-2.5 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#3A9FE8]"
+                                type="email"
+                                value={editForm.revealerEmail}
+                                onChange={(e) => updateEditForm("revealerEmail", e.target.value)}
+                              />
+                            </div>
+                            <div className="flex flex-col gap-1">
+                              <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Relation</label>
+                              <select
+                                className="w-full bg-white border border-gray-200 rounded-xl px-4 py-2.5 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#3A9FE8]"
+                                value={editForm.revealerRelation}
+                                onChange={(e) =>
+                                  updateEditForm("revealerRelation", e.target.value as RevealerRelation)
+                                }
+                              >
+                                {(Object.keys(RELATION_LABELS) as RevealerRelation[]).map((key) => (
+                                  <option key={key} value={key}>
+                                    {RELATION_LABELS[key]}
+                                  </option>
                                 ))}
-                              </div>
+                              </select>
                             </div>
-                            <label className="file-input-label">
-                              <span>Replace Photos</span>
+                          </div>
+                        )}
+
+                        {/* Edit Photos Sub-section */}
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-start">
+                          <div className="md:col-span-2 space-y-2">
+                            <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block">Current Photos</span>
+                            <div className="flex flex-wrap gap-3">
+                              {editForm.photos.length === 0 && <span className="text-xs text-gray-400 italic">None selected</span>}
+                              {editForm.photos.map((url, index) => (
+                                <div key={url} className="w-16 h-16 rounded-xl overflow-hidden relative border border-gray-200 group">
+                                  <img src={url} alt="" className="w-full h-full object-cover" />
+                                  <button
+                                    type="button"
+                                    onClick={() =>
+                                      updateEditForm(
+                                        "photos",
+                                        editForm.photos.filter((_, i) => i !== index)
+                                      )
+                                    }
+                                    className="absolute top-1 right-1 w-5 h-5 rounded-full bg-black/60 hover:bg-black text-white text-xs flex items-center justify-center"
+                                  >
+                                    ×
+                                  </button>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+
+                          <div className="flex flex-col gap-1">
+                            <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Replace Photos</span>
+                            <label className="border border-dashed border-gray-200 rounded-xl p-3 bg-white flex flex-col items-center justify-center text-center cursor-pointer hover:border-[#3A9FE8] transition-all">
+                              <Camera className="w-5 h-5 text-gray-400 mb-1" />
+                              <span className="text-xs font-bold text-gray-600">Select Files</span>
                               <input
                                 type="file"
                                 accept="image/jpeg,image/jpg,image/png,image/webp,image/gif,image/heic,image/heif"
                                 multiple
+                                className="hidden"
                                 onChange={(e) => setEditPhotoFiles(Array.from(e.target.files || []).slice(0, PHOTO_MAX))}
                               />
-                              <small>
-                                {editPhotoFiles.length > 0
-                                  ? `${editPhotoFiles.length} new file(s) selected`
-                                  : `Optional, up to ${PHOTO_MAX}`}
-                              </small>
                             </label>
-                          </div>
-
-                          <div className="edit-actions">
-                            <button className="btn-primary-lg" onClick={saveRevealEdits} disabled={savingReveal}>
-                              {savingReveal ? "Saving..." : "Save Changes"}
-                            </button>
-                            <button
-                              className="btn-ghost-sm"
-                              onClick={() => {
-                                setEditingRevealId(null);
-                                setEditForm(null);
-                                setEditPhotoFiles([]);
-                              }}
-                              disabled={savingReveal}
-                            >
-                              Cancel
-                            </button>
+                            <small className="text-[10px] text-gray-400 font-semibold mt-1">
+                              {editPhotoFiles.length > 0
+                                ? `${editPhotoFiles.length} file(s) selected`
+                                : `Up to ${PHOTO_MAX} photos`}
+                            </small>
                           </div>
                         </div>
-                      )}
-                    </article>
-                  );
-                })}
+
+                        {/* Edit Form Actions */}
+                        <div className="flex items-center gap-3 pt-2">
+                          <button
+                            onClick={saveRevealEdits}
+                            disabled={savingReveal}
+                            className="bg-gradient-to-r from-[#E8449A] to-[#3A9FE8] text-white hover:opacity-90 active:scale-[0.98] transition-all font-bold text-xs uppercase tracking-wider rounded-xl py-3 px-5 disabled:opacity-50"
+                          >
+                            {savingReveal ? "Saving..." : "Save Changes"}
+                          </button>
+                          <button
+                            className="border border-gray-200 text-[#374151] hover:bg-gray-100 font-bold text-xs uppercase tracking-wider rounded-xl py-3 px-5 disabled:opacity-50"
+                            onClick={() => {
+                              setEditingRevealId(null);
+                              setEditForm(null);
+                              setEditPhotoFiles([]);
+                            }}
+                            disabled={savingReveal}
+                          >
+                            Cancel
+                          </button>
+                        </div>
+                      </div>
+                    )}
+                  </article>
+                );
+              })}
+            </div>
+          </section>
+        ) : (
+          hasPlan && (
+            <div className="bg-white border border-[#f1f1f5] rounded-2xl p-10 text-center shadow-sm">
+              <Sparkles className="w-12 h-12 text-[#E8449A] mx-auto mb-4 animate-bounce" />
+              <h3 className="font-nunito font-extrabold text-xl text-gray-900 mb-1">Create your first reveal event</h3>
+              <p className="text-sm text-gray-500 font-medium max-w-sm mx-auto mb-6">
+                Tell us about your little one, configure invite codes, dates, and send your mid-wife or secure revealer link to play a cinematic reveal.
+              </p>
+              {canCreateReveal ? (
+                <button
+                  onClick={startNewReveal}
+                  className="bg-gradient-to-r from-[#E8449A] to-[#3A9FE8] text-white font-extrabold hover:opacity-95 rounded-xl py-3 px-6 text-xs uppercase tracking-wider transition-all animate-pulse"
+                >
+                  ✦ Start New Reveal
+                </button>
+              ) : (
+                <p className="text-xs text-red-500 font-bold">Please check your active plans below to activate purchase slots.</p>
+              )}
+            </div>
+          )
+        )}
+
+        {/* Guest Invites Portal */}
+        {latestReveal && (
+          <section className="space-y-6">
+            <h2 className="text-xs font-bold text-gray-400 uppercase tracking-widest border-b border-[#f1f1f5] pb-3 mb-1 flex items-center gap-2">
+              <Users className="w-4 h-4 text-[#3A9FE8]" />
+              Invite Guests
+            </h2>
+
+            <div className="bg-white border border-[#f1f1f5] rounded-2xl p-6 md:p-8 shadow-sm space-y-6">
+              {/* Toolbar */}
+              <div className="flex flex-wrap items-center gap-3">
+                <label className="bg-white border border-gray-200 text-[#374151] hover:bg-gray-50 font-bold text-xs uppercase tracking-wider rounded-xl py-3 px-4 cursor-pointer flex items-center gap-1.5 transition-all">
+                  <Upload className="w-4 h-4 text-gray-400" />
+                  Import CSV/XLSX
+                  <input
+                    type="file"
+                    accept=".csv,text/csv,.xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+                    className="hidden"
+                    onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      if (file) void handleGuestFile(file);
+                      e.currentTarget.value = "";
+                    }}
+                  />
+                </label>
+                <button
+                  onClick={() => setGuestDraftRows((rows) => [...rows, makeGuestRow()])}
+                  className="bg-white border border-gray-200 text-[#374151] hover:bg-gray-50 font-bold text-xs uppercase tracking-wider rounded-xl py-3 px-4 flex items-center gap-1.5 transition-all"
+                >
+                  <Plus className="w-4 h-4 text-gray-400" />
+                  Add Guest Row
+                </button>
+                <button
+                  onClick={() => loadGuestList(latestReveal.id)}
+                  className="bg-white border border-gray-200 text-[#374151] hover:bg-gray-50 font-bold text-xs uppercase tracking-wider rounded-xl py-3 px-4 flex items-center gap-1.5 transition-all"
+                >
+                  <RefreshCw className="w-4 h-4 text-gray-400" />
+                  Refresh List
+                </button>
+                <button
+                  onClick={() => sendGuestDigest(latestReveal.id)}
+                  className="bg-white border border-gray-200 text-[#374151] hover:bg-gray-50 font-bold text-xs uppercase tracking-wider rounded-xl py-3 px-4 flex items-center gap-1.5 transition-all"
+                >
+                  Send Parent Digest
+                </button>
               </div>
-            </section>
-          )}
 
-          {latestReveal && (
-            <section className="portal-section">
-              <p className="section-label">Invite Guests</p>
-              <div className="invite-panel">
-                <div className="invite-toolbar">
-                  <label className="upload-button">
-                    Import CSV/XLSX
-                    <input
-                      type="file"
-                      accept=".csv,text/csv,.xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-                      onChange={(e) => {
-                        const file = e.target.files?.[0];
-                        if (file) void handleGuestFile(file);
-                        e.currentTarget.value = "";
-                      }}
-                    />
-                  </label>
-                  <button className="btn-ghost-sm" onClick={() => setGuestDraftRows((rows) => [...rows, makeGuestRow()])}>
-                    Add Guest Row
-                  </button>
-                  <button className="btn-ghost-sm" onClick={() => loadGuestList(latestReveal.id)}>
-                    Refresh List
-                  </button>
-                  <button className="btn-ghost-sm" onClick={() => sendGuestDigest(latestReveal.id)}>
-                    Send Parent Digest
-                  </button>
+              {guestImportSummary && (
+                <div className="bg-blue-50 border border-blue-100 text-[#1B4F8C] text-xs font-semibold rounded-xl p-4">
+                  📋 {guestImportSummary.fileName}: {guestImportSummary.added} row(s) in table,{" "}
+                  {guestImportSummary.invalid} invalid, {guestImportSummary.duplicates} duplicate.
                 </div>
+              )}
 
-                {guestImportSummary && (
-                  <div className="import-summary">
-                    {guestImportSummary.fileName}: {guestImportSummary.added} row(s) in table,
-                    {guestImportSummary.invalid} invalid, {guestImportSummary.duplicates} duplicate.
-                  </div>
-                )}
-
-                <div className="table-wrap">
-                  <table className="portal-table">
-                    <thead>
-                      <tr>
-                        <th>Name</th>
-                        <th>Number</th>
-                        <th>Email</th>
-                        <th></th>
+              {/* Input Table */}
+              <div className="overflow-x-auto border border-gray-100 rounded-xl">
+                <table className="w-full text-left border-collapse text-xs md:text-sm">
+                  <thead>
+                    <tr className="bg-gray-50 border-b border-gray-100 font-bold text-gray-400 uppercase text-[10px] tracking-wider">
+                      <th className="p-4">Name</th>
+                      <th className="p-4">Phone Number</th>
+                      <th className="p-4">Email</th>
+                      <th className="p-4 text-right">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-50 bg-white">
+                    {guestDraftRows.map((row) => (
+                      <tr key={row.rowId}>
+                        <td className="p-3">
+                          <input
+                            className="bg-white border border-gray-200 rounded-lg px-3 py-2 text-xs text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-1 focus:ring-[#3A9FE8] w-full font-medium"
+                            value={row.name}
+                            onChange={(e) => updateGuestDraft(row.rowId, "name", e.target.value)}
+                            placeholder="Guest name"
+                          />
+                        </td>
+                        <td className="p-3">
+                          <input
+                            className="bg-white border border-gray-200 rounded-lg px-3 py-2 text-xs text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-1 focus:ring-[#3A9FE8] w-full font-medium"
+                            value={row.phone}
+                            onChange={(e) => updateGuestDraft(row.rowId, "phone", e.target.value)}
+                            placeholder="Phone number"
+                          />
+                        </td>
+                        <td className="p-3">
+                          <input
+                            className="bg-white border border-gray-200 rounded-lg px-3 py-2 text-xs text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-1 focus:ring-[#3A9FE8] w-full font-medium"
+                            type="email"
+                            value={row.email}
+                            onChange={(e) => updateGuestDraft(row.rowId, "email", e.target.value)}
+                            placeholder="guest@example.com"
+                          />
+                        </td>
+                        <td className="p-3 text-right">
+                          <button
+                            onClick={() => removeGuestDraft(row.rowId)}
+                            className="text-red-500 hover:text-red-700 font-bold text-xs uppercase tracking-wider px-2.5 py-1"
+                          >
+                            Remove
+                          </button>
+                        </td>
                       </tr>
-                    </thead>
-                    <tbody>
-                      {guestDraftRows.map((row) => (
-                        <tr key={row.rowId}>
-                          <td>
-                            <input
-                              value={row.name}
-                              onChange={(e) => updateGuestDraft(row.rowId, "name", e.target.value)}
-                              placeholder="Guest name"
-                            />
-                          </td>
-                          <td>
-                            <input
-                              value={row.phone}
-                              onChange={(e) => updateGuestDraft(row.rowId, "phone", e.target.value)}
-                              placeholder="Phone number"
-                            />
-                          </td>
-                          <td>
-                            <input
-                              type="email"
-                              value={row.email}
-                              onChange={(e) => updateGuestDraft(row.rowId, "email", e.target.value)}
-                              placeholder="guest@example.com"
-                            />
-                          </td>
-                          <td>
-                            <button className="btn-ghost-sm" onClick={() => removeGuestDraft(row.rowId)}>
-                              Remove
-                            </button>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-
-                <div className="invite-submit-row">
-                  <button className="btn-primary-lg" onClick={() => sendGuestInvites(latestReveal.id)} disabled={sendingInvites}>
-                    {sendingInvites ? "Sending..." : "Submit & Send Links"}
-                  </button>
-                  <span>The account email also receives a host party link.</span>
-                </div>
-
-                {guestRows.length > 0 && (
-                  <div className="sent-list">
-                    <h3>Sent Invites</h3>
-                    <div className="table-wrap">
-                      <table className="portal-table readonly">
-                        <thead>
-                          <tr>
-                            <th>Name</th>
-                            <th>Number</th>
-                            <th>Email</th>
-                            <th>Status</th>
-                            <th>Prediction</th>
-                            <th>Message</th>
-                            <th>Actions</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {guestRows.map((guest) => (
-                            <tr key={guest.guestId}>
-                              <td>
-                                {guest.name}
-                                {guest.isHost && <span className="host-badge">Host</span>}
-                              </td>
-                              <td>{guest.phone || "-"}</td>
-                              <td>{guest.email}</td>
-                              <td>
-                                {guest.responded ? "Responded" : "Pending"} ({guest.inviteStatus})
-                              </td>
-                              <td>{revealUnlocked ? guest.prediction || "-" : "Locked"}</td>
-                              <td>{revealUnlocked ? guest.message || "-" : guest.hasMessage ? "Locked" : "-"}</td>
-                              <td>
-                                <button className="btn-ghost-sm" onClick={() => manageGuest(guest.guestId, "resend", latestReveal.id)}>
-                                  Resend
-                                </button>
-                                <button className="btn-ghost-sm" onClick={() => manageGuest(guest.guestId, "revoke", latestReveal.id)}>
-                                  Revoke
-                                </button>
-                              </td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    </div>
-                  </div>
-                )}
+                    ))}
+                  </tbody>
+                </table>
               </div>
-            </section>
-          )}
 
-          {revealsLoading && reveals.length === 0 && hasPlan && (
-            <div className="reveals-loading">Loading your reveals...</div>
-          )}
+              {/* Submit & Send Banners */}
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pt-2 border-t border-gray-50">
+                <button
+                  onClick={() => sendGuestInvites(latestReveal.id)}
+                  disabled={sendingInvites}
+                  className="bg-gradient-to-r from-[#E8449A] to-[#3A9FE8] text-white hover:opacity-95 font-bold text-xs uppercase tracking-wider rounded-xl py-3.5 px-6 disabled:opacity-50 transition-all shadow-md shadow-[#e8449a0c]"
+                >
+                  {sendingInvites ? "Sending..." : "✦ Submit & Send Links"}
+                </button>
+                <span className="text-xs text-gray-400 font-medium">
+                  The account email also receives a copy of the host party link automatically.
+                </span>
+              </div>
 
-          {!hasPlan && (
-            <PlanSection
-              title="Choose Your Plan"
-              plans={PLANS}
-              activatingPlan={activatingPlan}
-              onSelect={requestPlanCheckout}
-            />
-          )}
+              {/* Sent Invites List */}
+              {guestRows.length > 0 && (
+                <div className="border-t border-gray-100 pt-6 space-y-4">
+                  <h3 className="text-xs font-bold text-gray-400 uppercase tracking-widest">Sent Invites</h3>
+                  
+                  <div className="overflow-x-auto border border-gray-100 rounded-xl">
+                    <table className="w-full text-left border-collapse text-xs md:text-sm">
+                      <thead>
+                        <tr className="bg-gray-50 border-b border-gray-100 font-bold text-gray-400 uppercase text-[10px] tracking-wider">
+                          <th className="p-4">Name</th>
+                          <th className="p-4">Phone</th>
+                          <th className="p-4">Email</th>
+                          <th className="p-4">Status</th>
+                          <th className="p-4">Prediction</th>
+                          <th className="p-4">Message</th>
+                          <th className="p-4 text-right">Actions</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-gray-50 bg-white text-gray-700 font-medium">
+                        {guestRows.map((guest) => (
+                          <tr key={guest.guestId}>
+                            <td className="p-4 flex items-center gap-2">
+                              {guest.name}
+                              {guest.isHost && (
+                                <span className="bg-blue-50 text-[#1B4F8C] text-[9px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full">
+                                  Host
+                                </span>
+                              )}
+                            </td>
+                            <td className="p-4 text-gray-500">{guest.phone || "-"}</td>
+                            <td className="p-4 text-gray-500">{guest.email}</td>
+                            <td className="p-4">
+                              <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase ${
+                                guest.responded ? "bg-green-50 text-green-700" : "bg-gray-50 text-gray-500"
+                              }`}>
+                                {guest.responded ? "Responded" : "Pending"}
+                              </span>
+                            </td>
+                            <td className="p-4 font-semibold">
+                              {revealUnlocked ? (
+                                guest.prediction === "boy" ? "💙 Boy" : guest.prediction === "girl" ? "🩷 Girl" : "-"
+                              ) : (
+                                <span className="text-gray-300 italic font-normal">Locked</span>
+                              )}
+                            </td>
+                            <td className="p-4 max-w-[200px] truncate text-gray-500">
+                              {revealUnlocked ? guest.message || "-" : guest.hasMessage ? "🔐 Locked" : "-"}
+                            </td>
+                            <td className="p-4 text-right flex items-center justify-end gap-2">
+                              <button
+                                onClick={() => manageGuest(guest.guestId, "resend", latestReveal.id)}
+                                className="border border-gray-200 text-[#374151] hover:bg-gray-50 font-bold text-xs uppercase tracking-wider rounded-lg px-2.5 py-1.5 transition-all"
+                              >
+                                Resend
+                              </button>
+                              <button
+                                onClick={() => manageGuest(guest.guestId, "revoke", latestReveal.id)}
+                                className="border border-red-100 text-red-500 hover:bg-red-50 font-bold text-xs uppercase tracking-wider rounded-lg px-2.5 py-1.5 transition-all"
+                              >
+                                Revoke
+                              </button>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              )}
+            </div>
+          </section>
+        )}
 
-          {activePlan === "basic" && (
-            <PlanSection
-              title="Unlock More"
-              plans={PLANS.filter((p) => p.id !== "basic")}
-              activatingPlan={activatingPlan}
-              onSelect={requestPlanCheckout}
-              upgrade
-            />
-          )}
+        {/* Reveals Loading State */}
+        {revealsLoading && reveals.length === 0 && hasPlan && (
+          <div className="text-center text-xs text-gray-400 font-bold py-12">Loading your reveals...</div>
+        )}
 
-          {hasPlan && !canCreateReveal && (
-            <PlanSection
-              title="Need Another Reveal?"
-              plans={PLANS.filter((p) => p.id !== "basic")}
-              activatingPlan={activatingPlan}
-              onSelect={requestPlanCheckout}
-            />
-          )}
-        </main>
+        {/* Pricing/Plans Grid Sections */}
+        {!hasPlan && (
+          <PlanSection
+            title="Choose Your Plan"
+            plans={PLANS}
+            activatingPlan={activatingPlan}
+            onSelect={requestPlanCheckout}
+          />
+        )}
+
+        {activePlan === "basic" && (
+          <PlanSection
+            title="Unlock More"
+            plans={PLANS.filter((p) => p.id !== "basic")}
+            activatingPlan={activatingPlan}
+            onSelect={requestPlanCheckout}
+            upgrade
+          />
+        )}
+
+        {hasPlan && !canCreateReveal && (
+          <PlanSection
+            title="Need Another Reveal?"
+            plans={PLANS.filter((p) => p.id !== "basic")}
+            activatingPlan={activatingPlan}
+            onSelect={requestPlanCheckout}
+          />
+        )}
       </div>
-    </>
+    </DashboardShell>
   );
 }
+
+// ─── Payment prompts & plan blocks ──────────────────────────
 
 function PaymentGatewayPrompt({
   plan,
@@ -1509,20 +1672,28 @@ function PaymentGatewayPrompt({
   onCancel: () => void;
 }) {
   return (
-    <div className="payment-prompt-backdrop" role="dialog" aria-modal="true" aria-labelledby="payment-prompt-title">
-      <div className="payment-prompt-card">
-        <p className="section-label">Payment Gateway</p>
-        <h2 id="payment-prompt-title" className="payment-prompt-title">
+    <div className="fixed inset-0 z-[9998] bg-black/50 backdrop-blur-sm flex items-center justify-center p-4">
+      <div className="bg-white border border-[#f1f1f5] rounded-2xl shadow-2xl p-6 md:p-8 max-w-md w-full animate-fade-up">
+        <span className="text-[10px] font-bold text-[#E8449A] uppercase tracking-widest block mb-1">Payment Gateway</span>
+        <h2 id="payment-prompt-title" className="font-nunito font-extrabold text-xl text-gray-900 mb-3">
           Taking you to payment gateway
         </h2>
-        <p className="payment-prompt-copy">
-          You selected the {plan.name} plan for {plan.priceLabel}. Proceed to secure Stripe Checkout or cancel to return to the pricing plans.
+        <p className="text-sm text-gray-500 leading-relaxed font-semibold mb-6">
+          You selected the <strong className="text-gray-800">{plan.name}</strong> for <strong className="text-gray-800">{plan.priceLabel}</strong>. Proceed to secure Stripe Checkout or cancel to return to the pricing plans.
         </p>
-        <div className="payment-prompt-actions">
-          <button type="button" className="btn-ghost-sm" onClick={onCancel}>
+        <div className="flex items-center justify-end gap-3">
+          <button
+            type="button"
+            className="border border-gray-200 text-[#374151] hover:bg-gray-50 rounded-xl py-2.5 px-4 font-bold text-xs uppercase tracking-wider transition-all"
+            onClick={onCancel}
+          >
             Cancel
           </button>
-          <button type="button" className="btn-primary-sm" onClick={onProceed}>
+          <button
+            type="button"
+            className="bg-gradient-to-r from-[#E8449A] to-[#3A9FE8] text-white hover:opacity-90 active:scale-[0.98] rounded-xl py-2.5 px-4 font-bold text-xs shadow-md tracking-wider uppercase transition-all"
+            onClick={onProceed}
+          >
             Proceed
           </button>
         </div>
@@ -1545,199 +1716,112 @@ function PlanSection({
   upgrade?: boolean;
 }) {
   return (
-    <section className="portal-section">
-      <p className="section-label">{title}</p>
+    <section className="space-y-6">
+      <h2 className="text-xs font-bold text-gray-400 uppercase tracking-widest border-b border-[#f1f1f5] pb-3 mb-1 flex items-center gap-2">
+        <Sparkles className="w-4 h-4 text-[#E8449A]" />
+        {title}
+      </h2>
+
       {upgrade && (
-        <div className="notice-panel">
-          You are on the Spark plan. Upgrade anytime for a cinematic reveal experience.
+        <div className="bg-gradient-to-r from-[#FDE8F2] to-[#D6EAFE] border border-white rounded-2xl p-5 shadow-sm text-sm text-gray-700 leading-relaxed font-semibold">
+          🎉 You are on the Spark plan. Upgrade anytime for a cinematic reveal experience!
         </div>
       )}
-      <div className="plans-grid">
-        {plans.map((plan) => (
-          <div key={plan.id} className={`plan-card${plan.id === "premium" ? " plan-popular" : ""}`}>
-            {plan.id === "premium" && <div className="plan-badge-top">Most Popular</div>}
-            <div className="plan-name">{plan.name}</div>
-            <div className="plan-price">
-              <span className="plan-curr">{plan.priceCents === 0 ? "" : "$"}</span>
-              <span className="plan-amount">
-                {plan.priceCents === 0
-                  ? "Free"
-                  : plan.priceCents % 100 === 0
-                    ? (plan.priceCents / 100).toFixed(0)
-                    : (plan.priceCents / 100).toFixed(2)}
-              </span>
-              {plan.priceCents > 0 && <span className="plan-per"> one-time</span>}
-            </div>
-            <p className="plan-desc">{plan.description}</p>
-            <div className="plan-divider" />
-            <ul className="plan-feats">
-              <li>{plan.revealsGranted} reveal{plan.revealsGranted === 1 ? "" : "s"}</li>
-              <li>Secure revealer link</li>
-              <li>Live broadcast to guests</li>
-              {plan.id === "premium" && <li>Custom cinematic video</li>}
-              {}
-            </ul>
-            <button
-              className={`plan-btn${plan.id === "premium" ? " plan-btn-primary" : ""}`}
-              onClick={() => onSelect(plan)}
-              disabled={!!activatingPlan}
+
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {plans.map((plan) => {
+          const isPremium = plan.id === "premium";
+          const isCustom = plan.id === "custom";
+          return (
+            <div
+              key={plan.id}
+              className={`relative bg-white border rounded-2xl p-6 shadow-sm flex flex-col justify-between transition-all duration-200 ${
+                isPremium
+                  ? "border-[#E8449A] ring-2 ring-[#E8449A]/10 scale-100 lg:scale-[1.02]"
+                  : "border-[#f1f1f5]"
+              }`}
             >
-              {activatingPlan === plan.id ? "Activating..." : plan.priceCents === 0 ? `Choose ${plan.name}` : `Buy ${plan.name}`}
-            </button>
-          </div>
-        ))}
+              {isPremium && (
+                <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 bg-gradient-to-r from-[#E8449A] to-[#3A9FE8] text-white text-[9px] font-bold tracking-widest uppercase py-1 px-3 rounded-full shadow-sm">
+                  Most Popular
+                </div>
+              )}
+
+              <div>
+                <h3 className="font-nunito font-extrabold text-xl text-gray-900 mb-2">{plan.name}</h3>
+                <div className="flex items-baseline gap-1 mb-4">
+                  <span className="text-3xl font-extrabold text-gray-900">
+                    {plan.priceCents === 0 ? "Free" : `$${(plan.priceCents / 100).toFixed(0)}`}
+                  </span>
+                  {plan.priceCents > 0 && (
+                    <span className="text-xs text-gray-400 font-semibold ml-0.5">one-time</span>
+                  )}
+                </div>
+                <p className="text-xs text-gray-500 leading-relaxed font-semibold mb-5">{plan.description}</p>
+                <div className="border-t border-gray-100 my-4" />
+                
+                <ul className="space-y-2.5 mb-6 text-xs text-gray-600 font-semibold">
+                  <li className="flex items-center gap-2">
+                    <span className="text-[#3A9FE8]">✓</span>
+                    {plan.revealsGranted} reveal{plan.revealsGranted === 1 ? "" : "s"}
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <span className="text-[#3A9FE8]">✓</span>
+                    Secure revealer link
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <span className="text-[#3A9FE8]">✓</span>
+                    Live broadcast to guests
+                  </li>
+                  {isPremium && (
+                    <li className="flex items-center gap-2 text-[#E8449A]">
+                      <span className="text-[#E8449A]">★</span>
+                      Custom cinematic video
+                    </li>
+                  )}
+                  {isCustom && (
+                    <li className="flex items-center gap-2 text-[#3A9FE8]">
+                      <span className="text-[#3A9FE8]">★</span>
+                      Fully tailored assets
+                    </li>
+                  )}
+                </ul>
+              </div>
+
+              <button
+                type="button"
+                disabled={!!activatingPlan}
+                onClick={() => onSelect(plan)}
+                className={`w-full py-3 px-4 rounded-xl text-xs font-bold tracking-wider uppercase transition-all duration-200 ${
+                  isPremium
+                    ? "bg-gradient-to-r from-[#E8449A] to-[#3A9FE8] text-white shadow-md hover:opacity-95"
+                    : "border border-gray-200 text-[#374151] hover:bg-gray-50"
+                } disabled:opacity-50 disabled:cursor-not-allowed`}
+              >
+                {activatingPlan === plan.id
+                  ? "Activating..."
+                  : plan.priceCents === 0
+                  ? `Choose ${plan.name}`
+                  : `Buy ${plan.name}`}
+              </button>
+            </div>
+          );
+        })}
       </div>
     </section>
   );
 }
 
+// ─── Shell Export ───────────────────────────────────────────
+
 export default function DashboardPage() {
   return (
-    <Suspense fallback={<div style={{ minHeight: "100vh", background: "#f6f4f1" }} />}>
+    <Suspense fallback={
+      <div className="min-h-screen bg-[#fafafd] flex items-center justify-center font-jakarta">
+        <p className="text-gray-400 text-xs font-bold animate-pulse">Loading dashboard view…</p>
+      </div>
+    }>
       <DashboardContent />
     </Suspense>
   );
 }
-
-const CSS = `
-@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,300;0,400;1,300;1,400&family=Plus+Jakarta+Sans:wght@300;400;500;600&display=swap');
-*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
-@keyframes slideIn{from{opacity:0;transform:translateX(20px);}to{opacity:1;transform:translateX(0);}}
-body{font-family:'Plus Jakarta Sans',sans-serif;background:#f6f4f1;color:#171717;min-height:100vh;}
-button,input,select{font-family:'Plus Jakarta Sans',sans-serif;}
-.dash-root{min-height:100vh;}
-.dash-header{position:sticky;top:0;z-index:50;height:64px;display:flex;align-items:center;justify-content:space-between;padding:0 2rem;background:rgba(246,244,241,0.92);backdrop-filter:blur(14px);border-bottom:1px solid rgba(0,0,0,0.08);}
-.dash-logo{font-family:'Playfair Display',serif;font-size:1.1rem;font-weight:400;color:#111827;text-decoration:none;line-height:1.2;}
-.logo-tag{display:block;font-size:0.58rem;font-family:'Plus Jakarta Sans',sans-serif;letter-spacing:0.22em;text-transform:uppercase;color:#b5476d;font-weight:400;}
-.dash-user{display:flex;align-items:center;gap:0.7rem;}
-.dash-avatar{width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,#2e7dd1,#c2527a);display:flex;align-items:center;justify-content:center;color:white;font-size:13px;font-weight:600;flex-shrink:0;}
-.dash-user-name{font-size:0.82rem;color:#6b7280;display:none;}
-@media(min-width:760px){.dash-user-name{display:inline;}}
-.dash-main{max-width:1180px;margin:0 auto;padding:3rem 2rem 4rem;}
-.welcome{margin-bottom:2.4rem;}
-.welcome-tag,.section-label{font-size:0.68rem;letter-spacing:0.32em;text-transform:uppercase;color:#b5476d;font-weight:600;margin-bottom:0.8rem;}
-.welcome-title{font-family:'Playfair Display',serif;font-size:2.8rem;font-weight:300;color:#111827;line-height:1.12;margin-bottom:0.6rem;}
-.welcome-title em{font-style:italic;color:#1b4f8c;}
-.welcome-sub{font-size:0.95rem;font-weight:300;color:#6b7280;line-height:1.7;max-width:620px;margin-bottom:1.2rem;}
-.plan-badge{display:inline-flex;align-items:center;gap:0.5rem;flex-wrap:wrap;padding:0.5rem 1rem;background:white;border:1px solid rgba(0,0,0,0.08);border-radius:999px;font-size:0.82rem;color:#374151;box-shadow:0 1px 4px rgba(0,0,0,0.04);}
-.plan-badge strong{color:#1b4f8c;font-weight:600;}
-.plan-badge-dot{width:8px;height:8px;border-radius:50%;background:#16a34a;box-shadow:0 0 10px rgba(22,163,74,0.5);}
-.plan-badge-sep{color:#d1d5db;}
-.portal-section{margin-bottom:2.2rem;}
-.section-label{display:flex;align-items:center;gap:0.9rem;color:#8a8f98;}
-.section-label::after{content:'';flex:1;height:1px;background:rgba(0,0,0,0.07);}
-.cta-card{background:linear-gradient(135deg,#143d6e 0%,#2e7dd1 58%,#c2527a 100%);border-radius:8px;padding:2rem 2.2rem;margin-bottom:2.4rem;box-shadow:0 14px 36px rgba(27,79,140,0.18);}
-.cta-card-inner{display:flex;align-items:center;justify-content:space-between;gap:2rem;flex-wrap:wrap;}
-.cta-card .section-label{color:rgba(255,255,255,0.72);margin-bottom:0.5rem;}
-.cta-card .section-label::after{background:rgba(255,255,255,0.16);}
-.cta-title{font-family:'Playfair Display',serif;font-size:2rem;font-weight:300;color:white;line-height:1.2;margin-bottom:0.5rem;}
-.cta-desc{font-size:0.88rem;font-weight:300;color:rgba(255,255,255,0.84);line-height:1.7;max-width:540px;}
-.btn-primary-lg{padding:0.9rem 1.5rem;background:#111827;color:white;border:none;border-radius:4px;cursor:pointer;font-size:0.78rem;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;box-shadow:0 6px 20px rgba(0,0,0,0.12);transition:transform 0.2s,box-shadow 0.2s;white-space:nowrap;}
-.btn-primary-lg:hover:not(:disabled){transform:translateY(-1px);box-shadow:0 10px 28px rgba(0,0,0,0.18);}
-.btn-primary-lg:disabled{opacity:0.55;cursor:not-allowed;}
-.btn-ghost-sm{padding:7px 12px;background:white;border:1px solid rgba(0,0,0,0.12);border-radius:5px;font-size:0.76rem;color:#374151;cursor:pointer;transition:all 0.2s;white-space:nowrap;}
-.btn-ghost-sm:hover:not(:disabled){border-color:#2e7dd1;color:#1b4f8c;background:#f8fbff;}
-.btn-ghost-sm:disabled{opacity:0.5;cursor:not-allowed;}
-.reveal-stack{display:flex;flex-direction:column;gap:0.9rem;}
-.detail-panel,.invite-panel,.notice-panel{background:white;border:1px solid rgba(0,0,0,0.08);border-radius:8px;box-shadow:0 1px 8px rgba(0,0,0,0.04);}
-.detail-panel{padding:1.2rem;}
-.detail-panel-header{display:flex;align-items:flex-start;justify-content:space-between;gap:1.2rem;margin-bottom:1rem;}
-.detail-title-wrap{display:flex;align-items:center;gap:1rem;min-width:0;}
-.reveal-photo{width:64px;height:64px;border-radius:8px;overflow:hidden;background:#f2f0ed;flex-shrink:0;display:flex;align-items:center;justify-content:center;}
-.reveal-photo img{width:100%;height:100%;object-fit:cover;}
-.reveal-photo-placeholder{font-size:0.68rem;color:#8a8f98;text-align:center;padding:0.4rem;}
-.reveal-mode-tag{font-size:0.68rem;letter-spacing:0.16em;text-transform:uppercase;color:#8a8f98;margin-bottom:0.25rem;}
-.detail-title{font-family:'Playfair Display',serif;font-size:1.35rem;font-weight:400;color:#111827;}
-.detail-sub{font-size:0.82rem;color:#6b7280;margin-top:0.2rem;}
-.detail-actions{display:flex;align-items:center;justify-content:flex-end;gap:0.5rem;flex-wrap:wrap;}
-.status-pill,.edit-pill,.host-badge{display:inline-flex;align-items:center;border-radius:999px;padding:0.32rem 0.62rem;font-size:0.7rem;font-weight:700;letter-spacing:0.04em;text-transform:uppercase;white-space:nowrap;}
-.status-pill.gray{background:#f3f4f6;color:#4b5563;}
-.status-pill.yellow{background:#fffbeb;color:#92400e;}
-.status-pill.blue{background:#eff6ff;color:#1d4ed8;}
-.status-pill.purple{background:#f5f3ff;color:#6d28d9;}
-.status-pill.red{background:#fef2f2;color:#b91c1c;}
-.status-pill.green{background:#ecfdf5;color:#047857;}
-.edit-pill.open{background:#eefaf2;color:#15803d;}
-.edit-pill.locked{background:#f4f4f5;color:#71717a;}
-.detail-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:0.75rem;border-top:1px solid rgba(0,0,0,0.06);padding-top:1rem;}
-.detail-grid div{background:#faf9f7;border:1px solid rgba(0,0,0,0.05);border-radius:6px;padding:0.8rem;min-width:0;}
-.detail-grid span,.mini-label,.edit-form label span,.file-input-label span{display:block;font-size:0.68rem;letter-spacing:0.12em;text-transform:uppercase;color:#8a8f98;font-weight:700;margin-bottom:0.35rem;}
-.detail-grid strong{font-size:0.9rem;color:#111827;font-weight:600;word-break:break-word;}
-.edit-form{border-top:1px solid rgba(0,0,0,0.06);padding-top:1rem;}
-.mode-row{display:flex;gap:0.6rem;margin-bottom:1rem;flex-wrap:wrap;}
-.mode-chip{padding:0.75rem 1rem;border:1px solid rgba(0,0,0,0.14);background:white;border-radius:5px;cursor:pointer;font-size:0.78rem;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:#374151;}
-.mode-chip.selected{border-color:#2e7dd1;background:#eff6ff;color:#1b4f8c;}
-.form-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:1rem;margin-bottom:1rem;}
-.edit-form input,.edit-form select,.portal-table input{width:100%;border:1px solid rgba(0,0,0,0.12);border-radius:4px;background:white;color:#111827;padding:0.76rem 0.8rem;font-size:0.88rem;outline:none;}
-.edit-form input:focus,.edit-form select:focus,.portal-table input:focus{border-color:#2e7dd1;box-shadow:0 0 0 3px rgba(46,125,209,0.1);}
-.photo-edit-row{display:grid;grid-template-columns:1fr 260px;gap:1rem;margin:0.5rem 0 1rem;}
-.photo-strip{display:flex;align-items:center;gap:0.6rem;flex-wrap:wrap;}
-.photo-thumb{width:68px;height:68px;border-radius:6px;overflow:hidden;position:relative;background:#f4f4f5;border:1px solid rgba(0,0,0,0.08);}
-.photo-thumb img{width:100%;height:100%;object-fit:cover;}
-.photo-thumb button{position:absolute;top:4px;right:4px;width:20px;height:20px;border:none;border-radius:50%;background:rgba(17,24,39,0.78);color:white;cursor:pointer;}
-.empty-note{font-size:0.84rem;color:#8a8f98;}
-.file-input-label{display:block;border:1px dashed rgba(0,0,0,0.2);border-radius:6px;padding:0.8rem;background:#faf9f7;}
-.file-input-label input{padding:0;border:none;margin-top:0.4rem;box-shadow:none;}
-.file-input-label small{display:block;color:#8a8f98;font-size:0.75rem;margin-top:0.45rem;}
-.edit-actions{display:flex;align-items:center;gap:0.6rem;flex-wrap:wrap;}
-.invite-panel{padding:1rem;}
-.invite-toolbar{display:flex;align-items:center;gap:0.6rem;flex-wrap:wrap;margin-bottom:0.8rem;}
-.upload-button{position:relative;display:inline-flex;align-items:center;justify-content:center;padding:7px 12px;border:1px solid rgba(0,0,0,0.12);border-radius:5px;background:white;color:#374151;cursor:pointer;font-size:0.76rem;font-weight:500;}
-.upload-button input{position:absolute;inset:0;opacity:0;cursor:pointer;}
-.import-summary{font-size:0.8rem;color:#4b5563;background:#f8fafc;border:1px solid rgba(0,0,0,0.06);border-radius:6px;padding:0.65rem 0.8rem;margin-bottom:0.8rem;}
-.table-wrap{overflow-x:auto;}
-.portal-table{width:100%;border-collapse:separate;border-spacing:0;font-size:0.84rem;min-width:760px;}
-.portal-table th{background:#f5f3f0;color:#6b7280;text-align:left;font-size:0.68rem;letter-spacing:0.13em;text-transform:uppercase;padding:0.72rem;border-top:1px solid rgba(0,0,0,0.07);border-bottom:1px solid rgba(0,0,0,0.07);}
-.portal-table td{padding:0.68rem;border-bottom:1px solid rgba(0,0,0,0.06);vertical-align:middle;color:#374151;}
-.portal-table th:first-child{border-left:1px solid rgba(0,0,0,0.07);border-top-left-radius:6px;}
-.portal-table th:last-child{border-right:1px solid rgba(0,0,0,0.07);border-top-right-radius:6px;}
-.portal-table.readonly td{background:white;}
-.invite-submit-row{display:flex;align-items:center;gap:1rem;flex-wrap:wrap;margin-top:1rem;}
-.invite-submit-row span{font-size:0.8rem;color:#6b7280;}
-.sent-list{margin-top:1.2rem;border-top:1px solid rgba(0,0,0,0.06);padding-top:1rem;}
-.sent-list h3{font-size:0.86rem;text-transform:uppercase;letter-spacing:0.16em;color:#6b7280;margin-bottom:0.8rem;}
-.host-badge{margin-left:0.45rem;background:#eff6ff;color:#1d4ed8;font-size:0.62rem;padding:0.22rem 0.45rem;}
-.notice-panel{padding:1rem 1.1rem;color:#4b5563;font-size:0.9rem;line-height:1.6;margin-bottom:1rem;}
-.reveals-loading{text-align:center;color:#8a8f98;padding:2rem;font-size:0.88rem;}
-.plans-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:1rem;}
-.plan-card{position:relative;background:white;border:1px solid rgba(0,0,0,0.08);border-radius:8px;padding:1.6rem;box-shadow:0 1px 8px rgba(0,0,0,0.04);}
-.plan-popular{border:1.5px solid #2e7dd1;box-shadow:0 10px 28px rgba(46,125,209,0.12);}
-.plan-badge-top{position:absolute;top:-10px;left:50%;transform:translateX(-50%);background:linear-gradient(135deg,#2e7dd1,#c2527a);color:white;font-size:0.62rem;letter-spacing:0.2em;text-transform:uppercase;padding:0.3rem 0.8rem;border-radius:999px;font-weight:700;white-space:nowrap;}
-.plan-name{font-family:'Playfair Display',serif;font-size:1.35rem;font-weight:400;color:#111827;margin-bottom:0.8rem;}
-.plan-price{font-family:'Playfair Display',serif;font-weight:300;color:#111827;margin-bottom:0.6rem;line-height:1;}
-.plan-curr{font-size:1.3rem;vertical-align:super;}
-.plan-amount{font-size:3rem;}
-.plan-per{font-size:0.8rem;font-family:'Plus Jakarta Sans',sans-serif;color:#8a8f98;}
-.plan-desc{font-size:0.85rem;color:#6b7280;line-height:1.6;margin-bottom:1.1rem;font-weight:300;}
-.plan-divider{height:1px;background:rgba(0,0,0,0.06);margin-bottom:1rem;}
-.plan-feats{list-style:none;margin-bottom:1.4rem;}
-.plan-feats li{font-size:0.83rem;color:#374151;padding:0.28rem 0;}
-.plan-btn{width:100%;padding:0.82rem;background:white;color:#374151;border:1.5px solid rgba(0,0,0,0.12);border-radius:4px;cursor:pointer;font-size:0.76rem;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;transition:all 0.2s;}
-.plan-btn:hover:not(:disabled){border-color:#2e7dd1;color:#1b4f8c;}
-.plan-btn-primary{background:linear-gradient(135deg,#2e7dd1,#c2527a);color:white;border:none;box-shadow:0 4px 16px rgba(46,125,209,0.22);}
-.plan-btn-primary:hover:not(:disabled){color:white;transform:translateY(-1px);}
-.plan-btn:disabled{opacity:0.5;cursor:not-allowed;}
-.payment-prompt-backdrop{position:fixed;inset:0;z-index:9998;background:rgba(17,24,39,0.58);backdrop-filter:blur(6px);display:flex;align-items:center;justify-content:center;padding:1.5rem;}
-.payment-prompt-card{width:min(440px,100%);background:white;border-radius:12px;border:1px solid rgba(0,0,0,0.08);box-shadow:0 24px 70px rgba(0,0,0,0.24);padding:1.8rem;}
-.payment-prompt-title{font-family:'Playfair Display',serif;font-size:1.8rem;font-weight:300;color:#111827;margin-bottom:0.65rem;}
-.payment-prompt-copy{font-size:0.92rem;color:#4b5563;line-height:1.7;margin-bottom:1.4rem;}
-.payment-prompt-actions{display:flex;align-items:center;justify-content:flex-end;gap:0.75rem;flex-wrap:wrap;}
-.btn-primary-sm{padding:8px 14px;background:#111827;color:white;border:1px solid #111827;border-radius:5px;font-size:0.76rem;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;cursor:pointer;transition:all 0.2s;white-space:nowrap;}
-.btn-primary-sm:hover{background:#1b4f8c;border-color:#1b4f8c;transform:translateY(-1px);}
-.dash-toast{position:fixed;top:20px;right:20px;z-index:9999;background:white;border-left:4px solid #2563eb;border-radius:8px;padding:14px 16px;max-width:390px;display:flex;align-items:flex-start;gap:10px;box-shadow:0 10px 30px rgba(0,0,0,0.12);font-size:14px;animation:slideIn .3s ease-out;}
-.dash-toast span:nth-child(2){color:#111827;line-height:1.5;flex:1;}
-.dash-toast button{background:none;border:none;color:#8a8f98;cursor:pointer;font-size:14px;}
-@media(max-width:900px){
-  .detail-panel-header{flex-direction:column;}
-  .detail-actions{justify-content:flex-start;}
-  .detail-grid,.form-grid,.photo-edit-row{grid-template-columns:1fr;}
-}
-@media(max-width:640px){
-  .dash-header{height:auto;align-items:flex-start;gap:1rem;padding:1rem;flex-direction:column;}
-  .dash-user{width:100%;flex-wrap:wrap;}
-  .dash-main{padding:2rem 1rem 3rem;}
-  .welcome-title{font-size:2.2rem;}
-  .cta-card{padding:1.5rem;}
-  .btn-primary-lg{width:100%;}
-}
-`;
