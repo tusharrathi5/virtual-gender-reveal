@@ -204,18 +204,16 @@ export default function GuestInvitePage() {
       <style>{`
         .party-bg-video {
           will-change: transform;
+          object-fit: contain;
         }
         @media (prefers-reduced-motion: reduce) {
           .party-bg-video {
             display: none !important;
           }
-          .party-overlay {
-            background: linear-gradient(135deg, rgba(232, 68, 154, 0.08) 0%, rgba(58, 159, 232, 0.08) 100%), #fffefb !important;
-          }
         }
       `}</style>
 
-      <div className="relative min-h-screen overflow-x-hidden w-full font-sans antialiased text-[#1f2937]">
+      <div className="relative min-h-screen overflow-x-hidden w-full font-sans antialiased text-[#1f2937] bg-gradient-to-tr from-[#E8449A]/10 via-white/80 to-[#3A9FE8]/10">
         {/* Decorative Fixed Video Background */}
         <video
           src="/videos/party-page-background.mp4"
@@ -225,11 +223,8 @@ export default function GuestInvitePage() {
           playsInline
           controls={false}
           aria-hidden="true"
-          className="party-bg-video fixed inset-0 w-full h-full object-cover z-0 pointer-events-none"
+          className="party-bg-video fixed inset-0 w-full h-full object-contain z-0 pointer-events-none"
         />
-        
-        {/* Premium Overlay Tint */}
-        <div className="party-overlay fixed inset-0 z-10 pointer-events-none bg-gradient-to-tr from-[#E8449A]/5 via-white/70 to-[#3A9FE8]/5" />
         
         {/* Main Content (z-index 20) */}
         <div className="relative z-20 max-w-[1080px] mx-auto px-4 py-8 md:py-12 flex flex-col gap-6">
@@ -270,71 +265,73 @@ export default function GuestInvitePage() {
             </div>
           </header>
 
+          {/* 2. REVEAL VIDEO / COUNTDOWN AREA (CENTERED HERO) */}
+          <div className="max-w-[860px] mx-auto w-full">
+            <section className="relative overflow-hidden bg-slate-900 border border-slate-800 shadow-2xl rounded-[24px]">
+              {/* Ambient subtle celebratory pink/blue glows in the corners of navy frame */}
+              <div className="absolute top-0 left-0 w-48 h-48 bg-[#E8449A]/15 blur-3xl pointer-events-none" />
+              <div className="absolute bottom-0 right-0 w-48 h-48 bg-[#3A9FE8]/15 blur-3xl pointer-events-none" />
+              
+              <div className="relative aspect-video w-full bg-slate-950">
+                {isLive && videoUrl ? (
+                  <iframe
+                    src={videoUrl}
+                    title="Reveal Video"
+                    className="w-full h-full border-0"
+                    allow="accelerometer; gyroscope; autoplay; encrypted-media; picture-in-picture;"
+                    allowFullScreen
+                  />
+                ) : (
+                  <div className="w-full h-full flex flex-col items-center justify-center text-center p-6 bg-gradient-to-b from-slate-900 to-slate-950">
+                    <div className="flex flex-col items-center gap-2">
+                      <div className="flex items-center gap-2 px-3 py-1 rounded-full bg-white/5 border border-white/10 text-xs font-semibold tracking-wider text-slate-300 uppercase">
+                        <Clock className="w-3.5 h-3.5 text-[#3A9FE8] animate-pulse" />
+                        The Reveal Live
+                      </div>
+                      
+                      <h2 className="text-2xl md:text-3xl font-extrabold text-white mt-4 tracking-tight">
+                        {countdownParts.live ? "Reveal is live now 🎉" : "Ready for the big reveal?"}
+                      </h2>
+                      
+                      {!countdownParts.live && (
+                        <div className="flex gap-2.5 md:gap-4 justify-center mt-6">
+                          {[
+                            { val: countdownParts.d, label: "Days", color: "from-[#3A9FE8]/25 to-[#3A9FE8]/5", border: "border-[#3A9FE8]/40", text: "text-[#3A9FE8]" },
+                            { val: countdownParts.h, label: "Hours", color: "from-[#E8449A]/25 to-[#E8449A]/5", border: "border-[#E8449A]/40", text: "text-[#E8449A]" },
+                            { val: countdownParts.m, label: "Mins", color: "from-[#3A9FE8]/25 to-[#3A9FE8]/5", border: "border-[#3A9FE8]/40", text: "text-[#3A9FE8]" },
+                            { val: countdownParts.s, label: "Secs", color: "from-[#E8449A]/25 to-[#E8449A]/5", border: "border-[#E8449A]/40", text: "text-[#E8449A]" },
+                          ].map((item, idx) => (
+                            <div key={idx} className={`flex flex-col items-center bg-gradient-to-b ${item.color} px-3 py-2 md:px-5 md:py-3 rounded-2xl border ${item.border} min-w-[64px] md:min-w-[80px] shadow-lg shadow-black/20`}>
+                              <span className="text-xl md:text-3xl font-extrabold text-white font-mono leading-none">{item.val}</span>
+                              <span className={`text-[9px] md:text-[10px] ${item.text} font-bold uppercase tracking-wider mt-1`}>{item.label}</span>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                      
+                      <p className="mt-6 text-sm text-slate-400 max-w-md">
+                        {countdownParts.live 
+                          ? "We are live! The reveal stream is starting now." 
+                          : "The screen will unlock automatically at the scheduled reveal time. Stay tuned!"}
+                      </p>
+                    </div>
+                  </div>
+                )}
+                
+                {!isLive && (
+                  <div className="absolute left-4 bottom-4 flex items-center gap-2 bg-slate-950/80 backdrop-blur-md px-3 py-1.5 rounded-full border border-white/10 text-[11px] font-bold text-white shadow-md">
+                    <span className="w-2 h-2 rounded-full bg-amber-500 animate-ping" />
+                    Countdown Active
+                  </div>
+                )}
+              </div>
+            </section>
+          </div>
+
           {/* Double Column Grid on Desktop, Stacked on Mobile */}
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-            {/* Left Column: Video + Prediction Form + Guest Wishes */}
+            {/* Left Column: Prediction Form + Guest Wishes */}
             <div className="lg:col-span-7 flex flex-col gap-6">
-              {/* 2. REVEAL VIDEO / COUNTDOWN AREA */}
-              <section className="relative overflow-hidden bg-slate-900 border border-slate-800 shadow-2xl rounded-[24px]">
-                {/* Ambient subtle celebratory pink/blue glows in the corners of navy frame */}
-                <div className="absolute top-0 left-0 w-48 h-48 bg-[#E8449A]/15 blur-3xl pointer-events-none" />
-                <div className="absolute bottom-0 right-0 w-48 h-48 bg-[#3A9FE8]/15 blur-3xl pointer-events-none" />
-                
-                <div className="relative aspect-video w-full bg-slate-950">
-                  {isLive && videoUrl ? (
-                    <iframe
-                      src={videoUrl}
-                      title="Reveal Video"
-                      className="w-full h-full border-0"
-                      allow="accelerometer; gyroscope; autoplay; encrypted-media; picture-in-picture;"
-                      allowFullScreen
-                    />
-                  ) : (
-                    <div className="w-full h-full flex flex-col items-center justify-center text-center p-6 bg-gradient-to-b from-slate-900 to-slate-950">
-                      <div className="flex flex-col items-center gap-2">
-                        <div className="flex items-center gap-2 px-3 py-1 rounded-full bg-white/5 border border-white/10 text-xs font-semibold tracking-wider text-slate-300 uppercase">
-                          <Clock className="w-3.5 h-3.5 text-[#3A9FE8] animate-pulse" />
-                          The Reveal Live
-                        </div>
-                        
-                        <h2 className="text-2xl md:text-3xl font-extrabold text-white mt-4 tracking-tight">
-                          {countdownParts.live ? "Reveal is live now 🎉" : "Ready for the big reveal?"}
-                        </h2>
-                        
-                        {!countdownParts.live && (
-                          <div className="flex gap-2.5 md:gap-4 justify-center mt-6">
-                            {[
-                              { val: countdownParts.d, label: "Days" },
-                              { val: countdownParts.h, label: "Hours" },
-                              { val: countdownParts.m, label: "Mins" },
-                              { val: countdownParts.s, label: "Secs" },
-                            ].map((item, idx) => (
-                              <div key={idx} className="flex flex-col items-center bg-white/5 px-3 py-2 md:px-5 md:py-3 rounded-2xl border border-white/10 min-w-[64px] md:min-w-[80px] shadow-lg">
-                                <span className="text-xl md:text-3xl font-extrabold text-white font-mono leading-none">{item.val}</span>
-                                <span className="text-[9px] md:text-[10px] text-white/50 font-bold uppercase tracking-wider mt-1">{item.label}</span>
-                              </div>
-                            ))}
-                          </div>
-                        )}
-                        
-                        <p className="mt-6 text-sm text-slate-400 max-w-md">
-                          {countdownParts.live 
-                            ? "We are live! The reveal stream is starting now." 
-                            : "The screen will unlock automatically at the scheduled reveal time. Stay tuned!"}
-                        </p>
-                      </div>
-                    </div>
-                  )}
-                  
-                  {!isLive && (
-                    <div className="absolute left-4 bottom-4 flex items-center gap-2 bg-slate-950/80 backdrop-blur-md px-3 py-1.5 rounded-full border border-white/10 text-[11px] font-bold text-white shadow-md">
-                      <span className="w-2 h-2 rounded-full bg-amber-500 animate-ping" />
-                      Countdown Active
-                    </div>
-                  )}
-                </div>
-              </section>
-
               {/* 3. PREDICTION & WISHES */}
               <section className="bg-white/70 backdrop-blur-xl border border-white/60 shadow-xl rounded-[24px] p-6 flex flex-col gap-4">
                 <div className="flex items-center gap-2 border-b border-slate-100 pb-3">
@@ -456,31 +453,8 @@ export default function GuestInvitePage() {
               </section>
             </div>
 
-            {/* Right Column: Guest List + Chat */}
+            {/* Right Column: Chat + Guest List */}
             <div className="lg:col-span-5 flex flex-col gap-6">
-              {/* 4. WHO'S INVITED */}
-              <section className="bg-white/70 backdrop-blur-xl border border-white/60 shadow-xl rounded-[24px] p-5 flex flex-col gap-3">
-                <div className="flex items-center gap-2 border-b border-slate-100 pb-2.5">
-                  <Users className="w-4 h-4 text-[#3A9FE8]" />
-                  <h3 className="text-base font-bold text-slate-800">Who&apos;s invited</h3>
-                </div>
-                <p className="text-xs text-slate-500">Everyone on the guest list for this reveal.</p>
-                {invitedGuests.length === 0 ? (
-                  <p className="text-xs text-slate-400 italic">No guest names are available yet.</p>
-                ) : (
-                  <div className="flex flex-wrap gap-1.5 mt-1.5 max-h-[140px] overflow-y-auto pr-1">
-                    {invitedGuests.map((guest, idx) => (
-                      <span
-                        key={`${guest.name}-${idx}`}
-                        className="text-xs font-semibold px-2.5 py-1 rounded-full bg-slate-100/90 border border-slate-200/50 text-slate-700 shadow-sm"
-                      >
-                        {guest.name}
-                      </span>
-                    ))}
-                  </div>
-                )}
-              </section>
-
               {/* 5. LIVE PARTY CHAT */}
               <section className="bg-white/70 backdrop-blur-xl border border-white/60 shadow-xl rounded-[24px] p-5 flex flex-col gap-3">
                 <div className="flex items-center justify-between border-b border-slate-100 pb-2.5">
@@ -536,10 +510,33 @@ export default function GuestInvitePage() {
                     disabled={!chatText.trim() || chatSending || isCompleted}
                     className="px-4 py-2.5 bg-gradient-to-r from-[#E8449A] to-[#3A9FE8] disabled:opacity-50 text-white text-xs font-bold uppercase tracking-wider rounded-xl shadow-md transition-all duration-200 flex items-center justify-center shrink-0"
                   >
-                    {chatSending ? "Sending" : "Send"}
+                    {chatSending ? "..." : "Send"}
                   </button>
                 </form>
                 {chatError && <p className="text-[10px] text-red-500 font-bold mt-1">⚠️ {chatError}</p>}
+              </section>
+
+              {/* 4. WHO'S INVITED */}
+              <section className="bg-white/70 backdrop-blur-xl border border-white/60 shadow-xl rounded-[24px] p-5 flex flex-col gap-3">
+                <div className="flex items-center gap-2 border-b border-slate-100 pb-2.5">
+                  <Users className="w-4 h-4 text-[#3A9FE8]" />
+                  <h3 className="text-base font-bold text-slate-800">Who&apos;s invited</h3>
+                </div>
+                <p className="text-xs text-slate-500">Everyone on the guest list for this reveal.</p>
+                {invitedGuests.length === 0 ? (
+                  <p className="text-xs text-slate-400 italic">No guest names are available yet.</p>
+                ) : (
+                  <div className="flex flex-wrap gap-1.5 mt-1.5 max-h-[140px] overflow-y-auto pr-1">
+                    {invitedGuests.map((guest, idx) => (
+                      <span
+                        key={`${guest.name}-${idx}`}
+                        className="text-xs font-semibold px-2.5 py-1 rounded-full bg-slate-100/90 border border-slate-200/50 text-slate-700 shadow-sm"
+                      >
+                        {guest.name}
+                      </span>
+                    ))}
+                  </div>
+                )}
               </section>
             </div>
           </div>
