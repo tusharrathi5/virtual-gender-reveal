@@ -273,7 +273,7 @@ export default function AdminPage() {
   const [dateTo, setDateTo] = useState("");
 
   const [page, setPage] = useState(1);
-  const PAGE_SIZE = 8;
+  const [pageSize, setPageSize] = useState(10);
 
   const [sortKey, setSortKey] = useState<SortKey>("createdAt");
   const [sortDir, setSortDir] = useState<SortDir>("desc");
@@ -568,11 +568,11 @@ export default function AdminPage() {
     return copy;
   }, [filteredUsers, sortKey, sortDir]);
 
-  const totalPages = Math.max(1, Math.ceil(sortedUsers.length / PAGE_SIZE));
+  const totalPages = Math.max(1, Math.ceil(sortedUsers.length / pageSize));
   const currentPage = Math.min(page, totalPages);
   const pagedUsers = sortedUsers.slice(
-    (currentPage - 1) * PAGE_SIZE,
-    currentPage * PAGE_SIZE
+    (currentPage - 1) * pageSize,
+    currentPage * pageSize
   );
 
   useEffect(() => {
@@ -912,11 +912,40 @@ export default function AdminPage() {
                 </table>
               </div>
 
-              <div className="vgr-pagination">
+              <div className="vgr-pagination" style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 16 }}>
                 <div className="vgr-pagination-info">
-                  Showing <strong>{(currentPage - 1) * PAGE_SIZE + 1} to {Math.min(currentPage * PAGE_SIZE, sortedUsers.length)}</strong> of <strong>{sortedUsers.length}</strong> users
+                  Showing <strong>{(currentPage - 1) * pageSize + 1} to {Math.min(currentPage * pageSize, sortedUsers.length)}</strong> of <strong>{sortedUsers.length}</strong> users
                 </div>
-                <Pagination current={currentPage} total={totalPages} onPage={setPage} />
+                
+                <div style={{ display: "flex", alignItems: "center", gap: 20 }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                    <span style={{ fontSize: 12, color: "var(--vgr-text-muted)", fontWeight: 500 }}>Show:</span>
+                    <select
+                      value={pageSize}
+                      onChange={(ev) => {
+                        setPageSize(Number(ev.target.value));
+                        setPage(1);
+                      }}
+                      style={{
+                        padding: "6px 12px",
+                        fontSize: 12,
+                        borderRadius: 6,
+                        border: "1px solid var(--vgr-border)",
+                        background: "white",
+                        outline: "none",
+                        cursor: "pointer"
+                      }}
+                    >
+                      {[10, 20, 30, 40, 50].map((size) => (
+                        <option key={size} value={size}>
+                          {size} entries
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  
+                  <Pagination current={currentPage} total={totalPages} onPage={setPage} />
+                </div>
               </div>
             </>
           )}
@@ -1176,8 +1205,8 @@ export default function AdminPage() {
           background: none; border: none; color: var(--vgr-blue);
           cursor: pointer; font: inherit; padding: 0; text-decoration: underline;
         }
-        .vgr-table-scroll { overflow-x: auto; }
-        .vgr-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+        .vgr-table-scroll { overflow-x: auto; width: 100%; -webkit-overflow-scrolling: touch; }
+        .vgr-table { width: 100%; min-width: 1200px; border-collapse: collapse; font-size: 13px; }
         .vgr-th {
           text-align: left; padding: 14px 16px;
           font-size: 11px; font-weight: 700; color: var(--vgr-text-muted);
