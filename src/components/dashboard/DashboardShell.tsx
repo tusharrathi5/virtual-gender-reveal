@@ -12,6 +12,7 @@ import {
   X, 
   Sparkles, 
   ChevronRight, 
+  ChevronLeft,
   ShieldCheck 
 } from "lucide-react";
 
@@ -33,6 +34,7 @@ export default function DashboardShell({
   const pathname = usePathname();
   const [isMobileOpen, setIsMobileOpen] = useState(false);
   const [loggingOut, setLoggingOut] = useState(false);
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const drawerRef = useRef<HTMLDivElement>(null);
   const [prefersReducedMotion, setPrefersReducedMotion] = useState(false);
 
@@ -140,7 +142,7 @@ export default function DashboardShell({
   return (
     <div className="min-h-screen bg-[#fafafd] text-[#111827] flex font-jakarta">
       {/* ── Desktop Sidebar ── */}
-      <aside className="hidden lg:flex flex-col w-[280px] bg-white border-r border-[#f1f1f5] fixed inset-y-0 left-0 z-40 p-6">
+      <aside className={`hidden lg:flex flex-col w-[280px] bg-white border-r border-[#f1f1f5] fixed inset-y-0 left-0 z-40 p-6 transition-transform duration-300 ${isSidebarCollapsed ? "-translate-x-full" : "translate-x-0"}`}>
         {/* Brand Logo */}
         <a href="/" className="flex items-center gap-3 mb-8 group focus:outline-none focus:ring-2 focus:ring-[#3A9FE8] rounded-lg p-1">
           <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-[#E8449A] to-[#3A9FE8] flex items-center justify-center shadow-md shadow-[#e8449a2a] group-hover:scale-105 transition-transform duration-200">
@@ -318,7 +320,22 @@ export default function DashboardShell({
       )}
 
       {/* ── Main Layout View Area ── */}
-      <div className={`flex-1 lg:pl-[280px] flex flex-col relative ${showVideoBackground ? "h-screen overflow-hidden" : "min-h-screen"}`}>
+      <div className={`flex-1 flex flex-col relative transition-[padding] duration-300 ${isSidebarCollapsed ? "lg:pl-0" : "lg:pl-[280px]"} ${showVideoBackground ? "h-screen overflow-hidden" : "min-h-screen"}`}>
+        {/* Desktop Sidebar Toggle Button */}
+        <button
+          onClick={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
+          className="hidden lg:flex fixed top-6 z-50 w-8 h-8 rounded-full border border-[#f1f1f5] bg-white text-[#6b7280] hover:text-[#111827] shadow-sm items-center justify-center transition-all duration-300 hover:scale-105 focus:outline-none focus:ring-2 focus:ring-[#3A9FE8]"
+          style={{
+            left: isSidebarCollapsed ? "24px" : "264px"
+          }}
+          aria-label={isSidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"}
+        >
+          {isSidebarCollapsed ? (
+            <ChevronRight className="w-4.5 h-4.5" />
+          ) : (
+            <ChevronLeft className="w-4.5 h-4.5" />
+          )}
+        </button>
         {showVideoBackground && (
           <>
             {/* Background Video */}
