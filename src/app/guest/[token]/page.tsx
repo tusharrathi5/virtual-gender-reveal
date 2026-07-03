@@ -228,8 +228,8 @@ export default function GuestInvitePage() {
         
         {/* Main Content (z-index 20) */}
         <div className="relative z-20 max-w-[1080px] mx-auto px-4 py-8 md:py-12 flex flex-col gap-6">
-          {/* 1. PARTY HERO HEADER (Glassmorphic Transparent) */}
-          <header className="relative overflow-hidden bg-white/10 backdrop-blur-xl border border-white/20 shadow-2xl rounded-[24px] p-6 md:p-8 text-center flex flex-col items-center gap-4">
+          {/* 1. PARTY HERO HEADER (Glassmorphic Transparent - Full Width) */}
+          <header className="relative overflow-hidden bg-white/10 backdrop-blur-xl border border-white/20 shadow-2xl rounded-[24px] p-6 md:p-8 text-center flex flex-col items-center gap-4 w-full">
             {/* Ambient Glows */}
             <div className="absolute top-0 left-0 w-32 h-full bg-[#E8449A]/10 blur-2xl pointer-events-none" />
             <div className="absolute top-0 right-0 w-32 h-full bg-[#3A9FE8]/10 blur-2xl pointer-events-none" />
@@ -265,7 +265,7 @@ export default function GuestInvitePage() {
             </div>
           </header>
 
-          {/* 2. REVEAL VIDEO / COUNTDOWN AREA (Centered Glassmorphic Video Box) */}
+          {/* 2. REVEAL VIDEO / COUNTDOWN AREA (Centered Glassmorphic Video Box - Full Width) */}
           <section className="relative overflow-hidden bg-slate-950/20 backdrop-blur-xl border border-white/10 shadow-2xl rounded-[24px] w-full">
             {/* Ambient subtle celebratory pink/blue glows in the corners of navy frame */}
             <div className="absolute top-0 left-0 w-48 h-48 bg-[#E8449A]/15 blur-3xl pointer-events-none" />
@@ -326,11 +326,11 @@ export default function GuestInvitePage() {
             </div>
           </section>
 
-          {/* Three Column Grid on Desktop, Stacked on Mobile (Invisible Cloth Glassmorphic Style) */}
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start w-full">
-            {/* Column 1: Prediction Form (Glassmorphic) */}
-            <div className="flex flex-col gap-6">
-              <section className="bg-white/15 backdrop-blur-xl border border-white/25 shadow-2xl rounded-[24px] p-6 flex flex-col gap-4">
+          {/* Row 3: Predictions & Guest Wishes (Two equal-sized boxes side-by-side) */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 w-full items-stretch animate-fade-in">
+            {/* Box 3A: Prediction Form (Glassmorphic) */}
+            <section className="bg-white/15 backdrop-blur-xl border border-white/25 shadow-2xl rounded-[24px] p-6 flex flex-col justify-between gap-4 w-full">
+              <div className="flex flex-col gap-4 w-full">
                 <div className="flex items-center gap-2 border-b border-white/10 pb-3">
                   <div className="w-8 h-8 rounded-lg bg-pink-500/20 flex items-center justify-center border border-pink-400/20">
                     <Sparkles className="w-4.5 h-4.5 text-[#E8449A]" />
@@ -406,12 +406,46 @@ export default function GuestInvitePage() {
                   </>
                 )}
                 {error && <p className="text-xs text-red-500 font-bold mt-1">⚠️ {error}</p>}
-              </section>
-            </div>
+              </div>
+            </section>
 
-            {/* Column 2: Live Party Chat (Standing Out in Custom Dark Slate Glassmorphic Styling) */}
-            <div className="flex flex-col gap-6">
-              <section className="bg-slate-950/40 backdrop-blur-xl border border-white/10 shadow-2xl rounded-[24px] p-5 flex flex-col gap-3 text-white">
+            {/* Box 3B: Guest Wishes (Glassmorphic) */}
+            <section className="bg-white/15 backdrop-blur-xl border border-white/25 shadow-2xl rounded-[24px] p-6 flex flex-col justify-between gap-4 w-full">
+              <div className="flex flex-col gap-4 w-full">
+                <div className="flex items-center gap-2 border-b border-white/10 pb-3">
+                  <div className="w-8 h-8 rounded-lg bg-blue-500/20 flex items-center justify-center border border-blue-400/20">
+                    <Heart className="w-4.5 h-4.5 text-[#3A9FE8] fill-[#3A9FE8]" />
+                  </div>
+                  <div>
+                    <h2 className="text-lg font-black text-slate-900">Guest wishes</h2>
+                    <p className="text-xs text-slate-700 font-medium">Prediction messages saved.</p>
+                  </div>
+                </div>
+
+                {feed.length === 0 ? (
+                  <p className="text-sm text-slate-600 italic text-center py-8 font-semibold">No guest wishes yet.</p>
+                ) : (
+                  <div className="flex flex-col gap-2.5 max-h-[300px] overflow-y-auto pr-1">
+                    {feed.map((item, idx) => (
+                      <div
+                        key={`${item.name}-${idx}`}
+                        className="bg-white/25 border border-white/35 p-3 rounded-xl shadow-sm text-slate-900"
+                      >
+                        <span className="font-black text-xs text-slate-950 block mb-1">{item.name}</span>
+                        <p className="text-xs text-slate-800 leading-normal italic font-medium">&ldquo;{item.message}&rdquo;</p>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </section>
+          </div>
+
+          {/* Row 4: Live Chat & Who's Invited (Two equal-sized boxes side-by-side) */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 w-full items-stretch">
+            {/* Box 4A: Live Party Chat (Dark Slate Glassmorphism) */}
+            <section className="bg-slate-950/40 backdrop-blur-xl border border-white/10 shadow-2xl rounded-[24px] p-5 flex flex-col justify-between gap-3 text-white w-full">
+              <div className="flex flex-col gap-3 w-full">
                 <div className="flex items-center justify-between border-b border-white/10 pb-2.5">
                   <div className="flex items-center gap-2">
                     <MessageSquare className="w-4.5 h-4.5 text-[#E8449A]" />
@@ -430,7 +464,7 @@ export default function GuestInvitePage() {
                 </div>
 
                 {/* Dark Transparent Chat Feed */}
-                <div className="h-[280px] overflow-y-auto pr-1 flex flex-col gap-2.5 mt-1 bg-black/20 rounded-2xl p-3 border border-white/5">
+                <div className="h-[200px] overflow-y-auto pr-1 flex flex-col gap-2.5 mt-1 bg-black/20 rounded-2xl p-3 border border-white/5">
                   {chatMessages.length === 0 ? (
                     <div className="h-full flex items-center justify-center text-slate-400 text-xs italic">
                       No chat messages yet.
@@ -448,63 +482,33 @@ export default function GuestInvitePage() {
                   )}
                   <div ref={chatEndRef} />
                 </div>
+              </div>
 
-                {/* Send Message Input */}
-                <form onSubmit={submitChat} className="flex gap-2 mt-1">
-                  <input
-                    type="text"
-                    value={chatText}
-                    maxLength={500}
-                    onChange={(e) => setChatText(e.target.value)}
-                    disabled={isCompleted}
-                    placeholder={isCompleted ? "Chat is closed" : "Say something..."}
-                    className="flex-1 text-xs rounded-xl border border-white/15 px-3 py-2.5 bg-black/35 text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-[#E8449A]/50 focus:border-[#E8449A] transition-all disabled:bg-white/5 font-semibold"
-                  />
-                  <button
-                    type="submit"
-                    disabled={!chatText.trim() || chatSending || isCompleted}
-                    className="px-4 py-2.5 bg-gradient-to-r from-[#E8449A] to-[#3A9FE8] hover:from-[#d13787] hover:to-[#2e8fd1] disabled:opacity-50 text-white text-xs font-black uppercase tracking-wider rounded-xl shadow-md transition-all duration-200 flex items-center justify-center shrink-0"
-                  >
-                    {chatSending ? "..." : "Send"}
-                  </button>
-                </form>
-                {chatError && <p className="text-[10px] text-red-400 font-bold mt-1">⚠️ {chatError}</p>}
-              </section>
-            </div>
+              {/* Message Input Form */}
+              <form onSubmit={submitChat} className="flex gap-2 mt-2 w-full">
+                <input
+                  type="text"
+                  value={chatText}
+                  maxLength={500}
+                  onChange={(e) => setChatText(e.target.value)}
+                  disabled={isCompleted}
+                  placeholder={isCompleted ? "Chat is closed" : "Say something..."}
+                  className="flex-1 text-xs rounded-xl border border-white/15 px-3 py-2.5 bg-black/35 text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-[#E8449A]/50 focus:border-[#E8449A] transition-all disabled:bg-white/5 font-semibold"
+                />
+                <button
+                  type="submit"
+                  disabled={!chatText.trim() || chatSending || isCompleted}
+                  className="px-4 py-2.5 bg-gradient-to-r from-[#E8449A] to-[#3A9FE8] hover:from-[#d13787] hover:to-[#2e8fd1] disabled:opacity-50 text-white text-xs font-black uppercase tracking-wider rounded-xl shadow-md transition-all duration-200 flex items-center justify-center shrink-0"
+                >
+                  {chatSending ? "..." : "Send"}
+                </button>
+              </form>
+              {chatError && <p className="text-[10px] text-red-400 font-bold">⚠️ {chatError}</p>}
+            </section>
 
-            {/* Column 3: Guest Wishes + Guest List (Glassmorphic) */}
-            <div className="flex flex-col gap-6">
-              {/* 6. GUEST WISHES */}
-              <section className="bg-white/15 backdrop-blur-xl border border-white/25 shadow-2xl rounded-[24px] p-6 flex flex-col gap-4">
-                <div className="flex items-center gap-2 border-b border-white/10 pb-3">
-                  <div className="w-8 h-8 rounded-lg bg-blue-500/20 flex items-center justify-center border border-blue-400/20">
-                    <Heart className="w-4.5 h-4.5 text-[#3A9FE8] fill-[#3A9FE8]" />
-                  </div>
-                  <div>
-                    <h2 className="text-lg font-black text-slate-900">Guest wishes</h2>
-                    <p className="text-xs text-slate-700 font-medium">Prediction messages saved.</p>
-                  </div>
-                </div>
-
-                {feed.length === 0 ? (
-                  <p className="text-sm text-slate-600 italic text-center py-4 font-semibold">No guest wishes yet.</p>
-                ) : (
-                  <div className="flex flex-col gap-2.5 max-h-[160px] overflow-y-auto pr-1">
-                    {feed.map((item, idx) => (
-                      <div
-                        key={`${item.name}-${idx}`}
-                        className="bg-white/25 border border-white/35 p-3 rounded-xl shadow-sm text-slate-900"
-                      >
-                        <span className="font-black text-xs text-slate-950 block mb-1">{item.name}</span>
-                        <p className="text-xs text-slate-800 leading-normal italic font-medium">&ldquo;{item.message}&rdquo;</p>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </section>
-
-              {/* 4. WHO'S INVITED */}
-              <section className="bg-white/15 backdrop-blur-xl border border-white/25 shadow-2xl rounded-[24px] p-5 flex flex-col gap-3">
+            {/* Box 4B: Who's Invited (Glassmorphic) */}
+            <section className="bg-white/15 backdrop-blur-xl border border-white/25 shadow-2xl rounded-[24px] p-5 flex flex-col justify-between gap-3 w-full">
+              <div className="flex flex-col gap-3 w-full">
                 <div className="flex items-center gap-2 border-b border-white/10 pb-2.5">
                   <Users className="w-4.5 h-4.5 text-[#3A9FE8]" />
                   <h3 className="text-base font-black text-slate-900">Who&apos;s invited</h3>
@@ -513,7 +517,7 @@ export default function GuestInvitePage() {
                 {invitedGuests.length === 0 ? (
                   <p className="text-xs text-slate-600 italic font-semibold">No guest names available yet.</p>
                 ) : (
-                  <div className="flex flex-wrap gap-1.5 mt-1 max-h-[120px] overflow-y-auto pr-1">
+                  <div className="flex flex-wrap gap-1.5 mt-1 max-h-[200px] overflow-y-auto pr-1">
                     {invitedGuests.map((guest, idx) => (
                       <span
                         key={`${guest.name}-${idx}`}
@@ -524,8 +528,8 @@ export default function GuestInvitePage() {
                     ))}
                   </div>
                 )}
-              </section>
-            </div>
+              </div>
+            </section>
           </div>
         </div>
 
