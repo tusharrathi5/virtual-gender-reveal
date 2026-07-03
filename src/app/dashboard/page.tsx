@@ -186,6 +186,8 @@ function formatDateTimeLocal(d: Date | null): string {
   )}:${pad(d.getMinutes())}`;
 }
 
+// ─── Custom XLSX & CSV Parser Helper Logic (No library dependency) ───
+
 function canEditReveal(reveal: RevealSummary): boolean {
   return !!reveal.createdAt && Date.now() - reveal.createdAt.getTime() <= EDIT_WINDOW_MS;
 }
@@ -201,8 +203,6 @@ function editWindowText(reveal: RevealSummary): string {
 function blankGuestRow(rowId = "draft-1"): EditableGuestRow {
   return { rowId, name: "", phone: "", email: "" };
 }
-
-// ─── Custom XLSX & CSV Parser Helper Logic (No library dependency) ───
 
 function makeGuestRow(): EditableGuestRow {
   return blankGuestRow(`draft-${Date.now()}-${Math.round(Math.random() * 10000)}`);
@@ -1170,7 +1170,7 @@ function DashboardContent() {
                         </div>
                         {reveal.mode === "reveal" && (
                           <div className="bg-gray-50/50 rounded-xl p-3 border border-gray-100 col-span-2">
-                            <span className="text-[9px] text-gray-400 block uppercase font-bold tracking-wider mb-0.5">Revealer Email &amp; Relation</span>
+                            <span className="text-[9px] text-gray-400 block uppercase font-bold tracking-wider mb-0.5">Revealer Email & Relation</span>
                             <span className="text-xs font-semibold text-gray-800 truncate block">
                               {reveal.revealerEmail || "-"} {reveal.revealerRelation ? `(${RELATION_LABELS[reveal.revealerRelation]})` : ""}
                             </span>
@@ -1218,7 +1218,7 @@ function DashboardContent() {
                           </div>
 
                           <div className="flex flex-col gap-1">
-                            <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Reveal Date &amp; Time</label>
+                            <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Reveal Date & Time</label>
                             <input
                               className="w-full bg-white border border-gray-200 rounded-xl px-4 py-2.5 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#3A9FE8]"
                               type="datetime-local"
@@ -1415,16 +1415,21 @@ function DashboardContent() {
             <div className="bg-white border border-[#f1f1f5] rounded-2xl p-6 md:p-8 shadow-sm space-y-6">
               {/* Toolbar */}
               <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 p-4 rounded-xl bg-gradient-to-r from-[#FDE8F2]/45 to-[#D6EAFE]/35 border border-white">
-                {/* Left: Toolbar Actions */}
-                <div className="flex flex-wrap items-center gap-2.5">
-                  <label className="bg-white border border-gray-200 text-[#374151] hover:bg-gray-50 font-bold text-xs uppercase tracking-wider rounded-xl py-3 px-4 cursor-pointer flex items-center gap-1.5 transition-all focus-within:ring-2 focus-within:ring-[#3A9FE8]">
-                    <Upload className="w-4 h-4 text-gray-400" />
-                    Import CSV/XLSX
+                <div className="flex flex-wrap items-center gap-3 w-full">
+                  {/* 1. Styled Import CSV/XLSX card (First position on the left) */}
+                  <label className="flex items-center gap-3 text-left p-3 rounded-xl bg-white/60 hover:bg-white/90 border border-pink-100 hover:border-pink-200 cursor-pointer transition-all group shrink-0 focus-within:ring-2 focus-within:ring-[#3A9FE8]">
+                    <div className="w-8 h-8 rounded-lg bg-gradient-to-tr from-[#E8449A] to-[#3A9FE8] flex items-center justify-center text-white font-bold shrink-0">
+                      <Upload className="w-4 h-4" />
+                    </div>
+                    <div>
+                      <span className="text-[9px] font-bold text-gray-400 uppercase tracking-wider block leading-tight">Want to add many guests?</span>
+                      <span className="text-xs font-bold text-gray-700 group-hover:text-[#E8449A] transition-colors leading-tight">Import a CSV/XLSX file</span>
+                    </div>
                     <input
                       ref={guestFileInputRef}
                       type="file"
                       accept=".csv,text/csv,.xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-                      className="hidden"
+                      className="sr-only"
                       onChange={(e) => {
                         const file = e.target.files?.[0];
                         if (file) void handleGuestFile(file);
@@ -1432,37 +1437,26 @@ function DashboardContent() {
                       }}
                     />
                   </label>
+
+                  {/* 2. Refresh List */}
                   <button
                     type="button"
                     onClick={() => loadGuestList(latestReveal.id)}
-                    className="bg-white border border-gray-200 text-[#374151] hover:bg-gray-50 font-bold text-xs uppercase tracking-wider rounded-xl py-3 px-4 flex items-center gap-1.5 transition-all focus:outline-none focus:ring-2 focus:ring-[#3A9FE8]"
+                    className="bg-white border border-gray-200 text-[#374151] hover:bg-gray-50 font-bold text-xs uppercase tracking-wider rounded-xl py-3 px-4 flex items-center gap-1.5 transition-all focus:outline-none focus:ring-2 focus:ring-[#3A9FE8] self-stretch md:self-auto"
                   >
                     <RefreshCw className="w-4 h-4 text-gray-400" />
                     Refresh List
                   </button>
+
+                  {/* 3. Send Parent Digest */}
                   <button
                     type="button"
                     onClick={() => sendGuestDigest(latestReveal.id)}
-                    className="bg-white border border-gray-200 text-[#374151] hover:bg-gray-50 font-bold text-xs uppercase tracking-wider rounded-xl py-3 px-4 flex items-center gap-1.5 transition-all focus:outline-none focus:ring-2 focus:ring-[#3A9FE8]"
+                    className="bg-white border border-gray-200 text-[#374151] hover:bg-gray-50 font-bold text-xs uppercase tracking-wider rounded-xl py-3 px-4 flex items-center gap-1.5 transition-all focus:outline-none focus:ring-2 focus:ring-[#3A9FE8] self-stretch md:self-auto"
                   >
                     Send Parent Digest
                   </button>
                 </div>
-
-                {/* Right: Helpful Import Callout */}
-                <button
-                  type="button"
-                  onClick={() => guestFileInputRef.current?.click()}
-                  className="flex items-center gap-3 text-left p-3 rounded-xl bg-white/60 hover:bg-white/90 border border-pink-100 hover:border-pink-200 transition-all group shrink-0 focus:outline-none focus:ring-2 focus:ring-[#3A9FE8]"
-                >
-                  <div className="w-8 h-8 rounded-lg bg-gradient-to-tr from-[#E8449A] to-[#3A9FE8] flex items-center justify-center text-white font-bold shrink-0">
-                    <Upload className="w-4 h-4" />
-                  </div>
-                  <div>
-                    <span className="text-[9px] font-bold text-gray-400 uppercase tracking-wider block leading-tight">Want to add many guests?</span>
-                    <span className="text-xs font-bold text-gray-700 group-hover:text-[#E8449A] transition-colors leading-tight">Import a CSV/XLSX file</span>
-                  </div>
-                </button>
               </div>
 
               {guestImportSummary && (
@@ -1528,9 +1522,9 @@ function DashboardContent() {
               </div>
 
               {/* Bottom Action Bar */}
-              <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 pt-6 border-t border-gray-100">
-                {/* Left side: Add Guest Row */}
-                <div className="flex flex-col sm:flex-row sm:items-center gap-3 w-full md:w-auto">
+              <div className="flex flex-col md:flex-row md:items-start justify-between gap-6 pt-6 border-t border-gray-100">
+                {/* Left group: Add Guest Row */}
+                <div className="flex flex-col gap-2 w-full md:w-auto">
                   <button
                     type="button"
                     onClick={() => setGuestDraftRows((rows) => [...rows, makeGuestRow()])}
@@ -1539,13 +1533,13 @@ function DashboardContent() {
                     <Plus className="w-4 h-4" />
                     Add Guest Row
                   </button>
-                  <span className="text-xs text-gray-400 font-medium text-center sm:text-left">
+                  <span className="text-xs text-gray-400 font-medium text-center md:text-left">
                     Add one guest at a time to your list.
                   </span>
                 </div>
 
-                {/* Right side: Submit & Send Links */}
-                <div className="flex flex-col items-end gap-2 w-full md:w-auto">
+                {/* Right group: Submit & Send Links */}
+                <div className="flex flex-col gap-2 w-full md:w-auto md:items-end">
                   <button
                     type="button"
                     onClick={() => sendGuestInvites(latestReveal.id)}
