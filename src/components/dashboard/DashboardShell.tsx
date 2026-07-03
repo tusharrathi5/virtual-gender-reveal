@@ -19,15 +19,31 @@ interface DashboardShellProps {
   children: React.ReactNode;
   activeTab?: "dashboard" | "create" | "settings";
   title?: string;
+  showVideoBackground?: boolean;
 }
 
-export default function DashboardShell({ children, activeTab = "create", title = "Create Your Reveal" }: DashboardShellProps) {
+export default function DashboardShell({ 
+  children, 
+  activeTab = "create", 
+  title = "Create Your Reveal",
+  showVideoBackground = false
+}: DashboardShellProps) {
   const { user, firestoreUser, logout } = useAuth();
   const router = useRouter();
   const pathname = usePathname();
   const [isMobileOpen, setIsMobileOpen] = useState(false);
   const [loggingOut, setLoggingOut] = useState(false);
   const drawerRef = useRef<HTMLDivElement>(null);
+  const [prefersReducedMotion, setPrefersReducedMotion] = useState(false);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const mediaQuery = window.matchMedia("(prefers-reduced-motion: reduce)");
+    setPrefersReducedMotion(mediaQuery.matches);
+    const listener = (e: MediaQueryListEvent) => setPrefersReducedMotion(e.matches);
+    mediaQuery.addEventListener("change", listener);
+    return () => mediaQuery.removeEventListener("change", listener);
+  }, []);
   const triggerRef = useRef<HTMLButtonElement>(null);
 
   // Close mobile drawer on route change
@@ -302,7 +318,37 @@ export default function DashboardShell({ children, activeTab = "create", title =
       )}
 
       {/* ── Main Layout View Area ── */}
-      <div className="flex-1 lg:pl-[280px] flex flex-col min-h-screen">
+      <div className={`flex-1 lg:pl-[280px] flex flex-col relative ${showVideoBackground ? "h-screen overflow-hidden" : "min-h-screen"}`}>
+        {showVideoBackground && (
+          <>
+            {/* Background Video */}
+            {!prefersReducedMotion ? (
+              <video
+                src="/videos/dashboard-loop.mp4"
+                autoPlay
+                muted
+                loop
+                playsInline
+                aria-hidden="true"
+                className="absolute inset-0 w-full h-full object-cover pointer-events-none z-0"
+              />
+            ) : (
+              // High contrast/performance static gradient background fallback for prefers-reduced-motion
+              <div className="absolute inset-0 bg-gradient-to-tr from-[#fbcfe8] via-[#e0f2fe] to-[#fafafd] z-0" />
+            )}
+            
+            {/* Translucent overlay tint */}
+            <div 
+              className="absolute inset-0 z-10 pointer-events-none" 
+              style={{
+                background: "linear-gradient(135deg, rgba(255, 255, 255, 0.65) 0%, rgba(255, 255, 255, 0.78) 100%)",
+                backdropFilter: "blur(1px)",
+                WebkitBackdropFilter: "blur(1px)"
+              }}
+            />
+          </>
+        )}
+
         {/* Mobile-only Header */}
         <header className="lg:hidden sticky top-0 z-30 h-16 bg-white/80 backdrop-blur-md border-b border-[#f1f1f5] px-6 flex items-center justify-between">
           {/* Hamburger Button */}
@@ -328,7 +374,7 @@ export default function DashboardShell({ children, activeTab = "create", title =
         </header>
 
         {/* Dashboard Content Container */}
-        <main className="flex-1 p-6 md:p-8 lg:px-10 lg:py-6 max-w-5xl mx-auto w-full">
+        <main className={`flex-1 p-6 md:p-8 lg:px-10 lg:py-6 max-w-5xl mx-auto w-full relative z-20 ${showVideoBackground ? "overflow-y-auto" : ""}`}>
           {children}
         </main>
       </div>

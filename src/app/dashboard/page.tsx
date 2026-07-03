@@ -999,7 +999,7 @@ function DashboardContent() {
   }
 
   return (
-    <DashboardShell activeTab="dashboard" title="Dashboard">
+    <DashboardShell activeTab="dashboard" title="Dashboard" showVideoBackground={true}>
       <div className="w-full space-y-8 font-jakarta">
         {toast && <Toast message={toast.message} type={toast.type} onClose={() => setToast(null)} />}
         
@@ -1039,7 +1039,7 @@ function DashboardContent() {
         {/* Overview Stat Cards */}
         {hasPlan && (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-            <div className="bg-white border border-[#f1f1f5] rounded-2xl p-6 shadow-sm flex flex-col justify-between">
+            <div className="bg-white/85 backdrop-blur-md border border-white/60 rounded-[20px] p-6 shadow-sm flex flex-col justify-between">
               <span className="text-[10px] text-gray-400 block uppercase font-bold tracking-wider mb-2">Billing Tier</span>
               <div className="flex items-center justify-between">
                 <span className="text-lg font-bold text-gray-900">{PLANS.find((p) => p.id === activePlan)?.name ?? activePlan}</span>
@@ -1049,7 +1049,7 @@ function DashboardContent() {
               </div>
             </div>
 
-            <div className="bg-white border border-[#f1f1f5] rounded-2xl p-6 shadow-sm flex flex-col justify-between">
+            <div className="bg-white/85 backdrop-blur-md border border-white/60 rounded-[20px] p-6 shadow-sm flex flex-col justify-between">
               <span className="text-[10px] text-gray-400 block uppercase font-bold tracking-wider mb-2">Reveals Remaining</span>
               <div className="flex items-baseline gap-1.5">
                 <span className="text-3xl font-extrabold text-gray-900">{revealsAllowed}</span>
@@ -1057,7 +1057,7 @@ function DashboardContent() {
               </div>
             </div>
 
-            <div className="bg-white border border-[#f1f1f5] rounded-2xl p-6 shadow-sm flex flex-col justify-between">
+            <div className="bg-white/85 backdrop-blur-md border border-white/60 rounded-[20px] p-6 shadow-sm flex flex-col justify-between">
               <span className="text-[10px] text-gray-400 block uppercase font-bold tracking-wider mb-2">Reveals Created</span>
               <div className="flex items-baseline gap-1.5">
                 <span className="text-3xl font-extrabold text-gray-900">{revealsCreated}</span>
@@ -1080,7 +1080,7 @@ function DashboardContent() {
                 const editable = canEditReveal(reveal);
                 const isEditing = editingRevealId === reveal.id && editForm;
                 return (
-                  <article key={reveal.id} className="bg-white border border-[#f1f1f5] rounded-2xl p-6 md:p-8 shadow-sm space-y-6">
+                  <article key={reveal.id} className="bg-white/85 backdrop-blur-md border border-white/60 rounded-[20px] p-6 md:p-8 shadow-sm space-y-6">
                     {/* Reveal Card Header */}
                     <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-gray-50 pb-4">
                       <div className="flex items-center gap-4">
@@ -1379,7 +1379,7 @@ function DashboardContent() {
           </section>
         ) : (
           hasPlan && (
-            <div className="bg-white border border-[#f1f1f5] rounded-2xl p-10 text-center shadow-sm">
+            <div className="bg-white/85 backdrop-blur-md border border-white/60 rounded-[20px] p-10 text-center shadow-sm">
               <Sparkles className="w-12 h-12 text-[#E8449A] mx-auto mb-4 animate-bounce" />
               <h3 className="font-nunito font-extrabold text-xl text-gray-900 mb-1">Create your first reveal event</h3>
               <p className="text-sm text-gray-500 font-medium max-w-sm mx-auto mb-6">
@@ -1412,7 +1412,7 @@ function DashboardContent() {
               </p>
             </div>
 
-            <div className="bg-white border border-[#f1f1f5] rounded-2xl p-6 md:p-8 shadow-sm space-y-6">
+            <div className="bg-white/85 backdrop-blur-md border border-white/60 rounded-[20px] p-6 md:p-8 shadow-sm space-y-6">
               {/* Toolbar */}
               <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 p-4 rounded-xl bg-gradient-to-r from-[#FDE8F2]/45 to-[#D6EAFE]/35 border border-white">
                 <div className="flex flex-wrap items-center gap-3 w-full">
@@ -1749,10 +1749,10 @@ function PlanSection({
           return (
             <div
               key={plan.id}
-              className={`relative bg-white border rounded-2xl p-6 shadow-sm flex flex-col justify-between transition-all duration-200 ${
+              className={`relative bg-white/85 backdrop-blur-md border rounded-[20px] p-6 shadow-sm flex flex-col justify-between transition-all duration-200 ${
                 isPremium
                   ? "border-[#E8449A] ring-2 ring-[#E8449A]/10 scale-100 lg:scale-[1.02]"
-                  : "border-[#f1f1f5]"
+                  : "border-white/60"
               }`}
             >
               {isPremium && (
