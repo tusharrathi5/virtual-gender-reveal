@@ -214,11 +214,12 @@ export function AuthModalShell({ title, subtitle, submitting, children }: AuthMo
             <button className="auth-close" onClick={close} disabled={submitting} aria-label="Close">×</button>
             
             <div className="auth-logo-area">
+              <div className="w-12 h-12 rounded-2xl bg-white border border-[#f1f1f5] flex items-center justify-center shadow-md shadow-[#00000008] mb-3 hover:scale-105 transition-transform duration-300">
+                <img src="/Favicon-VGR.png" alt="VGR Logo" className="w-8 h-8 object-contain" />
+              </div>
               <span className="auth-brand-badge">Virtual Gender Reveal</span>
               <div className="brand-icon-wrap">
-                <Heart className="w-5 h-5 text-[#E8449A] fill-[#E8449A]" />
-                <h1 id="auth-modal-title" className="auth-logo">{title}</h1>
-                <Sparkles className="w-4.5 h-4.5 text-[#3A9FE8]" />
+                <h1 id="auth-modal-title" className="auth-logo bg-gradient-to-r from-[#E8449A] to-[#3A9FE8] bg-clip-text text-transparent font-extrabold">{title}</h1>
               </div>
               <p className="auth-subtitle">{subtitle}</p>
             </div>
