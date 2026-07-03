@@ -145,8 +145,8 @@ export default function DashboardShell({
       <aside className={`hidden lg:flex flex-col w-[280px] bg-white border-r border-[#f1f1f5] fixed inset-y-0 left-0 z-40 p-6 transition-transform duration-300 ${isSidebarCollapsed ? "-translate-x-full" : "translate-x-0"}`}>
         {/* Brand Logo */}
         <a href="/" className="flex items-center gap-3 mb-8 group focus:outline-none focus:ring-2 focus:ring-[#3A9FE8] rounded-lg p-1">
-          <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-[#E8449A] to-[#3A9FE8] flex items-center justify-center shadow-md shadow-[#e8449a2a] group-hover:scale-105 transition-transform duration-200">
-            <Sparkles className="w-5 h-5 text-white" />
+          <div className="w-10 h-10 rounded-xl overflow-hidden bg-white border border-[#f1f1f5] flex items-center justify-center shadow-sm group-hover:scale-105 transition-transform duration-200">
+            <img src="/Favicon-VGR.png" alt="VGR Logo" className="w-7 h-7 object-contain" />
           </div>
           <div className="flex flex-col">
             <span className="font-nunito font-extrabold text-lg leading-tight bg-gradient-to-r from-[#E8449A] to-[#3A9FE8] bg-clip-text text-transparent">
@@ -245,8 +245,8 @@ export default function DashboardShell({
           >
             <div className="flex items-center justify-between mb-8">
               <a href="/" className="flex items-center gap-3">
-                <div className="w-9 h-9 rounded-lg bg-gradient-to-tr from-[#E8449A] to-[#3A9FE8] flex items-center justify-center text-white">
-                  <Sparkles className="w-4 h-4" />
+                <div className="w-9 h-9 rounded-lg overflow-hidden bg-white border border-[#f1f1f5] flex items-center justify-center">
+                  <img src="/Favicon-VGR.png" alt="VGR Logo" className="w-6 h-6 object-contain" />
                 </div>
                 <span className="font-nunito font-extrabold text-md bg-gradient-to-r from-[#E8449A] to-[#3A9FE8] bg-clip-text text-transparent">
                   Virtual Reveal
@@ -371,8 +371,8 @@ export default function DashboardShell({
 
           {/* Brand Logo inside Mobile Header */}
           <a href="/" className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-lg bg-gradient-to-tr from-[#E8449A] to-[#3A9FE8] flex items-center justify-center text-white">
-              <Sparkles className="w-4 h-4" />
+            <div className="w-8 h-8 rounded-lg overflow-hidden bg-white border border-[#f1f1f5] flex items-center justify-center">
+              <img src="/Favicon-VGR.png" alt="VGR Logo" className="w-5.5 h-5.5 object-contain" />
             </div>
             <span className="font-nunito font-extrabold text-sm bg-gradient-to-r from-[#E8449A] to-[#3A9FE8] bg-clip-text text-transparent font-semibold">
               Virtual Reveal
