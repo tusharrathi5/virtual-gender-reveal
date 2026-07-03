@@ -151,24 +151,30 @@ function LoginContent() {
         .form-label { display: block; font-size: 11px; font-weight: 700; color: #4b5563; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 8px; }
         
         .input-with-icon { position: relative; display: flex; align-items: center; width: 100%; }
-        .input-icon { position: absolute; left: 16px; width: 18px; height: 18px; color: #9ca3af; pointer-events: none; }
+        .input-icon { position: absolute; left: 16px; width: 18px; height: 18px; color: #9ca3af; pointer-events: none; transition: color 0.2s; }
         
         .form-input { 
           width: 100%; 
           padding: 13px 16px 13px 46px; 
-          border: 1.5px solid #f1f1f5; 
+          border: 1.5px solid rgba(229, 231, 235, 0.8); 
           border-radius: 14px; 
           font-size: 14px; 
           color: #111827; 
           outline: none; 
-          transition: all .2s; 
-          background: white; 
+          transition: all .2s cubic-bezier(0.16, 1, 0.3, 1); 
+          background: rgba(255, 255, 255, 0.7); 
+          backdrop-filter: blur(4px);
+          -webkit-backdrop-filter: blur(4px);
           font-weight: 500;
         }
         .form-input::placeholder { color: #9ca3af; font-weight: 500; }
         .form-input:focus { 
           border-color: #E8449A; 
-          box-shadow: 0 0 0 4px rgba(232, 68, 154, 0.08); 
+          background: white;
+          box-shadow: 0 0 0 4px rgba(232, 68, 154, 0.12); 
+        }
+        .form-input:focus ~ .input-icon {
+          color: #E8449A;
         }
         
         .password-toggle { 
@@ -200,44 +206,49 @@ function LoginContent() {
           font-size: 14px; 
           font-weight: 700; 
           cursor: pointer; 
-          transition: all .2s; 
+          transition: all .25s cubic-bezier(0.16, 1, 0.3, 1); 
           margin-top: 6px; 
-          box-shadow: 0 4px 12px rgba(232, 68, 154, 0.15);
+          box-shadow: 0 4px 12px rgba(232, 68, 154, 0.25);
           display: flex;
           align-items: center;
           justify-content: center;
           gap: 8px;
         }
         .btn-primary:hover:not(:disabled) { 
-          opacity: 0.95; 
-          transform: translateY(-1px);
-          box-shadow: 0 6px 16px rgba(232, 68, 154, 0.2);
+          transform: translateY(-1.5px) scale(1.01);
+          box-shadow: 0 6px 20px rgba(232, 68, 154, 0.35);
         }
         .btn-primary:active:not(:disabled) {
-          transform: translateY(0);
+          transform: translateY(0) scale(1);
         }
         .btn-primary:disabled { opacity: .5; cursor: not-allowed; transform: none; box-shadow: none; }
         
         .btn-google { 
           width: 100%; 
           padding: 13px; 
-          background: white; 
+          background: rgba(255, 255, 255, 0.85); 
           color: #374151; 
-          border: 1.5px solid #f1f1f5; 
+          border: 1.5px solid rgba(229, 231, 235, 0.8); 
           border-radius: 9999px; 
           font-size: 14px; 
           font-weight: 700; 
           cursor: pointer; 
-          transition: all .2s; 
+          transition: all .25s cubic-bezier(0.16, 1, 0.3, 1); 
           display: flex; 
           align-items: center; 
           justify-content: center; 
           gap: 10px; 
           margin-bottom: 24px; 
+          box-shadow: 0 2px 6px rgba(0,0,0,0.02);
         }
         .btn-google:hover:not(:disabled) { 
-          background: #fafafd; 
+          background: white; 
           border-color: #d1d5db; 
+          transform: translateY(-1px);
+          box-shadow: 0 4px 12px rgba(0,0,0,0.06);
+        }
+        .btn-google:active:not(:disabled) {
+          transform: translateY(0);
         }
         .btn-google:disabled { opacity: .5; cursor: not-allowed; }
         
