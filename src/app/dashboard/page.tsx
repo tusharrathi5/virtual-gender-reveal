@@ -524,6 +524,7 @@ function DashboardContent() {
   const [editPhotoFiles, setEditPhotoFiles] = useState<File[]>([]);
   const [savingReveal, setSavingReveal] = useState(false);
   const handledDashboardQueryRef = useRef<string | null>(null);
+  const guestFileInputRef = useRef<HTMLInputElement>(null);
 
   const latestReveal = reveals[0];
 
@@ -1019,7 +1020,7 @@ function DashboardContent() {
             </h1>
             <p className="text-sm text-gray-500 font-semibold mt-1">
               {!hasPlan && "Choose a plan below to get started creating your reveal."}
-              {hasPlan && canCreateReveal && reveals.length === 0 && "You&apos;re all set. Let&apos;s create your reveal event!"}
+              {hasPlan && canCreateReveal && reveals.length === 0 && "You’re all set. Let’s create your reveal event!"}
               {hasPlan && reveals.length > 0 && "Manage details, photos, guest invitations and view live broadcasts."}
             </p>
           </div>
@@ -1063,36 +1064,6 @@ function DashboardContent() {
                 <span className="text-xs text-gray-400 font-semibold font-jakarta">published to date</span>
               </div>
             </div>
-          </div>
-        )}
-
-        {/* Main Create Your Reveal Action Card */}
-        {hasPlan && canCreateReveal && (
-          <div className="bg-gradient-to-r from-[#E8449A] to-[#3A9FE8] rounded-2xl p-6 md:p-8 text-white shadow-lg shadow-[#e8449a1a] flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
-            <div className="space-y-1.5">
-              <span className="text-[9px] font-bold uppercase tracking-wider text-white/80 bg-white/10 px-2.5 py-1 rounded-full w-max block mb-1">Ready to start?</span>
-              <h2 className="font-nunito font-extrabold text-2xl">Create Your Reveal</h2>
-              <p className="text-sm text-white/90 leading-relaxed font-semibold max-w-xl">
-                Configure your parents, timezone, dates, optional sonograms, and invite contacts. We&apos;ll automatically email a secure link to your designated revealer!
-              </p>
-            </div>
-            <button
-              onClick={startNewReveal}
-              disabled={startingReveal}
-              className="bg-white text-gray-900 font-extrabold hover:bg-gray-50 active:scale-[0.98] transition-all rounded-xl py-3.5 px-6 text-xs uppercase tracking-wider shrink-0 disabled:opacity-70 disabled:cursor-not-allowed flex items-center gap-1.5 focus:outline-none focus:ring-2 focus:ring-white"
-            >
-              {startingReveal ? (
-                <>
-                  <RefreshCw className="w-4 h-4 animate-spin text-[#E8449A]" />
-                  Checking payment...
-                </>
-              ) : (
-                <>
-                  ✦ Start New Reveal
-                  <ArrowRight className="w-3.5 h-3.5" />
-                </>
-              )}
-            </button>
           </div>
         )}
 
@@ -1151,7 +1122,7 @@ function DashboardContent() {
                         {editable && !isEditing && (
                           <button
                             onClick={() => startEditingReveal(reveal)}
-                            className="border border-gray-200 text-[#374151] hover:bg-gray-50 font-bold text-xs uppercase tracking-wider rounded-lg px-3.5 py-2 flex items-center gap-1"
+                            className="border border-gray-200 text-[#374151] hover:bg-gray-50 font-bold text-xs uppercase tracking-wider rounded-lg px-3.5 py-2 flex items-center gap-1 focus:outline-none focus:ring-2 focus:ring-[#3A9FE8]"
                           >
                             <Edit2 className="w-3 h-3" />
                             Edit
@@ -1161,7 +1132,7 @@ function DashboardContent() {
                         <button
                           onClick={() => joinParty(reveal.id)}
                           disabled={openingPartyId === reveal.id}
-                          className="bg-[#3A9FE8] text-white hover:bg-[#2E7DD1] active:scale-[0.98] transition-all font-bold text-xs uppercase tracking-wider rounded-lg px-3.5 py-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                          className="bg-[#3A9FE8] text-white hover:bg-[#2E7DD1] active:scale-[0.98] transition-all font-bold text-xs uppercase tracking-wider rounded-lg px-3.5 py-2 disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-[#3A9FE8]"
                         >
                           {openingPartyId === reveal.id ? "Opening..." : "Join Party"}
                         </button>
@@ -1348,7 +1319,7 @@ function DashboardContent() {
                                         editForm.photos.filter((_, i) => i !== index)
                                       )
                                     }
-                                    className="absolute top-1 right-1 w-5 h-5 rounded-full bg-black/60 hover:bg-black text-white text-xs flex items-center justify-center"
+                                    className="absolute top-1 right-1 w-5 h-5 rounded-full bg-black/60 hover:bg-black text-white text-xs flex items-center justify-center focus:outline-none focus:ring-2 focus:ring-[#3A9FE8]"
                                   >
                                     ×
                                   </button>
@@ -1359,7 +1330,7 @@ function DashboardContent() {
 
                           <div className="flex flex-col gap-1">
                             <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Replace Photos</span>
-                            <label className="border border-dashed border-gray-200 rounded-xl p-3 bg-white flex flex-col items-center justify-center text-center cursor-pointer hover:border-[#3A9FE8] transition-all">
+                            <label className="border border-dashed border-gray-200 rounded-xl p-3 bg-white flex flex-col items-center justify-center text-center cursor-pointer hover:border-[#3A9FE8] transition-all focus-within:ring-2 focus-within:ring-[#3A9FE8]">
                               <Camera className="w-5 h-5 text-gray-400 mb-1" />
                               <span className="text-xs font-bold text-gray-600">Select Files</span>
                               <input
@@ -1383,12 +1354,12 @@ function DashboardContent() {
                           <button
                             onClick={saveRevealEdits}
                             disabled={savingReveal}
-                            className="bg-gradient-to-r from-[#E8449A] to-[#3A9FE8] text-white hover:opacity-90 active:scale-[0.98] transition-all font-bold text-xs uppercase tracking-wider rounded-xl py-3 px-5 disabled:opacity-50"
+                            className="bg-gradient-to-r from-[#E8449A] to-[#3A9FE8] text-white hover:opacity-90 active:scale-[0.98] transition-all font-bold text-xs uppercase tracking-wider rounded-xl py-3 px-5 disabled:opacity-50 focus:outline-none focus:ring-2 focus:ring-[#3A9FE8]"
                           >
                             {savingReveal ? "Saving..." : "Save Changes"}
                           </button>
                           <button
-                            className="border border-gray-200 text-[#374151] hover:bg-gray-100 font-bold text-xs uppercase tracking-wider rounded-xl py-3 px-5 disabled:opacity-50"
+                            className="border border-gray-200 text-[#374151] hover:bg-gray-100 font-bold text-xs uppercase tracking-wider rounded-xl py-3 px-5 disabled:opacity-50 focus:outline-none focus:ring-2 focus:ring-[#3A9FE8]"
                             onClick={() => {
                               setEditingRevealId(null);
                               setEditForm(null);
@@ -1417,7 +1388,7 @@ function DashboardContent() {
               {canCreateReveal ? (
                 <button
                   onClick={startNewReveal}
-                  className="bg-gradient-to-r from-[#E8449A] to-[#3A9FE8] text-white font-extrabold hover:opacity-95 rounded-xl py-3 px-6 text-xs uppercase tracking-wider transition-all animate-pulse"
+                  className="bg-gradient-to-r from-[#E8449A] to-[#3A9FE8] text-white font-extrabold hover:opacity-95 rounded-xl py-3 px-6 text-xs uppercase tracking-wider transition-all animate-pulse focus:outline-none focus:ring-2 focus:ring-[#3A9FE8]"
                 >
                   ✦ Start New Reveal
                 </button>
@@ -1431,47 +1402,66 @@ function DashboardContent() {
         {/* Guest Invites Portal */}
         {latestReveal && (
           <section className="space-y-6">
-            <h2 className="text-xs font-bold text-gray-400 uppercase tracking-widest border-b border-[#f1f1f5] pb-3 mb-1 flex items-center gap-2">
-              <Users className="w-4 h-4 text-[#3A9FE8]" />
-              Invite Guests
-            </h2>
+            <div className="border-b border-[#f1f1f5] pb-3 mb-1">
+              <h2 className="text-xs font-bold text-gray-400 uppercase tracking-widest flex items-center gap-2">
+                <Users className="w-4 h-4 text-[#3A9FE8]" />
+                Invite Guests
+              </h2>
+              <p className="text-xs text-gray-500 font-medium mt-1">
+                Add your guests or import a spreadsheet. We’ll send them a secure invite link.
+              </p>
+            </div>
 
             <div className="bg-white border border-[#f1f1f5] rounded-2xl p-6 md:p-8 shadow-sm space-y-6">
               {/* Toolbar */}
-              <div className="flex flex-wrap items-center gap-3">
-                <label className="bg-white border border-gray-200 text-[#374151] hover:bg-gray-50 font-bold text-xs uppercase tracking-wider rounded-xl py-3 px-4 cursor-pointer flex items-center gap-1.5 transition-all">
-                  <Upload className="w-4 h-4 text-gray-400" />
-                  Import CSV/XLSX
-                  <input
-                    type="file"
-                    accept=".csv,text/csv,.xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-                    className="hidden"
-                    onChange={(e) => {
-                      const file = e.target.files?.[0];
-                      if (file) void handleGuestFile(file);
-                      e.currentTarget.value = "";
-                    }}
-                  />
-                </label>
+              <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 p-4 rounded-xl bg-gradient-to-r from-[#FDE8F2]/45 to-[#D6EAFE]/35 border border-white">
+                {/* Left: Toolbar Actions */}
+                <div className="flex flex-wrap items-center gap-2.5">
+                  <label className="bg-white border border-gray-200 text-[#374151] hover:bg-gray-50 font-bold text-xs uppercase tracking-wider rounded-xl py-3 px-4 cursor-pointer flex items-center gap-1.5 transition-all focus-within:ring-2 focus-within:ring-[#3A9FE8]">
+                    <Upload className="w-4 h-4 text-gray-400" />
+                    Import CSV/XLSX
+                    <input
+                      ref={guestFileInputRef}
+                      type="file"
+                      accept=".csv,text/csv,.xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+                      className="hidden"
+                      onChange={(e) => {
+                        const file = e.target.files?.[0];
+                        if (file) void handleGuestFile(file);
+                        e.currentTarget.value = "";
+                      }}
+                    />
+                  </label>
+                  <button
+                    type="button"
+                    onClick={() => loadGuestList(latestReveal.id)}
+                    className="bg-white border border-gray-200 text-[#374151] hover:bg-gray-50 font-bold text-xs uppercase tracking-wider rounded-xl py-3 px-4 flex items-center gap-1.5 transition-all focus:outline-none focus:ring-2 focus:ring-[#3A9FE8]"
+                  >
+                    <RefreshCw className="w-4 h-4 text-gray-400" />
+                    Refresh List
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => sendGuestDigest(latestReveal.id)}
+                    className="bg-white border border-gray-200 text-[#374151] hover:bg-gray-50 font-bold text-xs uppercase tracking-wider rounded-xl py-3 px-4 flex items-center gap-1.5 transition-all focus:outline-none focus:ring-2 focus:ring-[#3A9FE8]"
+                  >
+                    Send Parent Digest
+                  </button>
+                </div>
+
+                {/* Right: Helpful Import Callout */}
                 <button
-                  onClick={() => setGuestDraftRows((rows) => [...rows, makeGuestRow()])}
-                  className="bg-white border border-gray-200 text-[#374151] hover:bg-gray-50 font-bold text-xs uppercase tracking-wider rounded-xl py-3 px-4 flex items-center gap-1.5 transition-all"
+                  type="button"
+                  onClick={() => guestFileInputRef.current?.click()}
+                  className="flex items-center gap-3 text-left p-3 rounded-xl bg-white/60 hover:bg-white/90 border border-pink-100 hover:border-pink-200 transition-all group shrink-0 focus:outline-none focus:ring-2 focus:ring-[#3A9FE8]"
                 >
-                  <Plus className="w-4 h-4 text-gray-400" />
-                  Add Guest Row
-                </button>
-                <button
-                  onClick={() => loadGuestList(latestReveal.id)}
-                  className="bg-white border border-gray-200 text-[#374151] hover:bg-gray-50 font-bold text-xs uppercase tracking-wider rounded-xl py-3 px-4 flex items-center gap-1.5 transition-all"
-                >
-                  <RefreshCw className="w-4 h-4 text-gray-400" />
-                  Refresh List
-                </button>
-                <button
-                  onClick={() => sendGuestDigest(latestReveal.id)}
-                  className="bg-white border border-gray-200 text-[#374151] hover:bg-gray-50 font-bold text-xs uppercase tracking-wider rounded-xl py-3 px-4 flex items-center gap-1.5 transition-all"
-                >
-                  Send Parent Digest
+                  <div className="w-8 h-8 rounded-lg bg-gradient-to-tr from-[#E8449A] to-[#3A9FE8] flex items-center justify-center text-white font-bold shrink-0">
+                    <Upload className="w-4 h-4" />
+                  </div>
+                  <div>
+                    <span className="text-[9px] font-bold text-gray-400 uppercase tracking-wider block leading-tight">Want to add many guests?</span>
+                    <span className="text-xs font-bold text-gray-700 group-hover:text-[#E8449A] transition-colors leading-tight">Import a CSV/XLSX file</span>
+                  </div>
                 </button>
               </div>
 
@@ -1498,7 +1488,7 @@ function DashboardContent() {
                       <tr key={row.rowId}>
                         <td className="p-3">
                           <input
-                            className="bg-white border border-gray-200 rounded-lg px-3 py-2 text-xs text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-1 focus:ring-[#3A9FE8] w-full font-medium"
+                            className="bg-white border border-gray-200 rounded-xl px-4 py-2.5 text-xs text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#3A9FE8] w-full font-medium transition-all"
                             value={row.name}
                             onChange={(e) => updateGuestDraft(row.rowId, "name", e.target.value)}
                             placeholder="Guest name"
@@ -1506,7 +1496,7 @@ function DashboardContent() {
                         </td>
                         <td className="p-3">
                           <input
-                            className="bg-white border border-gray-200 rounded-lg px-3 py-2 text-xs text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-1 focus:ring-[#3A9FE8] w-full font-medium"
+                            className="bg-white border border-gray-200 rounded-xl px-4 py-2.5 text-xs text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#3A9FE8] w-full font-medium transition-all"
                             value={row.phone}
                             onChange={(e) => updateGuestDraft(row.rowId, "phone", e.target.value)}
                             placeholder="Phone number"
@@ -1514,7 +1504,7 @@ function DashboardContent() {
                         </td>
                         <td className="p-3">
                           <input
-                            className="bg-white border border-gray-200 rounded-lg px-3 py-2 text-xs text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-1 focus:ring-[#3A9FE8] w-full font-medium"
+                            className="bg-white border border-gray-200 rounded-xl px-4 py-2.5 text-xs text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#3A9FE8] w-full font-medium transition-all"
                             type="email"
                             value={row.email}
                             onChange={(e) => updateGuestDraft(row.rowId, "email", e.target.value)}
@@ -1523,10 +1513,12 @@ function DashboardContent() {
                         </td>
                         <td className="p-3 text-right">
                           <button
+                            type="button"
                             onClick={() => removeGuestDraft(row.rowId)}
-                            className="text-red-500 hover:text-red-700 font-bold text-xs uppercase tracking-wider px-2.5 py-1"
+                            className="p-2 text-red-500 hover:text-red-700 hover:bg-red-50 rounded-lg transition-colors inline-flex items-center justify-center focus:outline-none focus:ring-2 focus:ring-red-500"
+                            aria-label="Remove guest"
                           >
-                            Remove
+                            <Trash2 className="w-4.5 h-4.5" />
                           </button>
                         </td>
                       </tr>
@@ -1535,18 +1527,46 @@ function DashboardContent() {
                 </table>
               </div>
 
-              {/* Submit & Send Banners */}
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pt-2 border-t border-gray-50">
-                <button
-                  onClick={() => sendGuestInvites(latestReveal.id)}
-                  disabled={sendingInvites}
-                  className="bg-gradient-to-r from-[#E8449A] to-[#3A9FE8] text-white hover:opacity-95 font-bold text-xs uppercase tracking-wider rounded-xl py-3.5 px-6 disabled:opacity-50 transition-all shadow-md shadow-[#e8449a0c]"
-                >
-                  {sendingInvites ? "Sending..." : "✦ Submit & Send Links"}
-                </button>
-                <span className="text-xs text-gray-400 font-medium">
-                  The account email also receives a copy of the host party link automatically.
-                </span>
+              {/* Bottom Action Bar */}
+              <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 pt-6 border-t border-gray-100">
+                {/* Left side: Add Guest Row */}
+                <div className="flex flex-col sm:flex-row sm:items-center gap-3 w-full md:w-auto">
+                  <button
+                    type="button"
+                    onClick={() => setGuestDraftRows((rows) => [...rows, makeGuestRow()])}
+                    className="w-full md:w-auto bg-gradient-to-r from-[#E8449A] to-[#3A9FE8] text-white hover:opacity-95 font-bold text-xs uppercase tracking-wider rounded-xl py-3 px-5 transition-all shadow-sm flex items-center justify-center gap-1.5 focus:outline-none focus:ring-2 focus:ring-[#3A9FE8]"
+                  >
+                    <Plus className="w-4 h-4" />
+                    Add Guest Row
+                  </button>
+                  <span className="text-xs text-gray-400 font-medium text-center sm:text-left">
+                    Add one guest at a time to your list.
+                  </span>
+                </div>
+
+                {/* Right side: Submit & Send Links */}
+                <div className="flex flex-col items-end gap-2 w-full md:w-auto">
+                  <button
+                    type="button"
+                    onClick={() => sendGuestInvites(latestReveal.id)}
+                    disabled={sendingInvites}
+                    className="w-full md:w-auto bg-gradient-to-r from-[#E8449A] to-[#3A9FE8] text-white hover:opacity-95 font-bold text-xs uppercase tracking-wider rounded-xl py-3.5 px-6 disabled:opacity-50 transition-all shadow-md shadow-[#e8449a0c] flex items-center justify-center gap-2 focus:outline-none focus:ring-2 focus:ring-[#3A9FE8]"
+                  >
+                    {sendingInvites ? (
+                      <>
+                        <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                        Sending...
+                      </>
+                    ) : (
+                      <>
+                        ✦ Submit &amp; Send Links
+                      </>
+                    )}
+                  </button>
+                  <span className="text-[11px] text-gray-400 font-medium text-center md:text-right w-full md:max-w-xs leading-normal">
+                    The account email also receives a copy of the host party link automatically.
+                  </span>
+                </div>
               </div>
 
               {/* Sent Invites List */}
@@ -1600,13 +1620,13 @@ function DashboardContent() {
                             <td className="p-4 text-right flex items-center justify-end gap-2">
                               <button
                                 onClick={() => manageGuest(guest.guestId, "resend", latestReveal.id)}
-                                className="border border-gray-200 text-[#374151] hover:bg-gray-50 font-bold text-xs uppercase tracking-wider rounded-lg px-2.5 py-1.5 transition-all"
+                                className="border border-gray-200 text-[#374151] hover:bg-gray-50 font-bold text-xs uppercase tracking-wider rounded-lg px-2.5 py-1.5 transition-all focus:outline-none focus:ring-2 focus:ring-[#3A9FE8]"
                               >
                                 Resend
                               </button>
                               <button
                                 onClick={() => manageGuest(guest.guestId, "revoke", latestReveal.id)}
-                                className="border border-red-100 text-red-500 hover:bg-red-50 font-bold text-xs uppercase tracking-wider rounded-lg px-2.5 py-1.5 transition-all"
+                                className="border border-red-100 text-red-500 hover:bg-red-50 font-bold text-xs uppercase tracking-wider rounded-lg px-2.5 py-1.5 transition-all focus:outline-none focus:ring-2 focus:ring-red-500"
                               >
                                 Revoke
                               </button>
@@ -1628,7 +1648,7 @@ function DashboardContent() {
         )}
 
         {/* Pricing/Plans Grid Sections */}
-        {!hasPlan && (
+        {!hasPlan && reveals.length === 0 && (
           <PlanSection
             title="Choose Your Plan"
             plans={PLANS}
@@ -1637,7 +1657,7 @@ function DashboardContent() {
           />
         )}
 
-        {activePlan === "basic" && (
+        {activePlan === "basic" && reveals.length === 0 && (
           <PlanSection
             title="Unlock More"
             plans={PLANS.filter((p) => p.id !== "basic")}
@@ -1684,14 +1704,14 @@ function PaymentGatewayPrompt({
         <div className="flex items-center justify-end gap-3">
           <button
             type="button"
-            className="border border-gray-200 text-[#374151] hover:bg-gray-50 rounded-xl py-2.5 px-4 font-bold text-xs uppercase tracking-wider transition-all"
+            className="border border-gray-200 text-[#374151] hover:bg-gray-50 rounded-xl py-2.5 px-4 font-bold text-xs uppercase tracking-wider transition-all focus:outline-none focus:ring-2 focus:ring-[#3A9FE8]"
             onClick={onCancel}
           >
             Cancel
           </button>
           <button
             type="button"
-            className="bg-gradient-to-r from-[#E8449A] to-[#3A9FE8] text-white hover:opacity-90 active:scale-[0.98] rounded-xl py-2.5 px-4 font-bold text-xs shadow-md tracking-wider uppercase transition-all"
+            className="bg-gradient-to-r from-[#E8449A] to-[#3A9FE8] text-white hover:opacity-90 active:scale-[0.98] rounded-xl py-2.5 px-4 font-bold text-xs shadow-md tracking-wider uppercase transition-all focus:outline-none focus:ring-2 focus:ring-[#3A9FE8]"
             onClick={onProceed}
           >
             Proceed
@@ -1796,7 +1816,7 @@ function PlanSection({
                   isPremium
                     ? "bg-gradient-to-r from-[#E8449A] to-[#3A9FE8] text-white shadow-md hover:opacity-95"
                     : "border border-gray-200 text-[#374151] hover:bg-gray-50"
-                } disabled:opacity-50 disabled:cursor-not-allowed`}
+                } disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-[#3A9FE8]`}
               >
                 {activatingPlan === plan.id
                   ? "Activating..."
