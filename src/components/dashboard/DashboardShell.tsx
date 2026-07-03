@@ -303,47 +303,32 @@ export default function DashboardShell({ children, activeTab = "create", title =
 
       {/* ── Main Layout View Area ── */}
       <div className="flex-1 lg:pl-[280px] flex flex-col min-h-screen">
-        {/* Top Header */}
-        <header className="sticky top-0 z-30 h-16 bg-white/80 backdrop-blur-md border-b border-[#f1f1f5] px-6 flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            {/* Hamburger Button */}
-            <button
-              ref={triggerRef}
-              onClick={() => setIsMobileOpen(true)}
-              className="lg:hidden w-10 h-10 rounded-xl flex items-center justify-center border border-[#e5e7eb] text-[#374151] hover:bg-[#f9fafb] focus:outline-none focus:ring-2 focus:ring-[#3A9FE8]"
-              aria-label="Open sidebar menu"
-              aria-expanded={isMobileOpen}
-            >
-              <Menu className="w-5 h-5" />
-            </button>
+        {/* Mobile-only Header */}
+        <header className="lg:hidden sticky top-0 z-30 h-16 bg-white/80 backdrop-blur-md border-b border-[#f1f1f5] px-6 flex items-center justify-between">
+          {/* Hamburger Button */}
+          <button
+            ref={triggerRef}
+            onClick={() => setIsMobileOpen(true)}
+            className="w-10 h-10 rounded-xl flex items-center justify-center border border-[#e5e7eb] text-[#374151] hover:bg-[#f9fafb] focus:outline-none focus:ring-2 focus:ring-[#3A9FE8]"
+            aria-label="Open sidebar menu"
+            aria-expanded={isMobileOpen}
+          >
+            <Menu className="w-5 h-5" />
+          </button>
 
-            {/* Breadcrumb Title */}
-            <nav className="flex items-center gap-2 text-sm text-[#6b7280]" aria-label="Breadcrumbs">
-              <a href="/dashboard" className="hover:text-[#111827] transition-colors">
-                Dashboard
-              </a>
-              <ChevronRight className="w-3.5 h-3.5 text-[#9ca3af]" />
-              <span className="font-semibold text-[#111827] truncate max-w-[160px] md:max-w-none">
-                {title}
-              </span>
-            </nav>
-          </div>
-
-          {/* Quick Profile Widget */}
-          <div className="flex items-center gap-3">
-            {firestoreUser && (
-              <span className="hidden sm:inline-block text-[11px] font-bold text-[#E8449A] bg-[#FDE8F2] px-2.5 py-1 rounded-full border border-[#f2b8cf]">
-                {planDisplayNames[planName] || planName}
-              </span>
-            )}
-            <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-[#E07FAA] to-[#2E7DD1] flex items-center justify-center text-white font-bold text-xs select-none">
-              {userInitials}
+          {/* Brand Logo inside Mobile Header */}
+          <a href="/" className="flex items-center gap-2">
+            <div className="w-8 h-8 rounded-lg bg-gradient-to-tr from-[#E8449A] to-[#3A9FE8] flex items-center justify-center text-white">
+              <Sparkles className="w-4 h-4" />
             </div>
-          </div>
+            <span className="font-nunito font-extrabold text-sm bg-gradient-to-r from-[#E8449A] to-[#3A9FE8] bg-clip-text text-transparent font-semibold">
+              Virtual Reveal
+            </span>
+          </a>
         </header>
 
         {/* Dashboard Content Container */}
-        <main className="flex-1 p-6 md:p-8 lg:p-10 max-w-5xl mx-auto w-full">
+        <main className="flex-1 p-6 md:p-8 lg:px-10 lg:py-6 max-w-5xl mx-auto w-full">
           {children}
         </main>
       </div>
