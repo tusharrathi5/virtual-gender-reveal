@@ -80,18 +80,19 @@ export function AuthModalShell({ title, subtitle, submitting, children }: AuthMo
         .auth-modal-page { min-height: 100vh; position: relative; overflow: hidden; font-family: 'Plus Jakarta Sans', sans-serif; }
         .auth-modal-bg { position: fixed; inset: 0; overflow: auto; filter: blur(6px); transform: scale(1.02); pointer-events: none; z-index: 5; }
         .auth-modal-shade { position: fixed; inset: 0; background: rgba(10, 11, 30, 0.72); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); z-index: 20; border: none; cursor: pointer; width: 100vw; height: 100vh; }
-        .auth-modal-layer { position: fixed; inset: 0; z-index: 30; display: flex; align-items: center; justify-content: center; padding: 24px; overflow: auto; }
+        .auth-modal-layer { position: fixed; inset: 0; z-index: 30; display: flex; align-items: flex-start; justify-content: center; padding: 40px 16px; overflow-y: auto; }
         
         .auth-card { 
           position: relative; 
           background: rgba(255, 255, 255, 0.95); 
           border-radius: 28px; 
-          padding: 44px; 
+          padding: 36px 40px; 
           width: min(540px, 100%); 
           box-shadow: 0 25px 60px -15px rgba(0, 0, 0, 0.2), 0 0 40px rgba(232, 68, 154, 0.04); 
           border: 1px solid rgba(255, 255, 255, 0.7);
           overflow: hidden;
           backdrop-filter: blur(8px);
+          margin: auto;
         }
 
         /* Ambient Glow Blobs */
@@ -153,7 +154,7 @@ export function AuthModalShell({ title, subtitle, submitting, children }: AuthMo
           align-items: center;
           justify-content: center;
           text-align: center;
-          margin-bottom: 28px;
+          margin-bottom: 20px;
           position: relative;
           z-index: 1;
         }
@@ -198,8 +199,8 @@ export function AuthModalShell({ title, subtitle, submitting, children }: AuthMo
         }
 
         @media (max-width: 580px) {
-          .auth-modal-layer { align-items: center; padding: 16px; }
-          .auth-card { padding: 36px 24px 28px; border-radius: 24px; }
+          .auth-modal-layer { align-items: flex-start; padding: 12px; }
+          .auth-card { padding: 28px 20px 24px; border-radius: 24px; }
           .auth-close { top: 16px; right: 16px; }
         }
       `}</style>
