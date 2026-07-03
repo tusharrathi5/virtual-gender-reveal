@@ -1,14 +1,7 @@
 "use client";
 
-import dynamic from "next/dynamic";
 import { useCallback, useEffect, useRef, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
-import { Sparkles, Heart } from "lucide-react";
-
-const VirtualGenderRevealApp = dynamic(
-  () => import("@/components/cinema/CinematicEntry"),
-  { ssr: false }
-);
 
 interface AuthModalShellProps {
   title: string;
@@ -77,9 +70,16 @@ export function AuthModalShell({ title, subtitle, submitting, children }: AuthMo
       <style>{`
         * { box-sizing: border-box; }
         body { margin: 0; }
-        .auth-modal-page { min-height: 100vh; position: relative; overflow: hidden; font-family: 'Plus Jakarta Sans', sans-serif; }
-        .auth-modal-bg { position: fixed; inset: 0; overflow: auto; filter: blur(6px); transform: scale(1.02); pointer-events: none; z-index: 5; }
-        .auth-modal-shade { position: fixed; inset: 0; background: rgba(10, 11, 30, 0.72); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); z-index: 20; border: none; cursor: pointer; width: 100vw; height: 100vh; }
+        .auth-modal-page {
+          min-height: 100vh;
+          position: relative;
+          overflow: hidden;
+          font-family: 'Plus Jakarta Sans', sans-serif;
+          background: url('/assets/login-background.png') no-repeat center center;
+          background-size: cover;
+        }
+        .auth-modal-bg { display: none; }
+        .auth-modal-shade { position: fixed; inset: 0; background: rgba(0, 0, 0, 0.1); z-index: 20; border: none; cursor: pointer; width: 100vw; height: 100vh; }
         .auth-modal-layer { position: fixed; inset: 0; z-index: 30; display: flex; align-items: flex-start; justify-content: center; padding: 40px 16px; overflow-y: auto; }
         
         .auth-card { 
@@ -205,9 +205,6 @@ export function AuthModalShell({ title, subtitle, submitting, children }: AuthMo
         }
       `}</style>
       <div className="auth-modal-page">
-        <div className="auth-modal-bg" aria-hidden="true">
-          <VirtualGenderRevealApp />
-        </div>
         <button className="auth-modal-shade" aria-label="Close authentication dialog" onClick={close} disabled={submitting} />
         <div className="auth-modal-layer" role="presentation">
           <div ref={modalRef} className="auth-card" role="dialog" aria-modal="true" aria-labelledby="auth-modal-title" onClick={(e) => e.stopPropagation()}>
