@@ -10,141 +10,19 @@ import {
   type GenderValue,
   type RevealerRelation,
 } from "@/lib/types";
-
-// ─── Styles ─────────────────────────────────────────────────
-
-const CSS = `
-@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,300;0,400;1,300;1,400&family=Plus+Jakarta+Sans:wght@300;400;500;600&display=swap');
-*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
-body{font-family:'Plus Jakarta Sans',sans-serif;background:#F4F3F0;color:#111827;min-height:100vh;}
-.page-wrap{max-width:720px;margin:0 auto;padding:5rem 2rem 4rem;}
-.back-link{display:inline-flex;align-items:center;gap:0.4rem;font-size:0.8rem;color:#6B7280;text-decoration:none;margin-bottom:2.5rem;transition:color 0.2s;}
-.back-link:hover{color:#1B4F8C;}
-.page-header{margin-bottom:2.5rem;}
-.page-title{font-family:'Playfair Display',serif;font-size:2rem;font-weight:300;margin-bottom:0.5rem;}
-.page-sub{font-size:0.88rem;color:#6B7280;line-height:1.7;}
-.form-card{background:white;border-radius:12px;padding:2.5rem;border:1px solid rgba(0,0,0,0.06);box-shadow:0 2px 16px rgba(0,0,0,0.04);}
-.form-section-title{font-size:0.72rem;letter-spacing:0.25em;text-transform:uppercase;color:#9CA3AF;margin-bottom:1.2rem;padding-bottom:0.6rem;border-bottom:1px solid rgba(0,0,0,0.06);}
-.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:1.2rem;}
-@media(max-width:600px){.form-grid{grid-template-columns:1fr;}}
-.form-group{margin-bottom:1.2rem;}
-.form-label{display:block;font-size:0.75rem;font-weight:500;letter-spacing:0.08em;text-transform:uppercase;color:#374151;margin-bottom:0.45rem;}
-.form-input,.form-select,.form-textarea{
-  width:100%;padding:0.85rem 1rem;border-radius:4px;
-  border:1px solid rgba(0,0,0,0.12);background:white;
-  font-family:'Plus Jakarta Sans',sans-serif;font-size:0.92rem;color:#111827;
-  transition:border-color 0.2s,box-shadow 0.2s;outline:none;
-}
-.form-input:focus,.form-select:focus,.form-textarea:focus{border-color:#2E7DD1;box-shadow:0 0 0 3px rgba(46,125,209,0.1);}
-.form-input::placeholder{color:#9CA3AF;}
-.form-input:disabled{background:#F9FAFB;color:#9CA3AF;cursor:not-allowed;}
-
-/* Mode selector */
-.mode-grid{display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1.5rem;}
-@media(max-width:500px){.mode-grid{grid-template-columns:1fr;}}
-.mode-opt{
-  border:2px solid rgba(0,0,0,0.08);border-radius:8px;padding:1.2rem;
-  cursor:pointer;text-align:left;transition:border-color 0.2s,background 0.2s;
-  background:white;
-}
-.mode-opt:hover{border-color:#2E7DD1;}
-.mode-opt.selected{border-color:#2E7DD1;background:rgba(46,125,209,0.04);}
-.mode-title{font-size:0.9rem;font-weight:600;margin-bottom:0.3rem;color:#111827;}
-.mode-desc{font-size:0.78rem;color:#6B7280;line-height:1.5;}
-
-/* Gender radio (announcement mode) */
-.gender-radio-grid{display:grid;grid-template-columns:1fr 1fr;gap:0.8rem;}
-.gender-opt{
-  border:2px solid rgba(0,0,0,0.08);border-radius:8px;padding:0.9rem;
-  cursor:pointer;text-align:center;transition:all 0.2s;background:white;
-  font-size:0.88rem;font-weight:500;
-}
-.gender-opt:hover{border-color:#2E7DD1;}
-.gender-opt.selected-boy{border-color:#2E7DD1;background:rgba(46,125,209,0.06);color:#1B4F8C;}
-.gender-opt.selected-girl{border-color:#C2527A;background:rgba(194,82,122,0.06);color:#C2527A;}
-
-/* Timezone dropdown */
-.tz-wrapper{position:relative;}
-.tz-trigger{
-  width:100%;padding:0.85rem 1rem;border-radius:4px;
-  border:1px solid rgba(0,0,0,0.12);background:white;
-  font-family:'Plus Jakarta Sans',sans-serif;font-size:0.92rem;color:#111827;
-  cursor:pointer;text-align:left;display:flex;justify-content:space-between;align-items:center;
-  transition:border-color 0.2s;
-}
-.tz-trigger:hover:not(:disabled){border-color:#2E7DD1;}
-.tz-trigger:disabled{background:#F9FAFB;color:#9CA3AF;cursor:not-allowed;}
-.tz-chevron{font-size:0.7rem;color:#9CA3AF;margin-left:0.5rem;}
-.tz-dropdown{
-  position:absolute;top:calc(100% + 4px);left:0;right:0;
-  background:white;border:1px solid rgba(0,0,0,0.1);border-radius:6px;
-  box-shadow:0 8px 24px rgba(0,0,0,0.1);
-  max-height:360px;overflow:hidden;z-index:100;
-  display:flex;flex-direction:column;
-}
-.tz-search{
-  width:100%;padding:0.7rem 0.9rem;border:none;border-bottom:1px solid rgba(0,0,0,0.08);
-  font-family:'Plus Jakarta Sans',sans-serif;font-size:0.85rem;outline:none;
-  background:#FAFAF9;
-}
-.tz-search:focus{background:white;}
-.tz-group-label{
-  padding:0.6rem 0.9rem 0.3rem;font-size:0.68rem;letter-spacing:0.15em;
-  text-transform:uppercase;color:#9CA3AF;font-weight:500;
-  background:#FAFAF9;border-bottom:1px solid rgba(0,0,0,0.04);
-}
-.tz-scroll{overflow-y:auto;flex:1;}
-.tz-option{
-  padding:0.65rem 0.9rem;cursor:pointer;font-size:0.85rem;color:#374151;
-  display:flex;justify-content:space-between;align-items:center;
-  border-bottom:1px solid rgba(0,0,0,0.04);
-  transition:background 0.15s;
-}
-.tz-option:hover{background:rgba(46,125,209,0.05);color:#1B4F8C;}
-.tz-option.selected{background:rgba(46,125,209,0.08);color:#1B4F8C;font-weight:500;}
-.tz-value{font-size:0.7rem;color:#9CA3AF;margin-left:0.5rem;}
-.tz-empty{padding:1rem;text-align:center;color:#9CA3AF;font-size:0.85rem;}
-
-/* Photo picker */
-.photo-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:0.8rem;margin-bottom:0.6rem;}
-@media(max-width:500px){.photo-grid{grid-template-columns:repeat(3,1fr);gap:0.5rem;}}
-.photo-slot{
-  aspect-ratio:1;border:2px dashed rgba(0,0,0,0.12);border-radius:8px;
-  display:flex;align-items:center;justify-content:center;
-  cursor:pointer;position:relative;overflow:hidden;background:#FAFAF9;
-  transition:border-color 0.2s;
-}
-.photo-slot:hover{border-color:#2E7DD1;}
-.photo-slot.filled{border-style:solid;border-color:rgba(0,0,0,0.08);}
-.photo-slot.filled:hover{border-color:rgba(0,0,0,0.08);}
-.photo-preview{width:100%;height:100%;object-fit:cover;}
-.photo-placeholder{font-size:0.7rem;color:#9CA3AF;letter-spacing:0.1em;text-transform:uppercase;text-align:center;padding:0.5rem;}
-.photo-remove{
-  position:absolute;top:6px;right:6px;width:22px;height:22px;border-radius:50%;
-  background:rgba(17,24,39,0.75);color:white;border:none;cursor:pointer;
-  font-size:12px;display:flex;align-items:center;justify-content:center;
-  transition:background 0.2s;
-}
-.photo-remove:hover{background:rgba(17,24,39,0.95);}
-.photo-hint{font-size:0.75rem;color:#9CA3AF;margin-top:0.3rem;line-height:1.5;}
-
-.form-divider{height:1px;background:rgba(0,0,0,0.06);margin:1.8rem 0;}
-.btn-submit{
-  width:100%;padding:1.05rem;border:none;border-radius:4px;cursor:pointer;
-  background:linear-gradient(135deg,#2E7DD1,#C2527A);color:white;
-  font-family:'Plus Jakarta Sans',sans-serif;font-size:0.84rem;font-weight:500;
-  letter-spacing:0.1em;text-transform:uppercase;
-  box-shadow:0 4px 16px rgba(46,125,209,0.25);
-  transition:transform 0.2s,box-shadow 0.2s,opacity 0.2s;
-}
-.btn-submit:hover:not(:disabled){transform:translateY(-2px);box-shadow:0 8px 28px rgba(46,125,209,0.32);}
-.btn-submit:disabled{opacity:0.6;cursor:not-allowed;transform:none;}
-.error-msg{font-size:0.8rem;color:#DC2626;padding:0.7rem 0.9rem;background:#FEF2F2;border-radius:4px;border:1px solid rgba(220,38,38,0.15);margin-bottom:1rem;line-height:1.5;}
-.hint{font-size:0.75rem;color:#9CA3AF;margin-top:0.3rem;line-height:1.5;}
-.progress-note{font-size:0.75rem;color:#2E7DD1;margin-top:0.6rem;text-align:center;}
-@keyframes spin{to{transform:rotate(360deg);}}
-.spinner{display:inline-block;width:14px;height:14px;border:2px solid rgba(255,255,255,.3);border-top-color:white;border-radius:50%;animation:spin .7s linear infinite;vertical-align:middle;margin-right:8px;}
-`;
+import DashboardShell from "@/components/dashboard/DashboardShell";
+import {
+  Sparkles,
+  Plus,
+  Trash2,
+  Calendar,
+  Mail,
+  User,
+  AlertCircle,
+  Camera,
+  Heart,
+  ChevronDown,
+} from "lucide-react";
 
 // ─── Helpers ────────────────────────────────────────────────
 
@@ -178,7 +56,6 @@ function getInitialTimezone(): string {
 // Get all IANA timezones the browser supports — falls back to US-only if unsupported
 function getAllTimezones(): string[] {
   try {
-    // Intl.supportedValuesOf is available in modern browsers (2022+)
     const supported = (Intl as unknown as {
       supportedValuesOf?: (key: string) => string[];
     }).supportedValuesOf;
@@ -188,7 +65,6 @@ function getAllTimezones(): string[] {
   } catch {
     // fall through
   }
-  // Fallback: just US timezones
   return US_TIMEZONES.map((t) => t.value);
 }
 
@@ -196,7 +72,6 @@ function getAllTimezones(): string[] {
 function formatTimezone(tz: string): string {
   const us = US_TIMEZONES.find((t) => t.value === tz);
   if (us) return `${us.label} (${us.short})`;
-  // For non-US zones, show a friendlier label: "Asia/Kolkata" → "Kolkata (Asia)"
   const parts = tz.split("/");
   if (parts.length >= 2) {
     const city = parts[parts.length - 1].replace(/_/g, " ");
@@ -207,7 +82,6 @@ function formatTimezone(tz: string): string {
 }
 
 function getMinDateTime(): string {
-  // Min = now + 1 hour, formatted for <input type="datetime-local">
   const d = new Date(Date.now() + 60 * 60 * 1000);
   const pad = (n: number) => String(n).padStart(2, "0");
   return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
@@ -219,6 +93,17 @@ const RELATION_LABELS: Record<RevealerRelation, string> = {
   friend: "Friend",
   other: "Other",
 };
+
+function formatRevealDate(d: Date | null): string {
+  if (!d || isNaN(d.getTime())) return "-";
+  return d.toLocaleDateString("en-US", {
+    weekday: "short",
+    month: "short",
+    day: "numeric",
+    hour: "numeric",
+    minute: "2-digit",
+  });
+}
 
 // ─── Component ──────────────────────────────────────────────
 
@@ -233,10 +118,8 @@ export default function NewRevealPage() {
   const isBasicPlan = (firestoreUser?.activePlan ?? "none") === "basic";
 
   // Entitlement guard: redirect if user can't create a reveal
-  //   - Not logged in → /login
-  //   - No revealsAllowed → /dashboard (with hint via URL param)
   useEffect(() => {
-    if (authLoading) return; // wait for auth to resolve
+    if (authLoading) return;
     if (!user) {
       setEntitlementChecked(false);
       router.replace("/login?redirect=/new-reveal");
@@ -275,12 +158,17 @@ export default function NewRevealPage() {
   const [revealAt, setRevealAt] = useState("");
   const [photoFiles, setPhotoFiles] = useState<File[]>([]);
 
+  // Name states (previously stored as null in DB/form)
+  const [babyName, setBabyName] = useState("");
+  const [babyNameGirl, setBabyNameGirl] = useState("");
+  const [babyNameBoy, setBabyNameBoy] = useState("");
+
   // Announcement mode fields
   const [dueDate, setDueDate] = useState("");
   const [announcementGender, setAnnouncementGender] = useState<GenderValue | null>(null);
 
   // Reveal mode fields
-    const [revealerEmail, setRevealerEmail] = useState("");
+  const [revealerEmail, setRevealerEmail] = useState("");
   const [revealerRelation, setRevealerRelation] = useState<RevealerRelation>("doctor");
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [timezone, setTimezone] = useState<string>(() => getInitialTimezone());
@@ -289,7 +177,7 @@ export default function NewRevealPage() {
   const tzDropdownRef = useRef<HTMLDivElement>(null);
   const minDateTime = useMemo(() => getMinDateTime(), []);
 
-  // All timezones for the search list (memoized — expensive call)
+  // All timezones for the search list
   const allTimezones = useMemo(() => getAllTimezones(), []);
 
   // Filter timezones based on search
@@ -316,11 +204,32 @@ export default function NewRevealPage() {
     return () => document.removeEventListener("mousedown", onClick);
   }, [tzDropdownOpen]);
 
-  // Preview URLs for selected photos
-  const previewUrls = useMemo(
-    () => photoFiles.map((f) => URL.createObjectURL(f)),
-    [photoFiles]
-  );
+  // Preview URLs for selected photos with proper cleanup
+  const [previewUrls, setPreviewUrls] = useState<string[]>([]);
+  useEffect(() => {
+    const urls = photoFiles.map((file) => URL.createObjectURL(file));
+    setPreviewUrls(urls);
+    return () => {
+      urls.forEach((url) => URL.revokeObjectURL(url));
+    };
+  }, [photoFiles]);
+
+  // Progress steps (non-blocking)
+  const steps = useMemo(() => {
+    const isStep1Complete = !!mode;
+    const isStep2Complete =
+      !!parentName.trim() &&
+      (mode === "announcement"
+        ? !!announcementGender
+        : !!revealerEmail.trim() && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(revealerEmail.trim()));
+    const isStep3Complete = !!revealAt;
+    
+    return [
+      { label: "Reveal Type", isComplete: isStep1Complete },
+      { label: "Family Details", isComplete: isStep2Complete },
+      { label: "Reveal Schedule", isComplete: isStep3Complete },
+    ];
+  }, [mode, parentName, announcementGender, revealerEmail, revealAt]);
 
   // ─── Photo handlers ──────────────────────────────────────
 
@@ -333,7 +242,6 @@ export default function NewRevealPage() {
     const files = Array.from(e.target.files || []);
     if (files.length === 0) return;
 
-    // Combine with existing, cap at PHOTO_MAX
     const combined = [...photoFiles, ...files].slice(0, PHOTO_MAX);
     const validation = validatePhotoFiles(combined);
     if (!validation.ok) {
@@ -342,7 +250,6 @@ export default function NewRevealPage() {
     }
     setError("");
     setPhotoFiles(combined);
-    // Reset the input so user can re-select the same file if they remove it
     if (fileInputRef.current) fileInputRef.current.value = "";
   }
 
@@ -373,7 +280,6 @@ export default function NewRevealPage() {
     if (mode === "announcement") {
       if (!announcementGender) return "Please select the baby's gender.";
     } else {
-      // reveal mode
       if (!revealerEmail.trim()) return "Please enter the revealer's email.";
       if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(revealerEmail.trim())) {
         return "Please enter a valid revealer email.";
@@ -385,7 +291,7 @@ export default function NewRevealPage() {
 
   // ─── Submit ──────────────────────────────────────────────
 
-async function handleSubmit(e: React.FormEvent) {
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!user) {
       setError("You must be logged in.");
@@ -405,7 +311,6 @@ async function handleSubmit(e: React.FormEvent) {
     const enquiryId = uuidv4();
 
     try {
-      // 1. Upload photos to Storage first if the user selected any.
       const effectivePhotoFiles = isBasicPlan ? [] : photoFiles;
       setUploadProgress(
         effectivePhotoFiles.length > 0
@@ -414,14 +319,6 @@ async function handleSubmit(e: React.FormEvent) {
       );
       const photoUrls = effectivePhotoFiles.length > 0 ? await uploadPhotos(enquiryId, effectivePhotoFiles) : [];
 
-      // 2. Call server-side API to atomically:
-      //    - Verify entitlement
-      //    - Create the enquiry doc
-      //    - Consume one purchase slot
-      //    - (announcement mode) encrypt + save the gender to secure-genders
-      //
-      //    If this API call fails, the server-side handler will delete the
-      //    photos we just uploaded to prevent orphaned Storage files.
       setUploadProgress("Saving your reveal details…");
       const idToken = await user.getIdToken();
 
@@ -440,11 +337,11 @@ async function handleSubmit(e: React.FormEvent) {
           revealTimezone: timezone,
           dueDate: isBasicPlan ? null : dueDate,
           // Announcement mode
-          babyName: null,
+          babyName: mode === "announcement" ? (babyName.trim() || null) : null,
           announcementGender: mode === "announcement" ? announcementGender : undefined,
           // Reveal mode
-          babyNameGirl: null,
-          babyNameBoy: null,
+          babyNameGirl: mode === "reveal" ? (babyNameGirl.trim() || null) : null,
+          babyNameBoy: mode === "reveal" ? (babyNameBoy.trim() || null) : null,
           revealerEmail: mode === "reveal" ? revealerEmail.trim().toLowerCase() : undefined,
           revealerRelation: mode === "reveal" ? revealerRelation : undefined,
         }),
@@ -456,7 +353,6 @@ async function handleSubmit(e: React.FormEvent) {
         throw new Error(data.error || "Failed to create reveal. Please try again.");
       }
 
-      // 3. Redirect to dashboard with success flag
       setUploadProgress("Finishing up…");
       router.push(`/dashboard?created=${enquiryId}`);
     } catch (err) {
@@ -472,350 +368,691 @@ async function handleSubmit(e: React.FormEvent) {
 
   // ─── Render ──────────────────────────────────────────────
 
+  const summaryCardComponent = useMemo(() => {
+    return (
+      <div className="lg:sticky lg:top-24 space-y-6">
+        <div className="bg-white border border-[#f1f1f5] rounded-2xl p-6 shadow-sm overflow-hidden relative">
+          <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-[#E8449A]/5 to-[#3A9FE8]/5 rounded-full blur-2xl -z-10" />
+
+          <h3 className="font-nunito font-extrabold text-lg text-gray-900 mb-4 flex items-center gap-2 border-b border-gray-100 pb-3">
+            <Sparkles className="w-5 h-5 text-[#E8449A]" />
+            Reveal Summary
+          </h3>
+
+          <div className="space-y-4 text-sm text-gray-700">
+            <div>
+              <span className="text-[10px] text-gray-400 block uppercase font-bold tracking-wider">Event Type</span>
+              <span className="font-bold text-gray-800 flex items-center gap-1.5 mt-0.5">
+                {mode === "reveal" ? "🎀 Gender Reveal" : "📣 Gender Announcement"}
+              </span>
+            </div>
+
+            <div>
+              <span className="text-[10px] text-gray-400 block uppercase font-bold tracking-wider">Parent Name(s)</span>
+              <span className="font-semibold text-gray-800 mt-0.5 block truncate">
+                {parentName.trim() || <span className="text-gray-300 italic font-normal">Not set</span>}
+              </span>
+            </div>
+
+            {mode === "announcement" && (
+              <>
+                <div>
+                  <span className="text-[10px] text-gray-400 block uppercase font-bold tracking-wider">Baby's Gender</span>
+                  <span className="font-semibold text-gray-800 mt-0.5 block">
+                    {announcementGender === "boy" ? "💙 Boy" : announcementGender === "girl" ? "🩷 Girl" : <span className="text-gray-300 italic font-normal">Not selected</span>}
+                  </span>
+                </div>
+
+                <div>
+                  <span className="text-[10px] text-gray-400 block uppercase font-bold tracking-wider">Baby's Name</span>
+                  <span className="font-semibold text-gray-800 mt-0.5 block truncate">
+                    {babyName.trim() || <span className="text-gray-400/60 italic text-xs font-normal">Optional</span>}
+                  </span>
+                </div>
+              </>
+            )}
+
+            {mode === "reveal" && (
+              <>
+                <div className="grid grid-cols-2 gap-2">
+                  <div>
+                    <span className="text-[10px] text-gray-400 block uppercase font-bold tracking-wider">If Girl Name</span>
+                    <span className="font-semibold text-gray-800 mt-0.5 block truncate">
+                      {babyNameGirl.trim() || <span className="text-gray-400/60 italic text-xs font-normal">Optional</span>}
+                    </span>
+                  </div>
+                  <div>
+                    <span className="text-[10px] text-gray-400 block uppercase font-bold tracking-wider">If Boy Name</span>
+                    <span className="font-semibold text-gray-800 mt-0.5 block truncate">
+                      {babyNameBoy.trim() || <span className="text-gray-400/60 italic text-xs font-normal">Optional</span>}
+                    </span>
+                  </div>
+                </div>
+
+                <div>
+                  <span className="text-[10px] text-gray-400 block uppercase font-bold tracking-wider">Revealer Contact</span>
+                  <span className="font-semibold text-gray-800 mt-0.5 block truncate">
+                    {revealerEmail.trim() || <span className="text-gray-300 italic font-normal">Not set</span>}
+                  </span>
+                  {revealerEmail && (
+                    <span className="text-xs text-gray-500 block mt-0.5 font-medium">
+                      Relation: {RELATION_LABELS[revealerRelation]}
+                    </span>
+                  )}
+                </div>
+              </>
+            )}
+
+            <div>
+              <span className="text-[10px] text-gray-400 block uppercase font-bold tracking-wider">Reveal Schedule</span>
+              <span className="font-semibold text-gray-800 mt-0.5 block">
+                {revealAt ? formatRevealDate(new Date(revealAt)) : <span className="text-gray-300 italic font-normal">Not scheduled</span>}
+              </span>
+              <span className="text-xs text-gray-500 block mt-0.5 truncate font-medium">
+                Timezone: {formatTimezone(timezone)}
+              </span>
+            </div>
+
+            {!isBasicPlan && dueDate && (
+              <div>
+                <span className="text-[10px] text-gray-400 block uppercase font-bold tracking-wider">Due Date</span>
+                <span className="font-semibold text-gray-800 mt-0.5 block">
+                  {new Date(dueDate + "T00:00:00").toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })}
+                </span>
+              </div>
+            )}
+
+            {!isBasicPlan && photoFiles.length > 0 && (
+              <div>
+                <span className="text-[10px] text-gray-400 block uppercase font-bold tracking-wider mb-1.5">Photos ({photoFiles.length})</span>
+                <div className="flex gap-2 overflow-x-auto pb-1">
+                  {previewUrls.map((url, idx) => (
+                    <img key={idx} src={url} className="w-10 h-10 rounded-lg object-cover border border-gray-100 flex-shrink-0" alt="Thumbnail" />
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+    );
+  }, [mode, parentName, announcementGender, babyName, babyNameGirl, babyNameBoy, revealerEmail, revealerRelation, revealAt, timezone, isBasicPlan, dueDate, photoFiles, previewUrls]);
+
   if (authLoading || !user || !entitlementChecked) {
     return (
-      <>
-        <style>{CSS}</style>
-        <div className="page-wrap">
-          <p className="page-sub">Checking your payment status…</p>
+      <DashboardShell activeTab="create" title="Create Your Reveal">
+        <div className="bg-white rounded-2xl p-8 border border-[#f1f1f5] shadow-sm max-w-2xl mx-auto mt-10">
+          <p className="text-gray-500 font-medium text-center">Checking your payment status…</p>
         </div>
-      </>
+      </DashboardShell>
     );
   }
 
   return (
-    <>
-      <style>{CSS}</style>
-      <div className="page-wrap">
-        <a href="/dashboard" className="back-link">← Back to Dashboard</a>
-        <div className="page-header">
-          <h1 className="page-title">Create Your Reveal</h1>
-          <p className="page-sub">
+    <DashboardShell activeTab="create" title="Create Your Reveal">
+      <div className="w-full">
+        {/* Page Introduction */}
+        <div className="mb-8">
+          <h1 className="font-nunito font-extrabold text-3xl md:text-4xl tracking-tight bg-gradient-to-r from-[#E8449A] to-[#3A9FE8] bg-clip-text text-transparent mb-2">
+            Create Your Reveal
+          </h1>
+          <p className="text-sm md:text-base text-gray-500 max-w-2xl leading-relaxed font-medium">
             Tell us about your little one and we&apos;ll take care of the rest — secure
             revealer link, personalized video, and live broadcast to your loved ones.
           </p>
         </div>
 
-        <form className="form-card" onSubmit={handleSubmit}>
-          {error && <div className="error-msg">⚠ {error}</div>}
-
-          {/* ── Mode Selection ── */}
-          <div className="form-section-title">What type of event?</div>
-          <div className="mode-grid">
-            <div
-              className={`mode-opt${mode === "reveal" ? " selected" : ""}`}
-              onClick={() => !loading && setMode("reveal")}
-            >
-              <div className="mode-title">🎀 Gender Reveal</div>
-              <div className="mode-desc">
-                You don&apos;t know the gender yet. A revealer (doctor, relative, etc.)
-                submits it privately, and it plays at the reveal.
+        {/* Lightweight Progress Stepper */}
+        <div className="flex items-center justify-between mb-8 bg-white border border-[#f1f1f5] rounded-2xl p-4 shadow-sm text-[11px] sm:text-xs md:text-sm gap-2">
+          {steps.map((step, idx) => (
+            <div key={idx} className="flex items-center gap-1.5 md:gap-2">
+              <div className={`w-5 h-5 sm:w-6 sm:h-6 rounded-full flex items-center justify-center font-bold text-[10px] sm:text-xs ${
+                step.isComplete 
+                  ? "bg-gradient-to-r from-[#E8449A] to-[#3A9FE8] text-white" 
+                  : "bg-gray-100 text-gray-400"
+              }`}>
+                {step.isComplete ? "✓" : idx + 1}
               </div>
-            </div>
-            <div
-              className={`mode-opt${mode === "announcement" ? " selected" : ""}`}
-              onClick={() => !loading && setMode("announcement")}
-            >
-              <div className="mode-title">📣 Gender Announcement</div>
-              <div className="mode-desc">
-                You already know the gender. We create a cinematic announcement to
-                share with family &amp; friends.
-              </div>
-            </div>
-          </div>
-
-          <div className="form-divider" />
-
-          {/* ── About You & Baby ── */}
-          <div className="form-section-title">About You &amp; Baby</div>
-
-          <div className="form-group">
-            <label className="form-label">Parent Name(s)</label>
-            <input
-              className="form-input"
-              type="text"
-              placeholder="e.g. Sarah &amp; Michael"
-              value={parentName}
-              onChange={(e) => setParentName(e.target.value)}
-              disabled={loading}
-              maxLength={120}
-            />
-            <div className="hint">
-              Both parents&apos; names, or one — whatever feels right. Shown on the reveal.
-            </div>
-          </div>
-
-          {mode === "announcement" && (
-            <>
-              {!isBasicPlan && <div className="form-group">
-                <label className="form-label">Due Date</label>
-                <input
-                  className="form-input"
-                  type="date"
-                  value={dueDate}
-                  onChange={(e) => setDueDate(e.target.value)}
-                  disabled={loading}
-                />
-              </div>}
-
-              <div className="form-group">
-                <label className="form-label">Baby&apos;s Gender</label>
-                <div className="gender-radio-grid">
-                  <div
-                    className={`gender-opt${announcementGender === "boy" ? " selected-boy" : ""}`}
-                    onClick={() => !loading && setAnnouncementGender("boy")}
-                  >
-                    💙 Boy
-                  </div>
-                  <div
-                    className={`gender-opt${announcementGender === "girl" ? " selected-girl" : ""}`}
-                    onClick={() => !loading && setAnnouncementGender("girl")}
-                  >
-                    🩷 Girl
-                  </div>
-                </div>
-                <div className="hint">
-                  This stays encrypted and is only shown during the reveal event.
-                </div>
-              </div>
-            </>
-          )}
-
-          {mode === "reveal" && !isBasicPlan && (
-            <div className="form-group" style={{ marginBottom: 0 }}>
-              <label className="form-label">Due Date</label>
-              <input
-                className="form-input"
-                type="date"
-                value={dueDate}
-                onChange={(e) => setDueDate(e.target.value)}
-                disabled={loading}
-              />
-            </div>
-          )}
-
-          {!isBasicPlan && <div className="form-divider" />}
-
-          {!isBasicPlan && (
-            <>
-          {/* ── Photos ── */}
-          <div className="form-section-title">Photos (optional, up to {PHOTO_MAX})</div>
-
-          <div className="photo-grid">
-            {Array.from({ length: PHOTO_MAX }).map((_, i) => {
-              const file = photoFiles[i];
-              const url = previewUrls[i];
-              if (file && url) {
-                return (
-                  <div key={i} className="photo-slot filled">
-                    <img className="photo-preview" src={url} alt={`Photo ${i + 1}`} />
-                    {!loading && (
-                      <button
-                        type="button"
-                        className="photo-remove"
-                        onClick={() => removePhoto(i)}
-                        aria-label={`Remove photo ${i + 1}`}
-                      >
-                        ×
-                      </button>
-                    )}
-                  </div>
-                );
-              }
-              // Empty slot — only the first empty slot is clickable
-              const isNextSlot = i === photoFiles.length;
-              return (
-                <div
-                  key={i}
-                  className="photo-slot"
-                  onClick={isNextSlot && !loading ? handlePhotoSlotClick : undefined}
-                  style={{ cursor: isNextSlot && !loading ? "pointer" : "default", opacity: isNextSlot ? 1 : 0.4 }}
-                >
-                  <span className="photo-placeholder">
-                    {isNextSlot ? "+ Add Photo" : "—"}
-                  </span>
-                </div>
-              );
-            })}
-          </div>
-
-          <input
-            ref={fileInputRef}
-            type="file"
-            accept="image/jpeg,image/jpg,image/png,image/webp,image/gif,image/heic,image/heif"
-            multiple
-            style={{ display: "none" }}
-            onChange={handleFileSelect}
-          />
-
-          <div className="photo-hint">
-            {photoFiles.length} of {PHOTO_MAX} photos selected. Max 5 MB each.
-            We recommend including a sonogram if you have one.
-          </div>
-          </>
-          )}
-
-          <div className="form-divider" />
-
-         {/* ── Reveal Date & Time ── */}
-         <div className="form-section-title">When should the reveal play?</div>
-          <div className="form-group">
-            <label className="form-label">Reveal Date &amp; Time</label>
-            <input
-              className="form-input"
-              type="datetime-local"
-              value={revealAt}
-              onChange={(e) => setRevealAt(e.target.value)}
-              disabled={loading}
-              min={minDateTime}
-            />
-            <div className="hint">Your selected timezone is shown below.</div>
-          </div>
-
-          <div className="form-group">
-            <label className="form-label">Timezone</label>
-            <div className="tz-wrapper" ref={tzDropdownRef}>
-              <button
-                type="button"
-                className="tz-trigger"
-                onClick={() => !loading && setTzDropdownOpen((o) => !o)}
-                disabled={loading}
-              >
-                <span>{formatTimezone(timezone)}</span>
-                <span className="tz-chevron">{tzDropdownOpen ? "▲" : "▼"}</span>
-              </button>
-
-              {tzDropdownOpen && (
-                <div className="tz-dropdown">
-                  <input
-                    type="text"
-                    className="tz-search"
-                    placeholder="Search all timezones…"
-                    value={tzSearch}
-                    onChange={(e) => setTzSearch(e.target.value)}
-                    autoFocus
-                  />
-
-                  {!tzSearch && (
-                    <>
-                      <div className="tz-group-label">United States</div>
-                      {US_TIMEZONES.map((tz) => (
-                        <div
-                          key={tz.value}
-                          className={`tz-option${timezone === tz.value ? " selected" : ""}`}
-                          onClick={() => {
-                            setTimezone(tz.value);
-                            setTzDropdownOpen(false);
-                            setTzSearch("");
-                          }}
-                        >
-                          <span>{tz.label} ({tz.short})</span>
-                          <span className="tz-value">{tz.value}</span>
-                        </div>
-                      ))}
-                      <div className="tz-group-label">All Other Timezones</div>
-                    </>
-                  )}
-
-                  <div className="tz-scroll">
-                    {tzSearch && (
-                      <>
-                        {/* Show matching US zones when searching */}
-                        {US_TIMEZONES.filter((tz) =>
-                          tz.label.toLowerCase().includes(tzSearch.toLowerCase()) ||
-                          tz.value.toLowerCase().includes(tzSearch.toLowerCase())
-                        ).map((tz) => (
-                          <div
-                            key={tz.value}
-                            className={`tz-option${timezone === tz.value ? " selected" : ""}`}
-                            onClick={() => {
-                              setTimezone(tz.value);
-                              setTzDropdownOpen(false);
-                              setTzSearch("");
-                            }}
-                          >
-                            <span>{tz.label} ({tz.short})</span>
-                            <span className="tz-value">{tz.value}</span>
-                          </div>
-                        ))}
-                      </>
-                    )}
-                    {filteredWorldTimezones.length === 0 && tzSearch && (
-                      <div className="tz-empty">No timezones match &quot;{tzSearch}&quot;</div>
-                    )}
-                    {filteredWorldTimezones.map((tz) => (
-                      <div
-                        key={tz}
-                        className={`tz-option${timezone === tz ? " selected" : ""}`}
-                        onClick={() => {
-                          setTimezone(tz);
-                          setTzDropdownOpen(false);
-                          setTzSearch("");
-                        }}
-                      >
-                        <span>{formatTimezone(tz)}</span>
-                        <span className="tz-value">{tz}</span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
+              <span className={`font-semibold hidden sm:inline ${step.isComplete ? "text-gray-800" : "text-gray-400"}`}>
+                {step.label}
+              </span>
+              <span className={`font-semibold sm:hidden ${step.isComplete ? "text-gray-800" : "text-gray-400"}`}>
+                {step.label.split(" ")[0]}
+              </span>
+              {idx < steps.length - 1 && (
+                <span className="text-gray-200 font-normal mx-1 md:mx-4">➔</span>
               )}
             </div>
-            <div className="hint">
-              All guest invites adjust automatically to their local time.
-            </div>
-          </div>
+          ))}
+        </div>
 
-          {/* ── Revealer (reveal mode only) ── */}
-          {mode === "reveal" && (
-            <>
-              <div className="form-divider" />
-              <div className="form-section-title">Your Revealer</div>
-              <div className="form-group">
-                <label className="form-label">Revealer&apos;s Email</label>
-                <input
-                  className="form-input"
-                  type="email"
-                  placeholder="doctor@clinic.com"
-                  value={revealerEmail}
-                  onChange={(e) => setRevealerEmail(e.target.value)}
-                  disabled={loading}
-                />
-                <div className="hint">
-                  We&apos;ll send them a private, one-time secure link. They submit the
-                  gender — you won&apos;t know until the reveal plays.
+        {/* Grid Responsive Layout */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
+          {/* Main Form Area */}
+          <form className="lg:col-span-2 space-y-6" onSubmit={handleSubmit}>
+            {error && (
+              <div className="flex items-start gap-3 bg-red-50 border border-red-200 text-red-700 p-4 rounded-xl text-sm leading-relaxed" role="alert">
+                <AlertCircle className="w-5 h-5 text-red-500 shrink-0 mt-0.5" />
+                <div>
+                  <span className="font-semibold block mb-0.5">Please correct the following:</span>
+                  {error}
                 </div>
               </div>
-              <div className="form-group">
-                <label className="form-label">Their Relation to You</label>
-                <select
-                  className="form-select"
-                  value={revealerRelation}
-                  onChange={(e) => setRevealerRelation(e.target.value as RevealerRelation)}
-                  disabled={loading}
-                >
-                  {(Object.keys(RELATION_LABELS) as RevealerRelation[]).map((key) => (
-                    <option key={key} value={key}>{RELATION_LABELS[key]}</option>
-                  ))}
-                </select>
-              </div>
-            </>
-          )}
-
-          <div className="form-divider" />
-
-          <button className="btn-submit" type="submit" disabled={loading}>
-            {loading ? (
-              <><span className="spinner" />{uploadProgress || "Setting up…"}</>
-            ) : (
-              "✦ Create My Reveal →"
             )}
-          </button>
-          <div className="hint" style={{ textAlign: "center", marginTop: "0.8rem" }}>
-            You&apos;ll be taken back to your dashboard once everything is set up.
+
+            {/* Section 1: Reveal Type */}
+            <div className="bg-white border border-[#f1f1f5] rounded-2xl p-6 md:p-8 shadow-sm">
+              <h2 className="text-xs font-bold text-gray-400 uppercase tracking-widest border-b border-[#f1f1f5] pb-3 mb-5 flex items-center gap-2">
+                <Sparkles className="w-4 h-4 text-[#E8449A]" />
+                1. What type of event?
+              </h2>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                {/* Gender Reveal Option */}
+                <div
+                  tabIndex={0}
+                  role="radio"
+                  aria-checked={mode === "reveal"}
+                  className={`relative p-5 rounded-2xl border-2 cursor-pointer transition-all duration-200 flex flex-col gap-2 focus-visible:ring-2 focus-visible:ring-[#3A9FE8] focus-visible:outline-none ${
+                    mode === "reveal"
+                      ? "border-[#E8449A] bg-[#FDE8F2]/20 shadow-sm shadow-[#e8449a0a]"
+                      : "border-gray-100 hover:border-gray-200 bg-white"
+                  }`}
+                  onClick={() => !loading && setMode("reveal")}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" || e.key === " ") {
+                      e.preventDefault();
+                      if (!loading) setMode("reveal");
+                    }
+                  }}
+                >
+                  <div className="flex items-center gap-2.5">
+                    <span className="text-xl select-none" aria-hidden="true">🎀</span>
+                    <h3 className="font-bold text-gray-900 text-sm md:text-base">Gender Reveal</h3>
+                  </div>
+                  <p className="text-xs text-gray-500 leading-relaxed font-medium mt-1">
+                    You don&apos;t know the gender yet. A revealer (doctor, relative, etc.)
+                    submits it privately, and it plays at the reveal.
+                  </p>
+                  {mode === "reveal" && (
+                    <div className="absolute top-3 right-3 w-4 h-4 rounded-full bg-[#E8449A] flex items-center justify-center">
+                      <span className="text-[10px] text-white font-bold select-none">✓</span>
+                    </div>
+                  )}
+                </div>
+
+                {/* Gender Announcement Option */}
+                <div
+                  tabIndex={0}
+                  role="radio"
+                  aria-checked={mode === "announcement"}
+                  className={`relative p-5 rounded-2xl border-2 cursor-pointer transition-all duration-200 flex flex-col gap-2 focus-visible:ring-2 focus-visible:ring-[#3A9FE8] focus-visible:outline-none ${
+                    mode === "announcement"
+                      ? "border-[#3A9FE8] bg-[#D6EAFE]/20 shadow-sm shadow-[#3a9fe80a]"
+                      : "border-gray-100 hover:border-gray-200 bg-white"
+                  }`}
+                  onClick={() => !loading && setMode("announcement")}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" || e.key === " ") {
+                      e.preventDefault();
+                      if (!loading) setMode("announcement");
+                    }
+                  }}
+                >
+                  <div className="flex items-center gap-2.5">
+                    <span className="text-xl select-none" aria-hidden="true">📣</span>
+                    <h3 className="font-bold text-gray-900 text-sm md:text-base">Gender Announcement</h3>
+                  </div>
+                  <p className="text-xs text-gray-500 leading-relaxed font-medium mt-1">
+                    You already know the gender. We create a cinematic announcement to
+                    share with family &amp; friends.
+                  </p>
+                  {mode === "announcement" && (
+                    <div className="absolute top-3 right-3 w-4 h-4 rounded-full bg-[#3A9FE8] flex items-center justify-center">
+                      <span className="text-[10px] text-white font-bold select-none">✓</span>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {/* Section 2: Family Details */}
+            <div className="bg-white border border-[#f1f1f5] rounded-2xl p-6 md:p-8 shadow-sm space-y-6">
+              <h2 className="text-xs font-bold text-gray-400 uppercase tracking-widest border-b border-[#f1f1f5] pb-3 mb-1 flex items-center gap-2">
+                <User className="w-4 h-4 text-[#3A9FE8]" />
+                2. Family details
+              </h2>
+
+              <div className="space-y-4">
+                <div className="flex flex-col gap-1.5">
+                  <label htmlFor="parentName" className="text-xs font-bold text-gray-500 uppercase tracking-wider">Parent Name(s)</label>
+                  <input
+                    id="parentName"
+                    className="w-full bg-white border border-gray-200 rounded-xl px-4 py-3 text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#3A9FE8] focus:border-[#3A9FE8] disabled:bg-gray-50 disabled:text-gray-400 transition-all font-medium"
+                    type="text"
+                    placeholder="e.g. Sarah &amp; Michael"
+                    value={parentName}
+                    onChange={(e) => setParentName(e.target.value)}
+                    disabled={loading}
+                    maxLength={120}
+                  />
+                  <span className="text-xs text-gray-400 mt-0.5 font-medium">
+                    Both parents&apos; names, or one — whatever feels right. Shown on the reveal.
+                  </span>
+                </div>
+
+                {mode === "announcement" && (
+                  <>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <div className="flex flex-col gap-1.5">
+                        <label htmlFor="babyName" className="text-xs font-bold text-gray-500 uppercase tracking-wider">Baby&apos;s Name (Optional)</label>
+                        <input
+                          id="babyName"
+                          className="w-full bg-white border border-gray-200 rounded-xl px-4 py-3 text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#3A9FE8] focus:border-[#3A9FE8] disabled:bg-gray-50 disabled:text-gray-400 transition-all font-medium"
+                          type="text"
+                          placeholder="e.g. Sophia"
+                          value={babyName}
+                          onChange={(e) => setBabyName(e.target.value)}
+                          disabled={loading}
+                          maxLength={120}
+                        />
+                      </div>
+
+                      {!isBasicPlan && (
+                        <div className="flex flex-col gap-1.5">
+                          <label htmlFor="dueDateAnnounce" className="text-xs font-bold text-gray-500 uppercase tracking-wider">Due Date</label>
+                          <input
+                            id="dueDateAnnounce"
+                            className="w-full bg-white border border-gray-200 rounded-xl px-4 py-3 text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#3A9FE8] focus:border-[#3A9FE8] disabled:bg-gray-50 disabled:text-gray-400 transition-all font-medium cursor-pointer"
+                            type="date"
+                            value={dueDate}
+                            onChange={(e) => setDueDate(e.target.value)}
+                            disabled={loading}
+                          />
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="flex flex-col gap-1.5">
+                      <span className="text-xs font-bold text-gray-500 uppercase tracking-wider">Baby&apos;s Gender</span>
+                      <div className="grid grid-cols-2 gap-4">
+                        <div
+                          tabIndex={0}
+                          role="radio"
+                          aria-checked={announcementGender === "boy"}
+                          className={`border-2 py-3 px-4 rounded-xl text-center font-bold text-sm cursor-pointer transition-all duration-200 focus-visible:ring-2 focus-visible:ring-[#3A9FE8] focus-visible:outline-none ${
+                            announcementGender === "boy"
+                              ? "border-[#3A9FE8] bg-[#D6EAFE]/30 text-[#1B4F8C]"
+                              : "border-gray-100 hover:border-gray-200 text-gray-600 bg-white"
+                          }`}
+                          onClick={() => !loading && setAnnouncementGender("boy")}
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter" || e.key === " ") {
+                              e.preventDefault();
+                              if (!loading) setAnnouncementGender("boy");
+                            }
+                          }}
+                        >
+                          💙 Boy
+                        </div>
+                        <div
+                          tabIndex={0}
+                          role="radio"
+                          aria-checked={announcementGender === "girl"}
+                          className={`border-2 py-3 px-4 rounded-xl text-center font-bold text-sm cursor-pointer transition-all duration-200 focus-visible:ring-2 focus-visible:ring-[#E8449A] focus-visible:outline-none ${
+                            announcementGender === "girl"
+                              ? "border-[#E8449A] bg-[#FDE8F2]/30 text-[#C2527A]"
+                              : "border-gray-100 hover:border-gray-200 text-gray-600 bg-white"
+                          }`}
+                          onClick={() => !loading && setAnnouncementGender("girl")}
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter" || e.key === " ") {
+                              e.preventDefault();
+                              if (!loading) setAnnouncementGender("girl");
+                            }
+                          }}
+                        >
+                          🩷 Girl
+                        </div>
+                      </div>
+                      <span className="text-xs text-gray-400 mt-0.5 font-medium">
+                        This stays encrypted and is only shown during the reveal event.
+                      </span>
+                    </div>
+                  </>
+                )}
+
+                {mode === "reveal" && (
+                  <>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <div className="flex flex-col gap-1.5">
+                        <label htmlFor="babyNameGirl" className="text-xs font-bold text-gray-500 uppercase tracking-wider">If it&apos;s a Girl (Optional)</label>
+                        <input
+                          id="babyNameGirl"
+                          className="w-full bg-white border border-gray-200 rounded-xl px-4 py-3 text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#E8449A] focus:border-[#E8449A] disabled:bg-gray-50 disabled:text-gray-400 transition-all font-medium"
+                          type="text"
+                          placeholder="e.g. Sophia"
+                          value={babyNameGirl}
+                          onChange={(e) => setBabyNameGirl(e.target.value)}
+                          disabled={loading}
+                          maxLength={120}
+                        />
+                      </div>
+
+                      <div className="flex flex-col gap-1.5">
+                        <label htmlFor="babyNameBoy" className="text-xs font-bold text-gray-500 uppercase tracking-wider">If it&apos;s a Boy (Optional)</label>
+                        <input
+                          id="babyNameBoy"
+                          className="w-full bg-white border border-gray-200 rounded-xl px-4 py-3 text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#3A9FE8] focus:border-[#3A9FE8] disabled:bg-gray-50 disabled:text-gray-400 transition-all font-medium"
+                          type="text"
+                          placeholder="e.g. Michael"
+                          value={babyNameBoy}
+                          onChange={(e) => setBabyNameBoy(e.target.value)}
+                          disabled={loading}
+                          maxLength={120}
+                        />
+                      </div>
+                    </div>
+
+                    {!isBasicPlan && (
+                      <div className="flex flex-col gap-1.5">
+                        <label htmlFor="dueDateReveal" className="text-xs font-bold text-gray-500 uppercase tracking-wider">Due Date</label>
+                        <input
+                          id="dueDateReveal"
+                          className="w-full bg-white border border-gray-200 rounded-xl px-4 py-3 text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#3A9FE8] focus:border-[#3A9FE8] disabled:bg-gray-50 disabled:text-gray-400 transition-all font-medium cursor-pointer"
+                          type="date"
+                          value={dueDate}
+                          onChange={(e) => setDueDate(e.target.value)}
+                          disabled={loading}
+                        />
+                      </div>
+                    )}
+                  </>
+                )}
+              </div>
+            </div>
+
+            {/* Section 3: Photo Upload */}
+            {!isBasicPlan && (
+              <div className="bg-white border border-[#f1f1f5] rounded-2xl p-6 md:p-8 shadow-sm space-y-4">
+                <h2 className="text-xs font-bold text-gray-400 uppercase tracking-widest border-b border-[#f1f1f5] pb-3 mb-1 flex items-center gap-2">
+                  <Camera className="w-4 h-4 text-[#E8449A]" />
+                  3. Photo upload
+                </h2>
+
+                <div className="grid grid-cols-3 gap-4" role="region" aria-label="Photo slots grid">
+                  {Array.from({ length: PHOTO_MAX }).map((_, i) => {
+                    const file = photoFiles[i];
+                    const url = previewUrls[i];
+                    if (file && url) {
+                      return (
+                        <div key={i} className="aspect-square relative rounded-xl border border-gray-200 overflow-hidden shadow-inner bg-gray-50">
+                          <img className="w-full h-full object-cover" src={url} alt={`Preview ${i + 1}`} />
+                          {!loading && (
+                            <button
+                              type="button"
+                              className="absolute top-2 right-2 p-1.5 rounded-full bg-black/60 hover:bg-black/85 text-white transition-all shadow-md focus:outline-none focus:ring-2 focus:ring-[#3A9FE8]"
+                              onClick={() => removePhoto(i)}
+                              aria-label={`Remove photo ${i + 1}`}
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+                          )}
+                        </div>
+                      );
+                    }
+                    const isNextSlot = i === photoFiles.length;
+                    return (
+                      <div
+                        key={i}
+                        tabIndex={isNextSlot && !loading ? 0 : -1}
+                        role="button"
+                        aria-label={isNextSlot ? "Upload photo slot" : "Inactive upload slot"}
+                        className={`aspect-square relative rounded-xl border-2 border-dashed flex flex-col items-center justify-center transition-all focus-visible:ring-2 focus-visible:ring-[#3A9FE8] focus-visible:outline-none ${
+                          isNextSlot && !loading
+                            ? "border-gray-200 hover:border-[#3A9FE8] bg-gray-50/50 cursor-pointer"
+                            : "border-gray-100 bg-gray-50/20 opacity-40 cursor-default"
+                        }`}
+                        onClick={isNextSlot && !loading ? handlePhotoSlotClick : undefined}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter" || e.key === " ") {
+                            e.preventDefault();
+                            if (isNextSlot && !loading) handlePhotoSlotClick();
+                          }
+                        }}
+                      >
+                        {isNextSlot ? (
+                          <>
+                            <Plus className="w-5 h-5 text-gray-400 mb-1" aria-hidden="true" />
+                            <span className="text-[10px] font-bold text-gray-500 uppercase tracking-wider select-none">Add Photo</span>
+                          </>
+                        ) : (
+                          <span className="text-gray-300 font-bold select-none">—</span>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/jpeg,image/jpg,image/png,image/webp,image/gif,image/heic,image/heif"
+                  multiple
+                  style={{ display: "none" }}
+                  onChange={handleFileSelect}
+                />
+
+                <span className="text-xs text-gray-400 mt-1 block font-medium">
+                  {photoFiles.length} of {PHOTO_MAX} photos selected. Max 5 MB each.
+                  We recommend including a sonogram if you have one.
+                </span>
+              </div>
+            )}
+
+            {/* Section 4: Reveal Schedule */}
+            <div className="bg-white border border-[#f1f1f5] rounded-2xl p-6 md:p-8 shadow-sm space-y-6">
+              <h2 className="text-xs font-bold text-gray-400 uppercase tracking-widest border-b border-[#f1f1f5] pb-3 mb-1 flex items-center gap-2">
+                <Calendar className="w-4 h-4 text-[#3A9FE8]" />
+                {isBasicPlan ? "3." : "4."} Reveal schedule
+              </h2>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="flex flex-col gap-1.5">
+                  <label htmlFor="revealAt" className="text-xs font-bold text-gray-500 uppercase tracking-wider">Reveal Date &amp; Time</label>
+                  <input
+                    id="revealAt"
+                    className="w-full bg-white border border-gray-200 rounded-xl px-4 py-3 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#3A9FE8] focus:border-[#3A9FE8] disabled:bg-gray-50 disabled:text-gray-400 transition-all font-medium cursor-pointer"
+                    type="datetime-local"
+                    value={revealAt}
+                    onChange={(e) => setRevealAt(e.target.value)}
+                    disabled={loading}
+                    min={minDateTime}
+                  />
+                  <span className="text-xs text-gray-400 font-medium">Your selected timezone is shown below.</span>
+                </div>
+
+                <div className="flex flex-col gap-1.5">
+                  <span className="text-xs font-bold text-gray-500 uppercase tracking-wider">Timezone</span>
+                  <div className="relative" ref={tzDropdownRef}>
+                    <button
+                      type="button"
+                      aria-expanded={tzDropdownOpen}
+                      aria-haspopup="listbox"
+                      className="w-full bg-white border border-gray-200 rounded-xl px-4 py-3 text-sm text-gray-900 flex items-center justify-between hover:border-gray-300 transition-all focus:outline-none focus:ring-2 focus:ring-[#3A9FE8] focus:border-[#3A9FE8] disabled:bg-gray-50 disabled:text-gray-400 font-medium"
+                      onClick={() => !loading && setTzDropdownOpen((o) => !o)}
+                      disabled={loading}
+                    >
+                      <span>{formatTimezone(timezone)}</span>
+                      <ChevronDown className="w-4 h-4 text-gray-400 shrink-0" />
+                    </button>
+
+                    {tzDropdownOpen && (
+                      <div className="absolute top-full left-0 right-0 mt-2 bg-white border border-gray-200 rounded-xl shadow-xl z-50 overflow-hidden flex flex-col max-h-[320px] animate-fade-in" role="listbox">
+                        <input
+                          type="text"
+                          className="w-full px-4 py-3 border-b border-gray-100 text-sm focus:outline-none placeholder-gray-400 bg-gray-50/50 font-medium"
+                          placeholder="Search all timezones…"
+                          value={tzSearch}
+                          onChange={(e) => setTzSearch(e.target.value)}
+                          autoFocus
+                        />
+
+                        {!tzSearch && (
+                          <div className="overflow-y-auto flex-1">
+                            <div className="px-4 py-1.5 bg-gray-50 text-[10px] font-bold text-gray-400 uppercase tracking-wider select-none">United States</div>
+                            {US_TIMEZONES.map((tz) => (
+                              <div
+                                key={tz.value}
+                                role="option"
+                                aria-selected={timezone === tz.value}
+                                className={`w-full px-4 py-2.5 text-left text-sm text-gray-700 hover:bg-[#3A9FE8]/5 hover:text-[#1B4F8C] transition-all flex items-center justify-between cursor-pointer ${
+                                  timezone === tz.value ? "bg-[#D6EAFE]/30 text-[#1B4F8C] font-semibold" : "font-medium"
+                                }`}
+                                onClick={() => {
+                                  setTimezone(tz.value);
+                                  setTzDropdownOpen(false);
+                                  setTzSearch("");
+                                }}
+                              >
+                                <span>{tz.label} ({tz.short})</span>
+                                <span className="text-xs text-gray-400">{tz.value}</span>
+                              </div>
+                            ))}
+                            <div className="px-4 py-1.5 bg-gray-50 text-[10px] font-bold text-gray-400 uppercase tracking-wider select-none">All Other Timezones</div>
+                          </div>
+                        )}
+
+                        <div className="overflow-y-auto flex-1">
+                          {tzSearch && (
+                            <>
+                              {US_TIMEZONES.filter((tz) =>
+                                tz.label.toLowerCase().includes(tzSearch.toLowerCase()) ||
+                                tz.value.toLowerCase().includes(tzSearch.toLowerCase())
+                              ).map((tz) => (
+                                <div
+                                  key={tz.value}
+                                  role="option"
+                                  aria-selected={timezone === tz.value}
+                                  className={`w-full px-4 py-2.5 text-left text-sm text-gray-700 hover:bg-[#3A9FE8]/5 hover:text-[#1B4F8C] transition-all flex items-center justify-between cursor-pointer ${
+                                    timezone === tz.value ? "bg-[#D6EAFE]/30 text-[#1B4F8C] font-semibold" : "font-medium"
+                                  }`}
+                                  onClick={() => {
+                                    setTimezone(tz.value);
+                                    setTzDropdownOpen(false);
+                                    setTzSearch("");
+                                  }}
+                                >
+                                  <span>{tz.label} ({tz.short})</span>
+                                  <span className="text-xs text-gray-400">{tz.value}</span>
+                                </div>
+                              ))}
+                            </>
+                          )}
+                          {filteredWorldTimezones.length === 0 && tzSearch && (
+                            <div className="px-4 py-6 text-center text-gray-400 text-sm font-medium">No timezones match &quot;{tzSearch}&quot;</div>
+                          )}
+                          {filteredWorldTimezones.map((tz) => (
+                            <div
+                              key={tz}
+                              role="option"
+                              aria-selected={timezone === tz}
+                              className={`w-full px-4 py-2.5 text-left text-sm text-gray-700 hover:bg-[#3A9FE8]/5 hover:text-[#1B4F8C] transition-all flex items-center justify-between cursor-pointer ${
+                                timezone === tz ? "bg-[#D6EAFE]/30 text-[#1B4F8C] font-semibold" : "font-medium"
+                              }`}
+                              onClick={() => {
+                                setTimezone(tz);
+                                setTzDropdownOpen(false);
+                                setTzSearch("");
+                              }}
+                            >
+                              <span>{formatTimezone(tz)}</span>
+                              <span className="text-xs text-gray-400 font-normal">{tz}</span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                  <span className="text-xs text-gray-400 font-medium">All guest invites adjust automatically to their local time.</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Section 5: Revealer Details */}
+            {mode === "reveal" && (
+              <div className="bg-white border border-[#f1f1f5] rounded-2xl p-6 md:p-8 shadow-sm space-y-6">
+                <h2 className="text-xs font-bold text-gray-400 uppercase tracking-widest border-b border-[#f1f1f5] pb-3 mb-1 flex items-center gap-2">
+                  <Mail className="w-4 h-4 text-[#E8449A]" />
+                  {isBasicPlan ? "4." : "5."} Revealer details
+                </h2>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="flex flex-col gap-1.5">
+                    <label htmlFor="revealerEmail" className="text-xs font-bold text-gray-500 uppercase tracking-wider">Revealer&apos;s Email</label>
+                    <input
+                      id="revealerEmail"
+                      className="w-full bg-white border border-gray-200 rounded-xl px-4 py-3 text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#3A9FE8] focus:border-[#3A9FE8] disabled:bg-gray-50 disabled:text-gray-400 transition-all font-medium"
+                      type="email"
+                      placeholder="doctor@clinic.com"
+                      value={revealerEmail}
+                      onChange={(e) => setRevealerEmail(e.target.value)}
+                      disabled={loading}
+                    />
+                    <span className="text-xs text-gray-400 font-medium">
+                      We&apos;ll send them a private, secure link to submit the gender.
+                    </span>
+                  </div>
+
+                  <div className="flex flex-col gap-1.5">
+                    <label htmlFor="revealerRelation" className="text-xs font-bold text-gray-500 uppercase tracking-wider">Their Relation to You</label>
+                    <div className="relative">
+                      <select
+                        id="revealerRelation"
+                        className="w-full bg-white border border-gray-200 rounded-xl px-4 py-3 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#3A9FE8] focus:border-[#3A9FE8] disabled:bg-gray-50 disabled:text-gray-400 transition-all appearance-none cursor-pointer font-medium pr-10"
+                        value={revealerRelation}
+                        onChange={(e) => setRevealerRelation(e.target.value as RevealerRelation)}
+                        disabled={loading}
+                      >
+                        {(Object.keys(RELATION_LABELS) as RevealerRelation[]).map((key) => (
+                          <option key={key} value={key}>{RELATION_LABELS[key]}</option>
+                        ))}
+                      </select>
+                      <ChevronDown className="w-4 h-4 text-gray-400 absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none" />
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Action Area */}
+            <div className="pt-4 space-y-4">
+              <button
+                type="submit"
+                disabled={loading}
+                className="w-full bg-gradient-to-r from-[#E8449A] to-[#3A9FE8] text-white py-4 px-6 rounded-xl font-bold text-sm tracking-wider uppercase shadow-md shadow-[#e8449a1a] hover:opacity-90 active:scale-[0.98] transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 focus:outline-none focus:ring-2 focus:ring-[#3A9FE8]"
+              >
+                {loading ? (
+                  <>
+                    <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                    {uploadProgress || "Setting up…"}
+                  </>
+                ) : (
+                  "✦ Create My Reveal →"
+                )}
+              </button>
+              <p className="text-xs text-gray-400 text-center font-medium">
+                You&apos;ll be taken back to your dashboard once everything is set up.
+              </p>
+            </div>
+          </form>
+
+          {/* Sticky Summary Card Sidebar (Stacked on mobile, sticky on desktop) */}
+          <div className="w-full lg:col-span-1">
+            {summaryCardComponent}
           </div>
-        </form>
+        </div>
       </div>
-    </>
+    </DashboardShell>
   );
 }
