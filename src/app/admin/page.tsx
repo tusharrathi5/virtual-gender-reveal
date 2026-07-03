@@ -10,6 +10,7 @@ import {
   Timestamp,
 } from "firebase/firestore";
 import { getAuth, signOut } from "firebase/auth";
+import { LogOut, Sparkles, ChevronLeft, ChevronRight } from "lucide-react";
 import { getFirebaseDb } from "@/lib/firebase";
 import { useAuth } from "@/lib/AuthContext";
 import {
@@ -219,7 +220,6 @@ function deriveOverallStatus(e: EnquiryData | null): {
   tone: "green" | "yellow" | "blue" | "gray";
 } {
   if (!e) return { label: "No reveal", tone: "gray" };
-  if (e.paymentStatus !== "completed") return { label: "Payment Pending", tone: "gray" };
   if (e.stages.eventCompleted) return { label: "Completed", tone: "green" };
   if (e.videoUrl || e.stages.videoGenerated)
     return { label: "Video Uploaded", tone: "green" };
@@ -248,6 +248,21 @@ export default function AdminPage() {
   const [videoModalMode, setVideoModalMode] = useState<"upload" | "delete">("upload");
   const [actionInProgress, setActionInProgress] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
+  const [loggingOut, setLoggingOut] = useState(false);
+
+  const handleLogout = async () => {
+    if (loggingOut) return;
+    setLoggingOut(true);
+    try {
+      await signOut(getAuth());
+      router.push("/login");
+    } catch (err) {
+      console.error("Logout failed:", err);
+    } finally {
+      setLoggingOut(false);
+    }
+  };
 
   const [searchTerm, setSearchTerm] = useState("");
   const [planFilter, setPlanFilter] = useState("all");
@@ -661,40 +676,50 @@ export default function AdminPage() {
 
   return (
     <div className="vgr-admin">
-      <aside className="vgr-sidebar">
-        <div className="vgr-brand">
-          <div className="vgr-brand-icon">
-            <SiteLogo className="vgr-brand-logo" />
+      <aside className={`flex flex-col w-[280px] bg-white border-r border-[#f1f1f5] fixed inset-y-0 left-0 z-40 p-6 transition-transform duration-300 ${isSidebarCollapsed ? "-translate-x-full" : "translate-x-0"}`}>
+        {/* Brand Logo */}
+        <a href="/" className="flex items-center gap-3 mb-8 group focus:outline-none focus:ring-2 focus:ring-[#3A9FE8] rounded-lg p-1">
+          <div className="w-10 h-10 rounded-xl overflow-hidden bg-white border border-[#f1f1f5] flex items-center justify-center shadow-sm group-hover:scale-105 transition-transform duration-200">
+            <img src="/Favicon-VGR.png" alt="VGR Logo" className="w-7 h-7 object-contain" />
           </div>
-          <div className="vgr-brand-text">
-            <div className="vgr-brand-name">
-              <span className="brand-gender">Gender</span>
-              <span className="brand-reveal">Reveal</span>
-            </div>
-            <div className="vgr-brand-sub">Admin Dashboard</div>
+          <div className="flex flex-col">
+            <span className="font-nunito font-extrabold text-lg leading-tight bg-gradient-to-r from-[#E8449A] to-[#3A9FE8] bg-clip-text text-transparent font-semibold">
+              Virtual Reveal
+            </span>
+            <span className="text-[10px] tracking-[0.2em] font-medium text-[#c2527a] uppercase font-nunito">
+              Admin
+            </span>
           </div>
-        </div>
+        </a>
 
-        <nav className="vgr-nav">
+        {/* Sidebar Nav Items */}
+        <nav className="flex-1 flex flex-col gap-1.5">
           {[
             { key: "users", label: "User Portal", count: users.length },
             { key: "deleted", label: "Deleted Users", count: deleted.length },
           ].map((item) => (
             <button
               key={item.key}
-              className={`vgr-nav-item ${activeTab === item.key ? "active" : ""}`}
               onClick={() => setActiveTab(item.key as AdminTab)}
+              className={`flex items-center justify-between w-full px-4 py-3 rounded-xl text-sm font-medium transition-all duration-200 ${
+                activeTab === item.key
+                  ? "bg-[#fafafd] text-[#111827] shadow-sm border border-[#f1f1f5]"
+                  : "text-[#6b7280] hover:text-[#111827] hover:bg-[#f9fafb]"
+              }`}
             >
-              <span className="vgr-nav-label">{item.label}</span>
-              <span className="vgr-nav-count">{item.count}</span>
+              <span>{item.label}</span>
+              <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-[#f1f1f5] text-[#6b7280]">
+                {item.count}
+              </span>
             </button>
           ))}
         </nav>
 
-        <div className="vgr-sidebar-footer">
-          <div className="vgr-account">
+        {/* User Profile & Sign Out bottom */}
+        <div className="border-t border-[#f1f1f5] pt-4 flex flex-col gap-3">
+          <div className="flex items-center gap-3 px-2">
             <div
-              className="vgr-account-avatar"
+              className="w-10 h-10 rounded-full flex items-center justify-center text-white font-bold text-sm shadow-inner shadow-black/10"
               style={{
                 background: avatarColor(firestoreUser.email || "admin"),
                 color: avatarTextColor(firestoreUser.email || "admin"),
@@ -702,31 +727,39 @@ export default function AdminPage() {
             >
               {getInitials("", firestoreUser.email || "Admin")}
             </div>
-            <div className="vgr-account-info">
-              <div className="vgr-account-name">Admin</div>
-              <div className="vgr-account-role">Business Owner</div>
+            <div className="flex flex-col min-w-0">
+              <span className="text-sm font-bold text-[#111827] truncate">
+                Admin
+              </span>
+              <span className="text-xs text-[#6b7280] truncate">
+                Business Owner
+              </span>
             </div>
-            <button
-              className="vgr-account-menu"
-              onClick={async () => {
-                if (!confirm("Sign out?")) return;
-                try {
-                  await signOut(getAuth());
-                } catch (err) {
-                  console.error(err);
-                }
-                router.push("/login");
-              }}
-              title="Sign out"
-              aria-label="Sign out"
-            >
-              Sign out
-            </button>
           </div>
+          <button
+            onClick={handleLogout}
+            disabled={loggingOut}
+            className="flex items-center gap-3 w-full px-4 py-3 rounded-xl text-sm font-medium text-red-500 hover:bg-red-50 transition-colors focus:outline-none focus:ring-2 focus:ring-red-300"
+          >
+            <LogOut className="w-5 h-5 text-red-400" />
+            {loggingOut ? "Signing out..." : "Sign Out"}
+          </button>
         </div>
       </aside>
 
-      <main className="vgr-main">
+      {/* Desktop Sidebar Toggle Button */}
+      <button
+        onClick={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
+        className="hidden lg:flex fixed top-6 z-50 w-8 h-8 rounded-full border border-[#f1f1f5] bg-white text-[#6b7280] hover:text-[#111827] shadow-sm items-center justify-center transition-all duration-300 hover:scale-105 focus:outline-none focus:ring-2 focus:ring-[#3A9FE8]"
+        style={{
+          left: isSidebarCollapsed ? "24px" : "264px"
+        }}
+      >
+        {isSidebarCollapsed ? <ChevronRight className="w-4 h-4" /> : <ChevronLeft className="w-4 h-4" />}
+      </button>
+
+      <div className={`flex-1 flex flex-col relative transition-[padding] duration-300 min-h-screen ${isSidebarCollapsed ? "lg:pl-0" : "lg:pl-[280px]"}`}>
+        <main className="vgr-main">
         <header className="vgr-page-header">
           <div>
             <h1 className="vgr-page-title">
@@ -894,6 +927,7 @@ export default function AdminPage() {
           <DeletedUsersPanel deleted={deleted} loadingData={loadingData} />
         )}
       </main>
+    </div>
 
       {selectedUser && (
         <UserProfileOverlay
@@ -1675,19 +1709,9 @@ function UserTableRow({
       </td>
       <td onClick={(ev) => ev.stopPropagation()}>
         {videoStatus === "uploaded" ? (
-          <div className="vgr-video-cell">
-            <span className="vgr-video-uploaded">
-              <span style={{ fontSize: 10 }}>OK</span> Video Uploaded
-            </span>
-            <button
-              className="vgr-video-edit"
-              onClick={onDeleteClick}
-              title="Delete video"
-              aria-label="Delete video"
-            >
-              Delete Video
-            </button>
-          </div>
+          <span className="vgr-pill vgr-pill-green">
+            Video Uploaded
+          </span>
         ) : e ? (
           <button className="vgr-video-upload-btn" onClick={onUploadClick}>
             <span style={{ fontSize: 12 }}>↑</span> Upload Video
