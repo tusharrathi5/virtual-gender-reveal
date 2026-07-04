@@ -196,7 +196,7 @@ export interface PlanDefinition {
 export const PLANS: PlanDefinition[] = [
   {
     id: "basic",
-    name: "Free Plan",
+    name: "Freemium",
     priceCents: 0,
     priceLabel: "Free",
     revealsGranted: 1,
@@ -205,18 +205,10 @@ export const PLANS: PlanDefinition[] = [
   {
     id: "premium",
     name: "Premium",
-    priceCents: 103,
-    priceLabel: "$1.03",
+    priceCents: 5999,
+    priceLabel: "$59.99",
     revealsGranted: 1,
     description: "The most loved plan for unforgettable memories.",
-  },
-  {
-    id: "custom",
-    name: "Custom",
-    priceCents: 65000,
-    priceLabel: "$650",
-    revealsGranted: 1,
-    description: "The ultimate experience for big celebrations.",
   },
 ];
 
