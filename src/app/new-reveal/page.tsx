@@ -499,11 +499,11 @@ export default function NewRevealPage() {
         />
         <div className="relative z-10">
         {/* Page Introduction */}
-        <div className="mb-8">
-          <h1 className="font-nunito font-extrabold text-3xl md:text-4xl tracking-tight bg-gradient-to-r from-[#E8449A] to-[#3A9FE8] bg-clip-text text-transparent mb-2">
+        <div className="mb-8 text-center flex flex-col items-center justify-center">
+          <h1 className="font-nunito font-extrabold text-3xl md:text-4xl tracking-tight bg-gradient-to-r from-[#E8449A] to-[#3A9FE8] bg-clip-text text-transparent mb-2 text-center">
             Create Your Reveal
           </h1>
-          <p className="text-sm md:text-base text-gray-500 max-w-2xl leading-relaxed font-medium">
+          <p className="text-sm md:text-base text-gray-500 max-w-2xl leading-relaxed font-medium text-center mx-auto">
             Tell us about your little one and we&apos;ll take care of the rest — secure
             revealer link, personalized video, and live broadcast to your loved ones.
           </p>
