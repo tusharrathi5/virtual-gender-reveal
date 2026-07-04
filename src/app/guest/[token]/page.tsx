@@ -239,29 +239,12 @@ export default function GuestInvitePage() {
 
   return (
     <>
-      <style>{`
-        .party-bg-video {
-          will-change: transform;
-          object-fit: fill;
-        }
-        @media (prefers-reduced-motion: reduce) {
-          .party-bg-video {
-            display: none !important;
-          }
-        }
-      `}</style>
-
-      <div className="relative min-h-screen overflow-x-hidden w-full font-sans antialiased text-[#1f2937] bg-gradient-to-tr from-[#E8449A]/10 via-white/80 to-[#3A9FE8]/10">
-        {/* Decorative Fixed Video Background */}
-        <video
-          src="/videos/party-page-background.mp4"
-          autoPlay
-          loop
-          muted
-          playsInline
-          controls={false}
-          aria-hidden="true"
-          className="party-bg-video fixed inset-0 w-full h-full object-fill z-0 pointer-events-none"
+      <div className="relative min-h-screen overflow-x-hidden w-full font-sans antialiased text-[#1f2937]">
+        {/* Decorative Fixed Background Image */}
+        <img
+          src="/images/reveal-page-background.png"
+          alt="Reveal Page Background"
+          className="fixed inset-0 w-full h-full object-cover z-0 pointer-events-none"
         />
         
         {/* Main Content (z-index 20) */}
