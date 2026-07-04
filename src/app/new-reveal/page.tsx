@@ -490,7 +490,14 @@ export default function NewRevealPage() {
 
   return (
     <DashboardShell activeTab="create" title="Create Your Reveal">
-      <div className="w-full">
+      <div className="w-full relative">
+        {/* Background Image for Create Reveal Page */}
+        <img
+          src="/images/reveal-page-background.png"
+          alt="Create Reveal Background"
+          className="fixed inset-0 w-full h-full object-cover z-0 pointer-events-none"
+        />
+        <div className="relative z-10">
         {/* Page Introduction */}
         <div className="mb-8">
           <h1 className="font-nunito font-extrabold text-3xl md:text-4xl tracking-tight bg-gradient-to-r from-[#E8449A] to-[#3A9FE8] bg-clip-text text-transparent mb-2">
@@ -1051,6 +1058,7 @@ export default function NewRevealPage() {
           <div className="w-full lg:col-span-1">
             {summaryCardComponent}
           </div>
+        </div>
         </div>
       </div>
     </DashboardShell>
