@@ -287,21 +287,42 @@ type PlanMeta = { id: string; name: string; price: number; priceLabel: string; c
 
 function ConfirmDialog({ plan, onConfirm, onCancel }: { plan: PlanMeta; onConfirm: () => void; onCancel: () => void }) {
   return (
-    <div style={{ position: "fixed", inset: 0, zIndex: 10000, display: "flex", alignItems: "center", justifyContent: "center", background: "rgba(5,3,5,0.88)", backdropFilter: "blur(14px)", fontFamily: "'Plus Jakarta Sans',sans-serif", animation: "fadeOverlay .2s ease-out" }}>
-      <div style={{ background: "linear-gradient(145deg,#140e14,#0e1218)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 20, padding: "40px 36px", maxWidth: 420, width: "90%", boxShadow: "0 30px 80px rgba(0,0,0,0.7)", animation: "slideUpDlg .3s ease-out" }}>
-        <div style={{ width: 10, height: 10, borderRadius: "50%", background: plan.color, boxShadow: `0 0 16px ${plan.color}80`, marginBottom: 20 }} />
-        <p style={{ fontSize: 11, letterSpacing: 3, textTransform: "uppercase", color: "rgba(245,239,245,0.4)", marginBottom: 12, fontFamily: "'Playfair Display',serif" }}>Payment Gateway</p>
-        <h2 style={{ fontFamily: "'Playfair Display',serif", fontSize: 28, fontWeight: 300, color: "#f5eff5", marginBottom: 8, lineHeight: 1.2 }}>
-          Taking you to payment gateway
-        </h2>
-        <p style={{ fontSize: 13, fontWeight: 300, color: "rgba(245,239,245,0.45)", lineHeight: 1.7, marginBottom: 32 }}>
-          You selected the {plan.name} plan at {plan.priceLabel}. Proceed to secure payment or cancel to return to the pricing plans.
-        </p>
-        <div style={{ display: "flex", gap: 12 }}>
-          <button onClick={onCancel} style={{ flex: 1, padding: "13px", background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.09)", borderRadius: 10, color: "rgba(245,239,245,0.45)", fontFamily: "'Plus Jakarta Sans',sans-serif", fontSize: 11, fontWeight: 400, letterSpacing: 1.5, textTransform: "uppercase", cursor: "pointer" }}>Go Back</button>
-          <button onClick={onConfirm} style={{ flex: 1, padding: "13px", background: `linear-gradient(135deg,${plan.color}e0,${plan.color}90)`, border: "none", borderRadius: 10, color: "#0a0608", fontFamily: "'Plus Jakarta Sans',sans-serif", fontSize: 11, fontWeight: 600, letterSpacing: 2, textTransform: "uppercase", cursor: "pointer" }}>
-            Proceed
-          </button>
+    <div className="fixed inset-0 z-[9999] bg-[#0a0b1e]/70 backdrop-blur-md flex items-center justify-center p-4 animate-fade-in font-jakarta">
+      <div className="bg-white border border-[#f1f1f5] rounded-3xl shadow-2xl p-6 md:p-8 max-w-md w-full relative overflow-hidden animate-fade-up">
+        {/* Decorative Glows matching login screen card */}
+        <div className="absolute top-0 left-0 w-32 h-32 bg-gradient-to-br from-[#E8449A]/15 to-transparent blur-xl pointer-events-none" />
+        <div className="absolute bottom-0 right-0 w-32 h-32 bg-gradient-to-tl from-[#3A9FE8]/15 to-transparent blur-xl pointer-events-none" />
+        
+        <div className="relative z-10">
+          <div className="flex items-center gap-2 mb-3">
+            <span className="text-[10px] font-bold text-[#E8449A] uppercase tracking-widest">Payment Gateway</span>
+            <div className="w-2.5 h-2.5 rounded-full" style={{ background: plan.color, boxShadow: `0 0 10px ${plan.color}` }} />
+          </div>
+          
+          <h2 className="font-nunito font-extrabold text-2xl text-gray-900 mb-3 leading-tight">
+            Taking you to payment gateway
+          </h2>
+          
+          <p className="text-sm text-gray-500 leading-relaxed font-semibold mb-6">
+            You selected the <strong className="text-gray-800">{plan.name}</strong> plan for <strong className="text-gray-800">{plan.priceLabel}</strong>. Proceed to secure Stripe Checkout or cancel to return to the pricing plans.
+          </p>
+          
+          <div className="flex items-center justify-end gap-3 mt-4">
+            <button
+              type="button"
+              className="border border-gray-200 text-[#374151] hover:bg-gray-50 rounded-xl py-2 px-4.5 font-bold text-xs uppercase tracking-wider transition-all focus:outline-none focus:ring-2 focus:ring-[#3A9FE8] cursor-pointer"
+              onClick={onCancel}
+            >
+              Cancel
+            </button>
+            <button
+              type="button"
+              className="bg-gradient-to-r from-[#E8449A] to-[#3A9FE8] text-white hover:opacity-90 active:scale-[0.98] rounded-xl py-2 px-5 font-bold text-xs shadow-md tracking-wider uppercase transition-all focus:outline-none focus:ring-2 focus:ring-[#3A9FE8] cursor-pointer"
+              onClick={onConfirm}
+            >
+              Proceed
+            </button>
+          </div>
         </div>
       </div>
     </div>
