@@ -6,6 +6,7 @@ import { FieldValue, Timestamp } from "firebase-admin/firestore";
 import CryptoJS from "crypto-js";
 import { saveGender } from "@/lib/secureGenderService";
 import { getAdminDb } from "@/lib/firebase-admin";
+import { validateDoctorToken } from "@/lib/doctorToken";
 
 function normalizeToken(rawToken: string): string {
   try {
@@ -15,21 +16,8 @@ function normalizeToken(rawToken: string): string {
   }
 }
 
-function decodeTokenPayload(token: string): { enquiryId: string; exp: number } | null {
-  try {
-    const [encoded] = token.split(".");
-    if (!encoded) return null;
-    const decoded = JSON.parse(Buffer.from(encoded, "base64url").toString("utf8"));
-    if (!decoded?.enquiryId || typeof decoded?.exp !== "number") return null;
-    if (Date.now() > decoded.exp) return null;
-    return { enquiryId: decoded.enquiryId, exp: decoded.exp };
-  } catch {
-    return null;
-  }
-}
-
 async function verifyActiveToken(token: string): Promise<{ enquiryId: string } | null> {
-  const payload = decodeTokenPayload(token);
+  const payload = validateDoctorToken(token);
   if (!payload) return null;
 
   const enquiryRef = getAdminDb().collection("enquiries").doc(payload.enquiryId);

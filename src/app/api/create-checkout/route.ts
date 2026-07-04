@@ -52,8 +52,35 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Plan not found." }, { status: 400 });
     }
 
-    // 3. Free plan OR Stripe not configured → activate directly (dev mode)
-    if (effectivePriceCents === 0 || !isStripeConfigured()) {
+    // 3. Free plan activation
+    if (effectivePriceCents === 0) {
+      const purchase = await activatePlan({
+        uid: session.uid,
+        planId: plan.id,
+        stripeSessionId: null,
+        stripePaymentIntentId: null,
+        amountPaidCents: 0,
+        currency: "usd",
+        status: "completed",
+      });
+
+      return NextResponse.json({
+        success: true,
+        purchaseId: purchase.purchaseId,
+        plan: plan.id,
+        message: launchOfferActive ? "Launch offer applied: Basic activated for free." : "Free plan activated.",
+      });
+    }
+
+    // Stripe pending/unconfigured dev mode fallback (Only allowed in local development)
+    if (!isStripeConfigured()) {
+      if (process.env.NODE_ENV !== "development") {
+        return NextResponse.json(
+          { error: "Stripe configuration is missing in the production environment." },
+          { status: 500 }
+        );
+      }
+
       const purchase = await activatePlan({
         uid: session.uid,
         planId: plan.id,
@@ -69,10 +96,7 @@ export async function POST(req: NextRequest) {
         devMode: true,
         purchaseId: purchase.purchaseId,
         plan: plan.id,
-        message:
-          effectivePriceCents === 0
-            ? (launchOfferActive ? "Launch offer applied: Basic activated for free." : "Free plan activated.")
-            : "Dev mode: plan activated without payment. Stripe integration pending.",
+        message: "Dev mode: plan activated without payment. Stripe integration pending.",
       });
     }
 
