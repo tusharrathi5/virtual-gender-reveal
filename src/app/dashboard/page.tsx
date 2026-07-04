@@ -839,7 +839,7 @@ function DashboardContent() {
     if (activatingPlan) return;
     setActivatingPlan(plan.id);
     setToast({
-      message: plan.priceCents > 0 ? "Taking you to the payment gateway..." : "Activating your free plan...",
+      message: plan.priceCents > 0 ? "Taking you to the payment gateway..." : "Activating your Freemium plan...",
       type: "info",
     });
     try {
@@ -1618,9 +1618,10 @@ function DashboardContent() {
                               >
                                 Resend
                               </button>
+                              {/* Hidden from UI as requested, but keeping functionality intact */}
                               <button
                                 onClick={() => manageGuest(guest.guestId, "revoke", latestReveal.id)}
-                                className="border border-red-100 text-red-500 hover:bg-red-50 font-bold text-xs uppercase tracking-wider rounded-lg px-2.5 py-1.5 transition-all focus:outline-none focus:ring-2 focus:ring-red-500"
+                                className="hidden"
                               >
                                 Revoke
                               </button>
@@ -1738,11 +1739,11 @@ function PlanSection({
 
       {upgrade && (
         <div className="bg-gradient-to-r from-[#FDE8F2] to-[#D6EAFE] border border-white rounded-2xl p-5 shadow-sm text-sm text-gray-700 leading-relaxed font-semibold">
-          🎉 You are on the Spark plan. Upgrade anytime for a cinematic reveal experience!
+          🎉 You are on the Freemium plan. Upgrade anytime for a cinematic reveal experience!
         </div>
       )}
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-2xl">
         {plans.map((plan) => {
           const isPremium = plan.id === "premium";
           const isCustom = plan.id === "custom";
@@ -1763,12 +1764,20 @@ function PlanSection({
 
               <div>
                 <h3 className="font-nunito font-extrabold text-xl text-gray-900 mb-2">{plan.name}</h3>
-                <div className="flex items-baseline gap-1 mb-4">
-                  <span className="text-3xl font-extrabold text-gray-900">
-                    {plan.priceCents === 0 ? "Free" : `$${(plan.priceCents / 100).toFixed(0)}`}
-                  </span>
-                  {plan.priceCents > 0 && (
-                    <span className="text-xs text-gray-400 font-semibold ml-0.5">one-time</span>
+                <div className="flex flex-col mb-4">
+                  {plan.id === "basic" && (
+                    <span className="text-xs line-through text-gray-400 font-bold mb-1">$29.99</span>
+                  )}
+                  <div className="flex items-baseline gap-1">
+                    <span className="text-3xl font-extrabold text-gray-900">
+                      {plan.id === "basic" ? "Free" : `$${(plan.priceCents / 100).toFixed(2)}`}
+                    </span>
+                    {plan.priceCents > 0 && (
+                      <span className="text-xs text-gray-400 font-semibold ml-0.5">one-time</span>
+                    )}
+                  </div>
+                  {plan.id === "basic" && (
+                    <span className="text-[10px] text-[#E8449A] font-bold mt-1.5 uppercase tracking-wider">Free for a limited time</span>
                   )}
                 </div>
                 <p className="text-xs text-gray-500 leading-relaxed font-semibold mb-5">{plan.description}</p>

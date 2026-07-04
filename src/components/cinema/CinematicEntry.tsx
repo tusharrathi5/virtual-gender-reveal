@@ -506,9 +506,8 @@ function LandingPage() {
           </div>
           <div className="pricing-grid fade-up">
             {[
-              { cardCls: "pnew-basic",   iconCls: "pic-pink",   icon: "🎈", nameCls: "pn-pink", name: "Free Plan", desc: "Everything you need for a simple & fun reveal!",   priceCls: "pp-pink", price: "0",   priceSub: "Free forever",     checkCls: "pnew-check-pink", feats: ["Basic reveal page", "Doctor secure link", "Up to 20 guests", "Email invitations", "7-day replay"], btnCls: "pbtn-pink",     btnLabel: "Start Free",           planId: "basic",    popular: false },
-              { cardCls: "pnew-premium", iconCls: "pic-purple", icon: "👑", nameCls: "pn-blue", name: "Premium", desc: "The most loved plan for unforgettable memories!", priceCls: "pp-blue", price: "1.03", priceSub: "One-time payment", checkCls: "pnew-check-blue", feats: ["Cinematic reveal video — made by us", "Live virtual party room", "Up to 200 guests", "Live chat & Boy/Girl polls", "Personalized guest invitations", "30-day replay window", "Custom overlay"], btnCls: "pbtn-gradient", btnLabel: "Choose Premium",        planId: "premium", popular: true  },
-              { cardCls: "pnew-custom",  iconCls: "pic-blue",   icon: "💎", nameCls: "pn-blue", name: "Custom",   desc: "The ultimate experience for big celebrations!",   priceCls: "pp-blue", price: "650", priceSub: "One-time payment", checkCls: "pnew-check-blue", feats: ["Bespoke reveal video story", "Unlimited guests", "Dedicated concierge", "Custom soundtrack", "Live on-call support", "Permanent family archive"],                                              btnCls: "pbtn-blue",     btnLabel: "Create Custom Reveal", planId: "custom",  popular: false },
+              { cardCls: "pnew-basic",   iconCls: "pic-pink",   icon: "🎈", nameCls: "pn-pink", name: "Freemium", desc: "Everything you need for a simple & fun reveal!",   priceCls: "pp-pink", price: "0",   priceSub: "Free for a limited time", checkCls: "pnew-check-pink", feats: ["Basic reveal page", "Doctor secure link", "Up to 20 guests", "Email invitations", "7-day replay"], btnCls: "pbtn-pink",     btnLabel: "Start Freemium",        planId: "basic",    popular: false },
+              { cardCls: "pnew-premium", iconCls: "pic-purple", icon: "👑", nameCls: "pn-blue", name: "Premium", desc: "The most loved plan for unforgettable memories!", priceCls: "pp-blue", price: "59.99", priceSub: "One-time payment", checkCls: "pnew-check-blue", feats: ["Cinematic reveal video — made by us", "Live virtual party room", "Up to 200 guests", "Live chat & Boy/Girl polls", "Personalized guest invitations", "30-day replay window", "Custom overlay"], btnCls: "pbtn-gradient", btnLabel: "Choose Premium",        planId: "premium", popular: true  },
             ].map((p, i) => (
               <div className={`pnew-card ${p.cardCls}`} key={i}>
                 {p.popular && <div className="pnew-popular-badge">⭐ MOST POPULAR</div>}
@@ -516,9 +515,18 @@ function LandingPage() {
                 <div className={`pnew-name ${p.nameCls}`}>{p.name}</div>
                 <div className="pnew-desc">{p.desc}</div>
                 <div className="pnew-price">
-                  <span className={`pnew-price-main ${p.priceCls}`}>
-                    <span className="pnew-price-curr">$</span><span className="pnew-price-amt">{p.price}</span>
-                  </span>
+                  {p.planId === "basic" ? (
+                    <div style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
+                      <span style={{ fontSize: "14px", textDecoration: "line-through", color: "#bbb", fontWeight: "bold" }}>$29.99</span>
+                      <span className={`pnew-price-main ${p.priceCls}`} style={{ marginTop: "4px" }}>
+                        <span className="pnew-price-curr">$</span><span className="pnew-price-amt">0</span>
+                      </span>
+                    </div>
+                  ) : (
+                    <span className={`pnew-price-main ${p.priceCls}`}>
+                      <span className="pnew-price-curr">$</span><span className="pnew-price-amt">{p.price}</span>
+                    </span>
+                  )}
                 </div>
                 <div className="pnew-price-sub">{p.priceSub}</div>
                 <div className="pnew-divider" />
@@ -911,7 +919,7 @@ nav#main-nav.solid{box-shadow:0 6px 28px rgba(0,0,0,0.14);}
 .pricing-title-line1{font-family:'Nunito',sans-serif;font-size:clamp(2rem,5vw,3.2rem);font-weight:900;color:#1a1a2e;display:block;line-height:1.1;}
 .pricing-title-line2{font-family:'Nunito',sans-serif;font-size:clamp(2rem,5vw,3.2rem);font-weight:900;display:block;line-height:1.1;background:linear-gradient(90deg,#E8449A,#3A9FE8);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;}
 .pricing-sub{font-size:1rem;color:#555;line-height:1.6;}
-.pricing-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:1.5rem;align-items:start;margin-bottom:2rem;}
+.pricing-grid{display:grid;grid-template-columns:repeat(2,1fr);max-w-[720px];margin:0 auto 2rem;gap:1.5rem;align-items:start;}
 .pnew-card{background:white;border-radius:24px;padding:2.4rem 1.8rem 2rem;position:relative;transition:transform 0.3s,box-shadow 0.3s;text-align:center;}
 .pnew-card:hover{transform:translateY(-6px);}
 .pnew-basic{border:2px solid #FFB8D8;box-shadow:0 8px 32px rgba(232,68,154,0.1);}
