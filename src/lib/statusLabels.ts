@@ -1,4 +1,4 @@
-﻿export type PaymentStatusValue = "pending" | "completed";
+export type PaymentStatusValue = "pending" | "completed";
 export type RevealVideoStatusValue = "in_progress" | "ready";
 export type AdminVideoStatusValue = "not_uploaded" | "uploaded";
 
@@ -72,9 +72,7 @@ export function derivePaymentStatusFromPurchases(
   const completed = purchases.some((purchase) => {
     if (purchase.status !== "completed") return false;
     if (!revealEnquiryId) return true;
-    if (purchase.revealEnquiryId === revealEnquiryId) return true;
-    if (purchase.revealEnquiryId === null || purchase.revealEnquiryId === undefined || purchase.revealEnquiryId === "") return true;
-    return false;
+    return purchase.revealEnquiryId === revealEnquiryId;
   });
 
   return completed ? "completed" : "pending";

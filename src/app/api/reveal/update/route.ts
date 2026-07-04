@@ -235,7 +235,7 @@ export async function POST(req: NextRequest) {
 
     const shouldSendRevealerLink =
       revealerEmailChanged ||
-      (existing.genderStatus !== "submitted" && !existing.doctorTokenHash);
+      existing.genderStatus !== "submitted";
 
     if (shouldSendRevealerLink) {
       const token = generateDoctorToken(body.enquiryId.trim());

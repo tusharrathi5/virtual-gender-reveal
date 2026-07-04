@@ -17,8 +17,12 @@ export function generateGuestToken(enquiryId: string, guestId: string): string {
 
 export function parseGuestToken(token: string): { enquiryId: string; guestId: string; exp: number } | null {
   try {
-    const [encoded] = token.split(".");
-    if (!encoded) return null;
+    const [encoded, sig] = token.split(".");
+    if (!encoded || !sig) return null;
+
+    const expectedSig = CryptoJS.HmacSHA256(encoded, SECRET).toString();
+    if (sig !== expectedSig) return null; // signature mismatch (tampered)
+
     const payload = JSON.parse(Buffer.from(encoded, "base64url").toString("utf8"));
     if (!payload?.enquiryId || !payload?.guestId || typeof payload?.exp !== "number") return null;
     if (Date.now() > payload.exp) return null;
