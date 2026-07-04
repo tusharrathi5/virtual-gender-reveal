@@ -1063,7 +1063,7 @@ nav#main-nav.solid{box-shadow:0 6px 28px rgba(0,0,0,0.14);}
 .footer-new-bottom{padding-top:1.6rem;border-top:1px solid rgba(0,0,0,0.07);display:flex;justify-content:space-between;flex-wrap:wrap;gap:1rem;font-size:0.74rem;color:#bbb;}
 @media(max-width:640px){.footer-new-top{flex-direction:column;gap:2rem;}.cta-bg-dec{font-size:3.5rem;}}
 /* ── Hero card mock — larger ── */
-.hero-title-img{width:100vw;height:auto;display:block;margin-bottom:1.2rem;filter:drop-shadow(0 0 18px rgba(255,255,255,0.9)) drop-shadow(0 0 40px rgba(255,255,255,0.5));}
+.hero-title-img{width:100%;max-width:480px;height:auto;display:block;margin-bottom:1.2rem;filter:drop-shadow(0 0 18px rgba(255,255,255,0.9)) drop-shadow(0 0 40px rgba(255,255,255,0.5));}
 .hero-card-mock{width:100%;max-width:720px;padding:3rem 2.8rem 2.2rem;transform:perspective(1000px) rotateY(-8deg) rotateX(4deg);transition:transform 0.4s ease;}
 .hero-card-mock:hover{transform:perspective(1000px) rotateY(-2deg) rotateX(1deg);}
 .hero-card-video{padding:0;overflow:hidden;}
@@ -1075,4 +1075,67 @@ nav#main-nav.solid{box-shadow:0 6px 28px rgba(0,0,0,0.14);}
 .mock-divider{margin:1.6rem 0 1.4rem;}
 .mock-controls{gap:1.2rem;}
 .mock-ctrl{width:52px;height:52px;font-size:1.4rem;}
+
+/* ── Mobile Layout Optimization Overrides ── */
+@media(max-width:768px){
+  .hiw-new-inner {
+    border-radius: 32px !important;
+    padding: 2.2rem 1.2rem !important;
+  }
+  .hiw-cards-row {
+    grid-template-columns: 1fr 1fr !important;
+    gap: 1.2rem !important;
+  }
+  .hiw-new-card {
+    padding: 1.5rem 1rem !important;
+  }
+  .hiw-feat-bar {
+    padding: 1.5rem 1.2rem !important;
+    grid-template-columns: 1fr !important;
+    gap: 1.2rem !important;
+  }
+  .hiw-feat-item {
+    justify-content: flex-start !important;
+  }
+  .pricing-section {
+    padding: 4rem 1.2rem 3rem !important;
+  }
+  .pnew-card {
+    padding: 2rem 1.2rem 1.8rem !important;
+  }
+  .pricing-trust {
+    padding: 1rem !important;
+    justify-content: center !important;
+    gap: 0.8rem !important;
+  }
+  .pricing-trust-divider {
+    display: none !important;
+  }
+  .testi-new-section {
+    padding: 4rem 1.2rem 2rem !important;
+  }
+  .testi-stats-bar {
+    grid-template-columns: 1fr !important;
+    padding: 1.5rem 1.2rem !important;
+    gap: 1.2rem !important;
+  }
+  .testi-new-card {
+    padding: 1.8rem 1.2rem !important;
+  }
+  .cta-new-section {
+    padding: 4rem 1.2rem !important;
+  }
+  .cta-new-box {
+    padding: 1.2rem !important;
+  }
+  .cta-new-btn {
+    padding: 0.9rem 2rem !important;
+    font-size: 0.95rem !important;
+  }
+}
+@media(max-width:480px){
+  .hiw-cards-row {
+    grid-template-columns: 1fr !important;
+  }
+}
 `;

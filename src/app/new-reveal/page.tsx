@@ -491,11 +491,16 @@ export default function NewRevealPage() {
   return (
     <DashboardShell activeTab="create" title="Create Your Reveal">
       <div className="w-full relative">
-        {/* Background Image for Create Reveal Page */}
+        {/* Background Image for Create Reveal Page (Desktop vs Mobile) */}
         <img
           src="/images/reveal-page-background.png"
           alt="Create Reveal Background"
-          className="fixed inset-0 w-full h-full object-cover z-0 pointer-events-none"
+          className="hidden md:block fixed inset-0 w-full h-full object-cover z-0 pointer-events-none"
+        />
+        <img
+          src="/images/reveal_image_mobile.jpeg"
+          alt="Create Reveal Background Mobile"
+          className="block md:hidden fixed inset-0 w-full h-full object-cover z-0 pointer-events-none"
         />
         <div className="relative z-10">
         {/* Page Introduction */}
