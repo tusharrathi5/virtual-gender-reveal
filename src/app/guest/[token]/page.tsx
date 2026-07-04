@@ -252,7 +252,7 @@ export default function GuestInvitePage() {
       `}</style>
 
       <div className="relative min-h-screen overflow-x-hidden w-full font-sans antialiased text-[#1f2937] bg-gradient-to-tr from-[#E8449A]/10 via-white/80 to-[#3A9FE8]/10">
-        {/* Decorative Fixed Video Background */}
+        {/* Decorative Fixed Video Background (Desktop only) */}
         <video
           src="/videos/party-page-background.mp4"
           autoPlay
@@ -261,7 +261,14 @@ export default function GuestInvitePage() {
           playsInline
           controls={false}
           aria-hidden="true"
-          className="party-bg-video fixed inset-0 w-full h-full object-fill z-0 pointer-events-none"
+          className="party-bg-video hidden md:block fixed inset-0 w-full h-full object-fill z-0 pointer-events-none"
+        />
+        
+        {/* Decorative Fixed Image Background (Mobile only) */}
+        <img
+          src="/images/party_page_mobile.jpeg"
+          alt="Party Background Mobile"
+          className="block md:hidden fixed inset-0 w-full h-full object-cover z-0 pointer-events-none"
         />
         
         {/* Main Content (z-index 20) */}
