@@ -3,7 +3,7 @@
 import type { FormEvent } from "react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useParams } from "next/navigation";
-import { Sparkles, Calendar, Send, Heart, Users, MessageSquare, Clock, Globe } from "lucide-react";
+import { Sparkles, Calendar, Send, Heart, Users, MessageSquare, Clock, Globe, Maximize } from "lucide-react";
 
 type Prediction = "boy" | "girl" | null;
 type ChatMessage = {
@@ -22,6 +22,18 @@ export default function GuestInvitePage() {
   const { token } = useParams<{ token: string }>();
   const encodedToken = useMemo(() => encodeURIComponent(token || ""), [token]);
   const chatEndRef = useRef<HTMLDivElement | null>(null);
+  const iframeContainerRef = useRef<HTMLDivElement | null>(null);
+
+  const toggleFullscreen = () => {
+    if (!iframeContainerRef.current) return;
+    if (!document.fullscreenElement) {
+      iframeContainerRef.current.requestFullscreen().catch((err) => {
+        console.error("Error attempting to enable fullscreen:", err);
+      });
+    } else {
+      document.exitFullscreen();
+    }
+  };
 
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
@@ -182,7 +194,7 @@ export default function GuestInvitePage() {
       startTime = Math.max(0, diffSeconds);
     }
     
-    return `https://iframe.videodelivery.net/${uid}?autoplay=true&controls=false&startTime=${startTime}`;
+    return `https://iframe.videodelivery.net/${uid}?autoplay=true&controls=false&muted=true&startTime=${startTime}`;
   }, [videoUrl, revealAtIso]);
   async function submitPrediction() {
     if (!prediction) return;
@@ -297,15 +309,29 @@ export default function GuestInvitePage() {
             <div className="absolute top-0 left-0 w-48 h-48 bg-[#E8449A]/15 blur-3xl pointer-events-none" />
             <div className="absolute bottom-0 right-0 w-48 h-48 bg-[#3A9FE8]/15 blur-3xl pointer-events-none" />
             
-            <div className="relative aspect-video w-full bg-slate-950/40">
+            <div ref={iframeContainerRef} className="relative aspect-video w-full bg-slate-950/40">
               {isLive && videoUrl ? (
-                <iframe
-                  src={streamEmbedUrl}
-                  title="Reveal Video"
-                  className="w-full h-full border-0"
-                  allow="accelerometer; gyroscope; autoplay; encrypted-media; picture-in-picture;"
-                  allowFullScreen
-                />
+                <>
+                  <iframe
+                    src={streamEmbedUrl}
+                    title="Reveal Video"
+                    className="w-full h-full border-0"
+                    allow="accelerometer; gyroscope; autoplay; encrypted-media; picture-in-picture;"
+                    allowFullScreen
+                  />
+                  {/* Floating Custom Fullscreen Button */}
+                  <div className="absolute right-4 bottom-4 z-30">
+                    <button
+                      type="button"
+                      onClick={toggleFullscreen}
+                      className="px-3 py-1.5 bg-slate-950/85 hover:bg-slate-950 backdrop-blur-md rounded-xl border border-white/20 text-white shadow-lg transition-all hover:scale-105 active:scale-95 cursor-pointer flex items-center gap-1.5 text-xs font-black"
+                      title="Toggle Fullscreen"
+                    >
+                      <Maximize className="w-3.5 h-3.5 text-[#3A9FE8]" />
+                      Fullscreen
+                    </button>
+                  </div>
+                </>
               ) : (
                 <div className="w-full h-full flex flex-col items-center justify-center text-center p-6 bg-transparent">
                   <div className="flex flex-col items-center gap-2">
