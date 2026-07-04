@@ -159,6 +159,31 @@ export default function GuestInvitePage() {
     return `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${text}&dates=${fmt(start)}/${fmt(end)}&ctz=${encodeURIComponent(revealTimezone)}&details=${details}`;
   }, [revealAtIso, parentName, revealTimezone]);
   const icsUrl = useMemo(() => `/api/guest/${encodedToken}/calendar.ics`, [encodedToken]);
+
+  const streamEmbedUrl = useMemo(() => {
+    if (!videoUrl) return "";
+    
+    let uid = "";
+    const parts = videoUrl.split("/");
+    for (const part of parts) {
+      const cleaned = part.replace(/\?.*/, "");
+      if (cleaned.length === 32 || cleaned.length === 36) {
+        uid = cleaned;
+        break;
+      }
+    }
+    
+    if (!uid) return videoUrl;
+    
+    let startTime = 0;
+    if (revealAtIso) {
+      const revealTime = new Date(revealAtIso).getTime();
+      const diffSeconds = Math.floor((Date.now() - revealTime) / 1000);
+      startTime = Math.max(0, diffSeconds);
+    }
+    
+    return `https://iframe.videodelivery.net/${uid}?autoplay=true&controls=false&startTime=${startTime}`;
+  }, [videoUrl, revealAtIso]);
   async function submitPrediction() {
     if (!prediction) return;
     setSubmitting(true);
@@ -275,7 +300,7 @@ export default function GuestInvitePage() {
             <div className="relative aspect-video w-full bg-slate-950/40">
               {isLive && videoUrl ? (
                 <iframe
-                  src={videoUrl}
+                  src={streamEmbedUrl}
                   title="Reveal Video"
                   className="w-full h-full border-0"
                   allow="accelerometer; gyroscope; autoplay; encrypted-media; picture-in-picture;"
