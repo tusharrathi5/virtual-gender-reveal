@@ -338,20 +338,12 @@ export default function DashboardShell({
         </button>
         {showVideoBackground && (
           <>
-            {/* Desktop Background Video */}
-            {!prefersReducedMotion ? (
-              <video
-                src="/videos/dashboard-loop.mp4"
-                autoPlay
-                muted
-                loop
-                playsInline
-                aria-hidden="true"
-                className="hidden md:block absolute inset-0 w-full h-full object-cover pointer-events-none z-0"
-              />
-            ) : (
-              <div className="hidden md:block absolute inset-0 bg-gradient-to-tr from-[#fbcfe8] via-[#e0f2fe] to-[#fafafd] z-0" />
-            )}
+            {/* Desktop Background Image (Replaced Video) */}
+            <img
+              src="/images/dashboard-background.png"
+              alt="Dashboard Background"
+              className="hidden md:block absolute inset-0 w-full h-full object-cover pointer-events-none z-0"
+            />
             
             {/* Mobile Background Image */}
             <img
