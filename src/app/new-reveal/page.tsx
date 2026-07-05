@@ -240,13 +240,6 @@ export default function NewRevealPage() {
           /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(revealerEmail.trim()) &&
           !!revealerName.trim());
 
-    if (mode === "announcement") {
-      return [
-        { label: "Reveal Type", isComplete: isStep1Complete },
-        { label: "Family Details", isComplete: isStep2Complete },
-      ];
-    }
-
     const isStep3Complete = !!revealAt;
     return [
       { label: "Reveal Type", isComplete: isStep1Complete },
@@ -287,13 +280,11 @@ export default function NewRevealPage() {
   function validateForm(): string | null {
     if (!parentName.trim()) return "Please enter the parent name(s).";
 
-    if (mode !== "announcement") {
-      if (!revealAt) return "Please pick a reveal date and time.";
-      const revealDate = new Date(revealAt);
-      if (isNaN(revealDate.getTime())) return "Invalid reveal date.";
-      if (revealDate.getTime() < Date.now() + 30 * 60 * 1000) {
-        return "Reveal time must be at least 30 minutes in the future.";
-      }
+    if (!revealAt) return "Please pick a reveal date and time.";
+    const revealDate = new Date(revealAt);
+    if (isNaN(revealDate.getTime())) return "Invalid reveal date.";
+    if (revealDate.getTime() < Date.now() + 30 * 60 * 1000) {
+      return "Reveal time must be at least 30 minutes in the future.";
     }
 
     if (!isBasicPlan) {
@@ -358,7 +349,7 @@ export default function NewRevealPage() {
           mode,
           parentName: parentName.trim(),
           photos: photoUrls,
-          revealAtMs: mode === "announcement" ? Date.now() : new Date(revealAt).getTime(),
+          revealAtMs: new Date(revealAt).getTime(),
           revealTimezone: timezone,
           dueDate: null,
           // Announcement mode
@@ -691,12 +682,7 @@ export default function NewRevealPage() {
                     <h3 className="font-black text-slate-900 text-base md:text-lg">Gender Announcement</h3>
                   </div>
                   <p className="text-xs md:text-sm text-gray-600 leading-relaxed font-semibold mt-1">
-                    You already know the gender.
-                    {isBasicPlan ? (
-                      <span className="block mt-1 text-[#3A9FE8] font-bold">✨ Available immediately after creation.</span>
-                    ) : (
-                      <span className="block mt-1 text-[#3A9FE8] font-bold">✨ Premium cinematic creations turnaround: 5–7 days.</span>
-                    )}
+                    You already know the gender. We create a cinematic announcement to share with family &amp; friends.
                   </p>
                   {mode === "announcement" && (
                     <div className="absolute top-4 right-4 w-5 h-5 rounded-full bg-[#3A9FE8] flex items-center justify-center">
@@ -916,8 +902,7 @@ export default function NewRevealPage() {
             )}
 
             {/* Section 4: Reveal Schedule */}
-            {mode !== "announcement" && (
-              <div className="bg-white border border-[#f1f1f5] rounded-2xl p-6 md:p-8 shadow-sm space-y-6">
+            <div className="bg-white border border-[#f1f1f5] rounded-2xl p-6 md:p-8 shadow-sm space-y-6">
                 <h2 className="text-xs font-bold text-gray-400 uppercase tracking-widest border-b border-[#f1f1f5] pb-3 mb-1 flex items-center gap-2">
                   <Calendar className="w-4 h-4 text-[#3A9FE8]" />
                   {isBasicPlan ? "3." : "4."} Reveal schedule
@@ -1053,7 +1038,6 @@ export default function NewRevealPage() {
                   </div>
                 </div>
               </div>
-            )}
 
             {/* Section 5: Revealer Details */}
             {mode === "reveal" && (() => {
