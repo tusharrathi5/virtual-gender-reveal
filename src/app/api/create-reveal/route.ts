@@ -97,7 +97,10 @@ export async function POST(req: NextRequest) {
     babyNameBoy,
     revealerEmail,
     revealerRelation,
+    revealerName,
   } = body;
+
+  const parsedRevealAtMs = mode === "announcement" ? (revealAtMs || Date.now()) : revealAtMs;
 
   // 3. Validate — bail early, no Firestore writes yet
   const validationError = validateCreateRevealInput({
@@ -105,11 +108,12 @@ export async function POST(req: NextRequest) {
     mode,
     parentName,
     photos,
-    revealAtMs,
+    revealAtMs: parsedRevealAtMs,
     revealTimezone,
     announcementGender,
     revealerEmail,
     revealerRelation,
+    revealerName,
   });
   if (validationError) {
     // Photos may already be in Storage — clean them up since we're rejecting
@@ -139,7 +143,7 @@ export async function POST(req: NextRequest) {
       mode: validatedMode,
       parentName: validatedParentName,
       photos: validatedPhotos,
-      revealAtMs: revealAtMs!,
+      revealAtMs: parsedRevealAtMs!,
       revealTimezone: revealTimezone!,
       dueDate: dueDate?.trim() || null,
       initialStages: INITIAL_STAGES,
@@ -148,6 +152,7 @@ export async function POST(req: NextRequest) {
       babyNameBoy: validatedMode === "reveal" ? (babyNameBoy?.trim() || null) : null,
       revealerEmail: validatedMode === "reveal" ? revealerEmail!.trim().toLowerCase() : null,
       revealerRelation: validatedMode === "reveal" ? revealerRelation! : null,
+      revealerName: validatedMode === "reveal" ? (revealerName?.trim() || null) : null,
     });
 
     // 5. Announcement mode — encrypt + save the known gender
@@ -172,6 +177,7 @@ export async function POST(req: NextRequest) {
           relationLabel: relationToLabel(revealerRelation!),
           revealUrl,
           enquiryId: validatedEnquiryId,
+          revealerName: (revealerName || "").trim() || undefined,
         });
       } catch (emailErr) {
         revealerEmailSent = false;
@@ -274,6 +280,7 @@ function validateCreateRevealInput(input: {
   announcementGender?: GenderValue;
   revealerEmail?: string;
   revealerRelation?: RevealerRelation;
+  revealerName?: string;
 }): string | null {
   const {
     enquiryId,
@@ -285,6 +292,7 @@ function validateCreateRevealInput(input: {
     announcementGender,
     revealerEmail,
     revealerRelation,
+    revealerName,
   } = input;
 
   // Basic presence checks
@@ -303,11 +311,17 @@ function validateCreateRevealInput(input: {
   if (photos.some((url) => typeof url !== "string" || !/^https?:\/\//.test(url))) {
     return "Invalid photo URL format.";
   }
-  if (typeof revealAtMs !== "number" || isNaN(revealAtMs)) {
-    return "Invalid reveal time.";
-  }
-  if (revealAtMs < Date.now() + 30 * 60 * 1000) {
-    return "Reveal time must be at least 30 minutes in the future.";
+  if (mode !== "announcement") {
+    if (typeof revealAtMs !== "number" || isNaN(revealAtMs)) {
+      return "Invalid reveal time.";
+    }
+    if (revealAtMs < Date.now() + 30 * 60 * 1000) {
+      return "Reveal time must be at least 30 minutes in the future.";
+    }
+  } else {
+    if (typeof revealAtMs !== "number" || isNaN(revealAtMs)) {
+      return "Invalid reveal time.";
+    }
   }
   if (!revealTimezone || typeof revealTimezone !== "string") {
     return "Timezone is required.";
@@ -319,6 +333,9 @@ function validateCreateRevealInput(input: {
       return "Please select the baby's gender.";
     }
   } else {
+    if (!revealerName || typeof revealerName !== "string" || !revealerName.trim()) {
+      return "Revealer's name is required.";
+    }
     if (!revealerEmail || typeof revealerEmail !== "string" || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(revealerEmail.trim())) {
       return "Please provide a valid revealer email.";
     }

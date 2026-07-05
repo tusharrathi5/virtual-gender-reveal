@@ -5,8 +5,9 @@ import { NextRequest, NextResponse } from "next/server";
 import { FieldValue, Timestamp } from "firebase-admin/firestore";
 import CryptoJS from "crypto-js";
 import { saveGender } from "@/lib/secureGenderService";
-import { getAdminDb } from "@/lib/firebase-admin";
+import { getAdminDb, getAdminAuth } from "@/lib/firebase-admin";
 import { validateDoctorToken } from "@/lib/doctorToken";
+import { sendParentGenderAlertEmail } from "@/lib/resendEmail";
 
 function normalizeToken(rawToken: string): string {
   try {
@@ -66,6 +67,10 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ tok
 
     const nowIso = new Date().toISOString();
     const enquiryRef = getAdminDb().collection("enquiries").doc(verified.enquiryId);
+    
+    const snap = await enquiryRef.get();
+    const data = snap.data();
+
     await enquiryRef.update({
       doctorTokenHash: "",
       doctorConfirmedAt: nowIso,
@@ -84,9 +89,41 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ tok
       createdAt: FieldValue.serverTimestamp(),
     });
 
+    if (data) {
+      try {
+        const userRecord = await getAdminAuth().getUser(data.userId);
+        const parentEmail = userRecord.email;
+        const relationLabels: Record<string, string> = {
+          doctor: "doctor",
+          relative: "relative",
+          friend: "friend",
+          other: "designated revealer"
+        };
+        const relationLabel = relationLabels[data.revealerRelation] || "revealer";
+        const appUrl = getAppUrl(req);
+        
+        if (parentEmail) {
+          await sendParentGenderAlertEmail({
+            to: parentEmail,
+            parentName: data.parentName || "Parent",
+            revealerRelation: relationLabel,
+            dashboardUrl: `${appUrl}/dashboard`,
+          });
+        }
+      } catch (parentEmailErr) {
+        console.error("[doctor-token][POST] Failed to send parent gender alert email:", parentEmailErr);
+      }
+    }
+
     return NextResponse.json({ success: true });
   } catch (err) {
     console.error("[doctor-token][POST]", err);
     return NextResponse.json({ error: "Server error submitting gender" }, { status: 500 });
   }
+}
+
+function getAppUrl(req: NextRequest): string {
+  const host = req.headers.get("host") || "localhost:3000";
+  const proto = req.headers.get("x-forwarded-proto") || "http";
+  return `${proto}://${host}`;
 }

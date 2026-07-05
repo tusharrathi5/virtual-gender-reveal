@@ -22,6 +22,7 @@ export interface CreateRevealParams {
   babyNameBoy: string | null;
   revealerEmail: string | null;
   revealerRelation: RevealerRelation | null;
+  revealerName: string | null;
 }
 
 export interface CreateRevealResult {
@@ -64,6 +65,7 @@ export async function createRevealAndConsumeEntitlement(
     babyNameBoy,
     revealerEmail,
     revealerRelation,
+    revealerName,
   } = params;
 
   const db = getAdminDb();
@@ -170,7 +172,7 @@ export async function createRevealAndConsumeEntitlement(
       babyNameBoy,
       revealerEmail,
       revealerRelation,
-      revealerName: null,
+      revealerName: revealerName?.trim() || null,
       createdAt: FieldValue.serverTimestamp(),
       updatedAt: FieldValue.serverTimestamp(),
     });

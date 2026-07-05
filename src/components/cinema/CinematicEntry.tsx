@@ -59,7 +59,7 @@ const CONFETTI_PIECES = Array.from({ length: 22 }, (_, i) => ({
 
 export default function CinematicEntry() {
   // ✅ Check localStorage on first render — skip intro if seen in last 24hrs
-  const [scene, setScene] = useState<number>(() => hasSeenIntro() ? 6 : 0);
+  const [scene, setScene] = useState<number>(6);
   const [exiting, setExiting] = useState(false);
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 

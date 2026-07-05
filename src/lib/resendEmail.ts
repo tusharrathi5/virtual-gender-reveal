@@ -17,6 +17,14 @@ export interface SendDoctorInviteParams {
   relationLabel: string;
   revealUrl: string;
   enquiryId: string;
+  revealerName?: string;
+}
+
+export interface SendParentGenderAlertEmailParams {
+  to: string;
+  parentName: string;
+  revealerRelation: string;
+  dashboardUrl: string;
 }
 
 export interface SendWelcomeEmailParams {
@@ -137,21 +145,62 @@ export async function sendDoctorInviteEmail(params: SendDoctorInviteParams): Pro
   const parentName = escapeHtml(params.parentName);
   const relationLabel = escapeHtml(params.relationLabel);
   const revealUrl = escapeHtml(params.revealUrl);
+  const revealerName = params.revealerName ? escapeHtml(params.revealerName) : "there";
 
-  const html = `
-    <div style="font-family:Arial,sans-serif;line-height:1.6;color:#111">
-      <h2 style="margin:0 0 12px">Virtual Gender Reveal Invitation</h2>
-      <p>${parentName} invited you as their ${relationLabel} to securely submit the baby's gender.</p>
-      <p>Please use this one-time secure link:</p>
-      <p><a href="${revealUrl}">${revealUrl}</a></p>
-      <p>This link expires in 7 days.</p>
-      <p style="color:#666;font-size:12px">Enquiry ID: ${escapeHtml(params.enquiryId)}</p>
-    </div>
-  `;
+  const baseUrl = new URL(params.revealUrl).origin;
+  const logoUrl = `${baseUrl}/Favicon-VGR.png`;
+  const bannerUrl = `${baseUrl}/images/image-for-email.png`;
+
+  const html = buildVgrEmailTemplateHtml({
+    logoUrl,
+    bannerUrl,
+    badgeText: "Secure Gender Submission",
+    headingHtml: `<span style="color: #E8449A;">Secure</span> <span style="color: #3A9FE8;">Gender Link</span>`,
+    greetingText: `Hi ${revealerName},`,
+    messageHtml: `<p style="margin: 0 0 12px 0;"><strong>${parentName}</strong> has invited you as their <strong>${relationLabel}</strong> to securely submit their baby's gender for their upcoming virtual reveal party.</p>
+                  <p style="margin: 0 0 12px 0;">Please click the button below to access the secure, encrypted submission portal. The parents will not be notified of the gender, preserving the surprise!</p>
+                  <p style="margin: 0; color: #ef4444; font-size: 13px; font-weight: 600;">⚠️ This secure link expires in 7 days.</p>`,
+    revealDateLabel: "Gender Submission Portal",
+    revealTimeLabel: "Click below to submit",
+    revealTimezone: "Secure connection",
+    primaryCtaUrl: revealUrl,
+    primaryCtaText: "SUBMIT THE GENDER",
+  });
 
   await sendEmail({
     to: params.to,
-    subject: "Secure Gender Submission Link",
+    subject: `Secure Gender Submission for ${params.parentName}`,
+    html,
+  });
+}
+
+export async function sendParentGenderAlertEmail(params: SendParentGenderAlertEmailParams): Promise<void> {
+  const parentName = escapeHtml(params.parentName);
+  const relationLabel = escapeHtml(params.revealerRelation);
+  const dashboardUrl = escapeHtml(params.dashboardUrl);
+
+  const baseUrl = new URL(params.dashboardUrl).origin;
+  const logoUrl = `${baseUrl}/Favicon-VGR.png`;
+  const bannerUrl = `${baseUrl}/images/image-for-email.png`;
+
+  const html = buildVgrEmailTemplateHtml({
+    logoUrl,
+    bannerUrl,
+    badgeText: "Gender Submitted",
+    headingHtml: `<span style="color: #E8449A;">Ready</span> <span style="color: #3A9FE8;">to Reveal!</span> ✦`,
+    greetingText: `Hi ${parentName},`,
+    messageHtml: `<p style="margin: 0 0 12px 0;">Great news! Your <strong>${relationLabel}</strong> has successfully submitted your baby's gender. Everything is locked in and ready for your big reveal event!</p>
+                  <p style="margin: 0;">You can view the countdown, invite guests, and manage your broadcast link directly from your dashboard.</p>`,
+    revealDateLabel: "Gender Locked & Encrypted",
+    revealTimeLabel: "Ready for broadcast",
+    revealTimezone: "Surprise preserved",
+    primaryCtaUrl: dashboardUrl,
+    primaryCtaText: "GO TO DASHBOARD",
+  });
+
+  await sendEmail({
+    to: params.to,
+    subject: "Your revealer has submitted the baby's gender!",
     html,
   });
 }
