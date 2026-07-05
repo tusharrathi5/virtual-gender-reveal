@@ -106,15 +106,11 @@ function validateInput(
     return "Invalid photo URL format.";
   }
 
-  if (mode !== "announcement") {
-    if (typeof revealAtMs !== "number" || Number.isNaN(revealAtMs)) return "Invalid reveal time.";
-    const previousMs = existingRevealAt?.getTime() ?? 0;
-    const revealTimeChanged = Math.abs(previousMs - revealAtMs) > 60 * 1000;
-    if (revealTimeChanged && revealAtMs < Date.now() + 30 * 60 * 1000) {
-      return "Reveal time must be at least 30 minutes in the future.";
-    }
-  } else {
-    if (typeof revealAtMs !== "number" || Number.isNaN(revealAtMs)) return "Invalid reveal time.";
+  if (typeof revealAtMs !== "number" || Number.isNaN(revealAtMs)) return "Invalid reveal time.";
+  const previousMs = existingRevealAt?.getTime() ?? 0;
+  const revealTimeChanged = Math.abs(previousMs - revealAtMs) > 60 * 1000;
+  if (revealTimeChanged && revealAtMs < Date.now() + 30 * 60 * 1000) {
+    return "Reveal time must be at least 30 minutes in the future.";
   }
 
   if (!revealTimezone || typeof revealTimezone !== "string") return "Timezone is required.";
@@ -175,9 +171,6 @@ export async function POST(req: NextRequest) {
   const previousMode: EnquiryMode = existing.mode === "announcement" ? "announcement" : "reveal";
   const existingRevealAt = toDate(existing.revealAt);
 
-  if (body.mode === "announcement") {
-    body.revealAtMs = existingRevealAt?.getTime() ?? Date.now();
-  }
 
   const validationError = validateInput(body, existingRevealAt, previousMode);
   if (validationError) return NextResponse.json({ error: validationError }, { status: 400 });

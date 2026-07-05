@@ -100,7 +100,7 @@ export async function POST(req: NextRequest) {
     revealerName,
   } = body;
 
-  const parsedRevealAtMs = mode === "announcement" ? (revealAtMs || Date.now()) : revealAtMs;
+  const parsedRevealAtMs = revealAtMs;
 
   // 3. Validate — bail early, no Firestore writes yet
   const validationError = validateCreateRevealInput({
@@ -311,17 +311,11 @@ function validateCreateRevealInput(input: {
   if (photos.some((url) => typeof url !== "string" || !/^https?:\/\//.test(url))) {
     return "Invalid photo URL format.";
   }
-  if (mode !== "announcement") {
-    if (typeof revealAtMs !== "number" || isNaN(revealAtMs)) {
-      return "Invalid reveal time.";
-    }
-    if (revealAtMs < Date.now() + 30 * 60 * 1000) {
-      return "Reveal time must be at least 30 minutes in the future.";
-    }
-  } else {
-    if (typeof revealAtMs !== "number" || isNaN(revealAtMs)) {
-      return "Invalid reveal time.";
-    }
+  if (typeof revealAtMs !== "number" || isNaN(revealAtMs)) {
+    return "Invalid reveal time.";
+  }
+  if (revealAtMs < Date.now() + 30 * 60 * 1000) {
+    return "Reveal time must be at least 30 minutes in the future.";
   }
   if (!revealTimezone || typeof revealTimezone !== "string") {
     return "Timezone is required.";
