@@ -1070,10 +1070,12 @@ function DashboardContent() {
         {/* Recent Reveals List or Empty State */}
         {reveals.length > 0 ? (
           <section className="space-y-6">
-            <h2 className="text-xs font-bold text-gray-400 uppercase tracking-widest border-b border-[#f1f1f5] pb-3 mb-1 flex items-center gap-2">
-              <Heart className="w-4 h-4 text-[#E8449A]" />
-              Your Reveals
-            </h2>
+            <div className="bg-white/85 backdrop-blur-md border border-white/60 rounded-2xl p-4 shadow-sm mb-4">
+              <h2 className="text-xs font-bold text-gray-500 uppercase tracking-widest flex items-center gap-2">
+                <Heart className="w-4 h-4 text-[#E8449A]" />
+                Your Reveals
+              </h2>
+            </div>
 
             <div className="space-y-6">
               {reveals.map((reveal) => {
@@ -1402,12 +1404,12 @@ function DashboardContent() {
         {/* Guest Invites Portal */}
         {latestReveal && (
           <section className="space-y-6">
-            <div className="border-b border-[#f1f1f5] pb-3 mb-1">
-              <h2 className="text-xs font-bold text-gray-400 uppercase tracking-widest flex items-center gap-2">
+            <div className="bg-white/85 backdrop-blur-md border border-white/60 rounded-2xl p-4 shadow-sm mb-4">
+              <h2 className="text-xs font-bold text-gray-500 uppercase tracking-widest flex items-center gap-2">
                 <Users className="w-4 h-4 text-[#3A9FE8]" />
                 Invite Guests
               </h2>
-              <p className="text-xs text-gray-500 font-medium mt-1">
+              <p className="text-xs text-gray-600 font-semibold mt-1">
                 Add your guests or import a spreadsheet. We’ll send them a secure invite link.
               </p>
             </div>
