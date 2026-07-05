@@ -42,6 +42,16 @@ export async function GET(_: NextRequest, { params }: { params: Promise<{ token:
     .sort((a, b) => (b.updatedAt?.toDate?.().getTime?.() || 0) - (a.updatedAt?.toDate?.().getTime?.() || 0))
     .slice(0, 20)
     .map((m) => ({ name: m.name || "Guest", message: m.message || "" }));
+  let boyVotes = 0;
+  let girlVotes = 0;
+  feedSnap.docs.forEach((doc) => {
+    const d = doc.data() as { prediction?: string | null; isAdminPartyLink?: boolean };
+    if (!d.isAdminPartyLink) {
+      if (d.prediction === "boy") boyVotes++;
+      if (d.prediction === "girl") girlVotes++;
+    }
+  });
+
   const invitedGuests = feedSnap.docs
     .map((d) => d.data() as { name?: string; inviteStatus?: string; isAdminPartyLink?: boolean; createdAt?: { toDate?: () => Date } })
     .filter((m) => !m.isAdminPartyLink && m.inviteStatus !== "revoked")
@@ -62,6 +72,11 @@ export async function GET(_: NextRequest, { params }: { params: Promise<{ token:
       isLive,
       isCompleted,
       videoUrl: isLive ? data.videoUrl || null : null,
+    },
+    votes: {
+      boy: boyVotes,
+      girl: girlVotes,
+      total: boyVotes + girlVotes,
     },
     feed,
     invitedGuests,

@@ -6,6 +6,43 @@ import { useParams } from "next/navigation";
 import { Sparkles, Calendar, Send, Heart, Users, MessageSquare, Clock, Globe, Maximize } from "lucide-react";
 
 type Prediction = "boy" | "girl" | null;
+
+const BabyBoySvg = ({ className }: { className?: string }) => (
+  <svg viewBox="0 0 100 100" className={className} fill="none" xmlns="http://www.w3.org/2000/svg">
+    <circle cx="50" cy="50" r="32" fill="#FFE5D9" stroke="#E5C3B3" strokeWidth="2"/>
+    <circle cx="38" cy="45" r="3" fill="#333"/>
+    <circle cx="62" cy="45" r="3" fill="#333"/>
+    <path d="M35 39 C 38 37, 41 39, 41 39" stroke="#333" strokeWidth="1.5" strokeLinecap="round"/>
+    <path d="M65 39 C 62 37, 59 39, 59 39" stroke="#333" strokeWidth="1.5" strokeLinecap="round"/>
+    <circle cx="32" cy="53" r="5" fill="#FFB3B3" opacity="0.6"/>
+    <circle cx="68" cy="53" r="5" fill="#FFB3B3" opacity="0.6"/>
+    <circle cx="50" cy="58" r="9" fill="#3A9FE8"/>
+    <circle cx="50" cy="58" r="5" fill="#90CDF4"/>
+    <circle cx="50" cy="68" r="6" stroke="#3A9FE8" strokeWidth="2.5" fill="none"/>
+    <path d="M20 40 C 20 20, 80 20, 80 40 Z" fill="#3A9FE8"/>
+    <circle cx="50" cy="18" r="6" fill="#90CDF4"/>
+    <rect x="18" y="36" width="64" height="6" rx="3" fill="#90CDF4"/>
+  </svg>
+);
+
+const BabyGirlSvg = ({ className }: { className?: string }) => (
+  <svg viewBox="0 0 100 100" className={className} fill="none" xmlns="http://www.w3.org/2000/svg">
+    <circle cx="50" cy="50" r="32" fill="#FFE5D9" stroke="#E5C3B3" strokeWidth="2"/>
+    <circle cx="38" cy="45" r="3" fill="#333"/>
+    <circle cx="62" cy="45" r="3" fill="#333"/>
+    <path d="M35 39 C 38 37, 41 39, 41 39" stroke="#333" strokeWidth="1.5" strokeLinecap="round"/>
+    <path d="M65 39 C 62 37, 59 39, 59 39" stroke="#333" strokeWidth="1.5" strokeLinecap="round"/>
+    <circle cx="32" cy="53" r="5" fill="#FFB3B3" opacity="0.6"/>
+    <circle cx="68" cy="53" r="5" fill="#FFB3B3" opacity="0.6"/>
+    <circle cx="50" cy="58" r="9" fill="#E8449A"/>
+    <circle cx="50" cy="58" r="5" fill="#FBB6CE"/>
+    <circle cx="50" cy="68" r="6" stroke="#E8449A" strokeWidth="2.5" fill="none"/>
+    <path d="M26 24 C 20 20, 20 36, 32 30 Z" fill="#E8449A"/>
+    <path d="M38 24 C 44 20, 44 36, 32 30 Z" fill="#E8449A"/>
+    <circle cx="32" cy="29" r="4.5" fill="#FFF"/>
+  </svg>
+);
+
 type ChatMessage = {
   id: string;
   name: string;
@@ -61,6 +98,7 @@ export default function GuestInvitePage() {
   const [prediction, setPrediction] = useState<Prediction>(null);
   const [message, setMessage] = useState("");
   const [nowMs, setNowMs] = useState(Date.now());
+  const [votes, setVotes] = useState<{ boy: number; girl: number; total: number }>({ boy: 0, girl: 0, total: 0 });
 
   useEffect(() => {
     const id = setInterval(() => setNowMs(Date.now()), 1000);
@@ -85,6 +123,10 @@ export default function GuestInvitePage() {
     setVideoUrl(data?.reveal?.videoUrl || null);
     setFeed(Array.isArray(data?.feed) ? data.feed : []);
     setInvitedGuests(Array.isArray(data?.invitedGuests) ? data.invitedGuests : []);
+
+    if (data?.votes) {
+      setVotes(data.votes);
+    }
 
     if (data?.response?.prediction === "boy" || data?.response?.prediction === "girl") {
       setPrediction(data.response.prediction);
@@ -196,6 +238,12 @@ export default function GuestInvitePage() {
     
     return `https://iframe.videodelivery.net/${uid}?autoplay=true&controls=false&muted=true&startTime=${startTime}`;
   }, [videoUrl, revealAtIso]);
+
+  const boyVotes = votes?.boy || 0;
+  const girlVotes = votes?.girl || 0;
+  const totalVotes = votes?.total || 0;
+  const boyPct = totalVotes > 0 ? Math.round((boyVotes / totalVotes) * 100) : 50;
+  const girlPct = totalVotes > 0 ? 100 - boyPct : 50;
   async function submitPrediction() {
     if (!prediction) return;
     setSubmitting(true);
@@ -213,6 +261,27 @@ export default function GuestInvitePage() {
     }
     setDone(true);
     setSubmitting(false);
+  }
+
+  async function submitVote(gender: "boy" | "girl") {
+    setPrediction(gender);
+    setSubmitting(true);
+    setError(null);
+    const res = await fetch(`/api/guest/${encodedToken}`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ prediction: gender, message: "" }),
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      setError(data?.error || "Failed to save your vote.");
+      setPrediction(null);
+      setSubmitting(false);
+      return;
+    }
+    setDone(true);
+    setSubmitting(false);
+    await loadInvite();
   }
 
   async function submitChat(event: FormEvent<HTMLFormElement>) {
@@ -275,6 +344,16 @@ export default function GuestInvitePage() {
         <div className="relative z-20 max-w-[1080px] mx-auto px-4 py-8 md:py-12 flex flex-col gap-6">
           {/* 1. PARTY HERO HEADER (Glassmorphic Transparent - Full Width) */}
           <header className="relative overflow-hidden bg-white/10 backdrop-blur-xl border border-white/20 shadow-2xl rounded-[24px] p-6 md:p-8 text-center flex flex-col items-center gap-4 w-full">
+            {/* Home Navigation Button */}
+            <div className="absolute top-4 left-4 z-30">
+              <a
+                href="/"
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white/25 hover:bg-white/40 backdrop-blur-md border border-white/30 rounded-xl text-[10px] md:text-xs font-black text-slate-800 transition-all hover:scale-105 active:scale-95 shadow-sm"
+              >
+                🏠 Home
+              </a>
+            </div>
+
             {/* Ambient Glows */}
             <div className="absolute top-0 left-0 w-32 h-full bg-[#E8449A]/10 blur-2xl pointer-events-none" />
             <div className="absolute top-0 right-0 w-32 h-full bg-[#3A9FE8]/10 blur-2xl pointer-events-none" />
@@ -384,10 +463,9 @@ export default function GuestInvitePage() {
               )}
             </div>
           </section>
-
-          {/* Row 3: Predictions & Guest Wishes (Two equal-sized boxes side-by-side) */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 w-full items-stretch animate-fade-in">
-            {/* Box 3A: Prediction Form (Glassmorphic) */}
+                {/* Row 3: Predictions / Voting (Full Width Glassmorphic Card) */}
+          <div className="grid grid-cols-1 gap-6 w-full items-stretch animate-fade-in">
+            {/* Box 3A: Prediction / Voting Form */}
             <section className="bg-white/15 backdrop-blur-xl border border-white/25 shadow-2xl rounded-[24px] p-6 flex flex-col justify-between gap-4 w-full">
               <div className="flex flex-col gap-4 w-full">
                 <div className="flex items-center gap-2 border-b border-white/10 pb-3">
@@ -395,7 +473,25 @@ export default function GuestInvitePage() {
                     <Sparkles className="w-4.5 h-4.5 text-[#E8449A]" />
                   </div>
                   <div>
-                    <h2 className="text-lg font-black text-slate-900">Prediction</h2>
+                    <h2 className="text-lg font-black text-slate-900">Cast Your Vote: Boy or Girl?</h2>
+                  </div>
+                </div>
+
+                {/* Real-time Vote Percentages (Always visible for engagement!) */}
+                <div className="bg-white/10 backdrop-blur-md rounded-2xl p-4 border border-white/20 shadow-sm mt-1 mb-2">
+                  <div className="flex justify-between items-center text-xs font-black text-slate-800 mb-2">
+                    <span className="flex items-center gap-1">💙 Team Boy: {boyPct}% ({boyVotes} {boyVotes === 1 ? "vote" : "votes"})</span>
+                    <span className="flex items-center gap-1">🩷 Team Girl: {girlPct}% ({girlVotes} {girlVotes === 1 ? "vote" : "votes"})</span>
+                  </div>
+                  <div className="w-full h-3 rounded-full bg-slate-200/50 overflow-hidden flex">
+                    <div
+                      className="h-full bg-gradient-to-r from-[#3A9FE8] to-[#60A5FA] transition-all duration-500"
+                      style={{ width: `${boyPct}%` }}
+                    />
+                    <div
+                      className="h-full bg-gradient-to-r from-[#F472B6] to-[#E8449A] transition-all duration-500"
+                      style={{ width: `${girlPct}%` }}
+                    />
                   </div>
                 </div>
 
@@ -406,12 +502,12 @@ export default function GuestInvitePage() {
                     <p className="text-sm text-slate-800 font-bold">This reveal event has completed. Thanks for joining 💛</p>
                   </div>
                 ) : done ? (
-                  <div className="bg-emerald-500/20 border border-emerald-400/30 rounded-2xl p-4 flex flex-col gap-2 shadow-sm">
+                  <div className="bg-emerald-500/20 border border-emerald-400/30 rounded-2xl p-4 text-center flex flex-col gap-2 shadow-sm items-center justify-center">
                     <p className="text-sm font-bold text-emerald-950 flex items-center gap-1.5">
-                      <span>✓</span> Response saved!
+                      <span>✓</span> Response saved! Thanks for voting!
                     </p>
                     <div className="text-sm text-emerald-900 mt-1">
-                      Prediction: <strong className={`font-black px-3 py-0.5 rounded-full text-xs text-white ${prediction === "boy" ? "bg-[#3A9FE8]" : "bg-[#E8449A]"}`}>
+                      Your Prediction: <strong className={`font-black px-3 py-0.5 rounded-full text-xs text-white ${prediction === "boy" ? "bg-[#3A9FE8]" : "bg-[#E8449A]"}`}>
                         {prediction === "boy" ? "Team Boy 💙" : "Team Girl 🩷"}
                       </strong>
                     </div>
@@ -422,82 +518,79 @@ export default function GuestInvitePage() {
                   </div>
                 ) : (
                   <>
-                    <div className="grid grid-cols-2 gap-4">
+                    <p className="text-xs text-slate-700 font-bold text-center -mb-2">
+                      Please vote for boy or girl below to submit your prediction:
+                    </p>
+                    
+                    <div className="flex justify-center gap-10 md:gap-16 py-4">
+                      {/* Vote Boy Button */}
                       <button
-                        onClick={() => setPrediction("boy")}
-                        className={`flex flex-col items-center justify-center gap-2 p-4 rounded-2xl border transition-all duration-300 ${
-                          prediction === "boy"
-                            ? "bg-blue-500/20 border-[#3A9FE8] text-blue-900 shadow-lg shadow-blue-500/10 font-black"
-                            : "bg-white/20 hover:bg-white/35 backdrop-blur-md border-white/30 text-slate-700 font-bold"
-                        }`}
+                        type="button"
+                        onClick={() => submitVote("boy")}
+                        disabled={submitting}
+                        className="group flex flex-col items-center gap-3 transition-all duration-300 hover:scale-105 active:scale-95 cursor-pointer focus:outline-none"
                       >
-                        <span className="text-2xl">💙</span>
-                        <span className="text-xs uppercase tracking-wider">Team Boy</span>
+                        <div className="w-24 h-24 rounded-full bg-gradient-to-br from-[#D6EAFE] to-[#BFDBFE] border border-[#3A9FE8]/40 shadow-md group-hover:shadow-lg group-hover:border-[#3A9FE8]/85 transition-all flex items-center justify-center p-3">
+                          <BabyBoySvg className="w-full h-full transform group-hover:rotate-6 transition-transform" />
+                        </div>
+                        <span className="text-xs font-black text-[#1E40AF] tracking-wider uppercase bg-[#D6EAFE] px-3 py-1 rounded-full border border-[#3A9FE8]/25 shadow-sm">
+                          Team Boy 💙
+                        </span>
                       </button>
-                      
+
+                      {/* Vote Girl Button */}
                       <button
-                        onClick={() => setPrediction("girl")}
-                        className={`flex flex-col items-center justify-center gap-2 p-4 rounded-2xl border transition-all duration-300 ${
-                          prediction === "girl"
-                            ? "bg-pink-500/20 border-[#E8449A] text-pink-900 shadow-lg shadow-pink-500/10 font-black"
-                            : "bg-white/20 hover:bg-white/35 backdrop-blur-md border-white/30 text-slate-700 font-bold"
-                        }`}
+                        type="button"
+                        onClick={() => submitVote("girl")}
+                        disabled={submitting}
+                        className="group flex flex-col items-center gap-3 transition-all duration-300 hover:scale-105 active:scale-95 cursor-pointer focus:outline-none"
                       >
-                        <span className="text-2xl">🩷</span>
-                        <span className="text-xs uppercase tracking-wider">Team Girl</span>
+                        <div className="w-24 h-24 rounded-full bg-gradient-to-br from-[#FCE7F3] to-[#FBCFE8] border border-[#E8449A]/40 shadow-md group-hover:shadow-lg group-hover:border-[#E8449A]/85 transition-all flex items-center justify-center p-3">
+                          <BabyGirlSvg className="w-full h-full transform group-hover:-rotate-6 transition-transform" />
+                        </div>
+                        <span className="text-xs font-black text-[#9D174D] tracking-wider uppercase bg-[#FCE7F3] px-3 py-1 rounded-full border border-[#E8449A]/25 shadow-sm">
+                          Team Girl 🩷
+                        </span>
                       </button>
                     </div>
-                    
-                    <textarea
-                      placeholder="Share a message for the parents…"
-                      value={message}
-                      onChange={(e) => setMessage(e.target.value)}
-                      className="w-full min-h-[100px] rounded-2xl border border-white/30 p-4 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#E8449A]/30 focus:border-[#E8449A] bg-white/25 placeholder-slate-500 transition-all resize-none font-medium"
-                    />
-                    
-                    <button
-                      onClick={submitPrediction}
-                      disabled={!prediction || submitting}
-                      className="w-full py-3.5 bg-gradient-to-r from-[#E8449A] to-[#3A9FE8] hover:from-[#d13787] hover:to-[#2e8fd1] disabled:opacity-50 text-white font-black text-sm uppercase tracking-wider rounded-full shadow-lg shadow-[#E8449A]/20 transition-all duration-200"
-                    >
-                      {submitting ? "Saving…" : "Submit Prediction"}
-                    </button>
                   </>
                 )}
-                {error && <p className="text-xs text-red-500 font-bold mt-1">⚠️ {error}</p>}
+                {error && <p className="text-xs text-red-500 font-bold mt-1 text-center">⚠️ {error}</p>}
               </div>
             </section>
 
-            {/* Box 3B: Guest Wishes (Glassmorphic) */}
-            <section className="bg-white/15 backdrop-blur-xl border border-white/25 shadow-2xl rounded-[24px] p-6 flex flex-col justify-between gap-4 w-full">
-              <div className="flex flex-col gap-4 w-full">
-                <div className="flex items-center gap-2 border-b border-white/10 pb-3">
-                  <div className="w-8 h-8 rounded-lg bg-blue-500/20 flex items-center justify-center border border-blue-400/20">
-                    <Heart className="w-4.5 h-4.5 text-[#3A9FE8] fill-[#3A9FE8]" />
+            {/* Box 3B: Guest Wishes (Code fully preserved but hidden as requested) */}
+            {false && (
+              <section className="bg-white/15 backdrop-blur-xl border border-white/25 shadow-2xl rounded-[24px] p-6 flex flex-col justify-between gap-4 w-full">
+                <div className="flex flex-col gap-4 w-full">
+                  <div className="flex items-center gap-2 border-b border-white/10 pb-3">
+                    <div className="w-8 h-8 rounded-lg bg-blue-500/20 flex items-center justify-center border border-blue-400/20">
+                      <Heart className="w-4.5 h-4.5 text-[#3A9FE8] fill-[#3A9FE8]" />
+                    </div>
+                    <div>
+                      <h2 className="text-lg font-black text-slate-900">Guest wishes</h2>
+                      <p className="text-xs text-slate-700 font-medium">Prediction messages saved.</p>
+                    </div>
                   </div>
-                  <div>
-                    <h2 className="text-lg font-black text-slate-900">Guest wishes</h2>
-                    <p className="text-xs text-slate-700 font-medium">Prediction messages saved.</p>
-                  </div>
+
+                  {feed.length === 0 ? (
+                    <p className="text-sm text-slate-600 italic text-center py-8 font-semibold">No guest wishes yet.</p>
+                  ) : (
+                    <div className="flex flex-col gap-2.5 max-h-[300px] overflow-y-auto pr-1">
+                      {feed.map((item, idx) => (
+                        <div
+                          key={`${item.name}-${idx}`}
+                          className="bg-white/25 border border-white/35 p-3 rounded-xl shadow-sm text-slate-900"
+                        >
+                          <span className="font-black text-xs text-slate-950 block mb-1">{item.name}</span>
+                          <p className="text-xs text-slate-800 leading-normal italic font-medium">&ldquo;{item.message}&rdquo;</p>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
-
-                {feed.length === 0 ? (
-                  <p className="text-sm text-slate-600 italic text-center py-8 font-semibold">No guest wishes yet.</p>
-                ) : (
-                  <div className="flex flex-col gap-2.5 max-h-[300px] overflow-y-auto pr-1">
-                    {feed.map((item, idx) => (
-                      <div
-                        key={`${item.name}-${idx}`}
-                        className="bg-white/25 border border-white/35 p-3 rounded-xl shadow-sm text-slate-900"
-                      >
-                        <span className="font-black text-xs text-slate-950 block mb-1">{item.name}</span>
-                        <p className="text-xs text-slate-800 leading-normal italic font-medium">&ldquo;{item.message}&rdquo;</p>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-            </section>
+              </section>
+            )}
           </div>
 
           {/* Row 4: Live Chat & Who's Invited (Two equal-sized boxes side-by-side) */}

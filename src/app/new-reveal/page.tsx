@@ -24,6 +24,20 @@ import {
   ChevronDown,
 } from "lucide-react";
 
+const StorkIcon = ({ smiling }: { smiling: boolean }) => (
+  <svg viewBox="0 0 64 64" className="w-8 h-8 transition-transform duration-300 hover:scale-110" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <path d="M16 48 C 24 48, 28 32, 28 20 C 28 12, 36 12, 36 20" stroke="#CBD5E1" strokeWidth="3" strokeLinecap="round"/>
+    <circle cx="36" cy="18" r="8" fill="#FFF" stroke="#94A3B8" strokeWidth="2"/>
+    <circle cx="39" cy="16" r="1.5" fill="#334155"/>
+    {smiling ? (
+      <path d="M42 18 Q 48 14, 52 20 Q 46 22, 42 20" fill="#F59E0B" stroke="#D97706" strokeWidth="1.5" strokeLinecap="round"/>
+    ) : (
+      <path d="M42 18 L 52 18 L 42 20" fill="#F59E0B" stroke="#D97706" strokeWidth="1.5" strokeLinecap="round"/>
+    )}
+    <path d="M36 20 C 36 20, 32 30, 24 32 C 16 34, 16 40, 24 38 C 32 36, 36 20, 36 20" fill="#FDBA74" opacity="0.8"/>
+  </svg>
+);
+
 // ─── Helpers ────────────────────────────────────────────────
 
 // All US timezones in priority order (grouped at top of dropdown)
@@ -168,6 +182,7 @@ export default function NewRevealPage() {
   const [announcementGender, setAnnouncementGender] = useState<GenderValue | null>(null);
 
   // Reveal mode fields
+  const [revealerName, setRevealerName] = useState("");
   const [revealerEmail, setRevealerEmail] = useState("");
   const [revealerRelation, setRevealerRelation] = useState<RevealerRelation>("doctor");
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -221,15 +236,24 @@ export default function NewRevealPage() {
       !!parentName.trim() &&
       (mode === "announcement"
         ? !!announcementGender
-        : !!revealerEmail.trim() && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(revealerEmail.trim()));
+        : !!revealerEmail.trim() &&
+          /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(revealerEmail.trim()) &&
+          !!revealerName.trim());
+
+    if (mode === "announcement") {
+      return [
+        { label: "Reveal Type", isComplete: isStep1Complete },
+        { label: "Family Details", isComplete: isStep2Complete },
+      ];
+    }
+
     const isStep3Complete = !!revealAt;
-    
     return [
       { label: "Reveal Type", isComplete: isStep1Complete },
       { label: "Family Details", isComplete: isStep2Complete },
       { label: "Reveal Schedule", isComplete: isStep3Complete },
     ];
-  }, [mode, parentName, announcementGender, revealerEmail, revealAt]);
+  }, [mode, parentName, announcementGender, revealerEmail, revealerName, revealAt]);
 
   // ─── Photo handlers ──────────────────────────────────────
 
@@ -262,12 +286,14 @@ export default function NewRevealPage() {
 
   function validateForm(): string | null {
     if (!parentName.trim()) return "Please enter the parent name(s).";
-    if (!revealAt) return "Please pick a reveal date and time.";
 
-    const revealDate = new Date(revealAt);
-    if (isNaN(revealDate.getTime())) return "Invalid reveal date.";
-    if (revealDate.getTime() < Date.now() + 30 * 60 * 1000) {
-      return "Reveal time must be at least 30 minutes in the future.";
+    if (mode !== "announcement") {
+      if (!revealAt) return "Please pick a reveal date and time.";
+      const revealDate = new Date(revealAt);
+      if (isNaN(revealDate.getTime())) return "Invalid reveal date.";
+      if (revealDate.getTime() < Date.now() + 30 * 60 * 1000) {
+        return "Reveal time must be at least 30 minutes in the future.";
+      }
     }
 
     if (!isBasicPlan) {
@@ -275,11 +301,10 @@ export default function NewRevealPage() {
       if (!photoValidation.ok) return photoValidation.error;
     }
 
-    if (!isBasicPlan && !dueDate) return "Please add the due date.";
-
     if (mode === "announcement") {
       if (!announcementGender) return "Please select the baby's gender.";
     } else {
+      if (!revealerName.trim()) return "Please enter the revealer's name.";
       if (!revealerEmail.trim()) return "Please enter the revealer's email.";
       if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(revealerEmail.trim())) {
         return "Please enter a valid revealer email.";
@@ -333,9 +358,9 @@ export default function NewRevealPage() {
           mode,
           parentName: parentName.trim(),
           photos: photoUrls,
-          revealAtMs: new Date(revealAt).getTime(),
+          revealAtMs: mode === "announcement" ? Date.now() : new Date(revealAt).getTime(),
           revealTimezone: timezone,
-          dueDate: isBasicPlan ? null : dueDate,
+          dueDate: null,
           // Announcement mode
           babyName: mode === "announcement" ? (babyName.trim() || null) : null,
           announcementGender: mode === "announcement" ? announcementGender : undefined,
@@ -344,6 +369,7 @@ export default function NewRevealPage() {
           babyNameBoy: mode === "reveal" ? (babyNameBoy.trim() || null) : null,
           revealerEmail: mode === "reveal" ? revealerEmail.trim().toLowerCase() : undefined,
           revealerRelation: mode === "reveal" ? revealerRelation : undefined,
+          revealerName: mode === "reveal" ? revealerName.trim() : undefined,
         }),
       });
 
@@ -491,6 +517,56 @@ export default function NewRevealPage() {
   return (
     <DashboardShell activeTab="create" title="Create Your Reveal">
       <div className="w-full relative">
+        <style>{`
+          @keyframes floatUp {
+            0% {
+              transform: translateY(110vh) rotate(0deg);
+              opacity: 0;
+            }
+            10% {
+              opacity: 0.9;
+            }
+            90% {
+              opacity: 0.9;
+            }
+            100% {
+              transform: translateY(-20vh) rotate(360deg);
+              opacity: 0;
+            }
+          }
+          .animate-float-balloon {
+            animation: floatUp 6s linear forwards;
+          }
+        `}</style>
+
+        {loading && (
+          <div className="fixed inset-0 pointer-events-none z-[9999] overflow-hidden">
+            {Array.from({ length: 16 }).map((_, i) => {
+              const left = `${5 + i * 6}%`;
+              const delay = `${i * 0.35}s`;
+              const duration = `${5 + Math.random() * 3}s`;
+              const size = `${30 + Math.random() * 30}px`;
+              const color = i % 2 === 0 ? "bg-[#E8449A]" : "bg-[#3A9FE8]";
+              return (
+                <div
+                  key={i}
+                  className={`absolute bottom-0 rounded-full animate-float-balloon ${color}`}
+                  style={{
+                    left,
+                    width: size,
+                    height: "calc(" + size + " * 1.2)",
+                    animationDelay: delay,
+                    animationDuration: duration,
+                    borderRadius: "50% 50% 50% 50% / 40% 40% 60% 60%",
+                  }}
+                >
+                  <div className="absolute bottom-0 left-1/2 w-0.5 h-6 bg-gray-300 -translate-x-1/2 translate-y-full" />
+                </div>
+              );
+            })}
+          </div>
+        )}
+
         {/* Background Image for Create Reveal Page (Desktop vs Mobile) */}
         <img
           src="/images/reveal-page-background.png"
@@ -559,15 +635,15 @@ export default function NewRevealPage() {
                 1. What type of event?
               </h2>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
                 {/* Gender Reveal Option */}
                 <div
                   tabIndex={0}
                   role="radio"
                   aria-checked={mode === "reveal"}
-                  className={`relative p-5 rounded-2xl border-2 cursor-pointer transition-all duration-200 flex flex-col gap-2 focus-visible:ring-2 focus-visible:ring-[#3A9FE8] focus-visible:outline-none ${
+                  className={`relative p-7 md:p-9 rounded-2xl border-2 cursor-pointer transition-all duration-300 flex flex-col gap-3 focus-visible:ring-2 focus-visible:ring-[#3A9FE8] focus-visible:outline-none ${
                     mode === "reveal"
-                      ? "border-[#E8449A] bg-[#FDE8F2]/20 shadow-sm shadow-[#e8449a0a]"
+                      ? "border-[#E8449A] bg-[#FDE8F2]/30 shadow-md shadow-[#e8449a0a] scale-[1.01]"
                       : "border-gray-100 hover:border-gray-200 bg-white"
                   }`}
                   onClick={() => !loading && setMode("reveal")}
@@ -578,16 +654,15 @@ export default function NewRevealPage() {
                     }
                   }}
                 >
-                  <div className="flex items-center gap-2.5">
-                    <span className="text-xl select-none" aria-hidden="true">🎀</span>
-                    <h3 className="font-bold text-gray-900 text-sm md:text-base">Gender Reveal</h3>
+                  <div className="flex items-center gap-3">
+                    <span className="text-3xl select-none" aria-hidden="true">🎀</span>
+                    <h3 className="font-black text-slate-900 text-base md:text-lg">Gender Reveal</h3>
                   </div>
-                  <p className="text-xs text-gray-500 leading-relaxed font-medium mt-1">
-                    You don&apos;t know the gender yet. A revealer (doctor, relative, etc.)
-                    submits it privately, and it plays at the reveal.
+                  <p className="text-xs md:text-sm text-gray-600 leading-relaxed font-semibold mt-1">
+                    You don&apos;t know the gender yet. A private link is sent to a doctor or friend to enter it, and the system handles the rest.
                   </p>
                   {mode === "reveal" && (
-                    <div className="absolute top-3 right-3 w-4 h-4 rounded-full bg-[#E8449A] flex items-center justify-center">
+                    <div className="absolute top-4 right-4 w-5 h-5 rounded-full bg-[#E8449A] flex items-center justify-center">
                       <span className="text-[10px] text-white font-bold select-none">✓</span>
                     </div>
                   )}
@@ -598,9 +673,9 @@ export default function NewRevealPage() {
                   tabIndex={0}
                   role="radio"
                   aria-checked={mode === "announcement"}
-                  className={`relative p-5 rounded-2xl border-2 cursor-pointer transition-all duration-200 flex flex-col gap-2 focus-visible:ring-2 focus-visible:ring-[#3A9FE8] focus-visible:outline-none ${
+                  className={`relative p-7 md:p-9 rounded-2xl border-2 cursor-pointer transition-all duration-300 flex flex-col gap-3 focus-visible:ring-2 focus-visible:ring-[#3A9FE8] focus-visible:outline-none ${
                     mode === "announcement"
-                      ? "border-[#3A9FE8] bg-[#D6EAFE]/20 shadow-sm shadow-[#3a9fe80a]"
+                      ? "border-[#3A9FE8] bg-[#D6EAFE]/30 shadow-md shadow-[#3a9fe80a] scale-[1.01]"
                       : "border-gray-100 hover:border-gray-200 bg-white"
                   }`}
                   onClick={() => !loading && setMode("announcement")}
@@ -611,16 +686,20 @@ export default function NewRevealPage() {
                     }
                   }}
                 >
-                  <div className="flex items-center gap-2.5">
-                    <span className="text-xl select-none" aria-hidden="true">📣</span>
-                    <h3 className="font-bold text-gray-900 text-sm md:text-base">Gender Announcement</h3>
+                  <div className="flex items-center gap-3">
+                    <span className="text-3xl select-none" aria-hidden="true">📣</span>
+                    <h3 className="font-black text-slate-900 text-base md:text-lg">Gender Announcement</h3>
                   </div>
-                  <p className="text-xs text-gray-500 leading-relaxed font-medium mt-1">
-                    You already know the gender. We create a cinematic announcement to
-                    share with family &amp; friends.
+                  <p className="text-xs md:text-sm text-gray-600 leading-relaxed font-semibold mt-1">
+                    You already know the gender.
+                    {isBasicPlan ? (
+                      <span className="block mt-1 text-[#3A9FE8] font-bold">✨ Available immediately after creation.</span>
+                    ) : (
+                      <span className="block mt-1 text-[#3A9FE8] font-bold">✨ Premium cinematic creations turnaround: 5–7 days.</span>
+                    )}
                   </p>
                   {mode === "announcement" && (
-                    <div className="absolute top-3 right-3 w-4 h-4 rounded-full bg-[#3A9FE8] flex items-center justify-center">
+                    <div className="absolute top-4 right-4 w-5 h-5 rounded-full bg-[#3A9FE8] flex items-center justify-center">
                       <span className="text-[10px] text-white font-bold select-none">✓</span>
                     </div>
                   )}
@@ -637,7 +716,10 @@ export default function NewRevealPage() {
 
               <div className="space-y-4">
                 <div className="flex flex-col gap-1.5">
-                  <label htmlFor="parentName" className="text-xs font-bold text-gray-500 uppercase tracking-wider">Parent Name(s)</label>
+                  <div className="flex items-center justify-between">
+                    <label htmlFor="parentName" className="text-xs font-bold text-gray-500 uppercase tracking-wider">Parent Name(s)</label>
+                    <StorkIcon smiling={parentName.trim().length > 0} />
+                  </div>
                   <input
                     id="parentName"
                     className="w-full bg-white border border-gray-200 rounded-xl px-4 py-3 text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#3A9FE8] focus:border-[#3A9FE8] disabled:bg-gray-50 disabled:text-gray-400 transition-all font-medium"
@@ -655,34 +737,18 @@ export default function NewRevealPage() {
 
                 {mode === "announcement" && (
                   <>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                      <div className="flex flex-col gap-1.5">
-                        <label htmlFor="babyName" className="text-xs font-bold text-gray-500 uppercase tracking-wider">Baby&apos;s Name (Optional)</label>
-                        <input
-                          id="babyName"
-                          className="w-full bg-white border border-gray-200 rounded-xl px-4 py-3 text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#3A9FE8] focus:border-[#3A9FE8] disabled:bg-gray-50 disabled:text-gray-400 transition-all font-medium"
-                          type="text"
-                          placeholder="e.g. Sophia"
-                          value={babyName}
-                          onChange={(e) => setBabyName(e.target.value)}
-                          disabled={loading}
-                          maxLength={120}
-                        />
-                      </div>
-
-                      {!isBasicPlan && (
-                        <div className="flex flex-col gap-1.5">
-                          <label htmlFor="dueDateAnnounce" className="text-xs font-bold text-gray-500 uppercase tracking-wider">Due Date</label>
-                          <input
-                            id="dueDateAnnounce"
-                            className="w-full bg-white border border-gray-200 rounded-xl px-4 py-3 text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#3A9FE8] focus:border-[#3A9FE8] disabled:bg-gray-50 disabled:text-gray-400 transition-all font-medium cursor-pointer"
-                            type="date"
-                            value={dueDate}
-                            onChange={(e) => setDueDate(e.target.value)}
-                            disabled={loading}
-                          />
-                        </div>
-                      )}
+                    <div className="flex flex-col gap-1.5">
+                      <label htmlFor="babyName" className="text-xs font-bold text-gray-500 uppercase tracking-wider">Baby&apos;s Name (Optional)</label>
+                      <input
+                        id="babyName"
+                        className="w-full bg-white border border-gray-200 rounded-xl px-4 py-3 text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#3A9FE8] focus:border-[#3A9FE8] disabled:bg-gray-50 disabled:text-gray-400 transition-all font-medium"
+                        type="text"
+                        placeholder="e.g. Sophia"
+                        value={babyName}
+                        onChange={(e) => setBabyName(e.target.value)}
+                        disabled={loading}
+                        maxLength={120}
+                      />
                     </div>
 
                     <div className="flex flex-col gap-1.5">
@@ -766,19 +832,6 @@ export default function NewRevealPage() {
                       </div>
                     </div>
 
-                    {!isBasicPlan && (
-                      <div className="flex flex-col gap-1.5">
-                        <label htmlFor="dueDateReveal" className="text-xs font-bold text-gray-500 uppercase tracking-wider">Due Date</label>
-                        <input
-                          id="dueDateReveal"
-                          className="w-full bg-white border border-gray-200 rounded-xl px-4 py-3 text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#3A9FE8] focus:border-[#3A9FE8] disabled:bg-gray-50 disabled:text-gray-400 transition-all font-medium cursor-pointer"
-                          type="date"
-                          value={dueDate}
-                          onChange={(e) => setDueDate(e.target.value)}
-                          disabled={loading}
-                        />
-                      </div>
-                    )}
                   </>
                 )}
               </div>
@@ -863,85 +916,67 @@ export default function NewRevealPage() {
             )}
 
             {/* Section 4: Reveal Schedule */}
-            <div className="bg-white border border-[#f1f1f5] rounded-2xl p-6 md:p-8 shadow-sm space-y-6">
-              <h2 className="text-xs font-bold text-gray-400 uppercase tracking-widest border-b border-[#f1f1f5] pb-3 mb-1 flex items-center gap-2">
-                <Calendar className="w-4 h-4 text-[#3A9FE8]" />
-                {isBasicPlan ? "3." : "4."} Reveal schedule
-              </h2>
+            {mode !== "announcement" && (
+              <div className="bg-white border border-[#f1f1f5] rounded-2xl p-6 md:p-8 shadow-sm space-y-6">
+                <h2 className="text-xs font-bold text-gray-400 uppercase tracking-widest border-b border-[#f1f1f5] pb-3 mb-1 flex items-center gap-2">
+                  <Calendar className="w-4 h-4 text-[#3A9FE8]" />
+                  {isBasicPlan ? "3." : "4."} Reveal schedule
+                </h2>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div className="flex flex-col gap-1.5">
-                  <label htmlFor="revealAt" className="text-xs font-bold text-gray-500 uppercase tracking-wider">Reveal Date &amp; Time</label>
-                  <input
-                    id="revealAt"
-                    className="w-full bg-white border border-gray-200 rounded-xl px-4 py-3 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#3A9FE8] focus:border-[#3A9FE8] disabled:bg-gray-50 disabled:text-gray-400 transition-all font-medium cursor-pointer"
-                    type="datetime-local"
-                    value={revealAt}
-                    onChange={(e) => setRevealAt(e.target.value)}
-                    disabled={loading}
-                    min={minDateTime}
-                  />
-                  <span className="text-xs text-gray-400 font-medium">Your selected timezone is shown below.</span>
-                </div>
-
-                <div className="flex flex-col gap-1.5">
-                  <span className="text-xs font-bold text-gray-500 uppercase tracking-wider">Timezone</span>
-                  <div className="relative" ref={tzDropdownRef}>
-                    <button
-                      type="button"
-                      aria-expanded={tzDropdownOpen}
-                      aria-haspopup="listbox"
-                      className="w-full bg-white border border-gray-200 rounded-xl px-4 py-3 text-sm text-gray-900 flex items-center justify-between hover:border-gray-300 transition-all focus:outline-none focus:ring-2 focus:ring-[#3A9FE8] focus:border-[#3A9FE8] disabled:bg-gray-50 disabled:text-gray-400 font-medium"
-                      onClick={() => !loading && setTzDropdownOpen((o) => !o)}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="flex flex-col gap-1.5 relative">
+                    <div className="flex items-center justify-between">
+                      <label htmlFor="revealAt" className="text-xs font-bold text-gray-500 uppercase tracking-wider">Reveal Date &amp; Time</label>
+                      {!!revealAt && (
+                        <div className="flex gap-1 animate-bounce text-amber-400 text-xs">
+                          <span>⭐</span>
+                          <span>✨</span>
+                          <span>⭐</span>
+                        </div>
+                      )}
+                    </div>
+                    <input
+                      id="revealAt"
+                      className="w-full bg-white border border-gray-200 rounded-xl px-4 py-3 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#3A9FE8] focus:border-[#3A9FE8] disabled:bg-gray-50 disabled:text-gray-400 transition-all font-medium cursor-pointer"
+                      type="datetime-local"
+                      value={revealAt}
+                      onChange={(e) => setRevealAt(e.target.value)}
                       disabled={loading}
-                    >
-                      <span>{formatTimezone(timezone)}</span>
-                      <ChevronDown className="w-4 h-4 text-gray-400 shrink-0" />
-                    </button>
+                      min={minDateTime}
+                    />
+                    <span className="text-xs text-gray-400 font-medium">Your selected timezone is shown below.</span>
+                  </div>
 
-                    {tzDropdownOpen && (
-                      <div className="absolute top-full left-0 right-0 mt-2 bg-white border border-gray-200 rounded-xl shadow-xl z-50 overflow-hidden flex flex-col max-h-[320px] animate-fade-in" role="listbox">
-                        <input
-                          type="text"
-                          className="w-full px-4 py-3 border-b border-gray-100 text-sm focus:outline-none placeholder-gray-400 bg-gray-50/50 font-medium"
-                          placeholder="Search all timezones…"
-                          value={tzSearch}
-                          onChange={(e) => setTzSearch(e.target.value)}
-                          autoFocus
-                        />
+                  <div className="flex flex-col gap-1.5">
+                    <span className="text-xs font-bold text-gray-500 uppercase tracking-wider">Timezone</span>
+                    <div className="relative" ref={tzDropdownRef}>
+                      <button
+                        type="button"
+                        aria-expanded={tzDropdownOpen}
+                        aria-haspopup="listbox"
+                        className="w-full bg-white border border-gray-200 rounded-xl px-4 py-3 text-sm text-gray-900 flex items-center justify-between hover:border-gray-300 transition-all focus:outline-none focus:ring-2 focus:ring-[#3A9FE8] focus:border-[#3A9FE8] disabled:bg-gray-50 disabled:text-gray-400 font-medium"
+                        onClick={() => !loading && setTzDropdownOpen((o) => !o)}
+                        disabled={loading}
+                      >
+                        <span>{formatTimezone(timezone)}</span>
+                        <ChevronDown className="w-4 h-4 text-gray-400 shrink-0" />
+                      </button>
 
-                        {!tzSearch && (
-                          <div className="overflow-y-auto flex-1">
-                            <div className="px-4 py-1.5 bg-gray-50 text-[10px] font-bold text-gray-400 uppercase tracking-wider select-none">United States</div>
-                            {US_TIMEZONES.map((tz) => (
-                              <div
-                                key={tz.value}
-                                role="option"
-                                aria-selected={timezone === tz.value}
-                                className={`w-full px-4 py-2.5 text-left text-sm text-gray-700 hover:bg-[#3A9FE8]/5 hover:text-[#1B4F8C] transition-all flex items-center justify-between cursor-pointer ${
-                                  timezone === tz.value ? "bg-[#D6EAFE]/30 text-[#1B4F8C] font-semibold" : "font-medium"
-                                }`}
-                                onClick={() => {
-                                  setTimezone(tz.value);
-                                  setTzDropdownOpen(false);
-                                  setTzSearch("");
-                                }}
-                              >
-                                <span>{tz.label} ({tz.short})</span>
-                                <span className="text-xs text-gray-400">{tz.value}</span>
-                              </div>
-                            ))}
-                            <div className="px-4 py-1.5 bg-gray-50 text-[10px] font-bold text-gray-400 uppercase tracking-wider select-none">All Other Timezones</div>
-                          </div>
-                        )}
+                      {tzDropdownOpen && (
+                        <div className="absolute top-full left-0 right-0 mt-2 bg-white border border-gray-200 rounded-xl shadow-xl z-50 overflow-hidden flex flex-col max-h-[320px] animate-fade-in" role="listbox">
+                          <input
+                            type="text"
+                            className="w-full px-4 py-3 border-b border-gray-100 text-sm focus:outline-none placeholder-gray-400 bg-gray-50/50 font-medium"
+                            placeholder="Search all timezones…"
+                            value={tzSearch}
+                            onChange={(e) => setTzSearch(e.target.value)}
+                            autoFocus
+                          />
 
-                        <div className="overflow-y-auto flex-1">
-                          {tzSearch && (
-                            <>
-                              {US_TIMEZONES.filter((tz) =>
-                                tz.label.toLowerCase().includes(tzSearch.toLowerCase()) ||
-                                tz.value.toLowerCase().includes(tzSearch.toLowerCase())
-                              ).map((tz) => (
+                          {!tzSearch && (
+                            <div className="overflow-y-auto flex-1">
+                              <div className="px-4 py-1.5 bg-gray-50 text-[10px] font-bold text-gray-400 uppercase tracking-wider select-none">United States</div>
+                              {US_TIMEZONES.map((tz) => (
                                 <div
                                   key={tz.value}
                                   role="option"
@@ -959,83 +994,133 @@ export default function NewRevealPage() {
                                   <span className="text-xs text-gray-400">{tz.value}</span>
                                 </div>
                               ))}
-                            </>
-                          )}
-                          {filteredWorldTimezones.length === 0 && tzSearch && (
-                            <div className="px-4 py-6 text-center text-gray-400 text-sm font-medium">No timezones match &quot;{tzSearch}&quot;</div>
-                          )}
-                          {filteredWorldTimezones.map((tz) => (
-                            <div
-                              key={tz}
-                              role="option"
-                              aria-selected={timezone === tz}
-                              className={`w-full px-4 py-2.5 text-left text-sm text-gray-700 hover:bg-[#3A9FE8]/5 hover:text-[#1B4F8C] transition-all flex items-center justify-between cursor-pointer ${
-                                timezone === tz ? "bg-[#D6EAFE]/30 text-[#1B4F8C] font-semibold" : "font-medium"
-                              }`}
-                              onClick={() => {
-                                setTimezone(tz);
-                                setTzDropdownOpen(false);
-                                setTzSearch("");
-                              }}
-                            >
-                              <span>{formatTimezone(tz)}</span>
-                              <span className="text-xs text-gray-400 font-normal">{tz}</span>
+                              <div className="px-4 py-1.5 bg-gray-50 text-[10px] font-bold text-gray-400 uppercase tracking-wider select-none">All Other Timezones</div>
                             </div>
-                          ))}
+                          )}
+
+                          <div className="overflow-y-auto flex-1">
+                            {tzSearch && (
+                              <>
+                                {US_TIMEZONES.filter((tz) =>
+                                  tz.label.toLowerCase().includes(tzSearch.toLowerCase()) ||
+                                  tz.value.toLowerCase().includes(tzSearch.toLowerCase())
+                                ).map((tz) => (
+                                  <div
+                                    key={tz.value}
+                                    role="option"
+                                    aria-selected={timezone === tz.value}
+                                    className={`w-full px-4 py-2.5 text-left text-sm text-gray-700 hover:bg-[#3A9FE8]/5 hover:text-[#1B4F8C] transition-all flex items-center justify-between cursor-pointer ${
+                                      timezone === tz.value ? "bg-[#D6EAFE]/30 text-[#1B4F8C] font-semibold" : "font-medium"
+                                    }`}
+                                    onClick={() => {
+                                      setTimezone(tz.value);
+                                      setTzDropdownOpen(false);
+                                      setTzSearch("");
+                                    }}
+                                  >
+                                    <span>{tz.label} ({tz.short})</span>
+                                    <span className="text-xs text-gray-400">{tz.value}</span>
+                                  </div>
+                                ))}
+                              </>
+                            )}
+                            {filteredWorldTimezones.length === 0 && tzSearch && (
+                              <div className="px-4 py-6 text-center text-gray-400 text-sm font-medium">No timezones match &quot;{tzSearch}&quot;</div>
+                            )}
+                            {filteredWorldTimezones.map((tz) => (
+                              <div
+                                key={tz}
+                                role="option"
+                                aria-selected={timezone === tz}
+                                className={`w-full px-4 py-2.5 text-left text-sm text-gray-700 hover:bg-[#3A9FE8]/5 hover:text-[#1B4F8C] transition-all flex items-center justify-between cursor-pointer ${
+                                  timezone === tz ? "bg-[#D6EAFE]/30 text-[#1B4F8C] font-semibold" : "font-medium"
+                                }`}
+                                onClick={() => {
+                                  setTimezone(tz);
+                                  setTzDropdownOpen(false);
+                                  setTzSearch("");
+                                }}
+                              >
+                                <span>{formatTimezone(tz)}</span>
+                                <span className="text-xs text-gray-400 font-normal">{tz}</span>
+                              </div>
+                            ))}
+                          </div>
                         </div>
-                      </div>
-                    )}
-                  </div>
-                  <span className="text-xs text-gray-400 font-medium">All guest invites adjust automatically to their local time.</span>
-                </div>
-              </div>
-            </div>
-
-            {/* Section 5: Revealer Details */}
-            {mode === "reveal" && (
-              <div className="bg-white border border-[#f1f1f5] rounded-2xl p-6 md:p-8 shadow-sm space-y-6">
-                <h2 className="text-xs font-bold text-gray-400 uppercase tracking-widest border-b border-[#f1f1f5] pb-3 mb-1 flex items-center gap-2">
-                  <Mail className="w-4 h-4 text-[#E8449A]" />
-                  {isBasicPlan ? "4." : "5."} Revealer details
-                </h2>
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div className="flex flex-col gap-1.5">
-                    <label htmlFor="revealerEmail" className="text-xs font-bold text-gray-500 uppercase tracking-wider">Revealer&apos;s Email</label>
-                    <input
-                      id="revealerEmail"
-                      className="w-full bg-white border border-gray-200 rounded-xl px-4 py-3 text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#3A9FE8] focus:border-[#3A9FE8] disabled:bg-gray-50 disabled:text-gray-400 transition-all font-medium"
-                      type="email"
-                      placeholder="doctor@clinic.com"
-                      value={revealerEmail}
-                      onChange={(e) => setRevealerEmail(e.target.value)}
-                      disabled={loading}
-                    />
-                    <span className="text-xs text-gray-400 font-medium">
-                      We&apos;ll send them a private, secure link to submit the gender.
-                    </span>
-                  </div>
-
-                  <div className="flex flex-col gap-1.5">
-                    <label htmlFor="revealerRelation" className="text-xs font-bold text-gray-500 uppercase tracking-wider">Their Relation to You</label>
-                    <div className="relative">
-                      <select
-                        id="revealerRelation"
-                        className="w-full bg-white border border-gray-200 rounded-xl px-4 py-3 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#3A9FE8] focus:border-[#3A9FE8] disabled:bg-gray-50 disabled:text-gray-400 transition-all appearance-none cursor-pointer font-medium pr-10"
-                        value={revealerRelation}
-                        onChange={(e) => setRevealerRelation(e.target.value as RevealerRelation)}
-                        disabled={loading}
-                      >
-                        {(Object.keys(RELATION_LABELS) as RevealerRelation[]).map((key) => (
-                          <option key={key} value={key}>{RELATION_LABELS[key]}</option>
-                        ))}
-                      </select>
-                      <ChevronDown className="w-4 h-4 text-gray-400 absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none" />
+                      )}
                     </div>
+                    <span className="text-xs text-gray-400 font-medium">All guest invites adjust automatically to their local time.</span>
                   </div>
                 </div>
               </div>
             )}
+
+            {/* Section 5: Revealer Details */}
+            {mode === "reveal" && (() => {
+              const isEmailValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(revealerEmail.trim());
+              return (
+                <div className={`bg-white border rounded-2xl p-6 md:p-8 space-y-6 transition-all duration-500 ${
+                  isEmailValid ? "shadow-2xl border-[#E8449A]/30 ring-4 ring-[#E8449A]/5" : "border-[#f1f1f5] shadow-sm"
+                }`}>
+                  <h2 className="text-xs font-bold text-gray-400 uppercase tracking-widest border-b border-[#f1f1f5] pb-3 mb-1 flex items-center gap-2">
+                    <Mail className="w-4 h-4 text-[#E8449A]" />
+                    {isBasicPlan ? "4." : "5."} Revealer details
+                  </h2>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                    <div className="flex flex-col gap-1.5">
+                      <label htmlFor="revealerName" className="text-xs font-bold text-gray-500 uppercase tracking-wider">Revealer&apos;s Name</label>
+                      <input
+                        id="revealerName"
+                        className="w-full bg-white border border-gray-200 rounded-xl px-4 py-3 text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#3A9FE8] focus:border-[#3A9FE8] disabled:bg-gray-50 disabled:text-gray-400 transition-all font-medium"
+                        type="text"
+                        placeholder="e.g. Dr. Davis"
+                        value={revealerName}
+                        onChange={(e) => setRevealerName(e.target.value)}
+                        disabled={loading}
+                      />
+                      <span className="text-xs text-gray-400 font-medium">
+                        Personalizes their invite and entry form.
+                      </span>
+                    </div>
+
+                    <div className="flex flex-col gap-1.5">
+                      <label htmlFor="revealerEmail" className="text-xs font-bold text-gray-500 uppercase tracking-wider">Revealer&apos;s Email</label>
+                      <input
+                        id="revealerEmail"
+                        className="w-full bg-white border border-gray-200 rounded-xl px-4 py-3 text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#3A9FE8] focus:border-[#3A9FE8] disabled:bg-gray-50 disabled:text-gray-400 transition-all font-medium"
+                        type="email"
+                        placeholder="doctor@clinic.com"
+                        value={revealerEmail}
+                        onChange={(e) => setRevealerEmail(e.target.value)}
+                        disabled={loading}
+                      />
+                      <span className="text-xs text-gray-400 font-medium">
+                        We&apos;ll send them a private, secure link to submit the gender.
+                      </span>
+                    </div>
+
+                    <div className="flex flex-col gap-1.5">
+                      <label htmlFor="revealerRelation" className="text-xs font-bold text-gray-500 uppercase tracking-wider">Their Relation to You</label>
+                      <div className="relative">
+                        <select
+                          id="revealerRelation"
+                          className="w-full bg-white border border-gray-200 rounded-xl px-4 py-3 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#3A9FE8] focus:border-[#3A9FE8] disabled:bg-gray-50 disabled:text-gray-400 transition-all appearance-none cursor-pointer font-medium pr-10"
+                          value={revealerRelation}
+                          onChange={(e) => setRevealerRelation(e.target.value)}
+                          disabled={loading}
+                        >
+                          {(Object.keys(RELATION_LABELS)).map((key) => (
+                            <option key={key} value={key}>{RELATION_LABELS[key]}</option>
+                          ))}
+                        </select>
+                        <ChevronDown className="w-4 h-4 text-gray-400 absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none" />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              );
+            })()}
 
             {/* Action Area */}
             <div className="pt-4 space-y-4">
