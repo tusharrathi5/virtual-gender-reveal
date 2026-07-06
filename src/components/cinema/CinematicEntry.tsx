@@ -408,7 +408,7 @@ function LandingPage() {
           <a href="/" className="nav-link nav-link-active">Home</a>
           <button type="button" className="nav-link" onClick={() => routeToReveal()}>Create Party</button>
           <a href="#how" className="nav-link">How It Works</a>
-          <a href="#pricing" className="nav-link">FAQ</a>
+          <a href="#faq" className="nav-link">FAQ</a>
         </div>
         <div className="nav-right">
           {loading ? null : user ? (
@@ -1246,14 +1246,15 @@ nav#main-nav.solid{box-shadow:0 6px 28px rgba(0,0,0,0.14);}
 
 /* ── FAQ Section ── */
 .faq-section{padding:5rem 2rem;background:#fafafd;position:relative;border-top:1px solid rgba(0,0,0,0.03);}
-.faq-inner{max-width:800px;margin:0 auto;}
+.faq-inner{max-width:1100px;margin:0 auto;}
 .faq-header{text-align:center;margin-bottom:3.5rem;}
 .faq-badge{display:inline-flex;align-items:center;gap:0.4rem;padding:0.38rem 1.2rem;border:1.5px solid #3A9FE8;border-radius:50px;font-size:0.72rem;font-weight:600;color:#3A9FE8;letter-spacing:0.1em;text-transform:uppercase;margin-bottom:1rem;}
 .faq-title{font-family:'Nunito',sans-serif;font-size:clamp(2rem,4vw,2.8rem);font-weight:900;color:#1a1a2e;line-height:1.2;margin-bottom:0.8rem;}
 .faq-sub{font-size:0.95rem;color:#666;max-width:540px;margin:0 auto;line-height:1.6;}
-.faq-list{display:flex;flex-direction:column;gap:1rem;}
-.faq-item{background:#fff;border:1.5px solid rgba(229,231,235,0.7);border-radius:18px;overflow:hidden;transition:all 0.25s cubic-bezier(0.16, 1, 0.3, 1);box-shadow:0 2px 10px rgba(0,0,0,0.02);}
-.faq-item.active{border-color:rgba(58,159,232,0.3);box-shadow:0 8px 30px rgba(58,159,232,0.06);transform:translateY(-1px);}
+.faq-list{display:grid;grid-template-columns:repeat(2, 1fr);gap:1.5rem;}
+.faq-item{background:#fff;border:1.5px solid rgba(229,231,235,0.7);border-radius:18px;overflow:hidden;transition:all 0.3s cubic-bezier(0.16, 1, 0.3, 1);box-shadow:0 2px 10px rgba(0,0,0,0.02);}
+.faq-item:hover{transform:scale(1.025) translateY(-2px);border-color:rgba(58,159,232,0.3);box-shadow:0 12px 28px rgba(232,68,154,0.15), 0 12px 28px rgba(58,159,232,0.15);}
+.faq-item.active{border-color:rgba(58,159,232,0.4);box-shadow:0 8px 30px rgba(58,159,232,0.06);}
 .faq-question-btn{width:100%;display:flex;align-items:center;justify-content:space-between;padding:1.4rem 1.8rem;border:none;background:transparent;cursor:pointer;text-align:left;font-family:'Plus Jakarta Sans',sans-serif;font-size:1.02rem;font-weight:700;color:#1a1a2e;transition:color 0.2s;}
 .faq-question-btn:hover{color:#3A9FE8;}
 .faq-icon{font-size:1.2rem;color:#3A9FE8;transition:transform 0.25s;font-weight:bold;}
@@ -1261,4 +1262,7 @@ nav#main-nav.solid{box-shadow:0 6px 28px rgba(0,0,0,0.14);}
 .faq-answer{max-height:0;overflow:hidden;transition:max-height 0.3s cubic-bezier(0.16, 1, 0.3, 1), padding 0.3s;}
 .faq-item.active .faq-answer{max-height:500px;padding:0 1.8rem 1.4rem;border-top:1px dashed rgba(229,231,235,0.5);}
 .faq-answer p{font-size:0.92rem;color:#555;line-height:1.7;}
+@media(max-width:860px){
+  .faq-list{grid-template-columns:1fr !important;}
+}
 `;
