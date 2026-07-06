@@ -285,7 +285,11 @@ export default function SignupPage() {
                 type="text"
                 placeholder="Sarah & James"
                 value={fullName}
-                onChange={e => setFullName(e.target.value)}
+                onChange={e => {
+                  const val = e.target.value;
+                  setFullName(val ? val.charAt(0).toUpperCase() + val.slice(1) : "");
+                }}
+                autoCapitalize="words"
                 disabled={isLoading}
               />
             </div>

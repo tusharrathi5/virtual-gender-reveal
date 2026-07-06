@@ -712,7 +712,11 @@ export default function NewRevealPage() {
                     type="text"
                     placeholder="e.g. Sarah &amp; Michael"
                     value={parentName}
-                    onChange={(e) => setParentName(e.target.value)}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      setParentName(val ? val.charAt(0).toUpperCase() + val.slice(1) : "");
+                    }}
+                    autoCapitalize="words"
                     disabled={loading}
                     maxLength={120}
                   />
@@ -731,7 +735,11 @@ export default function NewRevealPage() {
                         type="text"
                         placeholder="e.g. Sophia"
                         value={babyName}
-                        onChange={(e) => setBabyName(e.target.value)}
+                        onChange={(e) => {
+                          const val = e.target.value;
+                          setBabyName(val ? val.charAt(0).toUpperCase() + val.slice(1) : "");
+                        }}
+                        autoCapitalize="words"
                         disabled={loading}
                         maxLength={120}
                       />
@@ -797,7 +805,11 @@ export default function NewRevealPage() {
                           type="text"
                           placeholder="e.g. Sophia"
                           value={babyNameGirl}
-                          onChange={(e) => setBabyNameGirl(e.target.value)}
+                          onChange={(e) => {
+                            const val = e.target.value;
+                            setBabyNameGirl(val ? val.charAt(0).toUpperCase() + val.slice(1) : "");
+                          }}
+                          autoCapitalize="words"
                           disabled={loading}
                           maxLength={120}
                         />
@@ -811,7 +823,11 @@ export default function NewRevealPage() {
                           type="text"
                           placeholder="e.g. Michael"
                           value={babyNameBoy}
-                          onChange={(e) => setBabyNameBoy(e.target.value)}
+                          onChange={(e) => {
+                            const val = e.target.value;
+                            setBabyNameBoy(val ? val.charAt(0).toUpperCase() + val.slice(1) : "");
+                          }}
+                          autoCapitalize="words"
                           disabled={loading}
                           maxLength={120}
                         />
@@ -1060,7 +1076,11 @@ export default function NewRevealPage() {
                         type="text"
                         placeholder="e.g. Dr. Davis"
                         value={revealerName}
-                        onChange={(e) => setRevealerName(e.target.value)}
+                        onChange={(e) => {
+                          const val = e.target.value;
+                          setRevealerName(val ? val.charAt(0).toUpperCase() + val.slice(1) : "");
+                        }}
+                        autoCapitalize="words"
                         disabled={loading}
                       />
                       <span className="text-xs text-gray-400 font-medium">
