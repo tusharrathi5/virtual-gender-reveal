@@ -10,7 +10,7 @@ import {
   Timestamp,
 } from "firebase/firestore";
 import { getAuth, signOut } from "firebase/auth";
-import { LogOut, Sparkles, ChevronLeft, ChevronRight } from "lucide-react";
+import { LogOut, Sparkles, ChevronLeft, ChevronRight, Menu, X } from "lucide-react";
 import { getFirebaseDb } from "@/lib/firebase";
 import { useAuth } from "@/lib/AuthContext";
 import {
@@ -248,8 +248,14 @@ export default function AdminPage() {
   const [videoModalMode, setVideoModalMode] = useState<"upload" | "delete">("upload");
   const [actionInProgress, setActionInProgress] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
-  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(true);
   const [loggingOut, setLoggingOut] = useState(false);
+
+  useEffect(() => {
+    if (typeof window !== "undefined" && window.innerWidth >= 1024) {
+      setIsSidebarCollapsed(false);
+    }
+  }, []);
 
   const handleLogout = async () => {
     if (loggingOut) return;
@@ -676,7 +682,24 @@ export default function AdminPage() {
 
   return (
     <div className="vgr-admin">
+      {/* Mobile Sidebar Backdrop Overlay */}
+      {!isSidebarCollapsed && (
+        <div
+          className="lg:hidden fixed inset-0 z-30 bg-[#111827]/40 backdrop-blur-[2px]"
+          onClick={() => setIsSidebarCollapsed(true)}
+        />
+      )}
+
       <aside className={`flex flex-col w-[280px] bg-white border-r border-[#f1f1f5] fixed inset-y-0 left-0 z-40 p-6 transition-transform duration-300 ${isSidebarCollapsed ? "-translate-x-full" : "translate-x-0"}`}>
+        {/* Mobile close button inside sidebar */}
+        <button
+          onClick={() => setIsSidebarCollapsed(true)}
+          className="lg:hidden absolute top-6 right-6 w-8 h-8 rounded-lg flex items-center justify-center text-[#6b7280] hover:bg-[#f3f4f6]"
+          aria-label="Close menu"
+        >
+          <X className="w-5 h-5" />
+        </button>
+
         {/* Brand Logo */}
         <a href="/" className="flex items-center gap-3 mb-8 group focus:outline-none focus:ring-2 focus:ring-[#3A9FE8] rounded-lg p-1">
           <div className="w-10 h-10 rounded-xl overflow-hidden bg-white border border-[#f1f1f5] flex items-center justify-center shadow-sm group-hover:scale-105 transition-transform duration-200">
@@ -700,7 +723,12 @@ export default function AdminPage() {
           ].map((item) => (
             <button
               key={item.key}
-              onClick={() => setActiveTab(item.key as AdminTab)}
+              onClick={() => {
+                setActiveTab(item.key as AdminTab);
+                if (window.innerWidth < 1024) {
+                  setIsSidebarCollapsed(true);
+                }
+              }}
               className={`flex items-center justify-between w-full px-4 py-3 rounded-xl text-sm font-medium transition-all duration-200 ${
                 activeTab === item.key
                   ? "bg-[#fafafd] text-[#111827] shadow-sm border border-[#f1f1f5]"
@@ -759,6 +787,24 @@ export default function AdminPage() {
       </button>
 
       <div className={`flex-1 flex flex-col relative transition-[padding] duration-300 min-h-screen min-w-0 overflow-hidden ${isSidebarCollapsed ? "lg:pl-0" : "lg:pl-[280px]"}`}>
+        
+        {/* Mobile Header Bar */}
+        <header className="lg:hidden sticky top-0 z-30 h-16 bg-white/80 backdrop-blur-md border-b border-[#f1f1f5] px-6 flex items-center justify-between">
+          <button
+            onClick={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
+            className="w-10 h-10 rounded-xl flex items-center justify-center border border-[#e5e7eb] text-[#374151] hover:bg-[#f9fafb]"
+            aria-label="Toggle sidebar menu"
+          >
+            {isSidebarCollapsed ? <Menu className="w-5 h-5" /> : <X className="w-5 h-5" />}
+          </button>
+          
+          <a href="/" className="flex items-center gap-2">
+            <img src="/Favicon-VGR.png" alt="VGR Logo" className="w-6 h-6 object-contain" />
+            <span className="font-nunito font-extrabold text-sm bg-gradient-to-r from-[#E8449A] to-[#3A9FE8] bg-clip-text text-transparent">
+              VGR Admin
+            </span>
+          </a>
+        </header>
         <main className="vgr-main">
         <header className="vgr-page-header">
           <div>

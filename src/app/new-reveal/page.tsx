@@ -576,8 +576,7 @@ export default function NewRevealPage() {
             Create Your Reveal
           </h1>
           <p className="text-sm md:text-base text-gray-500 max-w-2xl leading-relaxed font-medium text-center mx-auto">
-            Tell us about your little one and we&apos;ll take care of the rest — secure
-            revealer link, personalized video, and live broadcast to your loved ones.
+            Complete the quick steps below and we&apos;ll handle everything to deliver a magical reveal experience
           </p>
         </div>
 
