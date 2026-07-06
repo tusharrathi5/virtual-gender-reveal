@@ -1159,7 +1159,14 @@ nav#main-nav.solid{box-shadow:0 6px 28px rgba(0,0,0,0.14);}
 .footer-col-links a{font-size:0.84rem;color:#888;text-decoration:none;transition:color 0.2s;}
 .footer-col-links a:hover{color:#E8449A;}
 .footer-new-bottom{padding-top:1.6rem;border-top:1px solid rgba(0,0,0,0.07);display:flex;justify-content:space-between;flex-wrap:wrap;gap:1rem;font-size:0.74rem;color:#bbb;}
-@media(max-width:640px){.footer-new-top{flex-direction:column;gap:2rem;}.cta-bg-dec{font-size:3.5rem;}}
+@media(max-width:640px){
+  .footer-new-top{flex-direction:column;gap:2rem;}
+  .cta-bg-dec{font-size:3.5rem;}
+  .faq-section{padding:3.5rem 1.2rem !important;}
+  .faq-question-btn{padding:1.1rem 1.2rem !important;font-size:0.95rem !important;}
+  .faq-answer p{font-size:0.86rem !important;}
+  .faq-item.active .faq-answer{padding:0 1.2rem 1.1rem !important;}
+}
 /* ── Hero card mock — larger ── */
 .hero-title-img{width:100%;max-width:480px;height:auto;display:block;margin-bottom:1.2rem;filter:drop-shadow(0 0 18px rgba(255,255,255,0.9)) drop-shadow(0 0 40px rgba(255,255,255,0.5));}
 .hero-card-mock{width:100%;max-width:720px;padding:3rem 2.8rem 2.2rem;transform:perspective(1000px) rotateY(-8deg) rotateX(4deg);transition:transform 0.4s ease;}
