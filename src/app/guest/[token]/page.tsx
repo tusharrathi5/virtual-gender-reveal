@@ -512,10 +512,6 @@ export default function GuestInvitePage() {
                       </strong>
                     </div>
                   </div>
-                ) : !isLive ? (
-                  <div className="bg-white/10 border border-white/20 rounded-2xl p-4 text-center">
-                    <p className="text-sm text-slate-800 font-semibold">{countdownLabel}</p>
-                  </div>
                 ) : (
                   <>
                     <p className="text-xs text-slate-700 font-bold text-center -mb-2">
