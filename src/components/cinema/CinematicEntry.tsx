@@ -339,6 +339,17 @@ function LandingPage() {
   const [activeFaq, setActiveFaq] = useState<number | null>(null);
   const [showFaqModal, setShowFaqModal] = useState(false);
 
+  useEffect(() => {
+    if (showFaqModal) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = '';
+    }
+    return () => {
+      document.body.style.overflow = '';
+    };
+  }, [showFaqModal]);
+
   function handleConfirm() {
     if (!confirmPlan) return;
     setConfirmPlan(null);
@@ -641,13 +652,7 @@ function LandingPage() {
         </div>
       </section>
 
-      <section className="cta-support-section">
-        <div className="cta-support-inner">
-          <p className="cta-support-text">
-            If you’re experiencing issues, want to cancel or have any other questions, please contact <a href="mailto:support@virtualgenderreveal.com">support@virtualgenderreveal.com</a> and we would be very happy to help you!
-          </p>
-        </div>
-      </section>
+
 
       {showFaqModal && (
         <div className="faq-modal-overlay" onClick={() => setShowFaqModal(false)}>
