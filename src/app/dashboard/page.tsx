@@ -511,7 +511,10 @@ function DashboardContent() {
   const [pendingPaymentPlan, setPendingPaymentPlan] = useState<PlanDefinition | null>(null);
   const [loggingOut, setLoggingOut] = useState(false);
   const [guestDraftRows, setGuestDraftRows] = useState<EditableGuestRow[]>([
-    blankGuestRow(),
+    blankGuestRow("draft-1"),
+    blankGuestRow("draft-2"),
+    blankGuestRow("draft-3"),
+    blankGuestRow("draft-4"),
   ]);
   const [guestImportSummary, setGuestImportSummary] = useState<ImportSummary | null>(null);
   const [sendingInvites, setSendingInvites] = useState(false);
@@ -1343,22 +1346,22 @@ function DashboardContent() {
               )}
 
               {/* Input Table */}
-              <div className="overflow-x-auto border border-gray-100 rounded-xl">
+              <div className="overflow-x-auto border border-white/20 rounded-xl">
                 <table className="w-full text-left border-collapse text-xs md:text-sm">
                   <thead>
-                    <tr className="bg-gray-50 border-b border-gray-100 font-bold text-gray-400 uppercase text-[10px] tracking-wider">
+                    <tr className="bg-white/10 border-b border-white/20 font-bold text-gray-500 uppercase text-[10px] tracking-wider">
                       <th className="p-4">Name</th>
                       <th className="p-4">Phone Number</th>
                       <th className="p-4">Email</th>
                       <th className="p-4 text-right">Actions</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-gray-50 bg-white">
+                  <tbody className="divide-y divide-white/10 bg-white/20 backdrop-blur-sm">
                     {guestDraftRows.map((row) => (
                       <tr key={row.rowId}>
                         <td className="p-3">
                           <input
-                            className="bg-white border border-gray-200 rounded-xl px-4 py-2.5 text-xs text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#3A9FE8] w-full font-medium transition-all"
+                            className="bg-white/20 border border-white/20 text-gray-800 placeholder-gray-500/80 rounded-xl px-4 py-2.5 text-xs focus:outline-none focus:ring-2 focus:ring-[#3A9FE8] w-full font-medium transition-all"
                             value={row.name}
                             onChange={(e) => updateGuestDraft(row.rowId, "name", e.target.value)}
                             placeholder="Guest name"
@@ -1366,7 +1369,7 @@ function DashboardContent() {
                         </td>
                         <td className="p-3">
                           <input
-                            className="bg-white border border-gray-200 rounded-xl px-4 py-2.5 text-xs text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#3A9FE8] w-full font-medium transition-all"
+                            className="bg-white/20 border border-white/20 text-gray-800 placeholder-gray-500/80 rounded-xl px-4 py-2.5 text-xs focus:outline-none focus:ring-2 focus:ring-[#3A9FE8] w-full font-medium transition-all"
                             value={row.phone}
                             onChange={(e) => updateGuestDraft(row.rowId, "phone", e.target.value)}
                             placeholder="Phone number"
@@ -1374,7 +1377,7 @@ function DashboardContent() {
                         </td>
                         <td className="p-3">
                           <input
-                            className="bg-white border border-gray-200 rounded-xl px-4 py-2.5 text-xs text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#3A9FE8] w-full font-medium transition-all"
+                            className="bg-white/20 border border-white/20 text-gray-800 placeholder-gray-500/80 rounded-xl px-4 py-2.5 text-xs focus:outline-none focus:ring-2 focus:ring-[#3A9FE8] w-full font-medium transition-all"
                             type="email"
                             value={row.email}
                             onChange={(e) => updateGuestDraft(row.rowId, "email", e.target.value)}
@@ -1444,10 +1447,10 @@ function DashboardContent() {
                 <div className="border-t border-gray-100 pt-6 space-y-4">
                   <h3 className="text-xs font-bold text-gray-400 uppercase tracking-widest">Sent Invites</h3>
                   
-                  <div className="overflow-x-auto border border-gray-100 rounded-xl">
+                  <div className="overflow-x-auto border border-white/20 rounded-xl">
                     <table className="w-full text-left border-collapse text-xs md:text-sm">
                       <thead>
-                        <tr className="bg-gray-50 border-b border-gray-100 font-bold text-gray-400 uppercase text-[10px] tracking-wider">
+                        <tr className="bg-white/10 border-b border-white/20 font-bold text-gray-500 uppercase text-[10px] tracking-wider">
                           <th className="p-4">Name</th>
                           <th className="p-4">Phone</th>
                           <th className="p-4">Email</th>
@@ -1457,7 +1460,7 @@ function DashboardContent() {
                           <th className="p-4 text-right">Actions</th>
                         </tr>
                       </thead>
-                      <tbody className="divide-y divide-gray-50 bg-white text-gray-700 font-medium">
+                      <tbody className="divide-y divide-white/10 bg-white/20 backdrop-blur-sm text-gray-700 font-medium">
                         {guestRows.map((guest) => (
                           <tr key={guest.guestId}>
                             <td className="p-4 flex items-center gap-2">

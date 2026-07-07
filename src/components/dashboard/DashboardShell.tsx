@@ -13,7 +13,8 @@ import {
   Sparkles, 
   ChevronRight, 
   ChevronLeft,
-  ShieldCheck 
+  ShieldCheck,
+  LifeBuoy
 } from "lucide-react";
 
 interface DashboardShellProps {
@@ -35,6 +36,7 @@ export default function DashboardShell({
   const [isMobileOpen, setIsMobileOpen] = useState(false);
   const [loggingOut, setLoggingOut] = useState(false);
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
+  const [showSupportModal, setShowSupportModal] = useState(false);
   const drawerRef = useRef<HTMLDivElement>(null);
   const [prefersReducedMotion, setPrefersReducedMotion] = useState(false);
 
@@ -125,6 +127,12 @@ export default function DashboardShell({
       icon: Settings,
       path: "/settings",
     },
+    {
+      id: "support",
+      label: "Support",
+      icon: LifeBuoy,
+      action: () => setShowSupportModal(true),
+    },
   ];
 
   const planName = firestoreUser?.activePlan ?? "none";
@@ -179,6 +187,19 @@ export default function DashboardShell({
           {navItems.map((item) => {
             const isActive = activeTab === item.id;
             const Icon = item.icon;
+            if (item.action) {
+              return (
+                <button
+                  key={item.id}
+                  type="button"
+                  onClick={item.action}
+                  className="flex items-center gap-3 w-full px-4 py-3 rounded-xl text-sm font-medium transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-[#3A9FE8] text-[#6b7280] hover:text-[#111827] hover:bg-white/10"
+                >
+                  <Icon className="w-5 h-5 text-[#9ca3af]" />
+                  {item.label}
+                </button>
+              );
+            }
             return (
               <a
                 key={item.id}
@@ -186,7 +207,7 @@ export default function DashboardShell({
                 className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-[#3A9FE8] ${
                   isActive
                     ? "bg-gradient-to-r from-[#E8449A] to-[#3A9FE8] text-white shadow-sm shadow-[#e8449a22]"
-                    : "text-[#6b7280] hover:text-[#111827] hover:bg-[#f6f6f9]"
+                    : "text-[#6b7280] hover:text-[#111827] hover:bg-white/10"
                 }`}
               >
                 <Icon className={`w-5 h-5 ${isActive ? "text-white" : "text-[#9ca3af]"}`} />
@@ -282,6 +303,22 @@ export default function DashboardShell({
               {navItems.map((item) => {
                 const isActive = activeTab === item.id;
                 const Icon = item.icon;
+                if (item.action) {
+                  return (
+                    <button
+                      key={item.id}
+                      type="button"
+                      onClick={() => {
+                        setIsMobileOpen(false);
+                        item.action();
+                      }}
+                      className="flex items-center gap-3 w-full px-4 py-3 rounded-xl text-sm font-medium transition-all text-[#6b7280] hover:text-[#111827] hover:bg-white/10"
+                    >
+                      <Icon className="w-5 h-5" />
+                      {item.label}
+                    </button>
+                  );
+                }
                 return (
                   <a
                     key={item.id}
@@ -289,7 +326,7 @@ export default function DashboardShell({
                     className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all ${
                       isActive
                         ? "bg-gradient-to-r from-[#E8449A] to-[#3A9FE8] text-white shadow-sm"
-                        : "text-[#6b7280] hover:text-[#111827] hover:bg-[#f6f6f9]"
+                        : "text-[#6b7280] hover:text-[#111827] hover:bg-white/10"
                     }`}
                   >
                     <Icon className="w-5 h-5" />
@@ -402,6 +439,18 @@ export default function DashboardShell({
           animation: slideIn 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
         }
       `}</style>
+      {/* Support Modal Popup */}
+      {showSupportModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#111827]/40 backdrop-blur-[4px]" onClick={() => setShowSupportModal(false)}>
+          <div className="bg-white/75 backdrop-blur-md border border-white/40 rounded-[24px] p-8 max-w-md w-full shadow-2xl relative" onClick={(e) => e.stopPropagation()}>
+            <button onClick={() => setShowSupportModal(false)} className="absolute top-4 right-4 text-gray-500 hover:text-gray-700 w-8 h-8 rounded-full border border-gray-100 bg-white flex items-center justify-center text-sm shadow-sm transition-all hover:scale-105">✕</button>
+            <h3 className="font-nunito font-extrabold text-xl bg-gradient-to-r from-[#E8449A] to-[#3A9FE8] bg-clip-text text-transparent mb-4">Contact Support</h3>
+            <p className="text-sm text-gray-700 leading-relaxed font-semibold">
+              If you’re experiencing issues, want to cancel or have any other questions, please contact <a href="mailto:support@virtualgenderreveal.com" className="text-[#3A9FE8] hover:underline font-bold">support@virtualgenderreveal.com</a> and we would be very happy to help you!
+            </p>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
