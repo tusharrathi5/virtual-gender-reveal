@@ -603,13 +603,41 @@ function LandingPage() {
           </div>
           <div className="testi-new-grid fade-up">
             {[
-              { q: "“We had family in three different states watching. Everyone found out at the exact same second. My mom ugly-cried in Florida and I watched it happen live. I will never forget that.”", name: "Sarah M.",        role: "Mom-to-be",    av: "👩",  starCls: "testi-stars-pink",   nameCls: "tn-pink",   heart: "💗" },
-              { q: "“The doctor link was so easy. She submitted in under a minute. I genuinely had no idea. When the video played and it said girl — I couldn’t breathe.”",                   name: "Jessica & Tom K.", role: "Parents-to-be", av: "👫",  starCls: "testi-stars-purple", nameCls: "tn-purple", heart: "💜" },
-              { q: "“My parents are in their 70s. They couldn’t travel. For the first time they had the actual front-row seat. Not a text an hour later. They were there.”",                        name: "Amanda R.",        role: "Mom-to-be",    av: "🧑🏾", starCls: "testi-stars-blue",   nameCls: "tn-blue",   heart: "💙" },
+              {
+                title: "This was 100% worth it.",
+                q: "“We wanted something different, exciting, and most importantly, a safe way to share our big news. The virtual horse race made the reveal unforgettable, and our friends are still talking about it weeks later.”",
+                name: "Brandon C.",
+                role: "Dad-to-be",
+                av: "👨",
+                starCls: "testi-stars-pink",
+                nameCls: "tn-pink",
+                heart: "💗"
+              },
+              {
+                title: "So easy, so simple, so exciting.",
+                q: "“Setting everything up was so quick and stress-free. Invites went out in minutes, and everyone joined right on time. We all experienced the surprise at the exact same moment. It was perfect!”",
+                name: "Lauren M.",
+                role: "Mom-to-be",
+                av: "👩",
+                starCls: "testi-stars-purple",
+                nameCls: "tn-purple",
+                heart: "💜"
+              },
+              {
+                title: "Safe, meaningful, and magical.",
+                q: "“We wanted a way to celebrate that was safe for everyone but still felt just as special. The horse race had us on the edge of our seats and the ending brought happy tears!”",
+                name: "Jessica R.",
+                role: "Mom-to-be",
+                av: "👩",
+                starCls: "testi-stars-blue",
+                nameCls: "tn-blue",
+                heart: "💙"
+              },
             ].map((t, i) => (
               <div className="testi-new-card" key={i}>
                 <div className="testi-avatar-placeholder">{t.av}</div>
                 <div className={`testi-new-stars ${t.starCls}`}>★★★★★</div>
+                <div className="testi-new-title">{t.title}</div>
                 <div className="testi-new-q">{t.q}</div>
                 <div className={`testi-new-name ${t.nameCls}`}>{t.name}</div>
                 <div className="testi-new-role">{t.role}</div>
@@ -1102,6 +1130,7 @@ nav#main-nav.solid{box-shadow:0 6px 28px rgba(0,0,0,0.14);}
 .testi-avatar-placeholder{width:56px;height:56px;border-radius:50%;background:linear-gradient(135deg,#FFB8D8,#B8D8FF);display:flex;align-items:center;justify-content:center;font-size:1.8rem;margin-bottom:0.8rem;}
 .testi-new-stars{font-size:1rem;margin-bottom:0.7rem;letter-spacing:0.05em;}
 .testi-stars-pink{color:#E8449A;}.testi-stars-purple{color:#7B6EE8;}.testi-stars-blue{color:#3A9FE8;}
+.testi-new-title{font-family:'Nunito',sans-serif;font-size:0.95rem;font-weight:900;color:#1a1a2e;margin-bottom:0.4rem;}
 .testi-new-q{font-size:0.85rem;color:#444;line-height:1.75;margin-bottom:1rem;font-style:italic;}
 .testi-new-name{font-family:'Nunito',sans-serif;font-size:0.95rem;font-weight:800;}
 .tn-pink{color:#E8449A;}.tn-blue{color:#3A9FE8;}.tn-purple{color:#7B6EE8;}
