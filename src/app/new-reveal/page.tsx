@@ -24,19 +24,7 @@ import {
   ChevronDown,
 } from "lucide-react";
 
-const StorkIcon = ({ smiling }: { smiling: boolean }) => (
-  <svg viewBox="0 0 64 64" className="w-8 h-8 transition-transform duration-300 hover:scale-110" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <path d="M16 48 C 24 48, 28 32, 28 20 C 28 12, 36 12, 36 20" stroke="#CBD5E1" strokeWidth="3" strokeLinecap="round"/>
-    <circle cx="36" cy="18" r="8" fill="#FFF" stroke="#94A3B8" strokeWidth="2"/>
-    <circle cx="39" cy="16" r="1.5" fill="#334155"/>
-    {smiling ? (
-      <path d="M42 18 Q 48 14, 52 20 Q 46 22, 42 20" fill="#F59E0B" stroke="#D97706" strokeWidth="1.5" strokeLinecap="round"/>
-    ) : (
-      <path d="M42 18 L 52 18 L 42 20" fill="#F59E0B" stroke="#D97706" strokeWidth="1.5" strokeLinecap="round"/>
-    )}
-    <path d="M36 20 C 36 20, 32 30, 24 32 C 16 34, 16 40, 24 38 C 32 36, 36 20, 36 20" fill="#FDBA74" opacity="0.8"/>
-  </svg>
-);
+
 
 // ─── Helpers ────────────────────────────────────────────────
 
@@ -174,11 +162,10 @@ export default function NewRevealPage() {
 
   // Name states (previously stored as null in DB/form)
   const [babyName, setBabyName] = useState("");
-  const [babyNameGirl, setBabyNameGirl] = useState("");
-  const [babyNameBoy, setBabyNameBoy] = useState("");
+
 
   // Announcement mode fields
-  const [dueDate, setDueDate] = useState("");
+
   const [announcementGender, setAnnouncementGender] = useState<GenderValue | null>(null);
 
   // Reveal mode fields
@@ -348,7 +335,7 @@ export default function NewRevealPage() {
           enquiryId,
           mode,
           parentName: parentName.trim(),
-          photos: photoUrls,
+          photos: [],
           revealAtMs: new Date(revealAt).getTime(),
           revealTimezone: timezone,
           dueDate: null,
@@ -356,8 +343,8 @@ export default function NewRevealPage() {
           babyName: mode === "announcement" ? (babyName.trim() || null) : null,
           announcementGender: mode === "announcement" ? announcementGender : undefined,
           // Reveal mode
-          babyNameGirl: mode === "reveal" ? (babyNameGirl.trim() || null) : null,
-          babyNameBoy: mode === "reveal" ? (babyNameBoy.trim() || null) : null,
+
+
           revealerEmail: mode === "reveal" ? revealerEmail.trim().toLowerCase() : undefined,
           revealerRelation: mode === "reveal" ? revealerRelation : undefined,
           revealerName: mode === "reveal" ? revealerName.trim() : undefined,
@@ -388,7 +375,7 @@ export default function NewRevealPage() {
   const summaryCardComponent = useMemo(() => {
     return (
       <div className="lg:sticky lg:top-24 space-y-6">
-        <div className="bg-white border border-[#f1f1f5] rounded-2xl p-6 shadow-sm overflow-hidden relative">
+        <div className="bg-white/40 backdrop-blur-md border border-white/30 rounded-2xl p-6 shadow-sm overflow-hidden relative">
           <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-[#E8449A]/5 to-[#3A9FE8]/5 rounded-full blur-2xl -z-10" />
 
           <h3 className="font-nunito font-extrabold text-lg text-gray-900 mb-4 flex items-center gap-2 border-b border-gray-100 pb-3">
@@ -431,21 +418,6 @@ export default function NewRevealPage() {
 
             {mode === "reveal" && (
               <>
-                <div className="grid grid-cols-2 gap-2">
-                  <div>
-                    <span className="text-[10px] text-gray-400 block uppercase font-bold tracking-wider">If Girl Name</span>
-                    <span className="font-semibold text-gray-800 mt-0.5 block truncate">
-                      {babyNameGirl.trim() || <span className="text-gray-400/60 italic text-xs font-normal">Optional</span>}
-                    </span>
-                  </div>
-                  <div>
-                    <span className="text-[10px] text-gray-400 block uppercase font-bold tracking-wider">If Boy Name</span>
-                    <span className="font-semibold text-gray-800 mt-0.5 block truncate">
-                      {babyNameBoy.trim() || <span className="text-gray-400/60 italic text-xs font-normal">Optional</span>}
-                    </span>
-                  </div>
-                </div>
-
                 <div>
                   <span className="text-[10px] text-gray-400 block uppercase font-bold tracking-wider">Revealer Contact</span>
                   <span className="font-semibold text-gray-800 mt-0.5 block truncate">
@@ -470,35 +442,19 @@ export default function NewRevealPage() {
               </span>
             </div>
 
-            {!isBasicPlan && dueDate && (
-              <div>
-                <span className="text-[10px] text-gray-400 block uppercase font-bold tracking-wider">Due Date</span>
-                <span className="font-semibold text-gray-800 mt-0.5 block">
-                  {new Date(dueDate + "T00:00:00").toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })}
-                </span>
-              </div>
-            )}
 
-            {!isBasicPlan && photoFiles.length > 0 && (
-              <div>
-                <span className="text-[10px] text-gray-400 block uppercase font-bold tracking-wider mb-1.5">Photos ({photoFiles.length})</span>
-                <div className="flex gap-2 overflow-x-auto pb-1">
-                  {previewUrls.map((url, idx) => (
-                    <img key={idx} src={url} className="w-10 h-10 rounded-lg object-cover border border-gray-100 flex-shrink-0" alt="Thumbnail" />
-                  ))}
-                </div>
-              </div>
-            )}
+
+
           </div>
         </div>
       </div>
     );
-  }, [mode, parentName, announcementGender, babyName, babyNameGirl, babyNameBoy, revealerEmail, revealerRelation, revealAt, timezone, isBasicPlan, dueDate, photoFiles, previewUrls]);
+  }, [mode, parentName, announcementGender, babyName, revealerEmail, revealerRelation, revealAt, timezone, isBasicPlan]);
 
   if (authLoading || !user || !entitlementChecked) {
     return (
       <DashboardShell activeTab="create" title="Create Your Reveal">
-        <div className="bg-white rounded-2xl p-8 border border-[#f1f1f5] shadow-sm max-w-2xl mx-auto mt-10">
+        <div className="bg-white/40 backdrop-blur-md border border-white/30 rounded-2xl p-8 shadow-sm max-w-2xl mx-auto mt-10">
           <p className="text-gray-500 font-medium text-center">Checking your payment status…</p>
         </div>
       </DashboardShell>
@@ -581,7 +537,7 @@ export default function NewRevealPage() {
         </div>
 
         {/* Lightweight Progress Stepper */}
-        <div className="flex items-center justify-between mb-8 bg-white border border-[#f1f1f5] rounded-2xl p-4 shadow-sm text-[11px] sm:text-xs md:text-sm gap-2">
+        <div className="flex items-center justify-between mb-8 bg-white/40 backdrop-blur-md border border-white/30 rounded-2xl p-4 shadow-sm text-[11px] sm:text-xs md:text-sm gap-2">
           {steps.map((step, idx) => (
             <div key={idx} className="flex items-center gap-1.5 md:gap-2">
               <div className={`w-5 h-5 sm:w-6 sm:h-6 rounded-full flex items-center justify-center font-bold text-[10px] sm:text-xs ${
@@ -619,7 +575,7 @@ export default function NewRevealPage() {
             )}
 
             {/* Section 1: Reveal Type */}
-            <div className="bg-white border border-[#f1f1f5] rounded-2xl p-6 md:p-8 shadow-sm">
+            <div className="bg-white/40 backdrop-blur-md border border-white/30 rounded-2xl p-6 md:p-8 shadow-sm">
               <h2 className="text-xs font-bold text-gray-400 uppercase tracking-widest border-b border-[#f1f1f5] pb-3 mb-5 flex items-center gap-2">
                 <Sparkles className="w-4 h-4 text-[#E8449A]" />
                 1. What type of event?
@@ -693,7 +649,7 @@ export default function NewRevealPage() {
             </div>
 
             {/* Section 2: Family Details */}
-            <div className="bg-white border border-[#f1f1f5] rounded-2xl p-6 md:p-8 shadow-sm space-y-6">
+            <div className="bg-white/40 backdrop-blur-md border border-white/30 rounded-2xl p-6 md:p-8 shadow-sm space-y-6">
               <h2 className="text-xs font-bold text-gray-400 uppercase tracking-widest border-b border-[#f1f1f5] pb-3 mb-1 flex items-center gap-2">
                 <User className="w-4 h-4 text-[#3A9FE8]" />
                 2. Family details
@@ -703,7 +659,7 @@ export default function NewRevealPage() {
                 <div className="flex flex-col gap-1.5">
                   <div className="flex items-center justify-between">
                     <label htmlFor="parentName" className="text-xs font-bold text-gray-500 uppercase tracking-wider">Parent Name(s)</label>
-                    <StorkIcon smiling={parentName.trim().length > 0} />
+
                   </div>
                   <input
                     id="parentName"
@@ -793,131 +749,14 @@ export default function NewRevealPage() {
                   </>
                 )}
 
-                {mode === "reveal" && (
-                  <>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                      <div className="flex flex-col gap-1.5">
-                        <label htmlFor="babyNameGirl" className="text-xs font-bold text-gray-500 uppercase tracking-wider">If it&apos;s a Girl (Optional)</label>
-                        <input
-                          id="babyNameGirl"
-                          className="w-full bg-white border border-gray-200 rounded-xl px-4 py-3 text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#E8449A] focus:border-[#E8449A] disabled:bg-gray-50 disabled:text-gray-400 transition-all font-medium"
-                          type="text"
-                          placeholder="e.g. Sophia"
-                          value={babyNameGirl}
-                          onChange={(e) => {
-                            const val = e.target.value;
-                            setBabyNameGirl(val ? val.charAt(0).toUpperCase() + val.slice(1) : "");
-                          }}
-                          autoCapitalize="words"
-                          disabled={loading}
-                          maxLength={120}
-                        />
-                      </div>
 
-                      <div className="flex flex-col gap-1.5">
-                        <label htmlFor="babyNameBoy" className="text-xs font-bold text-gray-500 uppercase tracking-wider">If it&apos;s a Boy (Optional)</label>
-                        <input
-                          id="babyNameBoy"
-                          className="w-full bg-white border border-gray-200 rounded-xl px-4 py-3 text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#3A9FE8] focus:border-[#3A9FE8] disabled:bg-gray-50 disabled:text-gray-400 transition-all font-medium"
-                          type="text"
-                          placeholder="e.g. Michael"
-                          value={babyNameBoy}
-                          onChange={(e) => {
-                            const val = e.target.value;
-                            setBabyNameBoy(val ? val.charAt(0).toUpperCase() + val.slice(1) : "");
-                          }}
-                          autoCapitalize="words"
-                          disabled={loading}
-                          maxLength={120}
-                        />
-                      </div>
-                    </div>
-
-                  </>
-                )}
               </div>
             </div>
 
-            {/* Section 3: Photo Upload */}
-            {!isBasicPlan && (
-              <div className="bg-white border border-[#f1f1f5] rounded-2xl p-6 md:p-8 shadow-sm space-y-4">
-                <h2 className="text-xs font-bold text-gray-400 uppercase tracking-widest border-b border-[#f1f1f5] pb-3 mb-1 flex items-center gap-2">
-                  <Camera className="w-4 h-4 text-[#E8449A]" />
-                  3. Photo upload
-                </h2>
 
-                <div className="grid grid-cols-3 gap-4" role="region" aria-label="Photo slots grid">
-                  {Array.from({ length: PHOTO_MAX }).map((_, i) => {
-                    const file = photoFiles[i];
-                    const url = previewUrls[i];
-                    if (file && url) {
-                      return (
-                        <div key={i} className="aspect-square relative rounded-xl border border-gray-200 overflow-hidden shadow-inner bg-gray-50">
-                          <img className="w-full h-full object-cover" src={url} alt={`Preview ${i + 1}`} />
-                          {!loading && (
-                            <button
-                              type="button"
-                              className="absolute top-2 right-2 p-1.5 rounded-full bg-black/60 hover:bg-black/85 text-white transition-all shadow-md focus:outline-none focus:ring-2 focus:ring-[#3A9FE8]"
-                              onClick={() => removePhoto(i)}
-                              aria-label={`Remove photo ${i + 1}`}
-                            >
-                              <Trash2 className="w-3.5 h-3.5" />
-                            </button>
-                          )}
-                        </div>
-                      );
-                    }
-                    const isNextSlot = i === photoFiles.length;
-                    return (
-                      <div
-                        key={i}
-                        tabIndex={isNextSlot && !loading ? 0 : -1}
-                        role="button"
-                        aria-label={isNextSlot ? "Upload photo slot" : "Inactive upload slot"}
-                        className={`aspect-square relative rounded-xl border-2 border-dashed flex flex-col items-center justify-center transition-all focus-visible:ring-2 focus-visible:ring-[#3A9FE8] focus-visible:outline-none ${
-                          isNextSlot && !loading
-                            ? "border-gray-200 hover:border-[#3A9FE8] bg-gray-50/50 cursor-pointer"
-                            : "border-gray-100 bg-gray-50/20 opacity-40 cursor-default"
-                        }`}
-                        onClick={isNextSlot && !loading ? handlePhotoSlotClick : undefined}
-                        onKeyDown={(e) => {
-                          if (e.key === "Enter" || e.key === " ") {
-                            e.preventDefault();
-                            if (isNextSlot && !loading) handlePhotoSlotClick();
-                          }
-                        }}
-                      >
-                        {isNextSlot ? (
-                          <>
-                            <Plus className="w-5 h-5 text-gray-400 mb-1" aria-hidden="true" />
-                            <span className="text-[10px] font-bold text-gray-500 uppercase tracking-wider select-none">Add Photo</span>
-                          </>
-                        ) : (
-                          <span className="text-gray-300 font-bold select-none">—</span>
-                        )}
-                      </div>
-                    );
-                  })}
-                </div>
-
-                <input
-                  ref={fileInputRef}
-                  type="file"
-                  accept="image/jpeg,image/jpg,image/png,image/webp,image/gif,image/heic,image/heif"
-                  multiple
-                  style={{ display: "none" }}
-                  onChange={handleFileSelect}
-                />
-
-                <span className="text-xs text-gray-400 mt-1 block font-medium">
-                  {photoFiles.length} of {PHOTO_MAX} photos selected. Max 5 MB each.
-                  We recommend including a sonogram if you have one.
-                </span>
-              </div>
-            )}
 
             {/* Section 4: Reveal Schedule */}
-            <div className="bg-white border border-[#f1f1f5] rounded-2xl p-6 md:p-8 shadow-sm space-y-6">
+            <div className="bg-white/40 backdrop-blur-md border border-white/30 rounded-2xl p-6 md:p-8 shadow-sm space-y-6">
                 <h2 className="text-xs font-bold text-gray-400 uppercase tracking-widest border-b border-[#f1f1f5] pb-3 mb-1 flex items-center gap-2">
                   <Calendar className="w-4 h-4 text-[#3A9FE8]" />
                   {isBasicPlan ? "3." : "4."} Reveal schedule
