@@ -1262,9 +1262,9 @@ nav#main-nav.solid{box-shadow:0 6px 28px rgba(0,0,0,0.14);}
 }
 
 /* ── FAQ Modal & Support ── */
-.faq-modal-overlay{position:fixed;inset:0;background:rgba(10,10,20,0.5);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);z-index:99999;display:flex;align-items:center;justify-content:center;padding:2rem;}
+.faq-modal-overlay{position:fixed;inset:0;background:rgba(10,10,20,0.5);z-index:99999;display:flex;align-items:center;justify-content:center;padding:2rem;}
 .faq-modal-content{width:100%;max-width:840px;max-height:85vh;overflow-y:auto;background-image:url('/images/faq-background.png');background-size:cover;background-position:center;border:1.5px solid rgba(255,255,255,0.4);border-radius:24px;padding:3rem 2rem;position:relative;box-shadow:0 20px 50px rgba(0,0,0,0.15);scrollbar-width:thin;}
-.faq-modal-content::before{content:'';position:absolute;inset:0;background:rgba(255,255,255,0.65);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);z-index:0;border-radius:22px;}
+.faq-modal-content::before{content:'';position:absolute;inset:0;background:rgba(255,255,255,0.7);z-index:0;border-radius:22px;}
 .faq-modal-close{position:absolute;top:20px;right:20px;width:36px;height:36px;border-radius:50%;border:1px solid rgba(0,0,0,0.1);background:white;color:#1a1a2e;font-size:1.1rem;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all 0.2s;z-index:10;}
 .faq-modal-close:hover{background:#fafafa;transform:scale(1.05);color:#E8449A;}
 .cta-support-section{padding:3.5rem 2rem;background:#fafafd;text-align:center;border-top:1px dashed rgba(0,0,0,0.05);}
