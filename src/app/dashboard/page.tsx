@@ -764,7 +764,12 @@ function DashboardContent() {
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(data?.error || "Failed to send invites.");
-      setGuestDraftRows([blankGuestRow()]);
+      setGuestDraftRows([
+        blankGuestRow("draft-1"),
+        blankGuestRow("draft-2"),
+        blankGuestRow("draft-3"),
+        blankGuestRow("draft-4"),
+      ]);
       setGuestImportSummary(null);
       setToast({
         type: "success",
@@ -1039,7 +1044,7 @@ function DashboardContent() {
         {/* Overview Stat Cards */}
         {hasPlan && (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-            <div className="bg-white/85 backdrop-blur-md border border-white/60 rounded-[20px] p-6 shadow-sm flex flex-col justify-between">
+            <div className="bg-white/40 backdrop-blur-md border border-white/30 shadow-lg rounded-[20px] p-6 shadow-sm flex flex-col justify-between">
               <span className="text-[10px] text-gray-400 block uppercase font-bold tracking-wider mb-2">Billing Tier</span>
               <div className="flex items-center justify-between">
                 <span className="text-lg font-bold text-gray-900">{PLANS.find((p) => p.id === activePlan)?.name ?? activePlan}</span>
@@ -1049,7 +1054,7 @@ function DashboardContent() {
               </div>
             </div>
 
-            <div className="bg-white/85 backdrop-blur-md border border-white/60 rounded-[20px] p-6 shadow-sm flex flex-col justify-between">
+            <div className="bg-white/40 backdrop-blur-md border border-white/30 shadow-lg rounded-[20px] p-6 shadow-sm flex flex-col justify-between">
               <span className="text-[10px] text-gray-400 block uppercase font-bold tracking-wider mb-2">Reveals Remaining</span>
               <div className="flex items-baseline gap-1.5">
                 <span className="text-3xl font-extrabold text-gray-900">{revealsAllowed}</span>
@@ -1057,7 +1062,7 @@ function DashboardContent() {
               </div>
             </div>
 
-            <div className="bg-white/85 backdrop-blur-md border border-white/60 rounded-[20px] p-6 shadow-sm flex flex-col justify-between">
+            <div className="bg-white/40 backdrop-blur-md border border-white/30 shadow-lg rounded-[20px] p-6 shadow-sm flex flex-col justify-between">
               <span className="text-[10px] text-gray-400 block uppercase font-bold tracking-wider mb-2">Reveals Created</span>
               <div className="flex items-baseline gap-1.5">
                 <span className="text-3xl font-extrabold text-gray-900">{revealsCreated}</span>
@@ -1070,7 +1075,7 @@ function DashboardContent() {
         {/* Recent Reveals List or Empty State */}
         {reveals.length > 0 ? (
           <section className="space-y-6">
-            <div className="bg-white/85 backdrop-blur-md border border-white/60 rounded-2xl p-4 shadow-sm mb-4">
+            <div className="bg-white/40 backdrop-blur-md border border-white/30 shadow-lg rounded-2xl p-4 shadow-sm mb-4">
               <h2 className="text-xs font-bold text-gray-500 uppercase tracking-widest flex items-center gap-2">
                 <Heart className="w-4 h-4 text-[#E8449A]" />
                 Your Reveals
@@ -1082,17 +1087,11 @@ function DashboardContent() {
                 const editable = canEditReveal(reveal);
                 const isEditing = editingRevealId === reveal.id && editForm;
                 return (
-                  <article key={reveal.id} className="bg-white/85 backdrop-blur-md border border-white/60 rounded-[20px] p-6 md:p-8 shadow-sm space-y-6">
+                  <article key={reveal.id} className="bg-white/40 backdrop-blur-md border border-white/30 shadow-lg rounded-[20px] p-6 md:p-8 shadow-sm space-y-6">
                     {/* Reveal Card Header */}
                     <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-gray-50 pb-4">
                       <div className="flex items-center gap-4">
-                        <div className="w-14 h-14 rounded-xl overflow-hidden border border-gray-100 bg-gray-50 flex-shrink-0 flex items-center justify-center">
-                          {reveal.photos[0] ? (
-                            <img src={reveal.photos[0]} alt="" className="w-full h-full object-cover" />
-                          ) : (
-                            <Camera className="w-6 h-6 text-gray-300" />
-                          )}
-                        </div>
+
                         <div>
                           <span className="text-[10px] bg-[#D6EAFE] text-[#1B4F8C] px-2 py-0.5 rounded-full font-bold uppercase tracking-wider">
                             {reveal.mode === "announcement" ? "Announcement" : "Gender Reveal"}
@@ -1157,27 +1156,9 @@ function DashboardContent() {
                           <span className="text-xs font-semibold text-gray-800 truncate block">{reveal.revealTimezone}</span>
                         </div>
                         <div className="bg-gray-50/50 rounded-xl p-3 border border-gray-100">
-                          <span className="text-[9px] text-gray-400 block uppercase font-bold tracking-wider mb-0.5">Attached Photos</span>
-                          <span className="text-xs font-semibold text-gray-800">{reveal.photos.length} photos</span>
-                        </div>
-                        <div className="bg-gray-50/50 rounded-xl p-3 border border-gray-100">
                           <span className="text-[9px] text-gray-400 block uppercase font-bold tracking-wider mb-0.5">Payment Status</span>
                           <span className="text-xs font-bold text-gray-800">{getPaymentStatusLabel(reveal.paymentStatus)}</span>
                         </div>
-                        <div className="bg-gray-50/50 rounded-xl p-3 border border-gray-100">
-                          <span className="text-[9px] text-gray-400 block uppercase font-bold tracking-wider mb-0.5">Estimated Due Date</span>
-                          <span className="text-xs font-semibold text-gray-800">
-                            {reveal.dueDate ? new Date(reveal.dueDate + "T00:00:00").toLocaleDateString("en-US", { year: "numeric", month: "short", day: "numeric" }) : "-"}
-                          </span>
-                        </div>
-                        {reveal.mode === "reveal" && (
-                          <div className="bg-gray-50/50 rounded-xl p-3 border border-gray-100 col-span-2">
-                            <span className="text-[9px] text-gray-400 block uppercase font-bold tracking-wider mb-0.5">Revealer Email & Relation</span>
-                            <span className="text-xs font-semibold text-gray-800 truncate block">
-                              {reveal.revealerEmail || "-"} {reveal.revealerRelation ? `(${RELATION_LABELS[reveal.revealerRelation]})` : ""}
-                            </span>
-                          </div>
-                        )}
                       </div>
                     )}
 
@@ -1240,16 +1221,7 @@ function DashboardContent() {
                         </div>
 
                         {editForm.mode === "announcement" ? (
-                          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                            <div className="flex flex-col gap-1">
-                              <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Due Date</label>
-                              <input
-                                className="w-full bg-white border border-gray-200 rounded-xl px-4 py-2.5 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#3A9FE8]"
-                                type="date"
-                                value={editForm.dueDate}
-                                onChange={(e) => updateEditForm("dueDate", e.target.value)}
-                              />
-                            </div>
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div className="flex flex-col gap-1">
                               <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Gender Update</label>
                               <select
@@ -1266,16 +1238,7 @@ function DashboardContent() {
                             </div>
                           </div>
                         ) : (
-                          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                            <div className="flex flex-col gap-1">
-                              <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Due Date</label>
-                              <input
-                                className="w-full bg-white border border-gray-200 rounded-xl px-4 py-2.5 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#3A9FE8]"
-                                type="date"
-                                value={editForm.dueDate}
-                                onChange={(e) => updateEditForm("dueDate", e.target.value)}
-                              />
-                            </div>
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div className="flex flex-col gap-1">
                               <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Revealer Email</label>
                               <input
@@ -1304,52 +1267,7 @@ function DashboardContent() {
                           </div>
                         )}
 
-                        {/* Edit Photos Sub-section */}
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-start">
-                          <div className="md:col-span-2 space-y-2">
-                            <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block">Current Photos</span>
-                            <div className="flex flex-wrap gap-3">
-                              {editForm.photos.length === 0 && <span className="text-xs text-gray-400 italic">None selected</span>}
-                              {editForm.photos.map((url, index) => (
-                                <div key={url} className="w-16 h-16 rounded-xl overflow-hidden relative border border-gray-200 group">
-                                  <img src={url} alt="" className="w-full h-full object-cover" />
-                                  <button
-                                    type="button"
-                                    onClick={() =>
-                                      updateEditForm(
-                                        "photos",
-                                        editForm.photos.filter((_, i) => i !== index)
-                                      )
-                                    }
-                                    className="absolute top-1 right-1 w-5 h-5 rounded-full bg-black/60 hover:bg-black text-white text-xs flex items-center justify-center focus:outline-none focus:ring-2 focus:ring-[#3A9FE8]"
-                                  >
-                                    ×
-                                  </button>
-                                </div>
-                              ))}
-                            </div>
-                          </div>
 
-                          <div className="flex flex-col gap-1">
-                            <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Replace Photos</span>
-                            <label className="border border-dashed border-gray-200 rounded-xl p-3 bg-white flex flex-col items-center justify-center text-center cursor-pointer hover:border-[#3A9FE8] transition-all focus-within:ring-2 focus-within:ring-[#3A9FE8]">
-                              <Camera className="w-5 h-5 text-gray-400 mb-1" />
-                              <span className="text-xs font-bold text-gray-600">Select Files</span>
-                              <input
-                                type="file"
-                                accept="image/jpeg,image/jpg,image/png,image/webp,image/gif,image/heic,image/heif"
-                                multiple
-                                className="hidden"
-                                onChange={(e) => setEditPhotoFiles(Array.from(e.target.files || []).slice(0, PHOTO_MAX))}
-                              />
-                            </label>
-                            <small className="text-[10px] text-gray-400 font-semibold mt-1">
-                              {editPhotoFiles.length > 0
-                                ? `${editPhotoFiles.length} file(s) selected`
-                                : `Up to ${PHOTO_MAX} photos`}
-                            </small>
-                          </div>
-                        </div>
 
                         {/* Edit Form Actions */}
                         <div className="flex items-center gap-3 pt-2">
@@ -1381,7 +1299,7 @@ function DashboardContent() {
           </section>
         ) : (
           hasPlan && (
-            <div className="bg-white/85 backdrop-blur-md border border-white/60 rounded-[20px] p-10 text-center shadow-sm">
+            <div className="bg-white/40 backdrop-blur-md border border-white/30 shadow-lg rounded-[20px] p-10 text-center shadow-sm">
               <Sparkles className="w-12 h-12 text-[#E8449A] mx-auto mb-4 animate-bounce" />
               <h3 className="font-nunito font-extrabold text-xl text-gray-900 mb-1">Create your first reveal event</h3>
               <p className="text-sm text-gray-500 font-medium max-w-sm mx-auto mb-6">
@@ -1404,62 +1322,18 @@ function DashboardContent() {
         {/* Guest Invites Portal */}
         {latestReveal && (
           <section className="space-y-6">
-            <div className="bg-white/85 backdrop-blur-md border border-white/60 rounded-2xl p-4 shadow-sm mb-4">
+            <div className="bg-white/40 backdrop-blur-md border border-white/30 shadow-lg rounded-2xl p-4 shadow-sm mb-4">
               <h2 className="text-xs font-bold text-gray-500 uppercase tracking-widest flex items-center gap-2">
                 <Users className="w-4 h-4 text-[#3A9FE8]" />
                 Invite Guests
               </h2>
               <p className="text-xs text-gray-600 font-semibold mt-1">
-                Add your guests or import a spreadsheet. We’ll send them a secure invite link.
+                Invite your guests by adding their phone number, email or both! We’ll send them a secure invite link.
               </p>
             </div>
 
-            <div className="bg-white/85 backdrop-blur-md border border-white/60 rounded-[20px] p-6 md:p-8 shadow-sm space-y-6">
-              {/* Toolbar */}
-              <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 p-4 rounded-xl bg-gradient-to-r from-[#FDE8F2]/45 to-[#D6EAFE]/35 border border-white">
-                <div className="flex flex-wrap items-center gap-3 w-full">
-                  {/* 1. Styled Import CSV/XLSX card (First position on the left) */}
-                  <label className="flex items-center gap-3 text-left p-3 rounded-xl bg-white/60 hover:bg-white/90 border border-pink-100 hover:border-pink-200 cursor-pointer transition-all group shrink-0 focus-within:ring-2 focus-within:ring-[#3A9FE8]">
-                    <div className="w-8 h-8 rounded-lg bg-gradient-to-tr from-[#E8449A] to-[#3A9FE8] flex items-center justify-center text-white font-bold shrink-0">
-                      <Upload className="w-4 h-4" />
-                    </div>
-                    <div>
-                      <span className="text-[9px] font-bold text-gray-400 uppercase tracking-wider block leading-tight">Want to add many guests?</span>
-                      <span className="text-xs font-bold text-gray-700 group-hover:text-[#E8449A] transition-colors leading-tight">Import a CSV/XLSX file</span>
-                    </div>
-                    <input
-                      ref={guestFileInputRef}
-                      type="file"
-                      accept=".csv,text/csv,.xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-                      className="sr-only"
-                      onChange={(e) => {
-                        const file = e.target.files?.[0];
-                        if (file) void handleGuestFile(file);
-                        e.currentTarget.value = "";
-                      }}
-                    />
-                  </label>
+            <div className="bg-white/40 backdrop-blur-md border border-white/30 shadow-lg rounded-[20px] p-6 md:p-8 shadow-sm space-y-6">
 
-                  {/* 2. Refresh List */}
-                  <button
-                    type="button"
-                    onClick={() => loadGuestList(latestReveal.id)}
-                    className="bg-white border border-gray-200 text-[#374151] hover:bg-gray-50 font-bold text-xs uppercase tracking-wider rounded-xl py-3 px-4 flex items-center gap-1.5 transition-all focus:outline-none focus:ring-2 focus:ring-[#3A9FE8] self-stretch md:self-auto"
-                  >
-                    <RefreshCw className="w-4 h-4 text-gray-400" />
-                    Refresh List
-                  </button>
-
-                  {/* 3. Send Parent Digest */}
-                  <button
-                    type="button"
-                    onClick={() => sendGuestDigest(latestReveal.id)}
-                    className="bg-white border border-gray-200 text-[#374151] hover:bg-gray-50 font-bold text-xs uppercase tracking-wider rounded-xl py-3 px-4 flex items-center gap-1.5 transition-all focus:outline-none focus:ring-2 focus:ring-[#3A9FE8] self-stretch md:self-auto"
-                  >
-                    Send Parent Digest
-                  </button>
-                </div>
-              </div>
 
               {guestImportSummary && (
                 <div className="bg-blue-50 border border-blue-100 text-[#1B4F8C] text-xs font-semibold rounded-xl p-4">
@@ -1690,7 +1564,7 @@ function PaymentGatewayPrompt({
 }) {
   return (
     <div className="fixed inset-0 z-[9998] bg-black/50 backdrop-blur-sm flex items-center justify-center p-4">
-      <div className="bg-white border border-[#f1f1f5] rounded-2xl shadow-2xl p-6 md:p-8 max-w-md w-full animate-fade-up">
+      <div className="bg-white/40 backdrop-blur-md border border-white/30 shadow-lg rounded-2xl p-6 md:p-8 max-w-md w-full animate-fade-up">
         <span className="text-[10px] font-bold text-[#E8449A] uppercase tracking-widest block mb-1">Payment Gateway</span>
         <h2 id="payment-prompt-title" className="font-nunito font-extrabold text-xl text-gray-900 mb-3">
           Taking you to payment gateway
@@ -1752,7 +1626,7 @@ function PlanSection({
           return (
             <div
               key={plan.id}
-              className={`relative bg-white/85 backdrop-blur-md border rounded-[20px] p-6 shadow-sm flex flex-col justify-between transition-all duration-200 ${
+              className={`relative bg-white/40 backdrop-blur-md border border-white/30 shadow-lg rounded-[20px] p-6 shadow-sm flex flex-col justify-between transition-all duration-200 ${
                 isPremium
                   ? "border-[#E8449A] ring-2 ring-[#E8449A]/10 scale-100 lg:scale-[1.02]"
                   : "border-white/60"

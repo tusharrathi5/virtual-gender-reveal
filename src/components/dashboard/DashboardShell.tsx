@@ -140,9 +140,25 @@ export default function DashboardShell({
   const userInitials = userDisplayName.charAt(0).toUpperCase();
 
   return (
-    <div className="min-h-screen bg-[#fafafd] text-[#111827] flex font-jakarta">
+    <div className="min-h-screen text-[#111827] flex font-jakarta relative">
+      {/* Background Images */}
+      {showVideoBackground && (
+        <>
+          <img
+            src="/images/dashboard-background.png"
+            alt="Dashboard Background"
+            className="hidden md:block fixed inset-0 w-full h-full object-cover pointer-events-none z-0"
+          />
+          <img
+            src="/images/dashboard_image_mobile.jpeg"
+            alt="Dashboard Mobile Background"
+            className="block md:hidden fixed inset-0 w-full h-full object-cover pointer-events-none z-0"
+          />
+          <div className="fixed inset-0 bg-slate-950/10 pointer-events-none z-0" />
+        </>
+      )}
       {/* ── Desktop Sidebar ── */}
-      <aside className={`hidden lg:flex flex-col w-[280px] bg-white border-r border-[#f1f1f5] fixed inset-y-0 left-0 z-40 p-6 transition-transform duration-300 ${isSidebarCollapsed ? "-translate-x-full" : "translate-x-0"}`}>
+      <aside className={`hidden lg:flex flex-col w-[280px] bg-white/45 backdrop-blur-md border-r border-white/30 fixed inset-y-0 left-0 z-40 p-6 transition-transform duration-300 ${isSidebarCollapsed ? "-translate-x-full" : "translate-x-0"}`}>
         {/* Brand Logo */}
         <a href="/" className="flex items-center gap-3 mb-8 group focus:outline-none focus:ring-2 focus:ring-[#3A9FE8] rounded-lg p-1">
           <div className="w-10 h-10 rounded-xl overflow-hidden bg-white border border-[#f1f1f5] flex items-center justify-center shadow-sm group-hover:scale-105 transition-transform duration-200">
@@ -241,7 +257,7 @@ export default function DashboardShell({
             role="dialog"
             aria-modal="true"
             aria-label="Mobile Navigation"
-            className="relative flex flex-col w-[280px] bg-white h-full p-6 shadow-2xl transition-transform duration-300 animate-slide-in"
+            className="relative flex flex-col w-[280px] bg-white/45 backdrop-blur-md h-full p-6 shadow-2xl transition-transform duration-300 animate-slide-in border-r border-white/30"
           >
             <div className="flex items-center justify-between mb-8">
               <a href="/" className="flex items-center gap-3">
@@ -336,23 +352,7 @@ export default function DashboardShell({
             <ChevronLeft className="w-4.5 h-4.5" />
           )}
         </button>
-        {showVideoBackground && (
-          <>
-            {/* Desktop Background Image (Replaced Video) */}
-            <img
-              src="/images/dashboard-background.png"
-              alt="Dashboard Background"
-              className="hidden md:block absolute inset-0 w-full h-full object-cover pointer-events-none z-0"
-            />
-            
-            {/* Mobile Background Image */}
-            <img
-              src="/images/dashboard_image_mobile.jpeg"
-              alt="Dashboard Mobile Background"
-              className="block md:hidden absolute inset-0 w-full h-full object-cover pointer-events-none z-0"
-            />
-          </>
-        )}
+
 
         {/* Mobile-only Header */}
         <header className="lg:hidden sticky top-0 z-30 h-16 bg-white/80 backdrop-blur-md border-b border-[#f1f1f5] px-6 flex items-center justify-between">
