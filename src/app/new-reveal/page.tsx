@@ -160,10 +160,6 @@ export default function NewRevealPage() {
   const [revealAt, setRevealAt] = useState("");
   const [photoFiles, setPhotoFiles] = useState<File[]>([]);
 
-  // Name states (previously stored as null in DB/form)
-  const [babyName, setBabyName] = useState("");
-
-
   // Announcement mode fields
 
   const [announcementGender, setAnnouncementGender] = useState<GenderValue | null>(null);
@@ -340,7 +336,7 @@ export default function NewRevealPage() {
           revealTimezone: timezone,
           dueDate: null,
           // Announcement mode
-          babyName: mode === "announcement" ? (babyName.trim() || null) : null,
+          babyName: null,
           announcementGender: mode === "announcement" ? announcementGender : undefined,
           // Reveal mode
 
@@ -406,13 +402,6 @@ export default function NewRevealPage() {
                     {announcementGender === "boy" ? "💙 Boy" : announcementGender === "girl" ? "🩷 Girl" : <span className="text-gray-300 italic font-normal">Not selected</span>}
                   </span>
                 </div>
-
-                <div>
-                  <span className="text-[10px] text-gray-400 block uppercase font-bold tracking-wider">Baby's Name</span>
-                  <span className="font-semibold text-gray-800 mt-0.5 block truncate">
-                    {babyName.trim() || <span className="text-gray-400/60 italic text-xs font-normal">Optional</span>}
-                  </span>
-                </div>
               </>
             )}
 
@@ -449,7 +438,7 @@ export default function NewRevealPage() {
         </div>
       </div>
     );
-  }, [mode, parentName, announcementGender, babyName, revealerEmail, revealerRelation, revealAt, timezone, isBasicPlan]);
+  }, [mode, parentName, announcementGender, revealerEmail, revealerRelation, revealAt, timezone, isBasicPlan]);
 
   if (authLoading || !user || !entitlementChecked) {
     return (
@@ -682,24 +671,6 @@ export default function NewRevealPage() {
 
                 {mode === "announcement" && (
                   <>
-                    <div className="flex flex-col gap-1.5">
-                      <label htmlFor="babyName" className="text-xs font-bold text-gray-500 uppercase tracking-wider">Baby&apos;s Name (Optional)</label>
-                      <input
-                        id="babyName"
-                        className="w-full bg-white border border-gray-200 rounded-xl px-4 py-3 text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#3A9FE8] focus:border-[#3A9FE8] disabled:bg-gray-50 disabled:text-gray-400 transition-all font-medium"
-                        type="text"
-                        placeholder="e.g. Sophia"
-                        value={babyName}
-                        onChange={(e) => {
-                          const val = e.target.value;
-                          setBabyName(val ? val.charAt(0).toUpperCase() + val.slice(1) : "");
-                        }}
-                        autoCapitalize="words"
-                        disabled={loading}
-                        maxLength={120}
-                      />
-                    </div>
-
                     <div className="flex flex-col gap-1.5">
                       <span className="text-xs font-bold text-gray-500 uppercase tracking-wider">Baby&apos;s Gender</span>
                       <div className="grid grid-cols-2 gap-4">
