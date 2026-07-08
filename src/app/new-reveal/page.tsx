@@ -117,7 +117,7 @@ export default function NewRevealPage() {
   const [uploadProgress, setUploadProgress] = useState<string>("");
   const [error, setError] = useState("");
   const [entitlementChecked, setEntitlementChecked] = useState(false);
-  const isBasicPlan = (firestoreUser?.activePlan ?? "none") === "basic";
+  const isBasicPlan = (firestoreUser?.activePlan ?? "none") === "basic" || (firestoreUser?.activePlan ?? "none") === "free";
 
   // Entitlement guard: redirect if user can't create a reveal
   useEffect(() => {

@@ -1135,7 +1135,7 @@ function DashboardContent() {
                           </button>
                         )}
 
-                        {reveal.plan === "basic" ? (
+                        {reveal.plan === "basic" || reveal.plan === "free" ? (
                           reveal.videoUrl ? (
                             <a
                               href={reveal.videoUrl}
