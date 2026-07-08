@@ -1115,7 +1115,7 @@ nav#main-nav.solid{box-shadow:0 6px 28px rgba(0,0,0,0.14);}
 .pricing-trust-divider{width:1px;height:20px;background:#e0e0e0;}
 @media(max-width:768px){.pricing-grid{grid-template-columns:1fr;}.pnew-premium{transform:none;}.pnew-premium:hover{transform:translateY(-6px);}}
 /* ── Testimonials Redesign ── */
-.testi-new-section{padding:5rem 2rem 2rem;background:url('/assets/testimonials-bg.png') center/cover no-repeat;position:relative;overflow:hidden;}
+.testi-new-section{padding:5rem 2rem 2rem;background:url('/images/testimonials-bg.png') center/cover no-repeat;position:relative;overflow:hidden;}
 .testi-heart-left{position:absolute;left:2%;top:12%;font-size:5rem;pointer-events:none;animation:balloonFloat 5s ease-in-out infinite alternate;opacity:0.7;}
 .testi-heart-right{position:absolute;right:2%;top:18%;font-size:4.5rem;pointer-events:none;animation:balloonFloat 4.5s ease-in-out infinite alternate-reverse;opacity:0.6;}
 .testi-new-inner{max-width:1060px;margin:0 auto;position:relative;z-index:2;}
@@ -1125,7 +1125,7 @@ nav#main-nav.solid{box-shadow:0 6px 28px rgba(0,0,0,0.14);}
 .testi-title-pink{color:#E8449A;}
 .testi-new-sub{font-size:0.95rem;color:#888;margin-top:0.6rem;}
 .testi-new-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:1.5rem;margin-bottom:3rem;}
-.testi-new-card{background:white;border-radius:20px;padding:1.8rem;box-shadow:0 4px 20px rgba(0,0,0,0.07);border:1px solid #f0f0f0;position:relative;transition:transform 0.25s,box-shadow 0.25s;}
+.testi-new-card{background:rgba(255,255,255,0.4);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);border-radius:20px;padding:1.8rem;box-shadow:0 8px 32px rgba(0,0,0,0.08);border:1px solid rgba(255,255,255,0.3);position:relative;transition:transform 0.25s,box-shadow 0.25s;}
 .testi-new-card:hover{transform:translateY(-4px);box-shadow:0 12px 36px rgba(100,60,200,0.1);}
 .testi-avatar-placeholder{width:56px;height:56px;border-radius:50%;background:linear-gradient(135deg,#FFB8D8,#B8D8FF);display:flex;align-items:center;justify-content:center;font-size:1.8rem;margin-bottom:0.8rem;}
 .testi-new-stars{font-size:1rem;margin-bottom:0.7rem;letter-spacing:0.05em;}
