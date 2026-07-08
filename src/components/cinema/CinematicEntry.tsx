@@ -1172,7 +1172,7 @@ nav#main-nav.solid{box-shadow:0 6px 28px rgba(0,0,0,0.14);}
 .testi-stat-text strong{color:#1a1a2e;}
 .testi-stat-text span{color:#888;}
 /* ── CTA Section Redesign ── */
-.cta-new-section{padding:6rem 2rem;position:relative;overflow:hidden;background:linear-gradient(160deg, #e37fb5 0%, #EEE6FF 50%, #317cb9 100%);text-align:center;}
+.cta-new-section{padding:6rem 2rem;position:relative;overflow:hidden;background:url('/images/cta-bg.png') center/cover no-repeat;text-align:center;}
 .cta-bg-dec{position:absolute;pointer-events:none;font-size:6rem;opacity:0.65;animation:balloonFloat 5s ease-in-out infinite alternate;}
 .cta-bg-left{left:3%;top:10%;}
 .cta-bg-right{right:3%;top:15%;animation-direction:alternate-reverse;font-size:5rem;}
