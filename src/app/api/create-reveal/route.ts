@@ -228,10 +228,9 @@ export async function POST(req: NextRequest) {
     }
 
     const enquiryRef = getAdminDb().collection("enquiries").doc(validatedEnquiryId);
-    const enquirySnap = await enquiryRef.get();
-    const plan = enquirySnap.data()?.plan;
+    const isBasic = plan === "basic" || plan === "free";
 
-    if (plan === "basic" && validatedMode === "announcement" && announcementGender) {
+    if (isBasic && validatedMode === "announcement" && announcementGender) {
       const videoUrl = `https://firebasestorage.googleapis.com/v0/b/${process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET}/o/static%2Fvideos%2F${announcementGender}_reveal.mov?alt=media`;
       await enquiryRef.update({
         videoUrl,
@@ -243,7 +242,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({
       success: true,
       enquiryId: result.enquiryId,
-      status: result.newStatus,
+      status: isBasic && validatedMode === "announcement" ? "completed" : result.newStatus,
       consumedPurchaseId: result.consumedPurchaseId,
     });
   } catch (err) {
