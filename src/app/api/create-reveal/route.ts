@@ -102,6 +102,9 @@ export async function POST(req: NextRequest) {
 
   const parsedRevealAtMs = revealAtMs;
 
+  const userSnap = await getAdminDb().collection("users").doc(session.uid).get();
+  const plan = userSnap.data()?.activePlan ?? "basic";
+
   // 3. Validate — bail early, no Firestore writes yet
   const validationError = validateCreateRevealInput({
     enquiryId,
@@ -114,6 +117,7 @@ export async function POST(req: NextRequest) {
     revealerEmail,
     revealerRelation,
     revealerName,
+    plan,
   });
   if (validationError) {
     // Photos may already be in Storage — clean them up since we're rejecting
@@ -294,6 +298,7 @@ function validateCreateRevealInput(input: {
   revealerEmail?: string;
   revealerRelation?: RevealerRelation;
   revealerName?: string;
+  plan?: string;
 }): string | null {
   const {
     enquiryId,
@@ -306,6 +311,7 @@ function validateCreateRevealInput(input: {
     revealerEmail,
     revealerRelation,
     revealerName,
+    plan,
   } = input;
 
   // Basic presence checks
@@ -327,8 +333,10 @@ function validateCreateRevealInput(input: {
   if (typeof revealAtMs !== "number" || isNaN(revealAtMs)) {
     return "Invalid reveal time.";
   }
-  if (revealAtMs < Date.now() + 30 * 60 * 1000) {
-    return "Reveal time must be at least 30 minutes in the future.";
+  if (plan !== "basic") {
+    if (revealAtMs < Date.now() + 30 * 60 * 1000) {
+      return "Reveal time must be at least 30 minutes in the future.";
+    }
   }
   if (!revealTimezone || typeof revealTimezone !== "string") {
     return "Timezone is required.";
