@@ -214,6 +214,12 @@ export async function POST(req: NextRequest) {
       });
       update.genderStatus = "submitted";
       update["stages.revealerSubmitted"] = null;
+
+      // Handle basic plan video URL updates
+      if (existing.plan === "basic") {
+        update.videoUrl = `https://firebasestorage.googleapis.com/v0/b/${process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET}/o/static%2Fvideos%2F${body.announcementGender}_reveal.mov?alt=media`;
+        update.status = "completed";
+      }
     }
   } else {
     const nextEmail = body.revealerEmail!.trim().toLowerCase();

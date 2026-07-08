@@ -61,6 +61,7 @@ interface RevealSummary {
   createdAt: Date | null;
   videoUrl?: string | null;
   videoReady?: boolean;
+  plan: string;
 }
 
 interface RevealEditForm {
@@ -571,6 +572,7 @@ function DashboardContent() {
           createdAt: timestampToDate(data.createdAt),
           videoUrl: typeof data.videoUrl === "string" ? data.videoUrl : null,
           videoReady: getRevealVideoStatus({ videoUrl: data.videoUrl }) === "ready",
+          plan: data.plan ?? "basic",
         };
       });
       setReveals(items);
@@ -1133,13 +1135,34 @@ function DashboardContent() {
                           </button>
                         )}
 
-                        <button
-                          onClick={() => joinParty(reveal.id)}
-                          disabled={openingPartyId === reveal.id}
-                          className="bg-[#3A9FE8] text-white hover:bg-[#2E7DD1] active:scale-[0.98] transition-all font-bold text-xs uppercase tracking-wider rounded-lg px-3.5 py-2 disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-[#3A9FE8]"
-                        >
-                          {openingPartyId === reveal.id ? "Opening..." : "Join Party"}
-                        </button>
+                        {reveal.plan === "basic" ? (
+                          reveal.videoUrl ? (
+                            <a
+                              href={reveal.videoUrl}
+                              download={`reveal_${reveal.id}.mov`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="bg-gradient-to-r from-[#E8449A] to-[#3A9FE8] text-white hover:opacity-95 active:scale-[0.98] transition-all font-bold text-xs uppercase tracking-wider rounded-lg px-4 py-2 text-center focus:outline-none focus:ring-2 focus:ring-[#3A9FE8]"
+                            >
+                              Download Video
+                            </a>
+                          ) : (
+                            <button
+                              disabled
+                              className="bg-gray-100 text-gray-400 font-bold text-xs uppercase tracking-wider rounded-lg px-4 py-2 cursor-not-allowed"
+                            >
+                              Waiting for Doctor
+                            </button>
+                          )
+                        ) : (
+                          <button
+                            onClick={() => joinParty(reveal.id)}
+                            disabled={openingPartyId === reveal.id}
+                            className="bg-[#3A9FE8] text-white hover:bg-[#2E7DD1] active:scale-[0.98] transition-all font-bold text-xs uppercase tracking-wider rounded-lg px-3.5 py-2 disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-[#3A9FE8]"
+                          >
+                            {openingPartyId === reveal.id ? "Opening..." : "Join Party"}
+                          </button>
+                        )}
                       </div>
                     </div>
 
