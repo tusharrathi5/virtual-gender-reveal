@@ -4,6 +4,8 @@ import { useRouter } from "next/navigation";
 import { useAuth } from "@/lib/AuthContext";
 import { v4 as uuidv4 } from "uuid";
 import { uploadPhotos, validatePhotoFiles } from "@/lib/storageService";
+import { ref as storageRef, getDownloadURL } from "firebase/storage";
+import { getFirebaseStorage } from "@/lib/firebase";
 import {
   PHOTO_MAX,
   type EnquiryMode,
@@ -117,6 +119,9 @@ export default function NewRevealPage() {
   const [uploadProgress, setUploadProgress] = useState<string>("");
   const [error, setError] = useState("");
   const [entitlementChecked, setEntitlementChecked] = useState(false);
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [createdDownloadUrl, setCreatedDownloadUrl] = useState("");
+  const [resolvingUrl, setResolvingUrl] = useState(false);
   const isBasicPlan = (firestoreUser?.activePlan ?? "none") === "basic" || (firestoreUser?.activePlan ?? "none") === "free";
 
   // Entitlement guard: redirect if user can't create a reveal
@@ -355,8 +360,26 @@ export default function NewRevealPage() {
         throw new Error(data.error || "Failed to create reveal. Please try again.");
       }
 
-      setUploadProgress("Finishing up…");
-      router.push(`/dashboard?created=${enquiryId}`);
+      if (isBasicPlan && mode === "announcement" && announcementGender) {
+        setUploadProgress("");
+        setLoading(false);
+        setShowSuccessModal(true);
+        setResolvingUrl(true);
+        try {
+          const storage = getFirebaseStorage();
+          const fileRef = storageRef(storage, `static/videos/${announcementGender}_reveal.mov`);
+          const url = await getDownloadURL(fileRef);
+          setCreatedDownloadUrl(url);
+        } catch (err) {
+          console.error("Failed client-side getDownloadURL:", err);
+          setCreatedDownloadUrl(`https://firebasestorage.googleapis.com/v0/b/${process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET}/o/static%2Fvideos%2F${announcementGender}_reveal.mov?alt=media`);
+        } finally {
+          setResolvingUrl(false);
+        }
+      } else {
+        setUploadProgress("Finishing up…");
+        router.push(`/dashboard?created=${enquiryId}`);
+      }
     } catch (err) {
       console.error("Reveal creation error:", err);
       const msg =
@@ -448,7 +471,42 @@ export default function NewRevealPage() {
         <div className="bg-white/40 backdrop-blur-md border border-white/30 rounded-2xl p-8 shadow-sm max-w-2xl mx-auto mt-10">
           <p className="text-gray-500 font-medium text-center">Checking your payment status…</p>
         </div>
-      </DashboardShell>
+        {showSuccessModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#111827]/40 backdrop-blur-[4px]">
+          <div className="bg-white/75 backdrop-blur-md border border-white/40 rounded-[24px] p-8 max-w-md w-full shadow-2xl relative text-center animate-scale-in">
+            <div className="w-16 h-16 bg-gradient-to-tr from-[#E8449A]/20 to-[#3A9FE8]/20 rounded-full flex items-center justify-center mx-auto mb-4 text-2xl">🎉</div>
+            <h3 className="font-nunito font-extrabold text-xl bg-gradient-to-r from-[#E8449A] to-[#3A9FE8] bg-clip-text text-transparent mb-2">Reveal Created Successfully!</h3>
+            <p className="text-xs text-gray-500 font-semibold mb-6 leading-relaxed">
+              Your virtual gender reveal is ready. Click below to download your custom reveal video.
+            </p>
+            {resolvingUrl ? (
+              <div className="py-3 text-sm text-gray-500 font-bold animate-pulse">Generating secure download link...</div>
+            ) : createdDownloadUrl ? (
+              <a
+                href={createdDownloadUrl}
+                download="gender_reveal.mov"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="block w-full py-3 px-4 bg-gradient-to-r from-[#E8449A] to-[#3A9FE8] text-white rounded-xl text-sm font-bold tracking-wider uppercase shadow-md hover:opacity-95 active:scale-[0.98] transition-all mb-3 text-center"
+              >
+                Download Video (.MOV)
+              </a>
+            ) : (
+              <div className="text-xs text-red-500 font-bold mb-3">Video file not found in storage.</div>
+            )}
+            <button
+              onClick={() => {
+                setShowSuccessModal(false);
+                router.push("/dashboard");
+              }}
+              className="block w-full py-2.5 px-4 border border-gray-200 hover:bg-gray-50 text-gray-700 rounded-xl text-xs font-bold uppercase tracking-wider transition-all"
+            >
+              Go to Dashboard
+            </button>
+          </div>
+        </div>
+      )}
+    </DashboardShell>
     );
   }
 
@@ -968,6 +1026,41 @@ export default function NewRevealPage() {
         </div>
         </div>
       </div>
+      {showSuccessModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#111827]/40 backdrop-blur-[4px]">
+          <div className="bg-white/75 backdrop-blur-md border border-white/40 rounded-[24px] p-8 max-w-md w-full shadow-2xl relative text-center animate-scale-in">
+            <div className="w-16 h-16 bg-gradient-to-tr from-[#E8449A]/20 to-[#3A9FE8]/20 rounded-full flex items-center justify-center mx-auto mb-4 text-2xl">🎉</div>
+            <h3 className="font-nunito font-extrabold text-xl bg-gradient-to-r from-[#E8449A] to-[#3A9FE8] bg-clip-text text-transparent mb-2">Reveal Created Successfully!</h3>
+            <p className="text-xs text-gray-500 font-semibold mb-6 leading-relaxed">
+              Your virtual gender reveal is ready. Click below to download your custom reveal video.
+            </p>
+            {resolvingUrl ? (
+              <div className="py-3 text-sm text-gray-500 font-bold animate-pulse">Generating secure download link...</div>
+            ) : createdDownloadUrl ? (
+              <a
+                href={createdDownloadUrl}
+                download="gender_reveal.mov"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="block w-full py-3 px-4 bg-gradient-to-r from-[#E8449A] to-[#3A9FE8] text-white rounded-xl text-sm font-bold tracking-wider uppercase shadow-md hover:opacity-95 active:scale-[0.98] transition-all mb-3 text-center"
+              >
+                Download Video (.MOV)
+              </a>
+            ) : (
+              <div className="text-xs text-red-500 font-bold mb-3">Video file not found in storage.</div>
+            )}
+            <button
+              onClick={() => {
+                setShowSuccessModal(false);
+                router.push("/dashboard");
+              }}
+              className="block w-full py-2.5 px-4 border border-gray-200 hover:bg-gray-50 text-gray-700 rounded-xl text-xs font-bold uppercase tracking-wider transition-all"
+            >
+              Go to Dashboard
+            </button>
+          </div>
+        </div>
+      )}
     </DashboardShell>
   );
 }

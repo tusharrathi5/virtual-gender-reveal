@@ -2,6 +2,8 @@
 
 import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
+import { ref as storageRef, getDownloadURL } from "firebase/storage";
+import { getFirebaseStorage } from "@/lib/firebase";
 import { collection, getDocs, orderBy, query, where } from "firebase/firestore";
 import { useAuth } from "@/lib/AuthContext";
 import { getFirebaseDb } from "@/lib/firebase";
@@ -511,6 +513,9 @@ function DashboardContent() {
   const [activatingPlan, setActivatingPlan] = useState<string | null>(null);
   const [pendingPaymentPlan, setPendingPaymentPlan] = useState<PlanDefinition | null>(null);
   const [loggingOut, setLoggingOut] = useState(false);
+  const [activeDownloadReveal, setActiveDownloadReveal] = useState<RevealSummary | null>(null);
+  const [modalDownloadUrl, setModalDownloadUrl] = useState<string>("");
+  const [resolvingUrl, setResolvingUrl] = useState(false);
   const [guestDraftRows, setGuestDraftRows] = useState<EditableGuestRow[]>([
     blankGuestRow("draft-1"),
     blankGuestRow("draft-2"),
@@ -529,6 +534,24 @@ function DashboardContent() {
   const [savingReveal, setSavingReveal] = useState(false);
   const handledDashboardQueryRef = useRef<string | null>(null);
   const guestFileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleOpenDownloadModal = async (reveal: RevealSummary) => {
+    setActiveDownloadReveal(reveal);
+    setResolvingUrl(true);
+    try {
+      const storage = getFirebaseStorage();
+      const isBoy = reveal.videoUrl?.includes("boy_reveal.mov");
+      const gender = isBoy ? "boy" : "girl";
+      const fileRef = storageRef(storage, `static/videos/${gender}_reveal.mov`);
+      const url = await getDownloadURL(fileRef);
+      setModalDownloadUrl(url);
+    } catch (err) {
+      console.error("Client getDownloadURL resolution failed:", err);
+      setModalDownloadUrl(reveal.videoUrl || "");
+    } finally {
+      setResolvingUrl(false);
+    }
+  };
 
   const latestReveal = reveals[0];
 
@@ -1137,15 +1160,12 @@ function DashboardContent() {
 
                         {reveal.plan === "basic" || reveal.plan === "free" ? (
                           reveal.videoUrl ? (
-                            <a
-                              href={reveal.videoUrl}
-                              download={`reveal_${reveal.id}.mov`}
-                              target="_blank"
-                              rel="noopener noreferrer"
+                            <button
+                              onClick={() => handleOpenDownloadModal(reveal)}
                               className="bg-gradient-to-r from-[#E8449A] to-[#3A9FE8] text-white hover:opacity-95 active:scale-[0.98] transition-all font-bold text-xs uppercase tracking-wider rounded-lg px-4 py-2 text-center focus:outline-none focus:ring-2 focus:ring-[#3A9FE8]"
                             >
                               Download Video
-                            </a>
+                            </button>
                           ) : (
                             <button
                               disabled
@@ -1168,19 +1188,23 @@ function DashboardContent() {
 
                     {/* View Details Grid */}
                     {!isEditing && (
-                      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                      <div className={`grid grid-cols-2 ${reveal.plan === "basic" || reveal.plan === "free" ? "md:grid-cols-2 max-w-md" : "md:grid-cols-4"} gap-4`}>
                         <div className="bg-gray-50/50 rounded-xl p-3 border border-gray-100">
                           <span className="text-[9px] text-gray-400 block uppercase font-bold tracking-wider mb-0.5">Reveal Mode</span>
                           <span className="text-xs font-semibold text-gray-800">{reveal.mode === "announcement" ? "Announcement" : "Reveal"}</span>
                         </div>
-                        <div className="bg-gray-50/50 rounded-xl p-3 border border-gray-100">
-                          <span className="text-[9px] text-gray-400 block uppercase font-bold tracking-wider mb-0.5">Reveal Time</span>
-                          <span className="text-xs font-semibold text-gray-800">{formatRevealDate(reveal.revealAt)}</span>
-                        </div>
-                        <div className="bg-gray-50/50 rounded-xl p-3 border border-gray-100">
-                          <span className="text-[9px] text-gray-400 block uppercase font-bold tracking-wider mb-0.5">Selected Timezone</span>
-                          <span className="text-xs font-semibold text-gray-800 truncate block">{reveal.revealTimezone}</span>
-                        </div>
+                        {!(reveal.plan === "basic" || reveal.plan === "free") && (
+                          <>
+                            <div className="bg-gray-50/50 rounded-xl p-3 border border-gray-100">
+                              <span className="text-[9px] text-gray-400 block uppercase font-bold tracking-wider mb-0.5">Reveal Time</span>
+                              <span className="text-xs font-semibold text-gray-800">{formatRevealDate(reveal.revealAt)}</span>
+                            </div>
+                            <div className="bg-gray-50/50 rounded-xl p-3 border border-gray-100">
+                              <span className="text-[9px] text-gray-400 block uppercase font-bold tracking-wider mb-0.5">Selected Timezone</span>
+                              <span className="text-xs font-semibold text-gray-800 truncate block">{reveal.revealTimezone}</span>
+                            </div>
+                          </>
+                        )}
                         <div className="bg-gray-50/50 rounded-xl p-3 border border-gray-100">
                           <span className="text-[9px] text-gray-400 block uppercase font-bold tracking-wider mb-0.5">Payment Status</span>
                           <span className="text-xs font-bold text-gray-800">{getPaymentStatusLabel(reveal.paymentStatus)}</span>
@@ -1573,6 +1597,34 @@ function DashboardContent() {
           />
         )}
       </div>
+      {/* Download Modal Popup */}
+      {activeDownloadReveal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#111827]/40 backdrop-blur-[4px]" onClick={() => setActiveDownloadReveal(null)}>
+          <div className="bg-white/75 backdrop-blur-md border border-white/40 rounded-[24px] p-8 max-w-md w-full shadow-2xl relative text-center animate-scale-in" onClick={(e) => e.stopPropagation()}>
+            <button onClick={() => setActiveDownloadReveal(null)} className="absolute top-4 right-4 text-gray-500 hover:text-gray-700 w-8 h-8 rounded-full border border-gray-100 bg-white flex items-center justify-center text-sm shadow-sm transition-all hover:scale-105">✕</button>
+            <div className="w-16 h-16 bg-gradient-to-tr from-[#E8449A]/20 to-[#3A9FE8]/20 rounded-full flex items-center justify-center mx-auto mb-4 text-2xl">🎬</div>
+            <h3 className="font-nunito font-extrabold text-xl bg-gradient-to-r from-[#E8449A] to-[#3A9FE8] bg-clip-text text-transparent mb-2">Download Your Reveal Video</h3>
+            <p className="text-xs text-gray-500 font-semibold mb-6 leading-relaxed">
+              Your custom virtual gender reveal video is ready. Click below to download or view it.
+            </p>
+            {resolvingUrl ? (
+              <div className="py-3 text-sm text-gray-500 font-bold animate-pulse">Generating secure download link...</div>
+            ) : modalDownloadUrl ? (
+              <a
+                href={modalDownloadUrl}
+                download={`gender_reveal_${activeDownloadReveal.id}.mov`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="block w-full py-3 px-4 bg-gradient-to-r from-[#E8449A] to-[#3A9FE8] text-white rounded-xl text-sm font-bold tracking-wider uppercase shadow-md hover:opacity-95 active:scale-[0.98] transition-all text-center"
+              >
+                Download Video (.MOV)
+              </a>
+            ) : (
+              <div className="text-xs text-red-500 font-bold">Video file not found in storage.</div>
+            )}
+          </div>
+        </div>
+      )}
     </DashboardShell>
   );
 }
