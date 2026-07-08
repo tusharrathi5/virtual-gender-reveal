@@ -333,7 +333,7 @@ function validateCreateRevealInput(input: {
   if (typeof revealAtMs !== "number" || isNaN(revealAtMs)) {
     return "Invalid reveal time.";
   }
-  if (plan !== "basic") {
+  if (mode === "reveal") {
     if (revealAtMs < Date.now() + 30 * 60 * 1000) {
       return "Reveal time must be at least 30 minutes in the future.";
     }
