@@ -109,7 +109,7 @@ function validateInput(
   if (typeof revealAtMs !== "number" || Number.isNaN(revealAtMs)) return "Invalid reveal time.";
   const previousMs = existingRevealAt?.getTime() ?? 0;
   const revealTimeChanged = Math.abs(previousMs - revealAtMs) > 60 * 1000;
-  if (existing.plan !== "basic" && revealTimeChanged && revealAtMs < Date.now() + 30 * 60 * 1000) {
+  if (mode === "reveal" && revealTimeChanged && revealAtMs < Date.now() + 30 * 60 * 1000) {
     return "Reveal time must be at least 30 minutes in the future.";
   }
 

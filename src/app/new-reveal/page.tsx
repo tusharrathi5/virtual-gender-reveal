@@ -268,7 +268,7 @@ export default function NewRevealPage() {
   function validateForm(): string | null {
     if (!parentName.trim()) return "Please enter the parent name(s).";
 
-    if (!isBasicPlan) {
+    if (mode === "reveal") {
       if (!revealAt) return "Please pick a reveal date and time.";
       const revealDate = new Date(revealAt);
       if (isNaN(revealDate.getTime())) return "Invalid reveal date.";
@@ -339,8 +339,8 @@ export default function NewRevealPage() {
           mode,
           parentName: parentName.trim(),
           photos: [],
-          revealAtMs: isBasicPlan ? Date.now() : new Date(revealAt).getTime(),
-          revealTimezone: isBasicPlan ? "UTC" : timezone,
+          revealAtMs: mode === "announcement" ? Date.now() : new Date(revealAt).getTime(),
+          revealTimezone: mode === "announcement" ? "UTC" : timezone,
           dueDate: null,
           // Announcement mode
           babyName: null,
@@ -787,7 +787,7 @@ export default function NewRevealPage() {
 
 
             {/* Section 4: Reveal Schedule */}
-            {!isBasicPlan && (
+            {mode === "reveal" && (
               <div className="bg-white/40 backdrop-blur-md border border-white/30 rounded-2xl p-6 md:p-8 shadow-sm space-y-6">
                 <h2 className="text-xs font-bold text-gray-400 uppercase tracking-widest border-b border-[#f1f1f5] pb-3 mb-1 flex items-center gap-2">
                   <Calendar className="w-4 h-4 text-[#3A9FE8]" />

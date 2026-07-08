@@ -76,7 +76,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ tok
       doctorTokenHash: "",
       doctorConfirmedAt: nowIso,
       genderStatus: "submitted",
-      status: plan === "basic" ? "completed" : "doctor_confirmed",
+      status: "doctor_confirmed",
       "stages.revealerSubmitted": Timestamp.now(),
       updatedAt: FieldValue.serverTimestamp(),
     };

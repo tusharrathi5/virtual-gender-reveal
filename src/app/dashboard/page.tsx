@@ -1158,7 +1158,7 @@ function DashboardContent() {
                           </button>
                         )}
 
-                        {reveal.plan === "basic" || reveal.plan === "free" ? (
+                        {reveal.mode === "announcement" ? (
                           reveal.videoUrl ? (
                             <button
                               onClick={() => handleOpenDownloadModal(reveal)}
@@ -1188,23 +1188,19 @@ function DashboardContent() {
 
                     {/* View Details Grid */}
                     {!isEditing && (
-                      <div className={`grid grid-cols-2 ${reveal.plan === "basic" || reveal.plan === "free" ? "md:grid-cols-2 max-w-md" : "md:grid-cols-4"} gap-4`}>
+                      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                         <div className="bg-gray-50/50 rounded-xl p-3 border border-gray-100">
                           <span className="text-[9px] text-gray-400 block uppercase font-bold tracking-wider mb-0.5">Reveal Mode</span>
                           <span className="text-xs font-semibold text-gray-800">{reveal.mode === "announcement" ? "Announcement" : "Reveal"}</span>
                         </div>
-                        {!(reveal.plan === "basic" || reveal.plan === "free") && (
-                          <>
-                            <div className="bg-gray-50/50 rounded-xl p-3 border border-gray-100">
-                              <span className="text-[9px] text-gray-400 block uppercase font-bold tracking-wider mb-0.5">Reveal Time</span>
-                              <span className="text-xs font-semibold text-gray-800">{formatRevealDate(reveal.revealAt)}</span>
-                            </div>
-                            <div className="bg-gray-50/50 rounded-xl p-3 border border-gray-100">
-                              <span className="text-[9px] text-gray-400 block uppercase font-bold tracking-wider mb-0.5">Selected Timezone</span>
-                              <span className="text-xs font-semibold text-gray-800 truncate block">{reveal.revealTimezone}</span>
-                            </div>
-                          </>
-                        )}
+                        <div className="bg-gray-50/50 rounded-xl p-3 border border-gray-100">
+                          <span className="text-[9px] text-gray-400 block uppercase font-bold tracking-wider mb-0.5">Reveal Time</span>
+                          <span className="text-xs font-semibold text-gray-800">{formatRevealDate(reveal.revealAt)}</span>
+                        </div>
+                        <div className="bg-gray-50/50 rounded-xl p-3 border border-gray-100">
+                          <span className="text-[9px] text-gray-400 block uppercase font-bold tracking-wider mb-0.5">Selected Timezone</span>
+                          <span className="text-xs font-semibold text-gray-800 truncate block">{reveal.revealTimezone}</span>
+                        </div>
                         <div className="bg-gray-50/50 rounded-xl p-3 border border-gray-100">
                           <span className="text-[9px] text-gray-400 block uppercase font-bold tracking-wider mb-0.5">Payment Status</span>
                           <span className="text-xs font-bold text-gray-800">{getPaymentStatusLabel(reveal.paymentStatus)}</span>
