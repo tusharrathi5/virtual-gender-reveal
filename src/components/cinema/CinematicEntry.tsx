@@ -457,15 +457,6 @@ function LandingPage() {
       </section>
 
             <section className="hiw-new-section" id="how">
-        <video
-          autoPlay
-          loop
-          muted
-          playsInline
-          className="hiw-bg-video"
-        >
-          <source src="/videos/how-it-works-bg.mp4" type="video/mp4" />
-        </video>
         <div className="hiw-overlay" />
         <div className="hiw-new-inner">
           <div className="hiw-new-header fade-up">
@@ -1041,8 +1032,7 @@ footer{background:#111827;padding:4rem 2rem 2rem;}
 .mock-ctrl{width:40px;height:40px;border-radius:50%;background:#f4f4f4;display:flex;align-items:center;justify-content:center;font-size:1.1rem;}
 .mock-ctrl-end{background:#FF4E6A;}
 /* ── How It Works Redesign ── */
-.hiw-new-section{padding:6rem 2rem;position:relative;overflow:hidden;background:transparent;min-height:90vh;display:flex;align-items:center;justify-content:center;}
-.hiw-bg-video{position:absolute;top:0;left:0;width:100%;height:100%;object-fit:cover;z-index:1;}
+.hiw-new-section{padding:6rem 2rem;position:relative;overflow:hidden;background:url('/images/how-it-works-bg.png') center/cover no-repeat;min-height:90vh;display:flex;align-items:center;justify-content:center;}
 .hiw-overlay{position:absolute;top:0;left:0;width:100%;height:100%;background:rgba(255,255,255,0.18);z-index:2;}
 .hiw-new-inner{max-width:1060px;margin:0 auto;position:relative;z-index:3;background:transparent;box-shadow:none;border-radius:0;padding:0;width:100%;}
 .hiw-new-header{display:flex;align-items:center;justify-content:center;gap:1rem;margin-bottom:3.5rem;}
