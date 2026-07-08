@@ -1171,7 +1171,7 @@ function DashboardContent() {
                               disabled
                               className="bg-gray-100 text-gray-400 font-bold text-xs uppercase tracking-wider rounded-lg px-4 py-2 cursor-not-allowed"
                             >
-                              Waiting for Doctor
+                              Waiting for Revealer's Response
                             </button>
                           )
                         ) : (
