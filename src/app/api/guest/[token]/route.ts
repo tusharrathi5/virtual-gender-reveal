@@ -9,7 +9,7 @@ import { FieldValue } from "firebase-admin/firestore";
 
 function normalize(raw: string) { try { return decodeURIComponent(raw).trim(); } catch { return raw.trim(); } }
 
-export async function GET(_: NextRequest, { params }: { params: Promise<{ token: string }> }) {
+export async function GET(req: NextRequest, { params }: { params: Promise<{ token: string }> }) {
   const { token: raw } = await params;
   const token = normalize(raw);
   const payload = parseGuestToken(token);
@@ -35,6 +35,16 @@ export async function GET(_: NextRequest, { params }: { params: Promise<{ token:
   const revealAt = data.revealAt?.toDate?.() ?? null;
   const isLive = !!revealAt && Date.now() >= revealAt.getTime();
   const isCompleted = Boolean(data?.stages?.eventCompleted);
+
+  const browserId = req.nextUrl.searchParams.get("browserId");
+  let clientPrediction = null;
+  if (browserId) {
+    const voteSnap = await getAdminDb().collection("predictions").doc(`${payload.enquiryId}_${browserId}`).get();
+    if (voteSnap.exists) {
+      clientPrediction = voteSnap.data()?.prediction || null;
+    }
+  }
+
   const feedSnap = await getAdminDb().collection("guest_invites").where("enquiryId", "==", payload.enquiryId).get();
   const feed = feedSnap.docs
     .map((d) => d.data() as { name?: string; message?: string | null; isAdminPartyLink?: boolean; updatedAt?: { toDate?: () => Date } })
@@ -42,11 +52,22 @@ export async function GET(_: NextRequest, { params }: { params: Promise<{ token:
     .sort((a, b) => (b.updatedAt?.toDate?.().getTime?.() || 0) - (a.updatedAt?.toDate?.().getTime?.() || 0))
     .slice(0, 20)
     .map((m) => ({ name: m.name || "Guest", message: m.message || "" }));
+  
   let boyVotes = 0;
   let girlVotes = 0;
   feedSnap.docs.forEach((doc) => {
     const d = doc.data() as { prediction?: string | null; isAdminPartyLink?: boolean };
     if (!d.isAdminPartyLink) {
+      if (d.prediction === "boy") boyVotes++;
+      if (d.prediction === "girl") girlVotes++;
+    }
+  });
+
+  const predictionsSnap = await getAdminDb().collection("predictions").where("enquiryId", "==", payload.enquiryId).get();
+  const countedVoteIds = new Set(feedSnap.docs.map(d => d.id));
+  predictionsSnap.docs.forEach((doc) => {
+    if (!countedVoteIds.has(doc.id)) {
+      const d = doc.data() as { prediction?: string | null };
       if (d.prediction === "boy") boyVotes++;
       if (d.prediction === "girl") girlVotes++;
     }
@@ -61,11 +82,12 @@ export async function GET(_: NextRequest, { params }: { params: Promise<{ token:
     success: true,
     guest: { name: guest.data()?.name },
     response: {
-      prediction: (guest.data()?.prediction as "boy" | "girl" | null) ?? null,
+      prediction: (clientPrediction || (guest.data()?.prediction as "boy" | "girl" | null)) ?? null,
       message: (guest.data()?.message as string | null) ?? null,
       submittedAt: guest.data()?.joinedAt ?? null,
     },
     reveal: {
+      id: payload.enquiryId,
       parentName: data.parentName || "Parents",
       revealAtIso: revealAt?.toISOString?.() || null,
       revealTimezone: data.revealTimezone || "UTC",
@@ -101,6 +123,17 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ tok
   if (guest.data()?.prediction) {
     return NextResponse.json({ error: "Response already submitted." }, { status: 409 });
   }
+
+  const browserId = body?.browserId;
+  const browserIdClean = typeof browserId === "string" ? browserId.trim() : null;
+  const voteId = browserIdClean ? `${payload.enquiryId}_${browserIdClean}` : payload.guestId;
+
+  await getAdminDb().collection("predictions").doc(voteId).set({
+    id: voteId,
+    enquiryId: payload.enquiryId,
+    prediction,
+    createdAt: FieldValue.serverTimestamp(),
+  });
 
   await guestRef.update({ prediction, message, joinedAt: FieldValue.serverTimestamp(), updatedAt: FieldValue.serverTimestamp() });
   return NextResponse.json({ success: true });

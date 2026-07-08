@@ -106,7 +106,12 @@ export default function GuestInvitePage() {
   }, []);
 
   const loadInvite = useCallback(async () => {
-    const res = await fetch(`/api/guest/${encodedToken}`);
+    let bid = localStorage.getItem("vgr_browser_id");
+    if (!bid) {
+      bid = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
+      localStorage.setItem("vgr_browser_id", bid);
+    }
+    const res = await fetch(`/api/guest/${encodedToken}?browserId=${bid}`);
     const data = await res.json().catch(() => ({}));
     if (!res.ok) {
       setError(data?.error || "Invalid invite");
@@ -132,6 +137,9 @@ export default function GuestInvitePage() {
       setPrediction(data.response.prediction);
       setMessage(data?.response?.message || "");
       setDone(true);
+      if (data?.reveal?.id) {
+        localStorage.setItem(`vgr_prediction_${data.reveal.id}`, data.response.prediction);
+      }
     }
     setLoading(false);
   }, [encodedToken]);
@@ -143,9 +151,29 @@ export default function GuestInvitePage() {
     })();
     const refresh = setInterval(() => {
       loadInvite().catch(() => {});
-    }, 30000);
+    }, 3000);
     return () => clearInterval(refresh);
   }, [encodedToken, loadInvite]);
+
+  // Read local storage on token change/load
+  useEffect(() => {
+    if (!encodedToken) return;
+    try {
+      const parts = decodeURIComponent(encodedToken).split(".");
+      if (parts[0]) {
+        const payload = JSON.parse(Buffer.from(parts[0], "base64url").toString("utf8"));
+        if (payload?.enquiryId) {
+          const localVote = localStorage.getItem(`vgr_prediction_${payload.enquiryId}`);
+          if (localVote === "boy" || localVote === "girl") {
+            setPrediction(localVote as "boy" | "girl");
+            setDone(true);
+          }
+        }
+      }
+    } catch (e) {
+      console.error("Local storage lookup failed on mount:", e);
+    }
+  }, [encodedToken]);
 
   useEffect(() => {
     if (!encodedToken) return;
@@ -267,10 +295,15 @@ export default function GuestInvitePage() {
     setPrediction(gender);
     setSubmitting(true);
     setError(null);
+    let bid = localStorage.getItem("vgr_browser_id");
+    if (!bid) {
+      bid = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
+      localStorage.setItem("vgr_browser_id", bid);
+    }
     const res = await fetch(`/api/guest/${encodedToken}`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ prediction: gender, message: "" }),
+      body: JSON.stringify({ prediction: gender, message: "", browserId: bid }),
     });
     const data = await res.json().catch(() => ({}));
     if (!res.ok) {
