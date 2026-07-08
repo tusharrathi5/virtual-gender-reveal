@@ -70,15 +70,23 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ tok
     
     const snap = await enquiryRef.get();
     const data = snap.data();
+    const plan = data?.plan;
 
-    await enquiryRef.update({
+    const baseUpdate: any = {
       doctorTokenHash: "",
       doctorConfirmedAt: nowIso,
       genderStatus: "submitted",
-      status: "doctor_confirmed",
+      status: plan === "basic" ? "completed" : "doctor_confirmed",
       "stages.revealerSubmitted": Timestamp.now(),
       updatedAt: FieldValue.serverTimestamp(),
-    });
+    };
+
+    if (plan === "basic") {
+      baseUpdate.videoUrl = `https://firebasestorage.googleapis.com/v0/b/${process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET}/o/static%2Fvideos%2F${gender}_reveal.mov?alt=media`;
+      baseUpdate["stages.videoGenerated"] = Timestamp.now();
+    }
+
+    await enquiryRef.update(baseUpdate);
 
     await getAdminDb().collection("email_log").add({
       type: "revealer_submission",
