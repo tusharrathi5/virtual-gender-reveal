@@ -10,6 +10,7 @@ import CryptoJS from "crypto-js";
 import { getAdminDb } from "@/lib/firebase-admin";
 import { sendDoctorInviteEmail } from "@/lib/resendEmail";
 import { deleteEnquiryPhotosAdmin } from "@/lib/storageServiceAdmin";
+import { FieldValue, Timestamp } from "firebase-admin/firestore";
 import {
   INITIAL_STAGES,
   PHOTO_MAX,
