@@ -1125,7 +1125,7 @@ nav#main-nav.solid{box-shadow:0 6px 28px rgba(0,0,0,0.14);}
 .testi-title-pink{color:#E8449A;}
 .testi-new-sub{font-size:0.95rem;color:#888;margin-top:0.6rem;}
 .testi-new-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:1.5rem;margin-bottom:3rem;}
-.testi-new-card{background:rgba(255,255,255,0.4);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);border-radius:20px;padding:1.8rem;box-shadow:0 8px 32px rgba(0,0,0,0.08);border:1px solid rgba(255,255,255,0.3);position:relative;transition:transform 0.25s,box-shadow 0.25s;}
+.testi-new-card{background:rgba(255,255,255,0.4);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);border-radius:20px;padding:1.8rem;box-shadow:0 8px 32px rgba(0,0,0,0.08);border:1px solid rgba(255,255,255,0.3);position:relative;transition:transform 0.25s,box-shadow 0.25s;}
 .testi-new-card:hover{transform:translateY(-4px);box-shadow:0 12px 36px rgba(100,60,200,0.1);}
 .testi-avatar-placeholder{width:56px;height:56px;border-radius:50%;background:linear-gradient(135deg,#FFB8D8,#B8D8FF);display:flex;align-items:center;justify-content:center;font-size:1.8rem;margin-bottom:0.8rem;}
 .testi-new-stars{font-size:1rem;margin-bottom:0.7rem;letter-spacing:0.05em;}
@@ -1164,7 +1164,7 @@ nav#main-nav.solid{box-shadow:0 6px 28px rgba(0,0,0,0.14);}
 .hiw-feat-text strong{font-size:0.92rem;font-weight:800;color:#1a1a2e;}
 .hiw-feat-text span{font-size:0.75rem;color:#888;}
 /* ── Testi stats-bar light override ── */
-.testi-stats-bar{background:white;border:1px solid rgba(232,68,154,0.12);box-shadow:0 4px 24px rgba(100,60,200,0.07);}
+.testi-stats-bar{background:rgba(255,255,255,0.4);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);border:1px solid rgba(255,255,255,0.3);box-shadow:0 8px 32px rgba(0,0,0,0.05);}
 .tsi-pink{background:rgba(232,68,154,0.12);box-shadow:0 0 0 1.5px rgba(232,68,154,0.2);}
 .tsi-blue{background:rgba(58,159,232,0.12);box-shadow:0 0 0 1.5px rgba(58,159,232,0.2);}
 .tsi-purple{background:rgba(123,110,232,0.12);box-shadow:0 0 0 1.5px rgba(123,110,232,0.2);}
