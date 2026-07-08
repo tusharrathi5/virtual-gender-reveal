@@ -1072,23 +1072,23 @@ nav#main-nav.solid{box-shadow:0 6px 28px rgba(0,0,0,0.14);}
 .nav-login-btn:hover{background:#2E8AD4;transform:translateY(-1px);}
 @media(max-width:768px){nav#main-nav{width:calc(100% - 2rem);padding:0 1rem;}.nav-links{display:none;}.nav-login-btn{padding:0.45rem 1rem;font-size:0.8rem;}}
 /* ── Pricing Redesign ── */
-.pricing-section{padding:5rem 2rem 4rem;position:relative;overflow:hidden;background:linear-gradient(160deg,#eb70b2 0%,#EEE6FF 40%,#1b69a9 100%);}
+.pricing-section{padding:2.5rem 2rem 2.5rem;position:relative;overflow:hidden;background:linear-gradient(160deg,#eb70b2 0%,#EEE6FF 40%,#1b69a9 100%);}
 .pricing-bg-dec{position:absolute;font-size:5rem;line-height:1.3;pointer-events:none;opacity:0.7;animation:balloonFloat 5s ease-in-out infinite alternate;}
 .pricing-bg-left{left:1%;top:8%;animation-direction:alternate;}
 .pricing-bg-right{right:1%;top:10%;font-size:7rem;animation-direction:alternate-reverse;}
 .pricing-inner{max-width:1020px;margin:0 auto;position:relative;z-index:2;}
-.pricing-header{text-align:center;margin-bottom:3rem;}
+.pricing-header{text-align:center;margin-bottom:1.5rem;}
 .pricing-pill-badge{display:inline-flex;align-items:center;gap:0.4rem;padding:0.38rem 1.2rem;border:1.5px solid #B07EE8;border-radius:50px;font-size:0.72rem;font-weight:600;color:#7B4FC4;letter-spacing:0.1em;text-transform:uppercase;margin-bottom:1.2rem;}
 .pricing-main-title{margin-bottom:0.7rem;}
 .pricing-title-line1{font-family:'Nunito',sans-serif;font-size:clamp(2rem,5vw,3.2rem);font-weight:900;color:#1a1a2e;display:block;line-height:1.1;}
 .pricing-title-line2{font-family:'Nunito',sans-serif;font-size:clamp(2rem,5vw,3.2rem);font-weight:900;display:block;line-height:1.1;background:linear-gradient(90deg,#E8449A,#3A9FE8);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;}
 .pricing-sub{font-size:1rem;color:#555;line-height:1.6;}
-.pricing-grid{display:grid;grid-template-columns:repeat(2,1fr);max-w-[720px];margin:0 auto 2rem;gap:1.5rem;align-items:start;}
-.pnew-card{background:white;border-radius:24px;padding:2.4rem 1.8rem 2rem;position:relative;transition:transform 0.3s,box-shadow 0.3s;text-align:center;}
+.pricing-grid{display:grid;grid-template-columns:repeat(2,1fr);max-w-[720px];margin:0 auto 2rem;gap:1.5rem;align-items:stretch;}
+.pnew-card{display:flex;flex-direction:column;background:white;border-radius:24px;padding:2.4rem 1.8rem 2rem;position:relative;transition:transform 0.3s,box-shadow 0.3s;text-align:center;}
 .pnew-card:hover{transform:translateY(-6px);}
 .pnew-basic{border:2px solid #FFB8D8;box-shadow:0 8px 32px rgba(232,68,154,0.1);}
-.pnew-premium{border:2px solid #B0C8FF;box-shadow:0 20px 56px rgba(100,80,220,0.18);transform:translateY(-10px);}
-.pnew-premium:hover{transform:translateY(-16px);}
+.pnew-premium{border:2px solid #B0C8FF;box-shadow:0 20px 56px rgba(100,80,220,0.18);}
+.pnew-premium:hover{transform:translateY(-6px);}
 .pnew-custom{border:2px solid #A8D8F8;box-shadow:0 8px 32px rgba(58,159,232,0.1);}
 .pnew-popular-badge{position:absolute;top:-15px;left:50%;transform:translateX(-50%);background:linear-gradient(135deg,#E8449A,#FF7EC8);color:white;font-family:'Nunito',sans-serif;font-size:0.72rem;font-weight:800;padding:0.34rem 1.1rem;border-radius:50px;white-space:nowrap;display:flex;align-items:center;gap:0.35rem;box-shadow:0 4px 12px rgba(232,68,154,0.4);}
 .pnew-icon-circle{width:68px;height:68px;border-radius:50%;margin:0 auto 1rem;display:flex;align-items:center;justify-content:center;font-size:2rem;}
@@ -1103,7 +1103,7 @@ nav#main-nav.solid{box-shadow:0 6px 28px rgba(0,0,0,0.14);}
 .pnew-price-amt{font-size:4rem;line-height:1;}
 .pnew-price-sub{font-size:0.76rem;color:#aaa;margin-bottom:1.4rem;}
 .pnew-divider{height:1px;background:#f2f2f2;margin:1.2rem 0;}
-.pnew-feats{list-style:none;margin-bottom:1.8rem;text-align:left;}
+.pnew-feats{list-style:none;margin-bottom:1.8rem;text-align:left;flex-grow:1;}
 .pnew-feats li{font-size:0.84rem;color:#444;padding:0.35rem 0;display:flex;align-items:flex-start;gap:0.6rem;line-height:1.45;}
 .pnew-check-pink{color:#E8449A;font-weight:800;flex-shrink:0;}.pnew-check-blue{color:#3A9FE8;font-weight:800;flex-shrink:0;}
 .pnew-btn{width:100%;padding:0.95rem;border:none;border-radius:50px;cursor:pointer;font-family:'Nunito',sans-serif;font-size:1rem;font-weight:800;transition:transform 0.2s,box-shadow 0.2s;}
@@ -1249,7 +1249,7 @@ nav#main-nav.solid{box-shadow:0 6px 28px rgba(0,0,0,0.14);}
     justify-content: flex-start !important;
   }
   .pricing-section {
-    padding: 4rem 1.2rem 3rem !important;
+    padding: 2.5rem 1.2rem 2rem !important;
   }
   .pnew-card {
     padding: 2rem 1.2rem 1.8rem !important;
