@@ -1158,7 +1158,23 @@ function DashboardContent() {
                           </button>
                         )}
 
-                        <div className="flex items-center gap-2">
+                        {reveal.mode === "announcement" ? (
+                          reveal.videoUrl ? (
+                            <button
+                              onClick={() => handleOpenDownloadModal(reveal)}
+                              className="bg-gradient-to-r from-[#E8449A] to-[#3A9FE8] text-white hover:opacity-95 active:scale-[0.98] transition-all font-bold text-xs uppercase tracking-wider rounded-lg px-4 py-2 text-center focus:outline-none focus:ring-2 focus:ring-[#3A9FE8]"
+                            >
+                              Download Video
+                            </button>
+                          ) : (
+                            <button
+                              disabled
+                              className="bg-gray-100 text-gray-400 font-bold text-xs uppercase tracking-wider rounded-lg px-4 py-2 cursor-not-allowed"
+                            >
+                              Waiting for Revealer's Response
+                            </button>
+                          )
+                        ) : (
                           <button
                             onClick={() => joinParty(reveal.id)}
                             disabled={openingPartyId === reveal.id}
@@ -1166,15 +1182,7 @@ function DashboardContent() {
                           >
                             {openingPartyId === reveal.id ? "Opening..." : "Join Party"}
                           </button>
-                          {(reveal.plan === "basic" || reveal.plan === "free") && reveal.videoUrl && (
-                            <button
-                              onClick={() => handleOpenDownloadModal(reveal)}
-                              className="bg-gradient-to-r from-[#E8449A] to-[#3A9FE8] text-white hover:opacity-95 active:scale-[0.98] transition-all font-bold text-xs uppercase tracking-wider rounded-lg px-4 py-2 text-center focus:outline-none focus:ring-2 focus:ring-[#3A9FE8]"
-                            >
-                              Download Video
-                            </button>
-                          )}
-                        </div>
+                        )}
                       </div>
                     </div>
 
