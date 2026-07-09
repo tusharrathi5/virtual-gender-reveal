@@ -525,12 +525,22 @@ export default function GuestInvitePage() {
           </header>
 
           {/* 2. REVEAL VIDEO / COUNTDOWN AREA (Centered Glassmorphic Video Box - Full Width) */}
-          <section className={`relative overflow-hidden transition-all duration-300 w-full ${isLive && videoUrl ? "bg-slate-950/20 backdrop-blur-xl border border-white/10 shadow-2xl rounded-[24px]" : "bg-transparent border-0 shadow-none rounded-[32px]"}`}>
+          <section className={`relative overflow-hidden transition-all duration-300 w-full ${isLive && videoUrl ? "bg-slate-950/20 backdrop-blur-xl border border-white/10 shadow-2xl rounded-[24px]" : "bg-white/45 backdrop-blur-[30px] border border-white/50 border-[1.5px] rounded-[32px] p-6 md:p-8 shadow-2xl flex flex-col items-center justify-center"}`}>
             {/* Ambient subtle celebratory pink/blue glows in the corners */}
             <div className="absolute top-0 left-0 w-48 h-48 bg-[#E8449A]/15 blur-3xl pointer-events-none" />
             <div className="absolute bottom-0 right-0 w-48 h-48 bg-[#3A9FE8]/15 blur-3xl pointer-events-none" />
 
-            <div ref={iframeContainerRef} className={`relative w-full ${isLive && videoUrl ? "aspect-video bg-slate-950/40" : "p-0 bg-transparent"}`}>
+            {!isLive && (
+              <>
+                {/* Floating hearts/stars decorative particles */}
+                <div className="absolute top-1/4 left-10 text-xl opacity-30 pointer-events-none anim-float-heart-1">💖</div>
+                <div className="absolute top-1/3 right-12 text-lg opacity-25 pointer-events-none anim-float-star-1">⭐</div>
+                <div className="absolute bottom-1/4 left-16 text-lg opacity-25 pointer-events-none anim-float-star-2">✨</div>
+                <div className="absolute bottom-1/3 right-16 text-xl opacity-30 pointer-events-none anim-float-heart-2">💕</div>
+              </>
+            )}
+
+            <div ref={iframeContainerRef} className={`relative w-full ${isLive && videoUrl ? "aspect-video bg-slate-950/40" : "w-full flex flex-col items-center justify-center bg-transparent mt-2 mb-6"}`}>
               {isLive && videoUrl ? (
                 <>
                   <iframe
@@ -554,108 +564,131 @@ export default function GuestInvitePage() {
                   </div>
                 </>
               ) : (
-                <div className="w-full flex items-center justify-center p-0 bg-transparent relative z-10">
-                  <div className="relative w-full aspect-[16/9] bg-[url('/images/countdown-bg.png')] bg-contain bg-no-repeat bg-center select-none overflow-hidden rounded-[24px] md:rounded-[32px] shadow-2xl @container">
+                <div className="w-full h-full flex flex-col items-center justify-center text-center p-0 bg-transparent z-10 relative">
+                  <div className="flex flex-col items-center gap-1.5 w-full">
                     
-                    {/* Days Number */}
-                    <div
-                      className="absolute flex items-center justify-center text-[#2a80ea] font-extrabold tracking-tighter text-center"
-                      style={{
-                        left: '12%',
-                        top: '28%',
-                        width: '17.5%',
-                        height: '33%',
-                        fontSize: 'clamp(24px, 7.8cqw, 82px)',
-                        textShadow: '1px 1px 0px rgba(255,255,255,0.8), -1px -1px 0px rgba(0,0,0,0.06), 0px 4px 10px rgba(0,0,0,0.08)',
-                        animation: 'bounce-gentle 2s ease-in-out infinite alternate',
+                    <h2 className="text-xl md:text-2xl font-black text-slate-800 tracking-wider uppercase flex items-center justify-center gap-1">
+                      ✨ THE BIG REVEAL IN ✨
+                    </h2>
+                    
+                    <p className="text-xs md:text-sm text-slate-600 max-w-md font-semibold text-center">
+                      Every second brings you closer to meeting your little miracle.
+                    </p>
+
+                    <div className="w-full flex items-center justify-center mt-6 w-full max-w-[720px]">
+                      <div className="relative w-full aspect-[3/2] bg-[url('/images/countdown-cards.png')] bg-contain bg-no-repeat bg-center select-none overflow-hidden @container">
+                        
+                        {/* Days Number */}
+                        <div
+                          className="absolute flex items-center justify-center text-[#2a80ea] font-extrabold tracking-tighter text-center"
+                          style={{
+                            left: '9.8%',
+                            top: '28%',
+                            width: '18.7%',
+                            height: '33%',
+                            fontSize: 'clamp(24px, 8.5cqw, 82px)',
+                            textShadow: '1px 1px 0px rgba(255,255,255,0.8), -1px -1px 0px rgba(0,0,0,0.06), 0px 4px 10px rgba(0,0,0,0.08)',
+                            animation: 'bounce-gentle 2s ease-in-out infinite alternate',
+                          }}
+                        >
+                          {String(countdownParts.d).padStart(2, "0")}
+                        </div>
+
+                        {/* Hours Number */}
+                        <div
+                          className="absolute flex items-center justify-center text-[#ea3998] font-extrabold tracking-tighter text-center"
+                          style={{
+                            left: '30.5%',
+                            top: '28%',
+                            width: '18.7%',
+                            height: '33%',
+                            fontSize: 'clamp(24px, 8.5cqw, 82px)',
+                            textShadow: '1px 1px 0px rgba(255,255,255,0.8), -1px -1px 0px rgba(0,0,0,0.06), 0px 4px 10px rgba(0,0,0,0.08)',
+                            animation: 'bounce-gentle 2s ease-in-out infinite alternate',
+                            animationDelay: '0.2s',
+                          }}
+                        >
+                          {String(countdownParts.h).padStart(2, "0")}
+                        </div>
+
+                        {/* Minutes Number */}
+                        <div
+                          className="absolute flex items-center justify-center text-[#7c56ed] font-extrabold tracking-tighter text-center"
+                          style={{
+                            left: '51%',
+                            top: '28%',
+                            width: '18.7%',
+                            height: '33%',
+                            fontSize: 'clamp(24px, 8.5cqw, 82px)',
+                            textShadow: '1px 1px 0px rgba(255,255,255,0.8), -1px -1px 0px rgba(0,0,0,0.06), 0px 4px 10px rgba(0,0,0,0.08)',
+                            animation: 'bounce-gentle 2s ease-in-out infinite alternate',
+                            animationDelay: '0.4s',
+                          }}
+                        >
+                          {String(countdownParts.m).padStart(2, "0")}
+                        </div>
+
+                        {/* Seconds Number */}
+                        <div
+                          className="absolute flex items-center justify-center text-[#f59700] font-extrabold tracking-tighter text-center"
+                          style={{
+                            left: '71.5%',
+                            top: '28%',
+                            width: '18.7%',
+                            height: '33%',
+                            fontSize: 'clamp(24px, 8.5cqw, 82px)',
+                            textShadow: '1px 1px 0px rgba(255,255,255,0.8), -1px -1px 0px rgba(0,0,0,0.06), 0px 4px 10px rgba(0,0,0,0.08)',
+                            animation: 'bounce-gentle 2s ease-in-out infinite alternate',
+                            animationDelay: '0.6s',
                       }}
                     >
-                      {String(countdownParts.d).padStart(2, "0")}
+                          {String(countdownParts.s).padStart(2, "0")}
+                        </div>
+
+                        {/* Pill Content Overlay */}
+                        <div
+                          className="absolute flex items-center justify-center gap-1.5 md:gap-3 text-[#5E5B8E] font-bold select-none text-center"
+                          style={{
+                            left: '20%',
+                            top: '78%',
+                            width: '60%',
+                            height: '10%',
+                          }}
+                        >
+                          {/* Date slot */}
+                          <div className="flex items-center gap-1.5 truncate" style={{ fontSize: 'clamp(9px, 1.8cqw, 15px)' }}>
+                            <Calendar className="w-3 h-3 md:w-3.5 md:h-3.5 text-[#E8449A] shrink-0" />
+                            <span>{getFormattedDateOnly(revealAtIso, revealTimezone)}</span>
+                          </div>
+                          
+                          <span className="text-[#5E5B8E]/30 text-xs md:text-sm font-light">|</span>
+                          
+                          {/* Time slot */}
+                          <div className="flex items-center gap-1.5 truncate" style={{ fontSize: 'clamp(9px, 1.8cqw, 15px)' }}>
+                            <Clock className="w-3 h-3 md:w-3.5 md:h-3.5 text-[#E8449A] shrink-0" />
+                            <span>{getFormattedTimeOnly(revealAtIso, revealTimezone)}</span>
+                          </div>
+                        </div>
+
+                      </div>
                     </div>
 
-                    {/* Hours Number */}
-                    <div
-                      className="absolute flex items-center justify-center text-[#ea3998] font-extrabold tracking-tighter text-center"
-                      style={{
-                        left: '31.5%',
-                        top: '28%',
-                        width: '17.5%',
-                        height: '33%',
-                        fontSize: 'clamp(24px, 7.8cqw, 82px)',
-                        textShadow: '1px 1px 0px rgba(255,255,255,0.8), -1px -1px 0px rgba(0,0,0,0.06), 0px 4px 10px rgba(0,0,0,0.08)',
-                        animation: 'bounce-gentle 2s ease-in-out infinite alternate',
-                        animationDelay: '0.2s',
-                      }}
-                    >
-                      {String(countdownParts.h).padStart(2, "0")}
-                    </div>
-
-                    {/* Minutes Number */}
-                    <div
-                      className="absolute flex items-center justify-center text-[#7c56ed] font-extrabold tracking-tighter text-center"
-                      style={{
-                        left: '51.3%',
-                        top: '28%',
-                        width: '17.5%',
-                        height: '33%',
-                        fontSize: 'clamp(24px, 7.8cqw, 82px)',
-                        textShadow: '1px 1px 0px rgba(255,255,255,0.8), -1px -1px 0px rgba(0,0,0,0.06), 0px 4px 10px rgba(0,0,0,0.08)',
-                        animation: 'bounce-gentle 2s ease-in-out infinite alternate',
-                        animationDelay: '0.4s',
-                      }}
-                    >
-                      {String(countdownParts.m).padStart(2, "0")}
-                    </div>
-
-                    {/* Seconds Number */}
-                    <div
-                      className="absolute flex items-center justify-center text-[#f59700] font-extrabold tracking-tighter text-center"
-                      style={{
-                        left: '71%',
-                        top: '28%',
-                        width: '17.5%',
-                        height: '33%',
-                        fontSize: 'clamp(24px, 7.8cqw, 82px)',
-                        textShadow: '1px 1px 0px rgba(255,255,255,0.8), -1px -1px 0px rgba(0,0,0,0.06), 0px 4px 10px rgba(0,0,0,0.08)',
-                        animation: 'bounce-gentle 2s ease-in-out infinite alternate',
-                        animationDelay: '0.6s',
-                      }}
-                    >
-                      {String(countdownParts.s).padStart(2, "0")}
-                    </div>
-
-                    {/* Date Pill Slot */}
-                    <div
-                      className="absolute flex items-center justify-center text-[#5E5B8E] font-bold text-center select-none truncate px-1"
-                      style={{
-                        left: '35.8%',
-                        top: '74.6%',
-                        width: '13.5%',
-                        height: '10%',
-                        fontSize: 'clamp(10px, 1.85cqw, 18px)',
-                      }}
-                    >
-                      {getFormattedDateOnly(revealAtIso, revealTimezone)}
-                    </div>
-
-                    {/* Time Pill Slot */}
-                    <div
-                      className="absolute flex items-center justify-center text-[#5E5B8E] font-bold text-center select-none truncate px-1"
-                      style={{
-                        left: '54.5%',
-                        top: '74.6%',
-                        width: '13.5%',
-                        height: '10%',
-                        fontSize: 'clamp(10px, 1.85cqw, 18px)',
-                      }}
-                    >
-                      {getFormattedTimeOnly(revealAtIso, revealTimezone)}
-                    </div>
-
+                    <p className="mt-4 text-[11px] md:text-xs text-slate-500 font-semibold max-w-sm text-center leading-relaxed">
+                      {countdownParts.live 
+                        ? "We are live! The reveal stream is starting now." 
+                        : "The screen will unlock automatically at the scheduled reveal time. Stay tuned!"}
+                    </p>
                   </div>
                 </div>
               )}
             </div>
+
+            {!isLive && (
+              <div className="absolute left-4 bottom-4 flex items-center gap-2 bg-white/70 backdrop-blur-md px-3.5 py-1.5 rounded-full border border-white/80 text-[10px] font-black text-slate-800 shadow-md">
+                <span className="w-2 h-2 rounded-full bg-emerald-500 animate-ping" />
+                🎈 Party Begins Soon
+              </div>
+            )}
           </section>
                 {/* Row 3: Predictions / Voting (Full Width Glassmorphic Card) */}
           <div className="grid grid-cols-1 gap-6 w-full items-stretch animate-fade-in">
