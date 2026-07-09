@@ -525,7 +525,7 @@ export default function GuestInvitePage() {
           </header>
 
           {/* 2. REVEAL VIDEO / COUNTDOWN AREA (Centered Glassmorphic Video Box - Full Width) */}
-          <section className={`relative overflow-hidden transition-all duration-300 w-full ${isLive && videoUrl ? "bg-slate-950/20 backdrop-blur-xl border border-white/10 shadow-2xl rounded-[24px]" : "bg-white/45 backdrop-blur-[30px] border border-white/50 border-[1.5px] rounded-[32px] p-6 md:p-8 shadow-2xl flex flex-col items-center justify-center"}`}>
+          <section className={`relative overflow-hidden transition-all duration-300 w-full ${isLive && videoUrl ? "bg-slate-950/20 backdrop-blur-xl border border-white/10 shadow-2xl rounded-[24px]" : "bg-white/45 backdrop-blur-[30px] border border-white/50 border-[1.5px] rounded-[32px] py-4 px-5 md:py-5 md:px-8 shadow-2xl flex flex-col items-center justify-center"}`}>
             {/* Ambient subtle celebratory pink/blue glows in the corners */}
             <div className="absolute top-0 left-0 w-48 h-48 bg-[#E8449A]/15 blur-3xl pointer-events-none" />
             <div className="absolute bottom-0 right-0 w-48 h-48 bg-[#3A9FE8]/15 blur-3xl pointer-events-none" />
@@ -540,7 +540,7 @@ export default function GuestInvitePage() {
               </>
             )}
 
-            <div ref={iframeContainerRef} className={`relative w-full ${isLive && videoUrl ? "aspect-video bg-slate-950/40" : "w-full flex flex-col items-center justify-center bg-transparent mt-2 mb-6"}`}>
+            <div ref={iframeContainerRef} className={`relative w-full ${isLive && videoUrl ? "aspect-video bg-slate-950/40" : "w-full flex flex-col items-center justify-center bg-transparent mt-1 mb-1"}`}>
               {isLive && videoUrl ? (
                 <>
                   <iframe
@@ -567,15 +567,15 @@ export default function GuestInvitePage() {
                 <div className="w-full h-full flex flex-col items-center justify-center text-center p-0 bg-transparent z-10 relative">
                   <div className="flex flex-col items-center gap-1.5 w-full">
                     
-                    <h2 className="text-xl md:text-2xl font-black text-slate-800 tracking-wider uppercase flex items-center justify-center gap-1">
-                      ✨ THE BIG REVEAL IN ✨
+                    <h2 className="text-lg md:text-xl font-nunito font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-[#E8449A] to-[#3A9FE8] tracking-wider flex items-center justify-center gap-1.5 drop-shadow-sm">
+                      ✨ 👶🏼 THE BIG REVEAL IN 👶🏾 ✨
                     </h2>
                     
-                    <p className="text-xs md:text-sm text-slate-600 max-w-md font-semibold text-center">
-                      Every second brings you closer to meeting your little miracle.
+                    <p className="text-[11px] md:text-xs text-slate-500 font-bold italic text-center mt-0.5">
+                      🧸 Every second brings you closer to meeting your little miracle. 🍼
                     </p>
 
-                    <div className="w-full flex items-center justify-center mt-6 w-full max-w-[720px]">
+                    <div className="w-full flex items-center justify-center mt-4 w-full max-w-[620px]">
                       <div className="relative w-full aspect-[3/2] bg-[url('/images/countdown-cards.png')] bg-contain bg-no-repeat bg-center select-none overflow-hidden @container">
                         
                         {/* Days Number */}
