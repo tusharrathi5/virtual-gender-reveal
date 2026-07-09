@@ -1122,7 +1122,7 @@ function DashboardContent() {
 
                         <div>
                           <span className="text-[10px] bg-[#D6EAFE] text-[#1B4F8C] px-2 py-0.5 rounded-full font-bold uppercase tracking-wider">
-                            {reveal.mode === "announcement" ? "Announcement" : "Gender Reveal"}
+                            {reveal.mode === "announcement" ? "We Already Know!" : "Surprise Reveal"}
                           </span>
                           <h3 className="font-nunito font-extrabold text-lg text-gray-900 mt-1">{reveal.parentName || "Untitled Reveal"}</h3>
                           <span className="text-xs text-gray-500 font-semibold flex items-center gap-1 mt-0.5">
@@ -1191,7 +1191,7 @@ function DashboardContent() {
                       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                         <div className="bg-gray-50/50 rounded-xl p-3 border border-gray-100">
                           <span className="text-[9px] text-gray-400 block uppercase font-bold tracking-wider mb-0.5">Reveal Mode</span>
-                          <span className="text-xs font-semibold text-gray-800">{reveal.mode === "announcement" ? "Announcement" : "Reveal"}</span>
+                          <span className="text-xs font-semibold text-gray-800">{reveal.mode === "announcement" ? "We Already Know!" : "Surprise Reveal"}</span>
                         </div>
                         <div className="bg-gray-50/50 rounded-xl p-3 border border-gray-100">
                           <span className="text-[9px] text-gray-400 block uppercase font-bold tracking-wider mb-0.5">Reveal Time</span>
@@ -1221,7 +1221,7 @@ function DashboardContent() {
                             }`}
                             onClick={() => updateEditForm("mode", "reveal")}
                           >
-                            Gender Reveal
+                            Surprise Reveal
                           </button>
                           <button
                             type="button"
@@ -1232,7 +1232,7 @@ function DashboardContent() {
                             }`}
                             onClick={() => updateEditForm("mode", "announcement")}
                           >
-                            Announcement
+                            We Already Know!
                           </button>
                         </div>
 

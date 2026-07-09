@@ -408,7 +408,7 @@ export default function NewRevealPage() {
             <div>
               <span className="text-[10px] text-gray-400 block uppercase font-bold tracking-wider">Event Type</span>
               <span className="font-bold text-gray-800 flex items-center gap-1.5 mt-0.5">
-                {mode === "reveal" ? "🎀 Gender Reveal" : "📣 Gender Announcement"}
+                {mode === "reveal" ? "🎀 Surprise Reveal" : "📣 We Already Know!"}
               </span>
             </div>
 
@@ -649,12 +649,15 @@ export default function NewRevealPage() {
                     }
                   }}
                 >
-                  <div className="flex items-center gap-3">
-                    <span className="text-3xl select-none" aria-hidden="true">🎀</span>
-                    <h3 className="font-black text-slate-900 text-base md:text-lg">Gender Reveal</h3>
+                  <div className="flex flex-col gap-1">
+                    <span className="text-[10px] uppercase font-bold tracking-widest text-[#E8449A]">THE SECRET STAYS SAFE WITH US! 🔐</span>
+                    <div className="flex items-center gap-3 mt-1">
+                      <span className="text-3xl select-none" aria-hidden="true">🎀</span>
+                      <h3 className="font-black text-slate-900 text-base md:text-lg">Surprise Reveal</h3>
+                    </div>
                   </div>
                   <p className="text-xs md:text-sm text-gray-600 leading-relaxed font-semibold mt-1">
-                    You don&apos;t know the gender yet. A private link is sent to a doctor or friend to enter it, and the system handles the rest.
+                    You don&apos;t know the gender yet! A private link is sent to a doctor or friend to enter it, and we handle the rest.
                   </p>
                   {mode === "reveal" && (
                     <div className="absolute top-4 right-4 w-5 h-5 rounded-full bg-[#E8449A] flex items-center justify-center">
@@ -681,12 +684,15 @@ export default function NewRevealPage() {
                     }
                   }}
                 >
-                  <div className="flex items-center gap-3">
-                    <span className="text-3xl select-none" aria-hidden="true">📣</span>
-                    <h3 className="font-black text-slate-900 text-base md:text-lg">Gender Announcement</h3>
+                  <div className="flex flex-col gap-1">
+                    <span className="text-[10px] uppercase font-bold tracking-widest text-[#3A9FE8]">LET&apos;S SHARE THE GOOD NEWS! 📣</span>
+                    <div className="flex items-center gap-3 mt-1">
+                      <span className="text-3xl select-none" aria-hidden="true">📣</span>
+                      <h3 className="font-black text-slate-900 text-base md:text-lg">We Already Know!</h3>
+                    </div>
                   </div>
                   <p className="text-xs md:text-sm text-gray-600 leading-relaxed font-semibold mt-1">
-                    You already know the gender. We create a cinematic announcement to share with family &amp; friends.
+                    You already know the gender. We&apos;ll create a beautiful cinematic announcement to share with family &amp; friends.
                   </p>
                   {mode === "announcement" && (
                     <div className="absolute top-4 right-4 w-5 h-5 rounded-full bg-[#3A9FE8] flex items-center justify-center">
