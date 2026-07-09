@@ -267,23 +267,41 @@ export default function GuestInvitePage() {
     return `https://iframe.videodelivery.net/${uid}?autoplay=true&controls=false&muted=true&startTime=${startTime}`;
   }, [videoUrl, revealAtIso]);
 
-  function getFormattedRevealBar(isoString: string | null, timezone: string): string {
+  function getFormattedDateOnly(isoString: string | null, timezone: string): string {
     if (!isoString) return "";
     try {
       const d = new Date(isoString);
-      const datePart = d.toLocaleDateString("en-US", {
-        weekday: "long",
-        month: "long",
+      return d.toLocaleDateString("en-US", {
+        weekday: "short",
+        month: "short",
         day: "numeric",
         year: "numeric",
         timeZone: timezone,
       });
-      const timePart = d.toLocaleTimeString("en-US", {
+    } catch {
+      return "";
+    }
+  }
+
+  function getFormattedTimeOnly(isoString: string | null, timezone: string): string {
+    if (!isoString) return "";
+    try {
+      const d = new Date(isoString);
+      const timeStr = d.toLocaleTimeString("en-US", {
         hour: "numeric",
         minute: "2-digit",
         timeZone: timezone,
       });
-      return `${datePart} | ${timePart} | ${timezone}`;
+      let tzAbbr = "";
+      try {
+        const parts = new Intl.DateTimeFormat("en-US", {
+          timeZone: timezone,
+          timeZoneName: "short",
+        }).formatToParts(d);
+        const tzPart = parts.find(p => p.type === "timeZoneName");
+        tzAbbr = tzPart ? tzPart.value : "";
+      } catch {}
+      return tzAbbr ? `${timeStr} (${tzAbbr})` : timeStr;
     } catch {
       return "";
     }
@@ -507,22 +525,12 @@ export default function GuestInvitePage() {
           </header>
 
           {/* 2. REVEAL VIDEO / COUNTDOWN AREA (Centered Glassmorphic Video Box - Full Width) */}
-          <section className={`relative overflow-hidden border shadow-2xl transition-all duration-300 w-full ${isLive && videoUrl ? "bg-slate-950/20 backdrop-blur-xl border-white/10 rounded-[24px]" : "bg-white/45 backdrop-blur-[30px] border-white/50 rounded-[32px]"}`}>
+          <section className={`relative overflow-hidden transition-all duration-300 w-full ${isLive && videoUrl ? "bg-slate-950/20 backdrop-blur-xl border border-white/10 shadow-2xl rounded-[24px]" : "bg-transparent border-0 shadow-none rounded-[32px]"}`}>
             {/* Ambient subtle celebratory pink/blue glows in the corners */}
             <div className="absolute top-0 left-0 w-48 h-48 bg-[#E8449A]/15 blur-3xl pointer-events-none" />
             <div className="absolute bottom-0 right-0 w-48 h-48 bg-[#3A9FE8]/15 blur-3xl pointer-events-none" />
 
-            {!isLive && (
-              <>
-                {/* Floating hearts/stars decorative particles */}
-                <div className="absolute top-1/4 left-10 text-xl opacity-30 pointer-events-none anim-float-heart-1">💖</div>
-                <div className="absolute top-1/3 right-12 text-lg opacity-25 pointer-events-none anim-float-star-1">⭐</div>
-                <div className="absolute bottom-1/4 left-16 text-lg opacity-25 pointer-events-none anim-float-star-2">✨</div>
-                <div className="absolute bottom-1/3 right-16 text-xl opacity-30 pointer-events-none anim-float-heart-2">💕</div>
-              </>
-            )}
-
-            <div ref={iframeContainerRef} className={`relative w-full ${isLive && videoUrl ? "aspect-video bg-slate-950/40" : "py-10 px-4 md:py-16 md:px-8 bg-transparent"}`}>
+            <div ref={iframeContainerRef} className={`relative w-full ${isLive && videoUrl ? "aspect-video bg-slate-950/40" : "p-0 bg-transparent"}`}>
               {isLive && videoUrl ? (
                 <>
                   <iframe
@@ -546,79 +554,105 @@ export default function GuestInvitePage() {
                   </div>
                 </>
               ) : (
-                <div className="w-full h-full flex flex-col items-center justify-center text-center p-2 bg-transparent z-10 relative">
-                  <div className="flex flex-col items-center gap-2">
+                <div className="w-full flex items-center justify-center p-0 bg-transparent relative z-10">
+                  <div className="relative w-full aspect-[16/9] bg-[url('/images/countdown-bg.png')] bg-contain bg-no-repeat bg-center select-none overflow-hidden rounded-[24px] md:rounded-[32px] shadow-2xl @container">
                     
-                    <h2 className="text-xl md:text-2xl font-black text-slate-800 tracking-wider uppercase flex items-center justify-center gap-1">
-                      ✨ THE BIG REVEAL IN ✨
-                    </h2>
-                    
-                    <p className="text-xs md:text-sm text-slate-600 max-w-md font-semibold text-center mt-1">
-                      Every second brings you closer to meeting your little miracle.
-                    </p>
-                    
-                    {!countdownParts.live && (
-                      <div className="flex flex-wrap md:flex-nowrap justify-center items-center gap-4 md:gap-6 mt-8 w-full max-w-[720px] px-2">
-                        {[
-                          { val: countdownParts.d, label: "DAYS", colorClass: "text-[#3A9FE8]", pulse: "glow-pulse-blue", badgeBg: "bg-[#D6EAFE]", badgeBorder: "border-[#3A9FE8]/40", icon: "⭐", bgGrad: "from-[#F3F9FF] to-white/90", cloudStars: ["⭐", "✨"] },
-                          { val: countdownParts.h, label: "HOURS", colorClass: "text-[#E8449A]", pulse: "glow-pulse-pink", badgeBg: "bg-[#FCE7F3]", badgeBorder: "border-[#E8449A]/40", icon: "💖", bgGrad: "from-[#FFF1F8] to-white/90", cloudStars: ["💖", "💕"] },
-                          { val: countdownParts.m, label: "MINUTES", colorClass: "text-[#7B6EE8]", pulse: "glow-pulse-purple", badgeBg: "bg-[#EBE9FE]", badgeBorder: "border-[#7B6EE8]/40", icon: "⭐", bgGrad: "from-[#F7F6FF] to-white/90", cloudStars: ["⭐", "✨"] },
-                          { val: countdownParts.s, label: "SECONDS", colorClass: "text-[#F59E0B]", pulse: "glow-pulse-gold", badgeBg: "bg-[#FEF3C7]", badgeBorder: "border-[#F59E0B]/40", icon: "⭐", bgGrad: "from-[#FFFDF5] to-white/90", cloudStars: ["⭐", "✨"] }
-                        ].map((item, idx) => (
-                          <Fragment key={idx}>
-                            {idx > 0 && (
-                              <span className="hidden md:inline text-3xl font-black text-slate-400/75 select-none" style={{ animation: "blink-colon 2s infinite" }}>:</span>
-                            )}
-                            <div
-                              style={{ animation: `${item.pulse} 4s ease-in-out infinite alternate` }}
-                              className={`relative flex flex-col items-center bg-gradient-to-b ${item.bgGrad} rounded-3xl border border-white/80 p-5 pt-8 min-w-[110px] md:min-w-[125px] flex-1 shadow-lg overflow-hidden transition-all duration-300 hover:scale-[1.03]`}
-                            >
-                              {/* Top Overlay Badge Icon */}
-                              <div className={`absolute top-0 -translate-y-1/2 w-8 h-8 rounded-full ${item.badgeBg} border ${item.badgeBorder} flex items-center justify-center shadow-sm z-10`}>
-                                <span className="text-xs">{item.icon}</span>
-                              </div>
-                              
-                              {/* Number */}
-                              <span className={`text-4xl md:text-5xl font-black ${item.colorClass} leading-none tracking-tight z-10 embossed-num`}>
-                                {String(item.val).padStart(2, "0")}
-                              </span>
-                              
-                              {/* Label */}
-                              <span className={`text-[10px] md:text-[11px] font-black tracking-widest ${item.colorClass} opacity-80 mt-2.5 z-10`}>
-                                {item.label}
-                              </span>
-                              
-                              {/* Clouds and floating particles base decoration */}
-                              <div className="absolute bottom-0 inset-x-0 h-10 bg-gradient-to-t from-white via-white/90 to-transparent pointer-events-none z-0 flex items-end justify-between px-2.5 pb-1">
-                                <span className="text-[10px] opacity-25">{item.cloudStars[0]}</span>
-                                <span className="text-[11px] opacity-20">☁️</span>
-                                <span className="text-[9px] opacity-25">{item.cloudStars[1]}</span>
-                              </div>
-                            </div>
-                          </Fragment>
-                        ))}
-                      </div>
-                    )}
-                    
-                    {/* Dynamic Date & Time Bar Pill */}
-                    <div className="mt-8 bg-gradient-to-r from-[#FCE7F3]/70 to-[#FFF]/70 backdrop-blur-md px-5 py-2.5 rounded-full border border-white/60 shadow-md inline-flex items-center justify-center gap-1 text-slate-800 text-[10px] md:text-xs font-bold leading-none tracking-wide text-center">
-                      <span className="mr-0.5">📅</span>
-                      <span>{getFormattedRevealBar(revealAtIso, revealTimezone)}</span>
+                    {/* Days Number */}
+                    <div
+                      className="absolute flex items-center justify-center text-[#2a80ea] font-extrabold tracking-tighter text-center"
+                      style={{
+                        left: '12%',
+                        top: '28%',
+                        width: '17.5%',
+                        height: '33%',
+                        fontSize: 'clamp(24px, 7.8cqw, 82px)',
+                        textShadow: '1px 1px 0px rgba(255,255,255,0.8), -1px -1px 0px rgba(0,0,0,0.06), 0px 4px 10px rgba(0,0,0,0.08)',
+                        animation: 'bounce-gentle 2s ease-in-out infinite alternate',
+                      }}
+                    >
+                      {String(countdownParts.d).padStart(2, "0")}
                     </div>
 
-                    <p className="mt-6 text-[11px] md:text-xs text-slate-500 font-semibold max-w-sm text-center leading-relaxed">
-                      {countdownParts.live 
-                        ? "We are live! The reveal stream is starting now." 
-                        : "The screen will unlock automatically at the scheduled reveal time. Stay tuned!"}
-                    </p>
+                    {/* Hours Number */}
+                    <div
+                      className="absolute flex items-center justify-center text-[#ea3998] font-extrabold tracking-tighter text-center"
+                      style={{
+                        left: '31.5%',
+                        top: '28%',
+                        width: '17.5%',
+                        height: '33%',
+                        fontSize: 'clamp(24px, 7.8cqw, 82px)',
+                        textShadow: '1px 1px 0px rgba(255,255,255,0.8), -1px -1px 0px rgba(0,0,0,0.06), 0px 4px 10px rgba(0,0,0,0.08)',
+                        animation: 'bounce-gentle 2s ease-in-out infinite alternate',
+                        animationDelay: '0.2s',
+                      }}
+                    >
+                      {String(countdownParts.h).padStart(2, "0")}
+                    </div>
+
+                    {/* Minutes Number */}
+                    <div
+                      className="absolute flex items-center justify-center text-[#7c56ed] font-extrabold tracking-tighter text-center"
+                      style={{
+                        left: '51.3%',
+                        top: '28%',
+                        width: '17.5%',
+                        height: '33%',
+                        fontSize: 'clamp(24px, 7.8cqw, 82px)',
+                        textShadow: '1px 1px 0px rgba(255,255,255,0.8), -1px -1px 0px rgba(0,0,0,0.06), 0px 4px 10px rgba(0,0,0,0.08)',
+                        animation: 'bounce-gentle 2s ease-in-out infinite alternate',
+                        animationDelay: '0.4s',
+                      }}
+                    >
+                      {String(countdownParts.m).padStart(2, "0")}
+                    </div>
+
+                    {/* Seconds Number */}
+                    <div
+                      className="absolute flex items-center justify-center text-[#f59700] font-extrabold tracking-tighter text-center"
+                      style={{
+                        left: '71%',
+                        top: '28%',
+                        width: '17.5%',
+                        height: '33%',
+                        fontSize: 'clamp(24px, 7.8cqw, 82px)',
+                        textShadow: '1px 1px 0px rgba(255,255,255,0.8), -1px -1px 0px rgba(0,0,0,0.06), 0px 4px 10px rgba(0,0,0,0.08)',
+                        animation: 'bounce-gentle 2s ease-in-out infinite alternate',
+                        animationDelay: '0.6s',
+                      }}
+                    >
+                      {String(countdownParts.s).padStart(2, "0")}
+                    </div>
+
+                    {/* Date Pill Slot */}
+                    <div
+                      className="absolute flex items-center justify-center text-[#5E5B8E] font-bold text-center select-none truncate px-1"
+                      style={{
+                        left: '35.8%',
+                        top: '74.6%',
+                        width: '13.5%',
+                        height: '10%',
+                        fontSize: 'clamp(10px, 1.85cqw, 18px)',
+                      }}
+                    >
+                      {getFormattedDateOnly(revealAtIso, revealTimezone)}
+                    </div>
+
+                    {/* Time Pill Slot */}
+                    <div
+                      className="absolute flex items-center justify-center text-[#5E5B8E] font-bold text-center select-none truncate px-1"
+                      style={{
+                        left: '54.5%',
+                        top: '74.6%',
+                        width: '13.5%',
+                        height: '10%',
+                        fontSize: 'clamp(10px, 1.85cqw, 18px)',
+                      }}
+                    >
+                      {getFormattedTimeOnly(revealAtIso, revealTimezone)}
+                    </div>
+
                   </div>
-                </div>
-              )}
-              
-              {!isLive && (
-                <div className="absolute left-4 bottom-4 flex items-center gap-2 bg-white/70 backdrop-blur-md px-3.5 py-1.5 rounded-full border border-white/80 text-[10px] font-black text-slate-800 shadow-md">
-                  <span className="w-2 h-2 rounded-full bg-emerald-500 animate-ping" />
-                  🎈 Party Begins Soon
                 </div>
               )}
             </div>
