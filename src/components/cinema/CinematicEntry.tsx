@@ -421,8 +421,8 @@ function LandingPage() {
           <a href="/" className="nav-link nav-link-active">Home</a>
           <button type="button" className="nav-link" onClick={() => routeToReveal()}>Create Party</button>
           <a href="#how" className="nav-link">How It Works</a>
-          <button type="button" onClick={() => setShowStoryModal(true)} className="nav-link" style={{ background: "transparent", border: "none", cursor: "pointer", fontFamily: "inherit", fontSize: "inherit", padding: 0 }}>Our Story</button>
-          <button type="button" onClick={() => setShowFaqModal(true)} className="nav-link" style={{ background: "transparent", border: "none", cursor: "pointer", fontFamily: "inherit", fontSize: "inherit", padding: 0 }}>FAQ</button>
+          <button type="button" onClick={() => setShowStoryModal(true)} className="nav-link">Our Story</button>
+          <button type="button" onClick={() => setShowFaqModal(true)} className="nav-link">FAQ</button>
         </div>
         <div className="nav-right">
           {loading ? null : user ? (
@@ -1146,13 +1146,13 @@ footer{background:#111827;padding:4rem 2rem 2rem;}
 @media(max-width:900px){.hiw-cards-row{grid-template-columns:repeat(2,1fr);}.hiw-new-card:nth-child(2)::after,.hiw-new-card:nth-child(4)::after{display:none;}.hiw-feat-bar{grid-template-columns:repeat(2,1fr);}}
 @media(max-width:640px){.hero-content{grid-template-columns:1fr;}.hero-right{display:none;}.hiw-cards-row{grid-template-columns:1fr 1fr;}.hiw-new-card::after{display:none;}.hiw-feat-bar{grid-template-columns:1fr 1fr;}}
 /* ── Navbar Redesign ── */
-nav#main-nav{position:fixed;top:1rem;left:50%;transform:translateX(-50%);width:calc(100% - 3rem);max-width:880px;height:62px;display:flex;align-items:center;justify-content:space-between;padding:0 1.4rem;background:rgba(255,255,255,0.96);backdrop-filter:blur(20px);border-radius:50px;box-shadow:0 4px 20px rgba(0,0,0,0.1);border:1px solid rgba(255,255,255,0.9);transition:box-shadow 0.3s;}
+nav#main-nav{position:fixed;top:1rem;left:50%;transform:translateX(-50%);width:calc(100% - 3rem);max-width:980px;height:70px;display:flex;align-items:center;justify-content:space-between;padding:0 1.8rem;background:rgba(255,255,255,0.96);backdrop-filter:blur(20px);border-radius:50px;box-shadow:0 4px 20px rgba(0,0,0,0.1);border:1px solid rgba(255,255,255,0.9);transition:box-shadow 0.3s;}
 nav#main-nav.solid{box-shadow:0 6px 28px rgba(0,0,0,0.14);}
 .nav-logo{display:flex;align-items:center;gap:0.4rem;text-decoration:none;}
 .nav-logo-img{width:56px;height:44px;object-fit:contain;display:block;}
 .nav-logo-text{font-family:'Nunito',sans-serif;font-size:1.5rem;font-weight:900;color:#E8449A;line-height:1;}
-.nav-links{display:flex;gap:0.2rem;align-items:center;}
-.nav-link{font-family:'Plus Jakarta Sans',sans-serif;font-size:0.87rem;font-weight:500;text-decoration:none;color:#555;padding:0.38rem 1rem;border-radius:50px;transition:color 0.2s,background 0.2s;background:none;border:none;cursor:pointer;}
+.nav-links{display:flex;gap:0.6rem;align-items:center;}
+.nav-link{font-family:'Plus Jakarta Sans',sans-serif;font-size:0.88rem;font-weight:600;text-decoration:none;color:#555;padding:0.42rem 1.1rem;border-radius:50px;transition:color 0.2s,background 0.2s;background:none;border:none;cursor:pointer;line-height:1;}
 .nav-link:hover{color:#E8449A;background:rgba(232,68,154,0.07);}
 .nav-link-active{color:#E8449A !important;background:rgba(232,68,154,0.1);}
 .nav-right{display:flex;align-items:center;gap:0.7rem;}
