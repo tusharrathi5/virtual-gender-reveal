@@ -292,6 +292,7 @@ export default function GuestInvitePage() {
   }
 
   async function submitVote(gender: "boy" | "girl") {
+    if (submitting) return;
     setPrediction(gender);
     setSubmitting(true);
     setError(null);
