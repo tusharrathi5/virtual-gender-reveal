@@ -338,9 +338,10 @@ function LandingPage() {
   const [checkingEntitlement, setCheckingEntitlement] = useState(false);
   const [activeFaq, setActiveFaq] = useState<number | null>(null);
   const [showFaqModal, setShowFaqModal] = useState(false);
+  const [showStoryModal, setShowStoryModal] = useState(false);
 
   useEffect(() => {
-    if (showFaqModal) {
+    if (showFaqModal || showStoryModal) {
       document.body.style.overflow = 'hidden';
     } else {
       document.body.style.overflow = '';
@@ -348,7 +349,7 @@ function LandingPage() {
     return () => {
       document.body.style.overflow = '';
     };
-  }, [showFaqModal]);
+  }, [showFaqModal, showStoryModal]);
 
   function handleConfirm() {
     if (!confirmPlan) return;
@@ -420,7 +421,8 @@ function LandingPage() {
           <a href="/" className="nav-link nav-link-active">Home</a>
           <button type="button" className="nav-link" onClick={() => routeToReveal()}>Create Party</button>
           <a href="#how" className="nav-link">How It Works</a>
-          <button type="button" onClick={() => setShowFaqModal(true)} className="nav-link" style={{ background: "transparent", border: "none", cursor: "pointer", fontFamily: "inherit", fontSize: "inherit", padding: 0 }}>FAQ</button>
+          <button type="button" onClick={() => setShowStoryModal(true)} className="nav-link">Our Story</button>
+          <button type="button" onClick={() => setShowFaqModal(true)} className="nav-link">FAQ</button>
         </div>
         <div className="nav-right">
           {loading ? null : user ? (
@@ -629,6 +631,16 @@ function LandingPage() {
                 nameCls: "tn-blue",
                 heart: "💙"
               },
+              {
+                title: "Finally, a gender reveal that's more than just a balloon pop.",
+                q: "“It felt like watching a mini Pixar movie with an unforgettable surprise at the end. We were literally on the edge of our seats through the entire race!”",
+                name: "Megan B.",
+                role: "Aunt",
+                av: "👩",
+                starCls: "testi-stars-purple",
+                nameCls: "tn-purple",
+                heart: "💜"
+              },
             ].map((t, i) => (
               <div className="testi-new-card" key={i}>
                 <div className="testi-avatar-placeholder">{t.av}</div>
@@ -677,6 +689,85 @@ function LandingPage() {
       </section>
 
 
+
+      {showStoryModal && (
+        <div className="faq-modal-overlay" onClick={() => setShowStoryModal(false)}>
+          <div className="faq-modal-content" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '780px' }}>
+            <button type="button" className="faq-modal-close" onClick={() => setShowStoryModal(false)}>✕</button>
+            <div className="faq-header" style={{ marginBottom: '2.5rem' }}>
+              <div className="faq-badge" style={{ borderColor: '#E8449A', color: '#E8449A' }}>💙🩷 Our Story</div>
+              <h2 className="faq-title" style={{ fontFamily: "'Nunito', sans-serif", fontSize: '2.2rem', fontWeight: 900 }}>Because Every Reveal Deserves a Story</h2>
+            </div>
+            
+            <div className="story-content-text" style={{ position: 'relative', zIndex: 1, color: '#2c3e50', fontSize: '0.96rem', lineHeight: '1.85', display: 'flex', flexDirection: 'column', gap: '1.2rem', maxHeight: '55vh', overflowY: 'auto', paddingRight: '0.8rem', scrollbarWidth: 'thin', textAlign: 'left', fontWeight: 500 }}>
+              <p className="font-bold text-slate-800 text-lg">It started with a simple question…</p>
+              
+              <p>Like so many expecting parents, we started planning our gender reveal the same way everyone else does: <strong>Balloon pops. Cake cutting. Confetti cannons. Colored smoke.</strong></p>
+              
+              <p>But something about them felt… <em>incomplete</em>.</p>
+              
+              <p>They’re over in seconds. One pop. One slice. One puff of smoke.</p>
+              
+              <p>The surprise is amazing, but the experience leading up to it is over almost as quickly as it begins. We wanted our family and friends to experience the same anticipation, excitement, and joy we were feeling. Not just discover whether we were having a boy or a girl, but share the journey with us every step of the way.</p>
+              
+              <p>Then there was something else we couldn’t ignore. Every year, we saw stories of gender reveals that went wrong. Fires sparked by pyrotechnics. Homes damaged. Guests injured. Celebrations that were meant to bring people together instead ended in heartbreak.</p>
+              
+              <p>We thought… There has to be a better way. A way that’s exciting. A way that’s interactive. A way that’s memorable. And above all… <strong>A way that’s safe.</strong></p>
+              
+              <p>We kept asking ourselves: <em>What if the reveal wasn’t just the ending? What if the journey to the surprise was just as exciting?</em></p>
+              
+              <p>That single question sparked an idea we couldn’t stop thinking about. We imagined a reveal that felt like watching the final moments of the Kentucky Derby. The anticipation builds. Everyone is on the edge of their seat. Family and friends are cheering, laughing, making predictions, and eagerly waiting to see who crosses the finish line first.</p>
+              
+              <p>Except instead of winning a trophy… The finish line reveals the biggest surprise of your life… the moment you discover whether you’re welcoming a little boy or a little girl.</p>
+              
+              <p>Suddenly, your reveal isn’t just something people watch. <strong>It’s something they experience.</strong> For a few unforgettable minutes, everyone forgets they’re watching a gender reveal and starts cheering like they’re watching the biggest race of the year.</p>
+              
+              <p>Guests begin making their predictions before the race even starts: <em>“Team Boy!” “Team Girl!”</em> Families text each other their predictions. Kids cheer for their favorite baby. Grandparents lean closer to the screen. Friends start shouting at the TV. Everyone has a favorite to win.</p>
+              
+              <p>Every stride toward the finish line builds more anticipation until the entire room is waiting for one incredible moment. For those unforgettable few minutes, everyone shares the same anticipation, excitement, and joy… together.</p>
+              
+              <p>We spent countless hours designing adorable animated babies, breathtaking race tracks, cinematic music, magical scenery, exciting twists, crowd reactions, and a surprise ending that keeps everyone guessing until the very last second.</p>
+              
+              <p>Every twist. Every laugh. Every cheer. All leading to the moment you’ve been waiting for.</p>
+              
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.8rem', background: 'rgba(255,255,255,0.4)', padding: '1rem', borderRadius: '14px', border: '1px solid rgba(255,255,255,0.6)' }}>
+                <span className="font-semibold text-gray-700">🚫 No cleanup</span>
+                <span className="font-semibold text-gray-700">🚫 No fire hazards</span>
+                <span className="font-semibold text-gray-700">🚫 No smoke / explosives</span>
+                <span className="font-semibold text-gray-700">✈️ No travel required</span>
+              </div>
+              
+              <p>Just one unforgettable experience shared by everyone you love, whether they’re across town or across the world. Parents can relax knowing everyone is enjoying the celebration safely from the comfort of their own home while still sharing the excitement together.</p>
+              
+              <p>But unlike a traditional gender reveal that’s remembered only through a few photos or cell phone videos… <strong>Your race becomes a keepsake.</strong> You’ll receive your personalized animated reveal video to download and keep forever. Years from now, you’ll be able to press play and relive the excitement all over again. One day, you’ll even get to watch it with the little boy or girl who was racing to the finish line.</p>
+              
+              <p>You’ll laugh. You’ll smile. You’ll remember exactly how that unforgettable moment felt. Because it’s more than a gender reveal. It’s the very first chapter of your baby’s story.</p>
+              
+              <hr style={{ border: 'none', borderTop: '1px dashed rgba(0,0,0,0.1)', margin: '0.8rem 0' }} />
+              
+              <p className="font-black text-slate-800 text-lg flex items-center gap-1.5" style={{ color: '#3A9FE8' }}>💙 Already Know the Gender?</p>
+              
+              <p>That’s perfectly okay!</p>
+              
+              <p>Whether you’ve already found out you’re having a boy or girl, or simply prefer not to have the surprise yourself, your personalized animated race becomes a one-of-a-kind announcement your family and friends will never forget. Instead of sending a text message, posting a photo, or making a quick phone call, invite everyone to experience the excitement together.</p>
+              
+              <p>They’ll still enjoy the anticipation, cheer for their favorite baby, and celebrate as the race builds toward the unforgettable finish line. You already know the ending. They don’t. Or maybe you’re all celebrating together. Either way, the magic isn’t just discovering the answer. <strong>It’s sharing the journey.</strong></p>
+              
+              <p>Your personalized animated race becomes a keepsake you’ll treasure forever. Years from now, you can press play and relive one of life’s happiest moments with the very child who was racing to the finish line. Because whether it’s a gender reveal or a baby announcement, every growing family deserves a celebration that’s interactive, emotional, unforgettable… and a story worth telling.</p>
+              
+              <hr style={{ border: 'none', borderTop: '1px dashed rgba(0,0,0,0.1)', margin: '0.8rem 0' }} />
+              
+              <p>Today, Virtual Gender Reveal allows families to invite guests from anywhere in the world to watch together on their phone, tablet, computer, or TV. Whether you’re celebrating with 10 guests or 1,000, everyone experiences the excitement at exactly the same moment.</p>
+              
+              <p>It’s a celebration that’s safe for everyone, unforgettable for your guests, and timeless for your family.</p>
+              
+              <p className="font-bold text-slate-800" style={{ color: '#E8449A' }}>Because every reveal deserves anticipation. Every family deserves excitement.</p>
+              
+              <p className="font-black text-center text-lg mt-2" style={{ letterSpacing: '0.15em', color: '#1B4F8C' }}>Because Every Reveal Deserves a Story. 💙🩷</p>
+            </div>
+          </div>
+        </div>
+      )}
 
       {showFaqModal && (
         <div className="faq-modal-overlay" onClick={() => setShowFaqModal(false)}>
@@ -753,6 +844,10 @@ function LandingPage() {
                 {
                   q: "What if I need help?",
                   a: "Our support team is here to help before your reveal so everything runs smoothly."
+                },
+                {
+                  q: "Should I turn my sound on?",
+                  a: "Definitely! 🔊 This isn’t just a video…it’s a show. Enjoy exciting race commentary, epic music, crowd reactions, and fun sound effects that make the reveal feel like a live sporting event. Grab some snacks, turn up the volume, and get ready for an unforgettable finish!"
                 }
               ].map((faq, idx) => {
                 const isActive = activeFaq === idx;
@@ -1055,13 +1150,13 @@ footer{background:#111827;padding:4rem 2rem 2rem;}
 @media(max-width:900px){.hiw-cards-row{grid-template-columns:repeat(2,1fr);}.hiw-new-card:nth-child(2)::after,.hiw-new-card:nth-child(4)::after{display:none;}.hiw-feat-bar{grid-template-columns:repeat(2,1fr);}}
 @media(max-width:640px){.hero-content{grid-template-columns:1fr;}.hero-right{display:none;}.hiw-cards-row{grid-template-columns:1fr 1fr;}.hiw-new-card::after{display:none;}.hiw-feat-bar{grid-template-columns:1fr 1fr;}}
 /* ── Navbar Redesign ── */
-nav#main-nav{position:fixed;top:1rem;left:50%;transform:translateX(-50%);width:calc(100% - 3rem);max-width:880px;height:62px;display:flex;align-items:center;justify-content:space-between;padding:0 1.4rem;background:rgba(255,255,255,0.96);backdrop-filter:blur(20px);border-radius:50px;box-shadow:0 4px 20px rgba(0,0,0,0.1);border:1px solid rgba(255,255,255,0.9);transition:box-shadow 0.3s;}
+nav#main-nav{position:fixed;top:1rem;left:50%;transform:translateX(-50%);width:calc(100% - 3rem);max-width:980px;height:70px;display:flex;align-items:center;justify-content:space-between;padding:0 1.8rem;background:rgba(255,255,255,0.96);backdrop-filter:blur(20px);border-radius:50px;box-shadow:0 4px 20px rgba(0,0,0,0.1);border:1px solid rgba(255,255,255,0.9);transition:box-shadow 0.3s;}
 nav#main-nav.solid{box-shadow:0 6px 28px rgba(0,0,0,0.14);}
 .nav-logo{display:flex;align-items:center;gap:0.4rem;text-decoration:none;}
 .nav-logo-img{width:56px;height:44px;object-fit:contain;display:block;}
 .nav-logo-text{font-family:'Nunito',sans-serif;font-size:1.5rem;font-weight:900;color:#E8449A;line-height:1;}
-.nav-links{display:flex;gap:0.2rem;align-items:center;}
-.nav-link{font-family:'Plus Jakarta Sans',sans-serif;font-size:0.87rem;font-weight:500;text-decoration:none;color:#555;padding:0.38rem 1rem;border-radius:50px;transition:color 0.2s,background 0.2s;background:none;border:none;cursor:pointer;}
+.nav-links{display:flex;gap:0.6rem;align-items:center;}
+.nav-link{font-family:'Plus Jakarta Sans',sans-serif;font-size:0.88rem;font-weight:600;text-decoration:none;color:#555;padding:0.42rem 1.1rem;border-radius:50px;transition:color 0.2s,background 0.2s;background:none;border:none;cursor:pointer;line-height:1;}
 .nav-link:hover{color:#E8449A;background:rgba(232,68,154,0.07);}
 .nav-link-active{color:#E8449A !important;background:rgba(232,68,154,0.1);}
 .nav-right{display:flex;align-items:center;gap:0.7rem;}
@@ -1116,23 +1211,25 @@ nav#main-nav.solid{box-shadow:0 6px 28px rgba(0,0,0,0.14);}
 .testi-new-section{padding:5rem 2rem 2rem;background:url('/images/testimonials-bg.png') center/cover no-repeat;position:relative;overflow:hidden;}
 .testi-heart-left{position:absolute;left:2%;top:12%;font-size:5rem;pointer-events:none;animation:balloonFloat 5s ease-in-out infinite alternate;opacity:0.7;}
 .testi-heart-right{position:absolute;right:2%;top:18%;font-size:4.5rem;pointer-events:none;animation:balloonFloat 4.5s ease-in-out infinite alternate-reverse;opacity:0.6;}
-.testi-new-inner{max-width:1060px;margin:0 auto;position:relative;z-index:2;}
+.testi-new-inner{max-width:1220px;margin:0 auto;position:relative;z-index:2;}
 .testi-new-header{text-align:center;margin-bottom:3rem;}
 .testi-pill-badge{display:inline-flex;align-items:center;gap:0.4rem;padding:0.38rem 1.2rem;border:1.5px solid #E8449A;border-radius:50px;font-size:0.72rem;font-weight:600;color:#E8449A;letter-spacing:0.1em;text-transform:uppercase;margin-bottom:1.2rem;}
 .testi-main-title{font-family:'Nunito',sans-serif;font-size:clamp(2rem,4.5vw,2.8rem);font-weight:900;color:#1a1a2e;line-height:1.15;}
 .testi-title-pink{color:#E8449A;}
 .testi-new-sub{font-size:0.95rem;color:#888;margin-top:0.6rem;}
-.testi-new-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:1.5rem;margin-bottom:3rem;}
-.testi-new-card{background:rgba(255,255,255,0.4);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);border-radius:20px;padding:1.8rem;box-shadow:0 8px 32px rgba(0,0,0,0.08);border:1px solid rgba(255,255,255,0.3);position:relative;transition:transform 0.25s,box-shadow 0.25s;}
-.testi-new-card:hover{transform:translateY(-4px);box-shadow:0 12px 36px rgba(100,60,200,0.1);}
-.testi-avatar-placeholder{width:56px;height:56px;border-radius:50%;background:linear-gradient(135deg,#FFB8D8,#B8D8FF);display:flex;align-items:center;justify-content:center;font-size:1.8rem;margin-bottom:0.8rem;}
-.testi-new-stars{font-size:1rem;margin-bottom:0.7rem;letter-spacing:0.05em;}
+.testi-new-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:1.5rem;margin-bottom:3rem;}
+@media(max-width:1024px){.testi-new-grid{grid-template-columns:repeat(2,1fr);}}
+@media(max-width:640px){.testi-new-grid{grid-template-columns:1fr;}}
+.testi-new-card{background:rgba(255,255,255,0.25);backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);border-radius:20px;padding:1.4rem 1.3rem;box-shadow:0 8px 32px rgba(0,0,0,0.04);border:1px solid rgba(255,255,255,0.18);position:relative;transition:all 0.3s ease;opacity:0.85;}
+.testi-new-card:hover{transform:translateY(-5px);box-shadow:0 12px 36px rgba(100,60,200,0.15);background:rgba(255,255,255,0.7);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border:1px solid rgba(255,255,255,0.45);opacity:1;}
+.testi-avatar-placeholder{width:46px;height:46px;border-radius:50%;background:linear-gradient(135deg,#FFB8D8,#B8D8FF);display:flex;align-items:center;justify-content:center;font-size:1.5rem;margin-bottom:0.7rem;}
+.testi-new-stars{font-size:0.9rem;margin-bottom:0.6rem;letter-spacing:0.05em;}
 .testi-stars-pink{color:#E8449A;}.testi-stars-purple{color:#7B6EE8;}.testi-stars-blue{color:#3A9FE8;}
-.testi-new-title{font-family:'Nunito',sans-serif;font-size:0.95rem;font-weight:900;color:#1a1a2e;margin-bottom:0.4rem;}
-.testi-new-q{font-size:0.85rem;color:#444;line-height:1.75;margin-bottom:1rem;font-style:italic;}
-.testi-new-name{font-family:'Nunito',sans-serif;font-size:0.95rem;font-weight:800;}
+.testi-new-title{font-family:'Nunito',sans-serif;font-size:0.86rem;font-weight:900;color:#1a1a2e;margin-bottom:0.4rem;line-height:1.25;}
+.testi-new-q{font-size:0.78rem;color:#444;line-height:1.6;margin-bottom:0.9rem;font-style:italic;}
+.testi-new-name{font-family:'Nunito',sans-serif;font-size:0.86rem;font-weight:800;}
 .tn-pink{color:#E8449A;}.tn-blue{color:#3A9FE8;}.tn-purple{color:#7B6EE8;}
-.testi-new-role{font-size:0.76rem;color:#aaa;margin-top:0.15rem;}
+.testi-new-role{font-size:0.7rem;color:#aaa;margin-top:0.15rem;}
 .testi-card-heart{position:absolute;bottom:1.2rem;right:1.4rem;font-size:1.2rem;}
 .testi-stats-bar{background:#1a2a4a;border-radius:20px;padding:1.6rem 2.5rem;display:grid;grid-template-columns:repeat(4,1fr);gap:1rem;margin-bottom:0;}
 .testi-stat-item{display:flex;align-items:center;gap:0.8rem;}
