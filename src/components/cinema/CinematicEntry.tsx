@@ -1135,8 +1135,8 @@ nav#main-nav.solid{box-shadow:0 6px 28px rgba(0,0,0,0.14);}
 .testi-new-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:1.5rem;margin-bottom:3rem;}
 @media(max-width:1024px){.testi-new-grid{grid-template-columns:repeat(2,1fr);}}
 @media(max-width:640px){.testi-new-grid{grid-template-columns:1fr;}}
-.testi-new-card{background:rgba(255,255,255,0.4);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);border-radius:20px;padding:1.4rem 1.3rem;box-shadow:0 8px 32px rgba(0,0,0,0.08);border:1px solid rgba(255,255,255,0.3);position:relative;transition:transform 0.25s,box-shadow 0.25s;}
-.testi-new-card:hover{transform:translateY(-4px);box-shadow:0 12px 36px rgba(100,60,200,0.1);}
+.testi-new-card{background:rgba(255,255,255,0.06);backdrop-filter:blur(2px);-webkit-backdrop-filter:blur(2px);border-radius:20px;padding:1.4rem 1.3rem;box-shadow:0 4px 16px rgba(0,0,0,0.02);border:1px solid rgba(255,255,255,0.1);position:relative;transition:all 0.3s ease;opacity:0.25;}
+.testi-new-card:hover{transform:translateY(-5px);box-shadow:0 12px 36px rgba(100,60,200,0.15);background:rgba(255,255,255,0.65);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);border:1px solid rgba(255,255,255,0.35);opacity:1;}
 .testi-avatar-placeholder{width:46px;height:46px;border-radius:50%;background:linear-gradient(135deg,#FFB8D8,#B8D8FF);display:flex;align-items:center;justify-content:center;font-size:1.5rem;margin-bottom:0.7rem;}
 .testi-new-stars{font-size:0.9rem;margin-bottom:0.6rem;letter-spacing:0.05em;}
 .testi-stars-pink{color:#E8449A;}.testi-stars-purple{color:#7B6EE8;}.testi-stars-blue{color:#3A9FE8;}
