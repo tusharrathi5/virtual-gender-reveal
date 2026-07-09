@@ -432,11 +432,6 @@ function LandingPage() {
       </nav>
 
       <section className="hero-section">
-        <video autoPlay muted loop playsInline style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover", objectPosition: "center", zIndex: 0 }}>
-          <source src="/assets/bg.mp4" type="video/mp4" />
-        </video>
-        <div className="hero-overlay" />
-
         <div className="hero-content">
           <div className="hero-left">
             <img
@@ -444,7 +439,7 @@ function LandingPage() {
               alt="Virtual Gender Reveal Party!"
               className="hero-title-img"
             />
-            <p className="hero-sub-new">Celebrate your big moment together,<br />no matter where you are! 💗</p>
+            <p className="hero-sub-new">Because every reveal deserves a story.</p>
             <button type="button" className="btn-create-party" onClick={() => routeToReveal()} disabled={checkingEntitlement}>{checkingEntitlement ? "Checking..." : "🎉 Create Your Party"}</button>
             <div className="hero-tagline">👥 Invite. Reveal. Celebrate!</div>
           </div>
@@ -1006,7 +1001,7 @@ footer{background:#111827;padding:4rem 2rem 2rem;}
 .footer-bottom{max-width:1060px;margin:0 auto;padding-top:1.8rem;border-top:1px solid rgba(255,255,255,0.07);display:flex;justify-content:space-between;flex-wrap:wrap;gap:1rem;font-size:0.74rem;color:rgba(255,255,255,0.28);}
 @media(max-width:768px){.nav-links{display:none;}.pc-prem{transform:none;}.pc-prem:hover{transform:translateY(-4px);}}
 /* ── Hero Redesign ── */
-.hero-section{min-height:100vh;display:flex;align-items:center;padding:5rem 2rem 3rem;position:relative;overflow:hidden;background:#f0e8ff;}
+.hero-section{min-height:100vh;display:flex;align-items:center;padding:5rem 2rem 3rem;position:relative;overflow:hidden;background:url('/images/hero-bg.png') center/cover no-repeat;}
 .hero-overlay{position:absolute;inset:0;background:linear-gradient(135deg,rgba(255,182,214,0.45) 0%,rgba(196,225,255,0.45) 100%);z-index:1;}
 .balloons-wrap{position:absolute;inset:0;z-index:2;pointer-events:none;}
 .balloon{position:absolute;animation:balloonFloat 4s ease-in-out infinite alternate;}
