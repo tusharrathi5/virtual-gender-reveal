@@ -55,21 +55,27 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ toke
   
   let boyVotes = 0;
   let girlVotes = 0;
+
+  const predictionsSnap = await getAdminDb().collection("predictions").where("enquiryId", "==", payload.enquiryId).get();
+  const predictionGuestIds = new Set<string>();
+
+  predictionsSnap.docs.forEach((doc) => {
+    const d = doc.data() as { prediction?: string | null; guestId?: string };
+    if (d.prediction === "boy") boyVotes++;
+    if (d.prediction === "girl") girlVotes++;
+    if (d.guestId) {
+      predictionGuestIds.add(d.guestId);
+    }
+    predictionGuestIds.add(doc.id);
+  });
+
   feedSnap.docs.forEach((doc) => {
     const d = doc.data() as { prediction?: string | null; isAdminPartyLink?: boolean };
     if (!d.isAdminPartyLink) {
-      if (d.prediction === "boy") boyVotes++;
-      if (d.prediction === "girl") girlVotes++;
-    }
-  });
-
-  const predictionsSnap = await getAdminDb().collection("predictions").where("enquiryId", "==", payload.enquiryId).get();
-  const countedVoteIds = new Set(feedSnap.docs.map(d => d.id));
-  predictionsSnap.docs.forEach((doc) => {
-    if (!countedVoteIds.has(doc.id)) {
-      const d = doc.data() as { prediction?: string | null };
-      if (d.prediction === "boy") boyVotes++;
-      if (d.prediction === "girl") girlVotes++;
+      if (!predictionGuestIds.has(doc.id)) {
+        if (d.prediction === "boy") boyVotes++;
+        if (d.prediction === "girl") girlVotes++;
+      }
     }
   });
 
@@ -131,6 +137,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ tok
   await getAdminDb().collection("predictions").doc(voteId).set({
     id: voteId,
     enquiryId: payload.enquiryId,
+    guestId: payload.guestId,
     prediction,
     createdAt: FieldValue.serverTimestamp(),
   });

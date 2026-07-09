@@ -1497,7 +1497,6 @@ function DashboardContent() {
                           <th className="p-4">Name</th>
                           <th className="p-4">Phone</th>
                           <th className="p-4">Email</th>
-                          <th className="p-4">Status</th>
                           <th className="p-4">Prediction</th>
                           <th className="p-4">Message</th>
                           <th className="p-4 text-right">Actions</th>
@@ -1516,13 +1515,6 @@ function DashboardContent() {
                             </td>
                             <td className="p-4 text-gray-500">{guest.phone || "-"}</td>
                             <td className="p-4 text-gray-500">{guest.email}</td>
-                            <td className="p-4">
-                              <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase ${
-                                guest.responded ? "bg-green-50 text-green-700" : "bg-gray-50 text-gray-500"
-                              }`}>
-                                {guest.responded ? "Responded" : "Pending"}
-                              </span>
-                            </td>
                             <td className="p-4 font-semibold">
                               {revealUnlocked ? (
                                 guest.prediction === "boy" ? "💙 Boy" : guest.prediction === "girl" ? "🩷 Girl" : "-"

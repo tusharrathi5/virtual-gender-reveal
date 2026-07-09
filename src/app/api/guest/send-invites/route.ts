@@ -73,7 +73,7 @@ export async function POST(req: NextRequest) {
       phone: g?.phone?.trim() || "",
       email: g?.email?.trim().toLowerCase() || "",
     }))
-    .filter((g) => g.name && EMAIL_RE.test(g.email));
+    .filter((g) => g.name && EMAIL_RE.test(g.email) && g.email !== hostEmail);
 
   if (normalizedGuests.length === 0) {
     return NextResponse.json({ error: "At least one guest with a valid name and email is required." }, { status: 400 });
@@ -174,7 +174,7 @@ export async function POST(req: NextRequest) {
   const hostAlreadySent = existingHost?.inviteStatus === "sent";
   if (sent > 0 && !hostAlreadySent && hostEmail && EMAIL_RE.test(hostEmail)) {
     hostSent = await writeAndSendInvite({
-      guestId: existingHost?.guestId,
+      guestId: existingHost?.guestId || `host-party-${validatedEnquiryId}`,
       name: hostName,
       phone: userData?.phone || "",
       email: hostEmail,
