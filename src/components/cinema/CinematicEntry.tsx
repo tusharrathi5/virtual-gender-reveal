@@ -844,6 +844,10 @@ function LandingPage() {
                 {
                   q: "What if I need help?",
                   a: "Our support team is here to help before your reveal so everything runs smoothly."
+                },
+                {
+                  q: "Should I turn my sound on?",
+                  a: "Definitely! 🔊 This isn’t just a video…it’s a show. Enjoy exciting race commentary, epic music, crowd reactions, and fun sound effects that make the reveal feel like a live sporting event. Grab some snacks, turn up the volume, and get ready for an unforgettable finish!"
                 }
               ].map((faq, idx) => {
                 const isActive = activeFaq === idx;
