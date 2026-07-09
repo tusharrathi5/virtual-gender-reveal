@@ -8,6 +8,7 @@ import { verifyAuthHeader } from "@/lib/authServer";
 import { getAdminDb } from "@/lib/firebase-admin";
 import { generateGuestToken } from "@/lib/guestToken";
 import { sendGuestInviteEmail, sendHostInvitationConfirmationEmail } from "@/lib/resendEmail";
+import { sendInviteSms } from "@/lib/twilioSms";
 
 interface GuestInput {
   name: string;
@@ -124,6 +125,23 @@ export async function POST(req: NextRequest) {
     const googleCalendarUrl = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(`${enquiry.parentName || "Parents"}'s Virtual Gender Reveal`)}&dates=${fmt(start)}/${fmt(end)}&ctz=${encodeURIComponent(enquiry.revealTimezone || "UTC")}&details=${encodeURIComponent(`Join the reveal: ${inviteUrl}`)}`;
     const icsUrl = `${appUrl.replace(/\/$/, "")}/api/guest/${encodeURIComponent(token)}/calendar.ics`;
     try {
+      if (input.phone) {
+        try {
+          await sendInviteSms({
+            toPhone: input.phone,
+            guestName: input.name,
+            parentName: enquiry.parentName || "the parents",
+            inviteUrl,
+            revealAtIso: enquiry.revealAt?.toDate?.().toISOString?.() || null,
+            revealTimezone: enquiry.revealTimezone || "UTC",
+            isHost: Boolean(input.isHost),
+          });
+        } catch (smsErr) {
+          const errMessage = smsErr instanceof Error ? smsErr.message : String(smsErr);
+          console.error(`[guest/send-invites] Twilio SMS delivery failed for ${input.name}: ${errMessage}`);
+        }
+      }
+
       const emailParams = {
         to: input.email,
         guestName: input.name,
