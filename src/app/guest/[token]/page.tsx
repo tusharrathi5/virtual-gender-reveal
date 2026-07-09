@@ -1,7 +1,7 @@
 "use client";
 
 import type { FormEvent } from "react";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, Fragment } from "react";
 import { useParams } from "next/navigation";
 import { Sparkles, Calendar, Send, Heart, Users, MessageSquare, Clock, Globe, Maximize } from "lucide-react";
 
@@ -267,6 +267,28 @@ export default function GuestInvitePage() {
     return `https://iframe.videodelivery.net/${uid}?autoplay=true&controls=false&muted=true&startTime=${startTime}`;
   }, [videoUrl, revealAtIso]);
 
+  function getFormattedRevealBar(isoString: string | null, timezone: string): string {
+    if (!isoString) return "";
+    try {
+      const d = new Date(isoString);
+      const datePart = d.toLocaleDateString("en-US", {
+        weekday: "long",
+        month: "long",
+        day: "numeric",
+        year: "numeric",
+        timeZone: timezone,
+      });
+      const timePart = d.toLocaleTimeString("en-US", {
+        hour: "numeric",
+        minute: "2-digit",
+        timeZone: timezone,
+      });
+      return `${datePart} | ${timePart} | ${timezone}`;
+    } catch {
+      return "";
+    }
+  }
+
   const boyVotes = votes?.boy || 0;
   const girlVotes = votes?.girl || 0;
   const totalVotes = votes?.total || 0;
@@ -368,6 +390,51 @@ export default function GuestInvitePage() {
             display: none !important;
           }
         }
+        @keyframes float-heart {
+          0% { transform: translateY(0) scale(1) rotate(0deg); opacity: 0; }
+          10% { opacity: 0.8; }
+          90% { opacity: 0.8; }
+          100% { transform: translateY(-120px) scale(1.1) rotate(15deg); opacity: 0; }
+        }
+        @keyframes float-star {
+          0% { transform: translateY(0) scale(0.8) rotate(0deg); opacity: 0; }
+          10% { opacity: 0.7; }
+          90% { opacity: 0.7; }
+          100% { transform: translateY(-100px) scale(1) rotate(-15deg); opacity: 0; }
+        }
+        @keyframes bounce-gentle {
+          0%, 100% { transform: translateY(0); }
+          50% { transform: translateY(-3px); }
+        }
+        @keyframes blink-colon {
+          0%, 100% { opacity: 1; filter: drop-shadow(0 0 6px rgba(255,255,255,0.8)); }
+          50% { opacity: 0.2; filter: none; }
+        }
+        @keyframes glow-pulse-blue {
+          0%, 100% { box-shadow: 0 0 10px rgba(58,159,232,0.15), inset 0 0 10px rgba(255,255,255,0.4); }
+          50% { box-shadow: 0 0 22px rgba(58,159,232,0.4), inset 0 0 16px rgba(58,159,232,0.2); }
+        }
+        @keyframes glow-pulse-pink {
+          0%, 100% { box-shadow: 0 0 10px rgba(232,68,154,0.15), inset 0 0 10px rgba(255,255,255,0.4); }
+          50% { box-shadow: 0 0 22px rgba(232,68,154,0.4), inset 0 0 16px rgba(232,68,154,0.2); }
+        }
+        @keyframes glow-pulse-purple {
+          0%, 100% { box-shadow: 0 0 10px rgba(123,110,232,0.15), inset 0 0 10px rgba(255,255,255,0.4); }
+          50% { box-shadow: 0 0 22px rgba(123,110,232,0.4), inset 0 0 16px rgba(123,110,232,0.2); }
+        }
+        @keyframes glow-pulse-gold {
+          0%, 100% { box-shadow: 0 0 10px rgba(245,158,11,0.15), inset 0 0 10px rgba(255,255,255,0.4); }
+          50% { box-shadow: 0 0 22px rgba(245,158,11,0.45), inset 0 0 16px rgba(245,158,11,0.2); }
+        }
+        .anim-float-heart-1 { animation: float-heart 6s ease-in-out infinite; }
+        .anim-float-heart-2 { animation: float-heart 8s ease-in-out infinite; animation-delay: 2s; }
+        .anim-float-star-1 { animation: float-star 5s ease-in-out infinite; animation-delay: 1s; }
+        .anim-float-star-2 { animation: float-star 7s ease-in-out infinite; animation-delay: 3s; }
+        
+        .embossed-num {
+          text-shadow: 1px 1px 0px rgba(255,255,255,0.8), -1px -1px 0px rgba(0,0,0,0.06), 0px 4px 10px rgba(0,0,0,0.08);
+          animation: bounce-gentle 2s ease-in-out infinite alternate;
+        }
       `}</style>
 
       <div className="relative min-h-screen overflow-x-hidden w-full font-sans antialiased text-[#1f2937] bg-gradient-to-tr from-[#E8449A]/10 via-white/80 to-[#3A9FE8]/10">
@@ -440,12 +507,22 @@ export default function GuestInvitePage() {
           </header>
 
           {/* 2. REVEAL VIDEO / COUNTDOWN AREA (Centered Glassmorphic Video Box - Full Width) */}
-          <section className="relative overflow-hidden bg-slate-950/20 backdrop-blur-xl border border-white/10 shadow-2xl rounded-[24px] w-full">
-            {/* Ambient subtle celebratory pink/blue glows in the corners of navy frame */}
+          <section className={`relative overflow-hidden border shadow-2xl transition-all duration-300 w-full ${isLive && videoUrl ? "bg-slate-950/20 backdrop-blur-xl border-white/10 rounded-[24px]" : "bg-white/45 backdrop-blur-[30px] border-white/50 rounded-[32px]"}`}>
+            {/* Ambient subtle celebratory pink/blue glows in the corners */}
             <div className="absolute top-0 left-0 w-48 h-48 bg-[#E8449A]/15 blur-3xl pointer-events-none" />
             <div className="absolute bottom-0 right-0 w-48 h-48 bg-[#3A9FE8]/15 blur-3xl pointer-events-none" />
-            
-            <div ref={iframeContainerRef} className="relative aspect-video w-full bg-slate-950/40">
+
+            {!isLive && (
+              <>
+                {/* Floating hearts/stars decorative particles */}
+                <div className="absolute top-1/4 left-10 text-xl opacity-30 pointer-events-none anim-float-heart-1">💖</div>
+                <div className="absolute top-1/3 right-12 text-lg opacity-25 pointer-events-none anim-float-star-1">⭐</div>
+                <div className="absolute bottom-1/4 left-16 text-lg opacity-25 pointer-events-none anim-float-star-2">✨</div>
+                <div className="absolute bottom-1/3 right-16 text-xl opacity-30 pointer-events-none anim-float-heart-2">💕</div>
+              </>
+            )}
+
+            <div ref={iframeContainerRef} className={`relative w-full ${isLive && videoUrl ? "aspect-video bg-slate-950/40" : "py-10 px-4 md:py-16 md:px-8 bg-transparent"}`}>
               {isLive && videoUrl ? (
                 <>
                   <iframe
@@ -469,34 +546,67 @@ export default function GuestInvitePage() {
                   </div>
                 </>
               ) : (
-                <div className="w-full h-full flex flex-col items-center justify-center text-center p-6 bg-transparent">
+                <div className="w-full h-full flex flex-col items-center justify-center text-center p-2 bg-transparent z-10 relative">
                   <div className="flex flex-col items-center gap-2">
-                    <div className="flex items-center gap-2 px-3 py-1 rounded-full bg-white/10 border border-white/20 text-xs font-semibold tracking-wider text-white uppercase">
-                      <Clock className="w-3.5 h-3.5 text-[#3A9FE8] animate-pulse" />
-                      The Reveal Live
-                    </div>
                     
-                    <h2 className="text-2xl md:text-3xl font-extrabold text-white mt-4 tracking-tight drop-shadow-md">
-                      {countdownParts.live ? "Reveal is live now 🎉" : "Ready for the big reveal?"}
+                    <h2 className="text-xl md:text-2xl font-black text-slate-800 tracking-wider uppercase flex items-center justify-center gap-1">
+                      ✨ THE BIG REVEAL IN ✨
                     </h2>
                     
+                    <p className="text-xs md:text-sm text-slate-600 max-w-md font-semibold text-center mt-1">
+                      Every second brings you closer to meeting your little miracle.
+                    </p>
+                    
                     {!countdownParts.live && (
-                      <div className="flex gap-2.5 md:gap-4 justify-center mt-6">
+                      <div className="flex flex-wrap md:flex-nowrap justify-center items-center gap-4 md:gap-6 mt-8 w-full max-w-[720px] px-2">
                         {[
-                          { val: countdownParts.d, label: "Days", color: "from-[#3A9FE8]/30 to-[#3A9FE8]/5", border: "border-[#3A9FE8]/50", text: "text-blue-300" },
-                          { val: countdownParts.h, label: "Hours", color: "from-[#E8449A]/30 to-[#E8449A]/5", border: "border-[#E8449A]/50", text: "text-pink-300" },
-                          { val: countdownParts.m, label: "Mins", color: "from-[#3A9FE8]/30 to-[#3A9FE8]/5", border: "border-[#3A9FE8]/50", text: "text-blue-300" },
-                          { val: countdownParts.s, label: "Secs", color: "from-[#E8449A]/30 to-[#E8449A]/5", border: "border-[#E8449A]/50", text: "text-pink-300" },
+                          { val: countdownParts.d, label: "DAYS", colorClass: "text-[#3A9FE8]", pulse: "glow-pulse-blue", badgeBg: "bg-[#D6EAFE]", badgeBorder: "border-[#3A9FE8]/40", icon: "⭐", bgGrad: "from-[#F3F9FF] to-white/90", cloudStars: ["⭐", "✨"] },
+                          { val: countdownParts.h, label: "HOURS", colorClass: "text-[#E8449A]", pulse: "glow-pulse-pink", badgeBg: "bg-[#FCE7F3]", badgeBorder: "border-[#E8449A]/40", icon: "💖", bgGrad: "from-[#FFF1F8] to-white/90", cloudStars: ["💖", "💕"] },
+                          { val: countdownParts.m, label: "MINUTES", colorClass: "text-[#7B6EE8]", pulse: "glow-pulse-purple", badgeBg: "bg-[#EBE9FE]", badgeBorder: "border-[#7B6EE8]/40", icon: "⭐", bgGrad: "from-[#F7F6FF] to-white/90", cloudStars: ["⭐", "✨"] },
+                          { val: countdownParts.s, label: "SECONDS", colorClass: "text-[#F59E0B]", pulse: "glow-pulse-gold", badgeBg: "bg-[#FEF3C7]", badgeBorder: "border-[#F59E0B]/40", icon: "⭐", bgGrad: "from-[#FFFDF5] to-white/90", cloudStars: ["⭐", "✨"] }
                         ].map((item, idx) => (
-                          <div key={idx} className={`flex flex-col items-center bg-gradient-to-b ${item.color} px-3 py-2 md:px-5 md:py-3 rounded-2xl border ${item.border} min-w-[64px] md:min-w-[80px] shadow-lg`}>
-                            <span className="text-xl md:text-3xl font-black text-white font-mono leading-none drop-shadow-sm">{item.val}</span>
-                            <span className={`text-[9px] md:text-[10px] ${item.text} font-black uppercase tracking-wider mt-1`}>{item.label}</span>
-                          </div>
+                          <Fragment key={idx}>
+                            {idx > 0 && (
+                              <span className="hidden md:inline text-3xl font-black text-slate-400/75 select-none" style={{ animation: "blink-colon 2s infinite" }}>:</span>
+                            )}
+                            <div
+                              style={{ animation: `${item.pulse} 4s ease-in-out infinite alternate` }}
+                              className={`relative flex flex-col items-center bg-gradient-to-b ${item.bgGrad} rounded-3xl border border-white/80 p-5 pt-8 min-w-[110px] md:min-w-[125px] flex-1 shadow-lg overflow-hidden transition-all duration-300 hover:scale-[1.03]`}
+                            >
+                              {/* Top Overlay Badge Icon */}
+                              <div className={`absolute top-0 -translate-y-1/2 w-8 h-8 rounded-full ${item.badgeBg} border ${item.badgeBorder} flex items-center justify-center shadow-sm z-10`}>
+                                <span className="text-xs">{item.icon}</span>
+                              </div>
+                              
+                              {/* Number */}
+                              <span className={`text-4xl md:text-5xl font-black ${item.colorClass} leading-none tracking-tight z-10 embossed-num`}>
+                                {String(item.val).padStart(2, "0")}
+                              </span>
+                              
+                              {/* Label */}
+                              <span className={`text-[10px] md:text-[11px] font-black tracking-widest ${item.colorClass} opacity-80 mt-2.5 z-10`}>
+                                {item.label}
+                              </span>
+                              
+                              {/* Clouds and floating particles base decoration */}
+                              <div className="absolute bottom-0 inset-x-0 h-10 bg-gradient-to-t from-white via-white/90 to-transparent pointer-events-none z-0 flex items-end justify-between px-2.5 pb-1">
+                                <span className="text-[10px] opacity-25">{item.cloudStars[0]}</span>
+                                <span className="text-[11px] opacity-20">☁️</span>
+                                <span className="text-[9px] opacity-25">{item.cloudStars[1]}</span>
+                              </div>
+                            </div>
+                          </Fragment>
                         ))}
                       </div>
                     )}
                     
-                    <p className="mt-6 text-sm text-white/80 max-w-md font-medium drop-shadow-sm">
+                    {/* Dynamic Date & Time Bar Pill */}
+                    <div className="mt-8 bg-gradient-to-r from-[#FCE7F3]/70 to-[#FFF]/70 backdrop-blur-md px-5 py-2.5 rounded-full border border-white/60 shadow-md inline-flex items-center justify-center gap-1 text-slate-800 text-[10px] md:text-xs font-bold leading-none tracking-wide text-center">
+                      <span className="mr-0.5">📅</span>
+                      <span>{getFormattedRevealBar(revealAtIso, revealTimezone)}</span>
+                    </div>
+
+                    <p className="mt-6 text-[11px] md:text-xs text-slate-500 font-semibold max-w-sm text-center leading-relaxed">
                       {countdownParts.live 
                         ? "We are live! The reveal stream is starting now." 
                         : "The screen will unlock automatically at the scheduled reveal time. Stay tuned!"}
@@ -506,9 +616,9 @@ export default function GuestInvitePage() {
               )}
               
               {!isLive && (
-                <div className="absolute left-4 bottom-4 flex items-center gap-2 bg-slate-950/60 backdrop-blur-md px-3 py-1.5 rounded-full border border-white/20 text-[11px] font-bold text-white shadow-md">
-                  <span className="w-2 h-2 rounded-full bg-amber-500 animate-ping" />
-                  Countdown Active
+                <div className="absolute left-4 bottom-4 flex items-center gap-2 bg-white/70 backdrop-blur-md px-3.5 py-1.5 rounded-full border border-white/80 text-[10px] font-black text-slate-800 shadow-md">
+                  <span className="w-2 h-2 rounded-full bg-emerald-500 animate-ping" />
+                  🎈 Party Begins Soon
                 </div>
               )}
             </div>
