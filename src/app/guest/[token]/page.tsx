@@ -339,6 +339,22 @@ export default function GuestInvitePage() {
     setChatSending(false);
   }
 
+  async function sendQuickMessage(text: string) {
+    if (chatSending || isCompleted) return;
+    setChatSending(true);
+    setChatError(null);
+    const res = await fetch(`/api/guest/${encodedToken}/chat`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ message: text }),
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      setChatError(data?.error || "Could not send that message.");
+    }
+    setChatSending(false);
+  }
+
   return (
     <>
       <style>{`
@@ -665,8 +681,29 @@ export default function GuestInvitePage() {
                 </div>
               </div>
 
+              {/* One-click Chat Messages */}
+              {!isCompleted && (
+                <div className="flex flex-wrap gap-1.5 mt-2 mb-1 justify-start">
+                  {[
+                    { text: "🎉 Congratulations!", label: "🎉 Congrats!" },
+                    { text: "💙 Welcome Baby Boy!", label: "💙 Baby Boy!" },
+                    { text: "🩷 Welcome Baby Girl!", label: "🩷 Baby Girl!" }
+                  ].map((quick) => (
+                    <button
+                      key={quick.text}
+                      type="button"
+                      onClick={() => sendQuickMessage(quick.text)}
+                      disabled={chatSending}
+                      className="px-2.5 py-1 text-[10px] font-bold rounded-lg border border-white/40 bg-white/20 hover:bg-white/40 text-slate-800 transition-all hover:scale-105 active:scale-95 cursor-pointer disabled:opacity-50"
+                    >
+                      {quick.label}
+                    </button>
+                  ))}
+                </div>
+              )}
+
               {/* Message Input Form */}
-              <div className="relative w-full mt-2">
+              <div className="relative w-full mt-1">
                 {showEmojiPicker && (
                   <div className="absolute bottom-full left-0 mb-2 w-full bg-white/70 backdrop-blur-md border border-white/40 p-2 rounded-xl shadow-xl z-30 flex flex-wrap gap-1.5 justify-center animate-fade-in">
                     {["👶", "🍼", "💙", "🩷", "🎉", "🥳", "✨", "🧸", "👣", "🎈"].map((emoji) => (
