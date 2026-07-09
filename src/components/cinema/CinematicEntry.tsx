@@ -338,9 +338,10 @@ function LandingPage() {
   const [checkingEntitlement, setCheckingEntitlement] = useState(false);
   const [activeFaq, setActiveFaq] = useState<number | null>(null);
   const [showFaqModal, setShowFaqModal] = useState(false);
+  const [showStoryModal, setShowStoryModal] = useState(false);
 
   useEffect(() => {
-    if (showFaqModal) {
+    if (showFaqModal || showStoryModal) {
       document.body.style.overflow = 'hidden';
     } else {
       document.body.style.overflow = '';
@@ -348,7 +349,7 @@ function LandingPage() {
     return () => {
       document.body.style.overflow = '';
     };
-  }, [showFaqModal]);
+  }, [showFaqModal, showStoryModal]);
 
   function handleConfirm() {
     if (!confirmPlan) return;
@@ -420,6 +421,7 @@ function LandingPage() {
           <a href="/" className="nav-link nav-link-active">Home</a>
           <button type="button" className="nav-link" onClick={() => routeToReveal()}>Create Party</button>
           <a href="#how" className="nav-link">How It Works</a>
+          <button type="button" onClick={() => setShowStoryModal(true)} className="nav-link" style={{ background: "transparent", border: "none", cursor: "pointer", fontFamily: "inherit", fontSize: "inherit", padding: 0 }}>Our Story</button>
           <button type="button" onClick={() => setShowFaqModal(true)} className="nav-link" style={{ background: "transparent", border: "none", cursor: "pointer", fontFamily: "inherit", fontSize: "inherit", padding: 0 }}>FAQ</button>
         </div>
         <div className="nav-right">
@@ -687,6 +689,85 @@ function LandingPage() {
       </section>
 
 
+
+      {showStoryModal && (
+        <div className="faq-modal-overlay" onClick={() => setShowStoryModal(false)}>
+          <div className="faq-modal-content" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '780px' }}>
+            <button type="button" className="faq-modal-close" onClick={() => setShowStoryModal(false)}>✕</button>
+            <div className="faq-header" style={{ marginBottom: '2.5rem' }}>
+              <div className="faq-badge" style={{ borderColor: '#E8449A', color: '#E8449A' }}>💙🩷 Our Story</div>
+              <h2 className="faq-title" style={{ fontFamily: "'Nunito', sans-serif", fontSize: '2.2rem', fontWeight: 900 }}>Because Every Reveal Deserves a Story</h2>
+            </div>
+            
+            <div className="story-content-text" style={{ position: 'relative', zIndex: 1, color: '#2c3e50', fontSize: '0.96rem', lineHeight: '1.85', display: 'flex', flexDirection: 'column', gap: '1.2rem', maxHeight: '55vh', overflowY: 'auto', paddingRight: '0.8rem', scrollbarWidth: 'thin', textAlign: 'left', fontWeight: 500 }}>
+              <p className="font-bold text-slate-800 text-lg">It started with a simple question…</p>
+              
+              <p>Like so many expecting parents, we started planning our gender reveal the same way everyone else does: <strong>Balloon pops. Cake cutting. Confetti cannons. Colored smoke.</strong></p>
+              
+              <p>But something about them felt… <em>incomplete</em>.</p>
+              
+              <p>They’re over in seconds. One pop. One slice. One puff of smoke.</p>
+              
+              <p>The surprise is amazing, but the experience leading up to it is over almost as quickly as it begins. We wanted our family and friends to experience the same anticipation, excitement, and joy we were feeling. Not just discover whether we were having a boy or a girl, but share the journey with us every step of the way.</p>
+              
+              <p>Then there was something else we couldn’t ignore. Every year, we saw stories of gender reveals that went wrong. Fires sparked by pyrotechnics. Homes damaged. Guests injured. Celebrations that were meant to bring people together instead ended in heartbreak.</p>
+              
+              <p>We thought… There has to be a better way. A way that’s exciting. A way that’s interactive. A way that’s memorable. And above all… <strong>A way that’s safe.</strong></p>
+              
+              <p>We kept asking ourselves: <em>What if the reveal wasn’t just the ending? What if the journey to the surprise was just as exciting?</em></p>
+              
+              <p>That single question sparked an idea we couldn’t stop thinking about. We imagined a reveal that felt like watching the final moments of the Kentucky Derby. The anticipation builds. Everyone is on the edge of their seat. Family and friends are cheering, laughing, making predictions, and eagerly waiting to see who crosses the finish line first.</p>
+              
+              <p>Except instead of winning a trophy… The finish line reveals the biggest surprise of your life… the moment you discover whether you’re welcoming a little boy or a little girl.</p>
+              
+              <p>Suddenly, your reveal isn’t just something people watch. <strong>It’s something they experience.</strong> For a few unforgettable minutes, everyone forgets they’re watching a gender reveal and starts cheering like they’re watching the biggest race of the year.</p>
+              
+              <p>Guests begin making their predictions before the race even starts: <em>“Team Boy!” “Team Girl!”</em> Families text each other their predictions. Kids cheer for their favorite baby. Grandparents lean closer to the screen. Friends start shouting at the TV. Everyone has a favorite to win.</p>
+              
+              <p>Every stride toward the finish line builds more anticipation until the entire room is waiting for one incredible moment. For those unforgettable few minutes, everyone shares the same anticipation, excitement, and joy… together.</p>
+              
+              <p>We spent countless hours designing adorable animated babies, breathtaking race tracks, cinematic music, magical scenery, exciting twists, crowd reactions, and a surprise ending that keeps everyone guessing until the very last second.</p>
+              
+              <p>Every twist. Every laugh. Every cheer. All leading to the moment you’ve been waiting for.</p>
+              
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.8rem', background: 'rgba(255,255,255,0.4)', padding: '1rem', borderRadius: '14px', border: '1px solid rgba(255,255,255,0.6)' }}>
+                <span className="font-semibold text-gray-700">🚫 No cleanup</span>
+                <span className="font-semibold text-gray-700">🚫 No fire hazards</span>
+                <span className="font-semibold text-gray-700">🚫 No smoke / explosives</span>
+                <span className="font-semibold text-gray-700">✈️ No travel required</span>
+              </div>
+              
+              <p>Just one unforgettable experience shared by everyone you love, whether they’re across town or across the world. Parents can relax knowing everyone is enjoying the celebration safely from the comfort of their own home while still sharing the excitement together.</p>
+              
+              <p>But unlike a traditional gender reveal that’s remembered only through a few photos or cell phone videos… <strong>Your race becomes a keepsake.</strong> You’ll receive your personalized animated reveal video to download and keep forever. Years from now, you’ll be able to press play and relive the excitement all over again. One day, you’ll even get to watch it with the little boy or girl who was racing to the finish line.</p>
+              
+              <p>You’ll laugh. You’ll smile. You’ll remember exactly how that unforgettable moment felt. Because it’s more than a gender reveal. It’s the very first chapter of your baby’s story.</p>
+              
+              <hr style={{ border: 'none', borderTop: '1px dashed rgba(0,0,0,0.1)', margin: '0.8rem 0' }} />
+              
+              <p className="font-black text-slate-800 text-lg flex items-center gap-1.5" style={{ color: '#3A9FE8' }}>💙 Already Know the Gender?</p>
+              
+              <p>That’s perfectly okay!</p>
+              
+              <p>Whether you’ve already found out you’re having a boy or girl, or simply prefer not to have the surprise yourself, your personalized animated race becomes a one-of-a-kind announcement your family and friends will never forget. Instead of sending a text message, posting a photo, or making a quick phone call, invite everyone to experience the excitement together.</p>
+              
+              <p>They’ll still enjoy the anticipation, cheer for their favorite baby, and celebrate as the race builds toward the unforgettable finish line. You already know the ending. They don’t. Or maybe you’re all celebrating together. Either way, the magic isn’t just discovering the answer. <strong>It’s sharing the journey.</strong></p>
+              
+              <p>Your personalized animated race becomes a keepsake you’ll treasure forever. Years from now, you can press play and relive one of life’s happiest moments with the very child who was racing to the finish line. Because whether it’s a gender reveal or a baby announcement, every growing family deserves a celebration that’s interactive, emotional, unforgettable… and a story worth telling.</p>
+              
+              <hr style={{ border: 'none', borderTop: '1px dashed rgba(0,0,0,0.1)', margin: '0.8rem 0' }} />
+              
+              <p>Today, Virtual Gender Reveal allows families to invite guests from anywhere in the world to watch together on their phone, tablet, computer, or TV. Whether you’re celebrating with 10 guests or 1,000, everyone experiences the excitement at exactly the same moment.</p>
+              
+              <p>It’s a celebration that’s safe for everyone, unforgettable for your guests, and timeless for your family.</p>
+              
+              <p className="font-bold text-slate-800" style={{ color: '#E8449A' }}>Because every reveal deserves anticipation. Every family deserves excitement.</p>
+              
+              <p className="font-black text-center text-lg mt-2" style={{ letterSpacing: '0.15em', color: '#1B4F8C' }}>Because Every Reveal Deserves a Story. 💙🩷</p>
+            </div>
+          </div>
+        </div>
+      )}
 
       {showFaqModal && (
         <div className="faq-modal-overlay" onClick={() => setShowFaqModal(false)}>
