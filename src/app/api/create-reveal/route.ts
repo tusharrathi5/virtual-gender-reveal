@@ -7,8 +7,8 @@ import { createRevealAndConsumeEntitlement } from "@/lib/revealCreation";
 import { saveGender } from "@/lib/secureGenderService";
 import { generateDoctorToken } from "@/lib/doctorToken";
 import CryptoJS from "crypto-js";
-import { getAdminDb } from "@/lib/firebase-admin";
-import { sendDoctorInviteEmail } from "@/lib/resendEmail";
+import { getAdminDb, getAdminAuth } from "@/lib/firebase-admin";
+import { sendDoctorInviteEmail, sendHostCreationConfirmationEmail } from "@/lib/resendEmail";
 import { deleteEnquiryPhotosAdmin } from "@/lib/storageServiceAdmin";
 import { FieldValue, Timestamp } from "firebase-admin/firestore";
 import {
@@ -160,6 +160,17 @@ export async function POST(req: NextRequest) {
       revealerName: validatedMode === "reveal" ? (revealerName?.trim() || null) : null,
     });
 
+    // Fetch host email for confirmation notification
+    let hostEmail = userSnap.data()?.email;
+    if (!hostEmail) {
+      try {
+        const userRecord = await getAdminAuth().getUser(session.uid);
+        hostEmail = userRecord.email;
+      } catch (authErr) {
+        console.error("[create-reveal] Failed to fetch host auth record:", authErr);
+      }
+    }
+
     // 5. Announcement mode — encrypt + save the known gender
     //    We do this AFTER the transaction so we're not blocking the transaction
     //    on encryption work, and because secure-genders is a separate collection
@@ -188,6 +199,18 @@ export async function POST(req: NextRequest) {
         revealerEmailSent = false;
         const details = emailErr instanceof Error ? emailErr.message : String(emailErr);
         console.error(`[create-reveal] Failed to send doctor invite for ${validatedEnquiryId}: ${details}`);
+      }
+
+      if (hostEmail) {
+        await sendHostCreationConfirmationEmail({
+          to: hostEmail,
+          parentName: validatedParentName,
+          revealAtIso: new Date(parsedRevealAtMs!).toISOString(),
+          revealTimezone: revealTimezone!,
+          dashboardUrl: `${appUrl}/dashboard`,
+        }).catch((emailErr) => {
+          console.error(`[create-reveal] Failed to send host confirmation email:`, emailErr);
+        });
       }
 
       return NextResponse.json({
@@ -236,6 +259,19 @@ export async function POST(req: NextRequest) {
         videoUrl,
         status: "completed",
         "stages.videoGenerated": Timestamp.now(),
+      });
+    }
+
+    if (hostEmail) {
+      const appUrl = getAppUrl(req);
+      await sendHostCreationConfirmationEmail({
+        to: hostEmail,
+        parentName: validatedParentName,
+        revealAtIso: new Date(parsedRevealAtMs!).toISOString(),
+        revealTimezone: revealTimezone!,
+        dashboardUrl: `${appUrl}/dashboard`,
+      }).catch((emailErr) => {
+        console.error(`[create-reveal] Failed to send host confirmation email:`, emailErr);
       });
     }
 

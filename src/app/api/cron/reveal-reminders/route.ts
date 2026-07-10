@@ -1,10 +1,7 @@
-export const dynamic = "force-dynamic";
-export const runtime = "nodejs";
-
 import { NextRequest, NextResponse } from "next/server";
 import { FieldValue, Timestamp } from "firebase-admin/firestore";
-import { getAdminDb } from "@/lib/firebase-admin";
-import { sendRevealReminderEmail } from "@/lib/resendEmail";
+import { getAdminDb, getAdminAuth } from "@/lib/firebase-admin";
+import { sendRevealReminderEmail, sendHostRevealReminderEmail } from "@/lib/resendEmail";
 
 type ReminderWindow = "7d" | "24h";
 
@@ -53,6 +50,8 @@ export async function GET(req: NextRequest) {
       parentName?: string;
       revealAt?: Timestamp;
       revealTimezone?: string;
+      userId?: string;
+      hostReminder24hSentAt?: Timestamp | null;
     };
 
     const revealAt = enquiry.revealAt?.toDate?.();
@@ -68,6 +67,50 @@ export async function GET(req: NextRequest) {
       continue;
     }
 
+    // 1. Send Host Reminder if 24h window matches and not yet sent
+    if (reminderWindow === "24h" && !enquiry.hostReminder24hSentAt && enquiry.userId) {
+      try {
+        const userRecord = await getAdminAuth().getUser(enquiry.userId);
+        const hostEmail = userRecord.email;
+        if (hostEmail) {
+          const appUrl = process.env.NEXT_PUBLIC_APP_URL || "https://virtualgenderreveal.com";
+
+          // Fetch vote stats
+          const predictionsSnap = await db
+            .collection("predictions")
+            .where("enquiryId", "==", enquiryDoc.id)
+            .get();
+          let boyVotes = 0;
+          let girlVotes = 0;
+          for (const predDoc of predictionsSnap.docs) {
+            const pred = predDoc.data()?.prediction;
+            if (pred === "boy") boyVotes++;
+            else if (pred === "girl") girlVotes++;
+          }
+
+          await sendHostRevealReminderEmail({
+            to: hostEmail,
+            parentName: enquiry.parentName || "Parent",
+            revealAtIso: revealAt.toISOString(),
+            revealTimezone: enquiry.revealTimezone || "UTC",
+            dashboardUrl: `${appUrl}/dashboard`,
+            boyVotes,
+            girlVotes,
+          });
+
+          await enquiryDoc.ref.update({
+            hostReminder24hSentAt: FieldValue.serverTimestamp(),
+            updatedAt: FieldValue.serverTimestamp(),
+          });
+          sentCount += 1;
+        }
+      } catch (hostErr) {
+        failedCount += 1;
+        console.error(`[cron/reveal-reminders] Failed for host of enquiry ${enquiryDoc.id}:`, hostErr);
+      }
+    }
+
+    // 2. Send Guest Reminders
     const invitesSnap = await db
       .collection("guest_invites")
       .where("enquiryId", "==", enquiryDoc.id)
