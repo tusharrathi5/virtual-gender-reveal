@@ -236,8 +236,8 @@ export async function GET(req: NextRequest) {
     const appUrl = process.env.NEXT_PUBLIC_APP_URL || "https://virtualgenderreveal.com";
     const dashboardUrl = `${appUrl.replace(/\/$/, "")}/dashboard`;
 
-    // Day 30: Deletion
-    if (elapsedMs >= 30 * 24 * 60 * 60 * 1000) {
+    // Day 31: Deletion
+    if (elapsedMs >= 31 * 24 * 60 * 60 * 1000) {
       try {
         await deleteCloudflareVideo(streamUid);
         await doc.ref.update({
@@ -255,8 +255,8 @@ export async function GET(req: NextRequest) {
       continue;
     }
 
-    // Day 29: 24h before deletion
-    if (elapsedMs >= 29 * 24 * 60 * 60 * 1000 && !enquiry.downloadReminder24hSentAt) {
+    // Day 30: 24h before deletion
+    if (elapsedMs >= 30 * 24 * 60 * 60 * 1000 && !enquiry.downloadReminder24hSentAt) {
       try {
         await sendHostDownloadReminder24hEmail({
           to: hostEmail,
@@ -274,8 +274,8 @@ export async function GET(req: NextRequest) {
       continue;
     }
 
-    // Day 23: 7d before deletion
-    if (elapsedMs >= 23 * 24 * 60 * 60 * 1000 && !enquiry.downloadReminder7dSentAt) {
+    // Day 24: 7d before deletion
+    if (elapsedMs >= 24 * 24 * 60 * 60 * 1000 && !enquiry.downloadReminder7dSentAt) {
       try {
         await sendHostDownloadReminder7dEmail({
           to: hostEmail,
