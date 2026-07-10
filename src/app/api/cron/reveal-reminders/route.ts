@@ -210,10 +210,6 @@ export async function GET(req: NextRequest) {
       continue;
     }
 
-    if (enquiry.videoDownloaded === true) {
-      continue;
-    }
-
     const revealAt = enquiry.revealAt?.toDate();
     if (!revealAt) continue;
 
@@ -252,6 +248,11 @@ export async function GET(req: NextRequest) {
       } catch (err) {
         console.error(`[cron/video-cleanup] Failed to delete video for ${doc.id}:`, err);
       }
+      continue;
+    }
+
+    // Skip reminders if they already downloaded the video
+    if (enquiry.videoDownloaded === true) {
       continue;
     }
 
