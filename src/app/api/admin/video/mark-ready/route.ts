@@ -1,10 +1,11 @@
-﻿export const dynamic = "force-dynamic";
+export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
 
 import { NextRequest, NextResponse } from "next/server";
 import { FieldValue, Timestamp } from "firebase-admin/firestore";
 import { verifyAuthHeader } from "@/lib/authServer";
-import { getAdminDb } from "@/lib/firebase-admin";
+import { getAdminDb, getAdminAuth } from "@/lib/firebase-admin";
+import { sendHostVideoReadyEmail } from "@/lib/resendEmail";
 
 async function requireAdmin(req: NextRequest) {
   const session = await verifyAuthHeader(req.headers.get("Authorization"));
@@ -40,7 +41,15 @@ export async function POST(req: NextRequest) {
   const enquirySnap = await enquiryRef.get();
   if (!enquirySnap.exists) return NextResponse.json({ error: "Enquiry not found." }, { status: 404 });
 
-  const enquiry = enquirySnap.data() as { videoUrl?: string | null; streamUid?: string | null; pendingStreamUid?: string | null };
+  const enquiry = enquirySnap.data() as {
+    videoUrl?: string | null;
+    streamUid?: string | null;
+    pendingStreamUid?: string | null;
+    userId?: string;
+    parentName?: string;
+    revealAt?: Timestamp;
+    revealTimezone?: string;
+  };
   if (typeof enquiry.videoUrl === "string" && enquiry.videoUrl.trim() && enquiry.streamUid !== streamUid) {
     return NextResponse.json(
       { error: "A video is already uploaded. Delete it before uploading a replacement." },
@@ -59,6 +68,26 @@ export async function POST(req: NextRequest) {
     "stages.videoGenerated": Timestamp.now(),
     updatedAt: FieldValue.serverTimestamp(),
   });
+
+  // Dispatch video ready email to host
+  if (enquiry.userId) {
+    try {
+      const userRecord = await getAdminAuth().getUser(enquiry.userId);
+      const hostEmail = userRecord.email;
+      if (hostEmail) {
+        const appUrl = process.env.NEXT_PUBLIC_APP_URL || "https://virtualgenderreveal.com";
+        await sendHostVideoReadyEmail({
+          to: hostEmail,
+          parentName: enquiry.parentName || "Parent",
+          revealAtIso: enquiry.revealAt?.toDate().toISOString() || new Date().toISOString(),
+          revealTimezone: enquiry.revealTimezone || "UTC",
+          dashboardUrl: `${appUrl}/dashboard`,
+        });
+      }
+    } catch (emailErr) {
+      console.error(`[mark-ready] Failed to send host video-ready email:`, emailErr);
+    }
+  }
 
   return NextResponse.json({ success: true, videoUrl });
 }

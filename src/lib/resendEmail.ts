@@ -568,3 +568,159 @@ export async function sendGuestReminderEmail(params: SendGuestReminderEmailParam
 export async function sendRevealReminderEmail(params: SendRevealReminderEmailParams): Promise<void> {
   return sendGuestReminderEmail({ ...params, inviteUrl: params.inviteUrl || "" });
 }
+
+export interface SendHostCreationConfirmationEmailParams {
+  to: string;
+  parentName: string;
+  revealAtIso: string;
+  revealTimezone: string;
+  dashboardUrl: string;
+}
+
+export interface SendHostVideoReadyEmailParams {
+  to: string;
+  parentName: string;
+  revealAtIso: string;
+  revealTimezone: string;
+  dashboardUrl: string;
+}
+
+export interface SendHostRevealReminderEmailParams {
+  to: string;
+  parentName: string;
+  revealAtIso: string;
+  revealTimezone: string;
+  dashboardUrl: string;
+  boyVotes: number;
+  girlVotes: number;
+}
+
+export async function sendHostCreationConfirmationEmail(params: SendHostCreationConfirmationEmailParams): Promise<void> {
+  const parentName = escapeHtml(params.parentName);
+  const dashboardUrl = escapeHtml(params.dashboardUrl);
+
+  const dateObj = new Date(params.revealAtIso);
+  const revealDateLabel = dateObj.toLocaleDateString("en-US", {
+    dateStyle: "full",
+    timeZone: params.revealTimezone,
+  });
+  const revealTimeLabel = dateObj.toLocaleTimeString("en-US", {
+    timeStyle: "short",
+    timeZone: params.revealTimezone,
+  });
+
+  const baseUrl = new URL(dashboardUrl).origin;
+  const logoUrl = `${baseUrl}/Favicon-VGR.png`;
+  const bannerUrl = `${baseUrl}/assets/email-banner.png`;
+
+  const html = buildVgrEmailTemplateHtml({
+    logoUrl,
+    bannerUrl,
+    badgeText: "Reveal Created",
+    headingHtml: `<span style="color: #E8449A;">Your Reveal</span> <span style="color: #3A9FE8;">Is Created!</span>`,
+    greetingText: `Hi ${parentName},`,
+    messageHtml: `<p style="margin: 0 0 12px 0;">Congratulations on creating your Virtual Gender Reveal event! Everything is successfully set up and ready to go.</p>
+                  <p style="margin: 0 0 12px 0;"><strong>Here is what you need to do next:</strong></p>
+                  <ul style="margin: 0 0 16px 0; padding-left: 20px; color: #4b5563;">
+                    <li style="margin-bottom: 6px;">Share your Guest Invite Link to collect votes and predictions.</li>
+                    <li style="margin-bottom: 6px;">For Reveal events, make sure your doctor or designated revealer submits the gender using their secure link.</li>
+                    <li style="margin-bottom: 6px;">Log in to your Host Dashboard to view predictions, manage messages, and track your livestream.</li>
+                  </ul>`,
+    revealDateLabel,
+    revealTimeLabel,
+    revealTimezone: params.revealTimezone,
+    primaryCtaUrl: dashboardUrl,
+    primaryCtaText: "GO TO DASHBOARD",
+  });
+
+  await sendEmail({
+    to: params.to,
+    subject: "Your Virtual Gender Reveal has been created!",
+    html,
+  });
+}
+
+export async function sendHostVideoReadyEmail(params: SendHostVideoReadyEmailParams): Promise<void> {
+  const parentName = escapeHtml(params.parentName);
+  const dashboardUrl = escapeHtml(params.dashboardUrl);
+
+  const dateObj = new Date(params.revealAtIso);
+  const revealDateLabel = dateObj.toLocaleDateString("en-US", {
+    dateStyle: "full",
+    timeZone: params.revealTimezone,
+  });
+  const revealTimeLabel = dateObj.toLocaleTimeString("en-US", {
+    timeStyle: "short",
+    timeZone: params.revealTimezone,
+  });
+
+  const baseUrl = new URL(dashboardUrl).origin;
+  const logoUrl = `${baseUrl}/Favicon-VGR.png`;
+  const bannerUrl = `${baseUrl}/assets/email-banner.png`;
+
+  const html = buildVgrEmailTemplateHtml({
+    logoUrl,
+    bannerUrl,
+    badgeText: "Video Ready",
+    headingHtml: `<span style="color: #E8449A;">Your Video</span> <span style="color: #3A9FE8;">Is Processed!</span> 🎬`,
+    greetingText: `Hi ${parentName},`,
+    messageHtml: `<p style="margin: 0 0 12px 0;">Exciting news! Your custom reveal video has been successfully processed and is ready for the broadcast.</p>
+                  <p style="margin: 0;">Your virtual party room is now fully prepared. The video will automatically unlock for you and your guests when the countdown reaches zero.</p>`,
+    revealDateLabel,
+    revealTimeLabel,
+    revealTimezone: params.revealTimezone,
+    primaryCtaUrl: dashboardUrl,
+    primaryCtaText: "VIEW CELEBRATION ROOM",
+  });
+
+  await sendEmail({
+    to: params.to,
+    subject: "Your custom reveal video is ready!",
+    html,
+  });
+}
+
+export async function sendHostRevealReminderEmail(params: SendHostRevealReminderEmailParams): Promise<void> {
+  const parentName = escapeHtml(params.parentName);
+  const dashboardUrl = escapeHtml(params.dashboardUrl);
+
+  const dateObj = new Date(params.revealAtIso);
+  const revealDateLabel = dateObj.toLocaleDateString("en-US", {
+    dateStyle: "full",
+    timeZone: params.revealTimezone,
+  });
+  const revealTimeLabel = dateObj.toLocaleTimeString("en-US", {
+    timeStyle: "short",
+    timeZone: params.revealTimezone,
+  });
+
+  const baseUrl = new URL(dashboardUrl).origin;
+  const logoUrl = `${baseUrl}/Favicon-VGR.png`;
+  const bannerUrl = `${baseUrl}/assets/email-banner.png`;
+
+  const html = buildVgrEmailTemplateHtml({
+    logoUrl,
+    bannerUrl,
+    badgeText: "Event Tomorrow",
+    headingHtml: `<span style="color: #E8449A;">Your Reveal</span> <span style="color: #3A9FE8;">Is Tomorrow!</span> 🎈`,
+    greetingText: `Hi ${parentName},`,
+    messageHtml: `<p style="margin: 0 0 12px 0;">The wait is almost over! Your Virtual Gender Reveal celebration starts tomorrow.</p>
+                  <p style="margin: 0 0 16px 0;">Here is a quick look at your guest voting stats so far:</p>
+                  <div style="background-color: #f8fafc; border-radius: 12px; padding: 12px 16px; margin-bottom: 16px; border: 1px solid #e2e8f0; display: inline-block; min-width: 200px; text-align: center;">
+                    <span style="color: #3A9FE8; font-weight: 800; font-size: 16px; margin-right: 16px;">💙 Team Boy: ${params.boyVotes}</span>
+                    <span style="color: #E8449A; font-weight: 800; font-size: 16px;">🩷 Team Girl: ${params.girlVotes}</span>
+                  </div>
+                  <p style="margin: 0;">Make sure your streaming device is ready, and click below to access your host dashboard.</p>`,
+    revealDateLabel,
+    revealTimeLabel,
+    revealTimezone: params.revealTimezone,
+    primaryCtaUrl: dashboardUrl,
+    primaryCtaText: "OPEN HOST DASHBOARD",
+  });
+
+  await sendEmail({
+    to: params.to,
+    subject: "Reminder: Your Virtual Gender Reveal is tomorrow!",
+    html,
+  });
+}
