@@ -122,6 +122,7 @@ export default function NewRevealPage() {
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [createdDownloadUrl, setCreatedDownloadUrl] = useState("");
   const [resolvingUrl, setResolvingUrl] = useState(false);
+  const [createdEnquiryId, setCreatedEnquiryId] = useState("");
   const isBasicPlan = (firestoreUser?.activePlan ?? "none") === "basic" || (firestoreUser?.activePlan ?? "none") === "free";
 
   // Entitlement guard: redirect if user can't create a reveal
@@ -360,6 +361,8 @@ export default function NewRevealPage() {
         throw new Error(data.error || "Failed to create reveal. Please try again.");
       }
 
+      setCreatedEnquiryId(enquiryId);
+
       if (isBasicPlan && mode === "announcement" && announcementGender) {
         setUploadProgress("");
         setLoading(false);
@@ -390,6 +393,23 @@ export default function NewRevealPage() {
       setUploadProgress("");
     }
   }
+
+  const handleDownloadComplete = async (enquiryId: string) => {
+    if (!user || !enquiryId) return;
+    try {
+      const idToken = await user.getIdToken();
+      await fetch("/api/reveal/download-complete", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${idToken}`,
+        },
+        body: JSON.stringify({ enquiryId }),
+      });
+    } catch (err) {
+      console.error("Failed to log download complete:", err);
+    }
+  };
 
   // ─── Render ──────────────────────────────────────────────
 
@@ -487,6 +507,7 @@ export default function NewRevealPage() {
                 download="gender_reveal.mov"
                 target="_blank"
                 rel="noopener noreferrer"
+                onClick={() => handleDownloadComplete(createdEnquiryId)}
                 className="block w-full py-3 px-4 bg-gradient-to-r from-[#E8449A] to-[#3A9FE8] text-white rounded-xl text-sm font-bold tracking-wider uppercase shadow-md hover:opacity-95 active:scale-[0.98] transition-all mb-3 text-center"
               >
                 Download Video (.MOV)
@@ -1048,6 +1069,7 @@ export default function NewRevealPage() {
                 download="gender_reveal.mov"
                 target="_blank"
                 rel="noopener noreferrer"
+                onClick={() => handleDownloadComplete(createdEnquiryId)}
                 className="block w-full py-3 px-4 bg-gradient-to-r from-[#E8449A] to-[#3A9FE8] text-white rounded-xl text-sm font-bold tracking-wider uppercase shadow-md hover:opacity-95 active:scale-[0.98] transition-all mb-3 text-center"
               >
                 Download Video (.MOV)
