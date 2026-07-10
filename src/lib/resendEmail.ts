@@ -724,3 +724,91 @@ export async function sendHostRevealReminderEmail(params: SendHostRevealReminder
     html,
   });
 }
+
+export interface SendHostDownloadReminderEmailParams {
+  to: string;
+  parentName: string;
+  dashboardUrl: string;
+}
+
+export async function sendHostDownloadReminder1dEmail(params: SendHostDownloadReminderEmailParams): Promise<void> {
+  const parentName = escapeHtml(params.parentName);
+  const dashboardUrl = escapeHtml(params.dashboardUrl);
+
+  const baseUrl = new URL(dashboardUrl).origin;
+  const logoUrl = `${baseUrl}/Favicon-VGR.png`;
+  const bannerUrl = `${baseUrl}/assets/email-banner.png`;
+
+  const html = buildVgrEmailTemplateHtml({
+    logoUrl,
+    bannerUrl,
+    badgeText: "Reveal Complete",
+    headingHtml: `<span style="color: #E8449A;">Congratulations on</span> <span style="color: #3A9FE8;">Your Reveal!</span> 🎉`,
+    greetingText: `Hi ${parentName},`,
+    messageHtml: `<p style="margin: 0 0 12px 0;">Congratulations on your Virtual Gender Reveal event! We hope you and your family had a wonderful time celebrating this special milestone.</p>
+                  <p style="margin: 0 0 12px 0;">Thank you so much for choosing <strong>Virtual Gender Reveal</strong>. Your personalized animated reveal video is ready to download so you can keep and relive it forever.</p>
+                  <p style="margin: 0 0 16px 0; color: #b91c1c; font-weight: 700;">⚠️ Please note: To free up secure server storage space, your video file will be permanently deleted in 30 days. Be sure to download and save it today!</p>`,
+    primaryCtaUrl: dashboardUrl,
+    primaryCtaText: "DOWNLOAD KEEPSAKE VIDEO",
+  });
+
+  await sendEmail({
+    to: params.to,
+    subject: "Congratulations on your Reveal! Download your keepsake video",
+    html,
+  });
+}
+
+export async function sendHostDownloadReminder7dEmail(params: SendHostDownloadReminderEmailParams): Promise<void> {
+  const parentName = escapeHtml(params.parentName);
+  const dashboardUrl = escapeHtml(params.dashboardUrl);
+
+  const baseUrl = new URL(dashboardUrl).origin;
+  const logoUrl = `${baseUrl}/Favicon-VGR.png`;
+  const bannerUrl = `${baseUrl}/assets/email-banner.png`;
+
+  const html = buildVgrEmailTemplateHtml({
+    logoUrl,
+    bannerUrl,
+    badgeText: "Download Warning",
+    headingHtml: `<span style="color: #E8449A;">7 Days Left</span> <span style="color: #3A9FE8;">To Save Video</span> ⏳`,
+    greetingText: `Hi ${parentName},`,
+    messageHtml: `<p style="margin: 0 0 12px 0;">This is a friendly reminder to download your keepsake Virtual Gender Reveal video.</p>
+                  <p style="margin: 0 0 16px 0; color: #b91c1c; font-weight: 700;">⚠️ Your custom video will be permanently deleted from our servers in 7 days to clear secure storage space. Please download it now to avoid losing it!</p>`,
+    primaryCtaUrl: dashboardUrl,
+    primaryCtaText: "DOWNLOAD VIDEO NOW",
+  });
+
+  await sendEmail({
+    to: params.to,
+    subject: "Action Required: 7 days left to download your reveal video",
+    html,
+  });
+}
+
+export async function sendHostDownloadReminder24hEmail(params: SendHostDownloadReminderEmailParams): Promise<void> {
+  const parentName = escapeHtml(params.parentName);
+  const dashboardUrl = escapeHtml(params.dashboardUrl);
+
+  const baseUrl = new URL(dashboardUrl).origin;
+  const logoUrl = `${baseUrl}/Favicon-VGR.png`;
+  const bannerUrl = `${baseUrl}/assets/email-banner.png`;
+
+  const html = buildVgrEmailTemplateHtml({
+    logoUrl,
+    bannerUrl,
+    badgeText: "Final Warning",
+    headingHtml: `<span style="color: #E8449A;">24 Hours Left</span> <span style="color: #3A9FE8;">To Save Video</span> 🚨`,
+    greetingText: `Hi ${parentName},`,
+    messageHtml: `<p style="margin: 0 0 12px 0;">This is your final notice to download your custom Virtual Gender Reveal video.</p>
+                  <p style="margin: 0 0 16px 0; color: #b91c1c; font-weight: 800;">⚠️ Critical: Your custom video is scheduled for permanent deletion in 24 hours. After this time, it cannot be recovered. Please click the button below to download and save it immediately.</p>`,
+    primaryCtaUrl: dashboardUrl,
+    primaryCtaText: "DOWNLOAD KEEPSAKE VIDEO NOW",
+  });
+
+  await sendEmail({
+    to: params.to,
+    subject: "Final Notice: 24 hours left to download your reveal video",
+    html,
+  });
+}

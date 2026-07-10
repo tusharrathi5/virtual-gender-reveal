@@ -553,6 +553,23 @@ function DashboardContent() {
     }
   };
 
+  const handleDownloadComplete = async (enquiryId: string) => {
+    if (!user) return;
+    try {
+      const idToken = await user.getIdToken();
+      await fetch("/api/reveal/download-complete", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${idToken}`,
+        },
+        body: JSON.stringify({ enquiryId }),
+      });
+    } catch (err) {
+      console.error("Failed to log download complete:", err);
+    }
+  };
+
   const latestReveal = reveals[0];
 
   const loadReveals = useCallback(async () => {
@@ -1603,6 +1620,7 @@ function DashboardContent() {
                 download={`gender_reveal_${activeDownloadReveal.id}.mov`}
                 target="_blank"
                 rel="noopener noreferrer"
+                onClick={() => handleDownloadComplete(activeDownloadReveal.id)}
                 className="block w-full py-3 px-4 bg-gradient-to-r from-[#E8449A] to-[#3A9FE8] text-white rounded-xl text-sm font-bold tracking-wider uppercase shadow-md hover:opacity-95 active:scale-[0.98] transition-all text-center"
               >
                 Download Video (.MOV)

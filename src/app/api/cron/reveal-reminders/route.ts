@@ -1,7 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
 import { FieldValue, Timestamp } from "firebase-admin/firestore";
 import { getAdminDb, getAdminAuth } from "@/lib/firebase-admin";
-import { sendRevealReminderEmail, sendHostRevealReminderEmail } from "@/lib/resendEmail";
+import {
+  sendRevealReminderEmail,
+  sendHostRevealReminderEmail,
+  sendHostDownloadReminder1dEmail,
+  sendHostDownloadReminder7dEmail,
+  sendHostDownloadReminder24hEmail,
+} from "@/lib/resendEmail";
 import { generateGuestToken } from "@/lib/guestToken";
 
 type ReminderWindow = "7d" | "24h";
@@ -177,6 +183,136 @@ export async function GET(req: NextRequest) {
     }
   }
 
+  // 3. Process completed reveals (Auto-deletions and post-reveal reminders)
+  const completedSnap = await db
+    .collection("enquiries")
+    .where("revealAt", "<", Timestamp.fromMillis(nowMs))
+    .get();
+
+  for (const doc of completedSnap.docs) {
+    const enquiry = doc.data() as {
+      userId?: string;
+      parentName?: string;
+      revealAt?: Timestamp;
+      revealTimezone?: string;
+      streamUid?: string | null;
+      videoUrl?: string | null;
+      videoDownloaded?: boolean;
+      videoUploadStatus?: string;
+      downloadReminder1dSentAt?: Timestamp | null;
+      downloadReminder7dSentAt?: Timestamp | null;
+      downloadReminder24hSentAt?: Timestamp | null;
+      videoAutoDeletedAt?: Timestamp | null;
+    };
+
+    const streamUid = enquiry.streamUid?.trim();
+    if (!streamUid || enquiry.videoUploadStatus === "auto_deleted") {
+      continue;
+    }
+
+    if (enquiry.videoDownloaded === true) {
+      continue;
+    }
+
+    const revealAt = enquiry.revealAt?.toDate();
+    if (!revealAt) continue;
+
+    const elapsedMs = nowMs - revealAt.getTime();
+    if (elapsedMs < 0) continue;
+
+    const hostUserId = enquiry.userId;
+    if (!hostUserId) continue;
+
+    let hostEmail: string | null = null;
+    try {
+      const userRecord = await getAdminAuth().getUser(hostUserId);
+      hostEmail = userRecord.email || null;
+    } catch (e) {
+      console.error(`[cron/video-cleanup] Failed to get user ${hostUserId}:`, e);
+      continue;
+    }
+    if (!hostEmail) continue;
+
+    const appUrl = process.env.NEXT_PUBLIC_APP_URL || "https://virtualgenderreveal.com";
+    const dashboardUrl = `${appUrl.replace(/\/$/, "")}/dashboard`;
+
+    // Day 30: Deletion
+    if (elapsedMs >= 30 * 24 * 60 * 60 * 1000) {
+      try {
+        await deleteCloudflareVideo(streamUid);
+        await doc.ref.update({
+          videoUrl: FieldValue.delete(),
+          streamUid: FieldValue.delete(),
+          pendingStreamUid: FieldValue.delete(),
+          videoUploadStatus: "auto_deleted",
+          videoAutoDeletedAt: FieldValue.serverTimestamp(),
+          updatedAt: FieldValue.serverTimestamp(),
+        });
+        console.log(`[cron/video-cleanup] Auto-deleted video for reveal ${doc.id}`);
+      } catch (err) {
+        console.error(`[cron/video-cleanup] Failed to delete video for ${doc.id}:`, err);
+      }
+      continue;
+    }
+
+    // Day 29: 24h before deletion
+    if (elapsedMs >= 29 * 24 * 60 * 60 * 1000 && !enquiry.downloadReminder24hSentAt) {
+      try {
+        await sendHostDownloadReminder24hEmail({
+          to: hostEmail,
+          parentName: enquiry.parentName || "Parent",
+          dashboardUrl,
+        });
+        await doc.ref.update({
+          downloadReminder24hSentAt: FieldValue.serverTimestamp(),
+          updatedAt: FieldValue.serverTimestamp(),
+        });
+        console.log(`[cron/video-cleanup] Sent 24h warning to host of reveal ${doc.id}`);
+      } catch (err) {
+        console.error(`[cron/video-cleanup] Failed 24h email for ${doc.id}:`, err);
+      }
+      continue;
+    }
+
+    // Day 23: 7d before deletion
+    if (elapsedMs >= 23 * 24 * 60 * 60 * 1000 && !enquiry.downloadReminder7dSentAt) {
+      try {
+        await sendHostDownloadReminder7dEmail({
+          to: hostEmail,
+          parentName: enquiry.parentName || "Parent",
+          dashboardUrl,
+        });
+        await doc.ref.update({
+          downloadReminder7dSentAt: FieldValue.serverTimestamp(),
+          updatedAt: FieldValue.serverTimestamp(),
+        });
+        console.log(`[cron/video-cleanup] Sent 7d warning to host of reveal ${doc.id}`);
+      } catch (err) {
+        console.error(`[cron/video-cleanup] Failed 7d email for ${doc.id}:`, err);
+      }
+      continue;
+    }
+
+    // Day 1: 24h after reveal
+    if (elapsedMs >= 24 * 60 * 60 * 1000 && !enquiry.downloadReminder1dSentAt) {
+      try {
+        await sendHostDownloadReminder1dEmail({
+          to: hostEmail,
+          parentName: enquiry.parentName || "Parent",
+          dashboardUrl,
+        });
+        await doc.ref.update({
+          downloadReminder1dSentAt: FieldValue.serverTimestamp(),
+          updatedAt: FieldValue.serverTimestamp(),
+        });
+        console.log(`[cron/video-cleanup] Sent 1d reminder to host of reveal ${doc.id}`);
+      } catch (err) {
+        console.error(`[cron/video-cleanup] Failed 1d email for ${doc.id}:`, err);
+      }
+      continue;
+    }
+  }
+
   return NextResponse.json({
     success: true,
     scannedEnquiries,
@@ -185,4 +321,24 @@ export async function GET(req: NextRequest) {
     failedCount,
     timestamp: new Date().toISOString(),
   });
+}
+
+async function deleteCloudflareVideo(streamUid: string): Promise<void> {
+  const accountId = process.env.CLOUDFLARE_ACCOUNT_ID?.trim();
+  const apiToken = process.env.CLOUDFLARE_STREAM_TOKEN?.trim();
+  if (!accountId || !apiToken) {
+    throw new Error("Cloudflare env vars missing.");
+  }
+
+  const response = await fetch(`https://api.cloudflare.com/client/v4/accounts/${accountId}/stream/${streamUid}`, {
+    method: "DELETE",
+    headers: { Authorization: `Bearer ${apiToken}` },
+  });
+
+  if (response.status === 404) return;
+
+  const data = await response.json().catch(() => ({}));
+  if (!response.ok || data?.success === false) {
+    throw new Error(data?.errors?.[0]?.message || "Failed to delete video from Cloudflare.");
+  }
 }
