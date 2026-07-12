@@ -233,7 +233,7 @@ export default function NewRevealPage() {
     return [
       { label: "Reveal Type", isComplete: isStep1Complete },
       { label: "Family Details", isComplete: isStep2Complete },
-      { label: "Reveal Schedule", isComplete: isStep3Complete },
+      { label: "Schedule", isComplete: isStep3Complete },
     ];
   }, [mode, parentName, announcementGender, revealerEmail, revealerName, revealAt]);
 
@@ -467,7 +467,7 @@ export default function NewRevealPage() {
             )}
 
             <div>
-              <span className="text-[10px] text-gray-400 block uppercase font-bold tracking-wider">Reveal Schedule</span>
+              <span className="text-[10px] text-gray-400 block uppercase font-bold tracking-wider">Schedule</span>
               <span className="font-semibold text-gray-800 mt-0.5 block">
                 {revealAt ? formatRevealDate(new Date(revealAt)) : <span className="text-gray-300 italic font-normal">Not scheduled</span>}
               </span>
@@ -822,7 +822,7 @@ export default function NewRevealPage() {
               <div className="bg-white/40 backdrop-blur-md border border-white/30 rounded-2xl p-6 md:p-8 shadow-sm space-y-6">
                 <h2 className="text-xs font-bold text-gray-400 uppercase tracking-widest border-b border-[#f1f1f5] pb-3 mb-1 flex items-center gap-2">
                   <Calendar className="w-4 h-4 text-[#3A9FE8]" />
-                  {isBasicPlan ? "3." : "4."} Reveal schedule
+                  {isBasicPlan ? "3." : "4."} Schedule
                 </h2>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
