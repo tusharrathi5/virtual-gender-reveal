@@ -747,19 +747,6 @@ function LandingPage() {
               </div>
             ))}
           </div>
-          <div className="testi-stats-bar fade-up">
-            {[
-              { icon: "👥", iconCls: "tsi-pink",   num: "50K+", label: "Happy Families" },
-              { icon: "🎉", iconCls: "tsi-blue",   num: "25K+", label: "Parties Hosted" },
-              { icon: "🌐", iconCls: "tsi-purple", num: "100+", label: "Countries"       },
-              { icon: "💗", iconCls: "tsi-gold",   num: "4.9",  label: "Average Rating"  },
-            ].map((s, i) => (
-              <div className="testi-stat-item" key={i}>
-                <div className={`testi-stat-icon ${s.iconCls}`}>{s.icon}</div>
-                <div className="testi-stat-text"><strong>{s.num}</strong><span>{s.label}</span></div>
-              </div>
-            ))}
-          </div>
         </div>
       </section>
 
@@ -1478,7 +1465,7 @@ nav#main-nav.solid{box-shadow:0 6px 28px rgba(0,0,0,0.14);}
 .pricing-trust-divider{width:1px;height:20px;background:#e0e0e0;}
 @media(max-width:768px){.pricing-grid{grid-template-columns:1fr;}.pnew-premium{transform:none;}.pnew-premium:hover{transform:translateY(-6px);}}
 /* ── Testimonials Redesign ── */
-.testi-new-section{padding:5rem 2rem 2rem;background:url('/images/testimonials-bg.png') center/cover no-repeat;position:relative;overflow:hidden;}
+.testi-new-section{padding:5rem 2rem 5rem;background:url('/images/testimonials-bg.png') center/cover no-repeat;position:relative;overflow:hidden;}
 .testi-heart-left{position:absolute;left:2%;top:12%;font-size:5rem;pointer-events:none;animation:balloonFloat 5s ease-in-out infinite alternate;opacity:0.7;}
 .testi-heart-right{position:absolute;right:2%;top:18%;font-size:4.5rem;pointer-events:none;animation:balloonFloat 4.5s ease-in-out infinite alternate-reverse;opacity:0.6;}
 .testi-new-inner{max-width:1220px;margin:0 auto;position:relative;z-index:2;}
@@ -1487,7 +1474,7 @@ nav#main-nav.solid{box-shadow:0 6px 28px rgba(0,0,0,0.14);}
 .testi-main-title{font-family:'Nunito',sans-serif;font-size:clamp(2rem,4.5vw,2.8rem);font-weight:900;color:#1a1a2e;line-height:1.15;}
 .testi-title-pink{color:#E8449A;}
 .testi-new-sub{font-size:0.95rem;color:#888;margin-top:0.6rem;}
-.testi-new-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:1.5rem;margin-bottom:3rem;}
+.testi-new-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:1.5rem;margin-bottom:0;}
 @media(max-width:1024px){.testi-new-grid{grid-template-columns:repeat(2,1fr);}}
 @media(max-width:640px){.testi-new-grid{grid-template-columns:1fr;}}
 .testi-new-card{background:rgba(255,255,255,0.25);backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);border-radius:20px;padding:1.4rem 1.3rem;box-shadow:0 8px 32px rgba(0,0,0,0.04);border:1px solid rgba(255,255,255,0.18);position:relative;transition:all 0.3s ease;opacity:0.85;}
@@ -1501,14 +1488,7 @@ nav#main-nav.solid{box-shadow:0 6px 28px rgba(0,0,0,0.14);}
 .tn-pink{color:#E8449A;}.tn-blue{color:#3A9FE8;}.tn-purple{color:#7B6EE8;}
 .testi-new-role{font-size:0.7rem;color:#aaa;margin-top:0.15rem;}
 .testi-card-heart{position:absolute;bottom:1.2rem;right:1.4rem;font-size:1.2rem;}
-.testi-stats-bar{background:#1a2a4a;border-radius:20px;padding:1.6rem 2.5rem;display:grid;grid-template-columns:repeat(4,1fr);gap:1rem;margin-bottom:0;}
-.testi-stat-item{display:flex;align-items:center;gap:0.8rem;}
-.testi-stat-icon{width:44px;height:44px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:1.2rem;flex-shrink:0;}
-.tsi-pink{background:rgba(232,68,154,0.2);}.tsi-blue{background:rgba(58,159,232,0.2);}.tsi-purple{background:rgba(123,110,232,0.2);}.tsi-gold{background:rgba(255,180,50,0.2);}
-.testi-stat-text{display:flex;flex-direction:column;gap:0.1rem;}
-.testi-stat-text strong{font-family:'Nunito',sans-serif;font-size:1.05rem;font-weight:900;color:white;}
-.testi-stat-text span{font-size:0.72rem;color:rgba(255,255,255,0.55);}
-@media(max-width:768px){.testi-new-grid{grid-template-columns:1fr;}.testi-stats-bar{grid-template-columns:repeat(2,1fr);}.pricing-trust{gap:0.8rem;font-size:0.78rem;}}
+@media(max-width:768px){.testi-new-grid{grid-template-columns:1fr;}.pricing-trust{gap:0.8rem;font-size:0.78rem;}}
 /* ── How It Works section color ── */
 /* hiw-new-section background overridden */
 /* hiw-new-inner background overridden */
@@ -1531,14 +1511,7 @@ nav#main-nav.solid{box-shadow:0 6px 28px rgba(0,0,0,0.14);}
 .hiw-feat-text strong{font-size:0.92rem;font-weight:800;color:#1a1a2e;}
 .hiw-feat-text span{font-size:0.75rem;color:#888;}
 */
-/* ── Testi stats-bar light override ── */
-.testi-stats-bar{background:rgba(255,255,255,0.4);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);border:1px solid rgba(255,255,255,0.3);box-shadow:0 8px 32px rgba(0,0,0,0.05);}
-.tsi-pink{background:rgba(232,68,154,0.12);box-shadow:0 0 0 1.5px rgba(232,68,154,0.2);}
-.tsi-blue{background:rgba(58,159,232,0.12);box-shadow:0 0 0 1.5px rgba(58,159,232,0.2);}
-.tsi-purple{background:rgba(123,110,232,0.12);box-shadow:0 0 0 1.5px rgba(123,110,232,0.2);}
-.tsi-gold{background:rgba(255,180,50,0.12);box-shadow:0 0 0 1.5px rgba(255,180,50,0.2);}
-.testi-stat-text strong{color:#1a1a2e;}
-.testi-stat-text span{color:#888;}
+
 /* ── CTA Section Redesign ── */
 .cta-new-section{padding:6rem 2rem;position:relative;overflow:hidden;background:url('/images/cta-bg.png') center/cover no-repeat;text-align:center;}
 .cta-bg-dec{position:absolute;pointer-events:none;font-size:6rem;opacity:0.65;animation:balloonFloat 5s ease-in-out infinite alternate;}
@@ -1632,12 +1605,7 @@ nav#main-nav.solid{box-shadow:0 6px 28px rgba(0,0,0,0.14);}
     display: none !important;
   }
   .testi-new-section {
-    padding: 4rem 1.2rem 2rem !important;
-  }
-  .testi-stats-bar {
-    grid-template-columns: 1fr !important;
-    padding: 1.5rem 1.2rem !important;
-    gap: 1.2rem !important;
+    padding: 4rem 1.2rem 4rem !important;
   }
   .testi-new-card {
     padding: 1.8rem 1.2rem !important;
