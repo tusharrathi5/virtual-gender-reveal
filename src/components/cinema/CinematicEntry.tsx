@@ -546,9 +546,11 @@ function LandingPage() {
                 originalPrice: "29.99",
                 priceSub: "Free for a limited time",
                 feats: ["Basic reveal page", "Doctor secure link", "Up to 20 guests", "Email invitations", "7-day replay"],
-                btnLabel: "Start Freemium",
+                btnLabel: "Choose Little Bundle",
+                btnEmoji: "🤍",
                 planId: "basic",
                 popular: false,
+                heart: "💙",
               },
               {
                 cardCls: "pricing-card-bundle-of-joy",
@@ -556,61 +558,87 @@ function LandingPage() {
                 desc: "The most loved plan for unforgettable memories!",
                 price: "59.99",
                 priceSub: "One-time payment",
-                feats: ["Cinematic reveal video — made by us", "Live virtual party room", "Up to 200 guests", "Live chat & Boy/Girl polls", "Personalized guest invitations", "30-day replay window", "Custom overlay"],
-                btnLabel: "Choose Premium",
+                feats: [
+                  "Everything in Little Bundle",
+                  "Secure revealer link",
+                  "Live broadcast to guests",
+                  "Custom cinematic video",
+                  "Download keepsake",
+                  "Unlimited guests",
+                  "Priority support",
+                ],
+                btnLabel: "Choose Bundle of Joy",
+                btnEmoji: "⭐",
                 planId: "premium",
                 popular: true,
+                heart: "🩷",
               },
             ].map((p, i) => (
               <div className={`pricing-card-redesign ${p.cardCls}`} key={i}>
                 {p.popular && <div className="pricing-card-popular-badge">⭐ MOST POPULAR</div>}
                 
-                {/* Left Side: Reserved for background illustration */}
+                {/* Left Column: Reserved for background illustration */}
                 <div className="pricing-card-left-column" />
                 
-                {/* Center Side: Dynamic pricing and CTA */}
-                <div className="pricing-card-center-column">
-                  <h3 className="pricing-card-title">{p.name}</h3>
-                  <p className="pricing-card-description">{p.desc}</p>
-                  
-                  <div className="pricing-card-price-container">
-                    {p.originalPrice && (
-                      <span className="pricing-card-original-price">${p.originalPrice}</span>
-                    )}
-                    <div className="pricing-card-current-price">
-                      <span className="pricing-card-price-curr">$</span>
-                      {p.price.split(".")[0]}
-                      {p.price.includes(".") && (
-                        <span style={{ fontSize: "1.8rem" }}>.{p.price.split(".")[1]}</span>
-                      )}
+                {/* Right Area: Content & Button */}
+                <div className="pricing-card-content-area">
+                  <div className="pricing-card-top-row">
+                    {/* Details Column */}
+                    <div className="pricing-card-details-col">
+                      <h3 className="pricing-card-title">{p.name}</h3>
+                      
+                      {/* Heart Divider */}
+                      <div className="pricing-card-heart-divider">
+                        <span className="heart-line" />
+                        <span className="heart-icon">{p.heart}</span>
+                        <span className="heart-line" />
+                      </div>
+
+                      <p className="pricing-card-description">{p.desc}</p>
+                      
+                      <div className="pricing-card-price-container">
+                        {p.originalPrice && (
+                          <span className="pricing-card-original-price">${p.originalPrice}</span>
+                        )}
+                        <div className="pricing-card-current-price">
+                          <span className="pricing-card-price-curr">$</span>
+                          {p.price.split(".")[0]}
+                          {p.price.includes(".") && (
+                            <span style={{ fontSize: "2rem" }}>.{p.price.split(".")[1]}</span>
+                          )}
+                        </div>
+                        <span className="pricing-card-price-sub">{p.priceSub}</span>
+                      </div>
                     </div>
-                    <span className="pricing-card-price-sub">{p.priceSub}</span>
+                    
+                    {/* Features Column */}
+                    <div className="pricing-card-features-col">
+                      <ul className="pricing-card-features">
+                        {p.feats.map((f, j) => (
+                          <li className="pricing-card-feature-item" key={j}>
+                            <span className="pricing-card-feature-icon-circle">✓</span>
+                            <span>{f}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
                   </div>
-                  
-                  <button
-                    className="pricing-card-btn"
-                    onClick={() => handlePricingPlanClick({
-                      id: p.planId,
-                      name: p.name,
-                      price: Number(p.price),
-                      priceLabel: p.price === "0" ? "Free" : `$${p.price}`,
-                      color: p.popular ? "#82B8E8" : "#E8449A",
-                    })}
-                  >
-                    {p.btnLabel}
-                  </button>
-                </div>
-                
-                {/* Right Side: Feature list */}
-                <div className="pricing-card-right-column">
-                  <ul className="pricing-card-features">
-                    {p.feats.map((f, j) => (
-                      <li className="pricing-card-feature-item" key={j}>
-                        <span className="pricing-card-feature-icon">✔</span>
-                        <span>{f}</span>
-                      </li>
-                    ))}
-                  </ul>
+
+                  {/* Bottom Row: CTA Button */}
+                  <div className="pricing-card-btn-row">
+                    <button
+                      className="pricing-card-btn"
+                      onClick={() => handlePricingPlanClick({
+                        id: p.planId,
+                        name: p.name,
+                        price: Number(p.price),
+                        priceLabel: p.price === "0" ? "Free" : `$${p.price}`,
+                        color: p.popular ? "#82B8E8" : "#E8449A",
+                      })}
+                    >
+                      {p.btnLabel} {p.btnEmoji}
+                    </button>
+                  </div>
                 </div>
               </div>
             ))}
@@ -1205,7 +1233,7 @@ nav#main-nav.solid{box-shadow:0 6px 28px rgba(0,0,0,0.14);}
 .pricing-bg-dec{position:absolute;font-size:5rem;line-height:1.3;pointer-events:none;opacity:0.7;animation:balloonFloat 5s ease-in-out infinite alternate;}
 .pricing-bg-left{left:1%;top:8%;animation-direction:alternate;}
 .pricing-bg-right{right:1%;top:10%;font-size:7rem;animation-direction:alternate-reverse;}
-.pricing-inner{max-width:1020px;margin:0 auto;position:relative;z-index:2;width:100%;}
+.pricing-inner{max-width:1240px;margin:0 auto;position:relative;z-index:2;width:100%;}
 .pricing-header{text-align:center;margin-bottom:1.5rem;}
 .pricing-pill-badge{display:inline-flex;align-items:center;gap:0.4rem;padding:0.38rem 1.2rem;border:1.5px solid #B07EE8;border-radius:50px;font-size:0.72rem;font-weight:600;color:#7B4FC4;letter-spacing:0.1em;text-transform:uppercase;margin-bottom:1.2rem;}
 .pricing-main-title{margin-bottom:0.7rem;}
