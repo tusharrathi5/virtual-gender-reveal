@@ -591,4 +591,11 @@ body {
   }
 }
 
+/* Prevent iOS Safari zooming when input fields are focused */
+@media (max-width: 768px) {
+  input, select, textarea {
+    font-size: 16px !important;
+  }
+}
+
 
