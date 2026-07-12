@@ -339,6 +339,7 @@ function LandingPage() {
   const [activeFaq, setActiveFaq] = useState<number | null>(null);
   const [showFaqModal, setShowFaqModal] = useState(false);
   const [showStoryModal, setShowStoryModal] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   useEffect(() => {
     if (showFaqModal || showStoryModal) {
@@ -417,12 +418,12 @@ function LandingPage() {
           <SiteLogo className="nav-logo-img" />
           <span className="nav-logo-text">VGR</span>
         </a>
-        <div className="nav-links">
-          <a href="/" className="nav-link nav-link-active">Home</a>
-          <button type="button" className="nav-link" onClick={() => routeToReveal()}>Create Party</button>
-          <a href="#how" className="nav-link">How It Works</a>
-          <button type="button" onClick={() => setShowStoryModal(true)} className="nav-link">Our Story</button>
-          <button type="button" onClick={() => setShowFaqModal(true)} className="nav-link">FAQ</button>
+        <div className={`nav-links ${mobileMenuOpen ? 'mobile-open' : ''}`}>
+          <a href="/" className="nav-link nav-link-active" onClick={() => setMobileMenuOpen(false)}>Home</a>
+          <button type="button" className="nav-link" onClick={() => { routeToReveal(); setMobileMenuOpen(false); }}>Create Party</button>
+          <a href="#how" className="nav-link" onClick={() => setMobileMenuOpen(false)}>How It Works</a>
+          <button type="button" onClick={() => { setShowStoryModal(true); setMobileMenuOpen(false); }} className="nav-link">Our Story</button>
+          <button type="button" onClick={() => { setShowFaqModal(true); setMobileMenuOpen(false); }} className="nav-link">FAQ</button>
         </div>
         <div className="nav-right">
           {loading ? null : user ? (
@@ -430,6 +431,17 @@ function LandingPage() {
           ) : (
             <a href="/login" className="nav-login-btn">👤 Log In</a>
           )}
+          <button 
+            type="button" 
+            className="mobile-nav-toggle" 
+            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+            aria-label="Toggle navigation menu"
+            aria-expanded={mobileMenuOpen}
+          >
+            <span className={`hamburger-line ${mobileMenuOpen ? 'active' : ''}`} />
+            <span className={`hamburger-line ${mobileMenuOpen ? 'active' : ''}`} />
+            <span className={`hamburger-line ${mobileMenuOpen ? 'active' : ''}`} />
+          </button>
         </div>
       </nav>
 
@@ -1230,7 +1242,19 @@ nav#main-nav.solid{box-shadow:0 6px 28px rgba(0,0,0,0.14);}
 .nav-right{display:flex;align-items:center;gap:0.7rem;}
 .nav-login-btn{display:inline-flex;align-items:center;gap:0.4rem;padding:0.5rem 1.3rem;border-radius:50px;background:#3A9FE8;color:white !important;font-family:'Nunito',sans-serif;font-size:0.86rem;font-weight:700;text-decoration:none;transition:background 0.2s,transform 0.2s;}
 .nav-login-btn:hover{background:#2E8AD4;transform:translateY(-1px);}
-@media(max-width:768px){nav#main-nav{width:calc(100% - 2rem);padding:0 1rem;}.nav-links{display:none;}.nav-login-btn{padding:0.45rem 1rem;font-size:0.8rem;}}
+.mobile-nav-toggle{display:none;flex-direction:column;justify-content:space-between;width:24px;height:16px;background:transparent;border:none;cursor:pointer;padding:0;margin-left:0.4rem;}
+.hamburger-line{width:100%;height:2px;background-color:#2D285C;border-radius:2px;transition:all 0.3s cubic-bezier(0.16,1,0.3,1);}
+.mobile-nav-toggle .hamburger-line.active:nth-child(1){transform:translateY(7px) rotate(45deg);}
+.mobile-nav-toggle .hamburger-line.active:nth-child(2){opacity:0;}
+.mobile-nav-toggle .hamburger-line.active:nth-child(3){transform:translateY(-7px) rotate(-45deg);}
+@media(max-width:768px){
+  nav#main-nav{width:calc(100% - 2rem);padding:0 1rem;}
+  .mobile-nav-toggle{display:flex;}
+  .nav-login-btn{padding:0.45rem 1rem;font-size:0.8rem;}
+  .nav-links{display:none;position:absolute;top:80px;left:0;right:0;background:rgba(255,255,255,0.98);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border:1px solid rgba(0,0,0,0.06);border-radius:24px;flex-direction:column;padding:1.2rem;gap:0.6rem;box-shadow:0 15px 30px rgba(0,0,0,0.08);z-index:999;}
+  .nav-links.mobile-open{display:flex;}
+  .nav-links .nav-link{width:100%;text-align:center;padding:0.6rem 0;font-size:0.95rem;}
+}
 /* ── Pricing Redesign ── */
 .pricing-section{padding:2.5rem 2rem 2.5rem;position:relative;overflow:hidden;background:linear-gradient(rgba(255, 255, 255, 0.22), rgba(255, 255, 255, 0.22)), url('/assets/pricing_page_bg.png') center/cover no-repeat;min-height:60vh;display:flex;align-items:center;justify-content:center;}
 .pricing-bg-dec{position:absolute;font-size:5rem;line-height:1.3;pointer-events:none;opacity:0.7;animation:balloonFloat 5s ease-in-out infinite alternate;}
