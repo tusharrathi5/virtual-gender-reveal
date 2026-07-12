@@ -1490,7 +1490,7 @@ nav#main-nav.solid{box-shadow:0 6px 28px rgba(0,0,0,0.14);}
 .story-content-panel{flex:1;display:flex;flex-direction:column;padding:3rem 2.5rem;position:relative;height:100%;z-index:2;}
 @media (max-width:768px){
   .story-modal-box{flex-direction:column;max-width:500px;height:90vh;max-height:680px;background-image:url('/images/our_story.jpeg') !important;background-size:cover !important;background-position:center !important;}
-  .story-modal-box::before{content:'';position:absolute;inset:0;background:rgba(255,255,255,0.88);z-index:1;border-radius:30px;}
+  .story-modal-box::before{content:'';position:absolute;inset:0;background:rgba(255,255,255,0.65);z-index:1;border-radius:30px;}
   .story-image-panel{display:none !important;}
   .story-content-panel{padding:2rem 1.5rem;z-index:2;}
 }
