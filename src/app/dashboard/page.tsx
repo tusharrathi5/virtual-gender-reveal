@@ -1715,60 +1715,85 @@ function PlanSection({
             priceSub: isBasic ? "Free for a limited time" : "One-time payment",
             feats: isBasic
               ? ["Basic reveal page", "Doctor secure link", "Up to 20 guests", "Email invitations", "7-day replay"]
-              : ["Cinematic reveal video — made by us", "Live virtual party room", "Up to 200 guests", "Live chat & Boy/Girl polls", "Personalized guest invitations", "30-day replay window", "Custom overlay"],
+              : [
+                  "Everything in Little Bundle",
+                  "Secure revealer link",
+                  "Live broadcast to guests",
+                  "Custom cinematic video",
+                  "Download keepsake",
+                  "Unlimited guests",
+                  "Priority support",
+                ],
+            btnLabel: activatingPlan === plan.id
+              ? "Activating..."
+              : `Choose ${isBasic ? "Little Bundle" : "Bundle of Joy"}`,
+            btnEmoji: activatingPlan === plan.id ? "" : (isBasic ? "🤍" : "⭐"),
             popular: plan.id === "premium",
+            heart: isBasic ? "💙" : "🩷",
           };
 
           return (
             <div className={`pricing-card-redesign ${p.cardCls}`} key={plan.id}>
               {p.popular && <div className="pricing-card-popular-badge">⭐ MOST POPULAR</div>}
               
-              {/* Left Side: Reserved for background illustration */}
+              {/* Left Column: Reserved for background illustration */}
               <div className="pricing-card-left-column" />
               
-              {/* Center Side: Dynamic pricing and CTA */}
-              <div className="pricing-card-center-column">
-                <h3 className="pricing-card-title">{p.name}</h3>
-                <p className="pricing-card-description">{p.desc}</p>
-                
-                <div className="pricing-card-price-container">
-                  {p.originalPrice && (
-                    <span className="pricing-card-original-price">${p.originalPrice}</span>
-                  )}
-                  <div className="pricing-card-current-price">
-                    <span className="pricing-card-price-curr">$</span>
-                    {p.price.split(".")[0]}
-                    {p.price.includes(".") && (
-                      <span style={{ fontSize: "1.8rem" }}>.{p.price.split(".")[1]}</span>
-                    )}
+              {/* Right Area: Content & Button */}
+              <div className="pricing-card-content-area">
+                <div className="pricing-card-top-row">
+                  {/* Details Column */}
+                  <div className="pricing-card-details-col">
+                    <h3 className="pricing-card-title">{p.name}</h3>
+                    
+                    {/* Heart Divider */}
+                    <div className="pricing-card-heart-divider">
+                      <span className="heart-line" />
+                      <span className="heart-icon">{p.heart}</span>
+                      <span className="heart-line" />
+                    </div>
+
+                    <p className="pricing-card-description">{p.desc}</p>
+                    
+                    <div className="pricing-card-price-container">
+                      {p.originalPrice && (
+                        <span className="pricing-card-original-price">${p.originalPrice}</span>
+                      )}
+                      <div className="pricing-card-current-price">
+                        <span className="pricing-card-price-curr">$</span>
+                        {p.price.split(".")[0]}
+                        {p.price.includes(".") && (
+                          <span style={{ fontSize: "2rem" }}>.{p.price.split(".")[1]}</span>
+                        )}
+                      </div>
+                      <span className="pricing-card-price-sub">{p.priceSub}</span>
+                    </div>
                   </div>
-                  <span className="pricing-card-price-sub">{p.priceSub}</span>
+                  
+                  {/* Features Column */}
+                  <div className="pricing-card-features-col">
+                    <ul className="pricing-card-features">
+                      {p.feats.map((f, j) => (
+                        <li className="pricing-card-feature-item" key={j}>
+                          <span className="pricing-card-feature-icon-circle">✓</span>
+                          <span>{f}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
                 </div>
-                
-                <button
-                  type="button"
-                  disabled={!!activatingPlan}
-                  onClick={() => onSelect(plan)}
-                  className="pricing-card-btn"
-                >
-                  {activatingPlan === plan.id
-                    ? "Activating..."
-                    : plan.priceCents === 0
-                    ? `Choose ${p.name}`
-                    : `Buy ${p.name}`}
-                </button>
-              </div>
-              
-              {/* Right Side: Feature list */}
-              <div className="pricing-card-right-column">
-                <ul className="pricing-card-features">
-                  {p.feats.map((f, j) => (
-                    <li className="pricing-card-feature-item" key={j}>
-                      <span className="pricing-card-feature-icon">✔</span>
-                      <span>{f}</span>
-                    </li>
-                  ))}
-                </ul>
+
+                {/* Bottom Row: CTA Button */}
+                <div className="pricing-card-btn-row">
+                  <button
+                    type="button"
+                    disabled={!!activatingPlan}
+                    onClick={() => onSelect(plan)}
+                    className="pricing-card-btn"
+                  >
+                    {p.btnLabel} {p.btnEmoji}
+                  </button>
+                </div>
               </div>
             </div>
           );
