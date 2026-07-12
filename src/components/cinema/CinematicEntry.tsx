@@ -1229,7 +1229,7 @@ nav#main-nav.solid{box-shadow:0 6px 28px rgba(0,0,0,0.14);}
 .nav-login-btn:hover{background:#2E8AD4;transform:translateY(-1px);}
 @media(max-width:768px){nav#main-nav{width:calc(100% - 2rem);padding:0 1rem;}.nav-links{display:none;}.nav-login-btn{padding:0.45rem 1rem;font-size:0.8rem;}}
 /* ── Pricing Redesign ── */
-.pricing-section{padding:2.5rem 2rem 2.5rem;position:relative;overflow:hidden;background:url('/images/pricing-bg.png') center/cover no-repeat;min-height:60vh;display:flex;align-items:center;justify-content:center;}
+.pricing-section{padding:2.5rem 2rem 2.5rem;position:relative;overflow:hidden;background:linear-gradient(rgba(255, 255, 255, 0.22), rgba(255, 255, 255, 0.22)), url('/assets/pricing_page_bg.png') center/cover no-repeat;min-height:60vh;display:flex;align-items:center;justify-content:center;}
 .pricing-bg-dec{position:absolute;font-size:5rem;line-height:1.3;pointer-events:none;opacity:0.7;animation:balloonFloat 5s ease-in-out infinite alternate;}
 .pricing-bg-left{left:1%;top:8%;animation-direction:alternate;}
 .pricing-bg-right{right:1%;top:10%;font-size:7rem;animation-direction:alternate-reverse;}
