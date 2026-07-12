@@ -651,7 +651,7 @@ export default function NewRevealPage() {
                 1. What type of event?
               </h2>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+              <div className="grid grid-cols-1 gap-5">
                 {/* Gender Reveal Option */}
                 <div
                   tabIndex={0}
