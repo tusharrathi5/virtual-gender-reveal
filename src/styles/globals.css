@@ -64,3 +64,314 @@ body {
   background: linear-gradient(to bottom, var(--blue-light), var(--pink-light));
   border-radius: 3px;
 }
+
+/* ── Illustrated Pricing Cards Redesign ── */
+.pricing-section-container {
+  display: flex;
+  justify-content: center;
+  gap: 3.5rem;
+  flex-wrap: wrap;
+  padding: 3rem 1.5rem;
+  max-width: 1280px;
+  margin: 0 auto;
+  align-items: stretch;
+}
+
+.pricing-card-redesign {
+  position: relative;
+  display: grid;
+  grid-template-columns: 170px 1.1fr 1fr;
+  gap: 1.5rem;
+  width: 100%;
+  max-width: 560px;
+  min-height: 660px;
+  border-radius: 40px;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.04);
+  padding: 3rem 2.2rem 3rem 1.8rem;
+  transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275), box-shadow 0.3s ease;
+  overflow: hidden;
+  align-items: center;
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  text-align: left;
+}
+
+/* Card Hover effect */
+.pricing-card-redesign:hover {
+  transform: translateY(-6px);
+  box-shadow: 0 20px 48px rgba(0, 0, 0, 0.08);
+}
+
+/* Specific Plan Backgrounds */
+.pricing-card-little-bundle {
+  background-image: url('/assets/little_bundel_pricing.png');
+}
+
+.pricing-card-bundle-of-joy {
+  background-image: url('/assets/bundle_of_joy.png');
+}
+
+/* Column styles */
+.pricing-card-left-column {
+  /* Reserved for background illustration */
+  pointer-events: none;
+  height: 100%;
+}
+
+.pricing-card-center-column {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  text-align: center;
+  height: 100%;
+  padding: 1rem 0;
+}
+
+.pricing-card-right-column {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  height: 100%;
+  padding-left: 0.5rem;
+}
+
+/* Typography styles */
+.pricing-card-title {
+  font-family: 'Plus Jakarta Sans', 'Nunito', sans-serif;
+  font-weight: 900;
+  font-size: 1.65rem;
+  margin-bottom: 0.5rem;
+  letter-spacing: -0.02em;
+}
+
+.pricing-card-little-bundle .pricing-card-title {
+  color: #2E7DD1; /* Pastel Blue Primary */
+}
+
+.pricing-card-bundle-of-joy .pricing-card-title {
+  color: #E8449A; /* Pastel Pink Primary */
+}
+
+.pricing-card-description {
+  font-size: 0.84rem;
+  color: #4b5563;
+  line-height: 1.55;
+  margin-bottom: 1.6rem;
+  font-weight: 600;
+}
+
+/* Price styles */
+.pricing-card-price-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-bottom: 1.6rem;
+}
+
+.pricing-card-original-price {
+  font-size: 1.05rem;
+  text-decoration: line-through;
+  color: #9ca3af;
+  font-weight: 700;
+  margin-bottom: 0.2rem;
+}
+
+.pricing-card-current-price {
+  font-family: 'Plus Jakarta Sans', 'Nunito', sans-serif;
+  font-weight: 900;
+  font-size: 3.6rem;
+  line-height: 1;
+  color: #111827;
+}
+
+.pricing-card-price-curr {
+  font-size: 1.8rem;
+  vertical-align: super;
+  font-weight: 900;
+  margin-right: 2px;
+}
+
+.pricing-card-price-sub {
+  font-size: 0.72rem;
+  color: #6b7280;
+  margin-top: 0.4rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+/* Button styles */
+.pricing-card-btn {
+  display: block;
+  width: 100%;
+  padding: 0.9rem 1.5rem;
+  border: none;
+  border-radius: 9999px; /* Rounded pill */
+  font-family: 'Plus Jakarta Sans', 'Nunito', sans-serif;
+  font-weight: 800;
+  font-size: 0.88rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  cursor: pointer;
+  transition: transform 0.2s ease, box-shadow 0.2s ease, filter 0.2s ease;
+  margin-top: auto;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+}
+
+.pricing-card-btn:hover {
+  transform: translateY(-1.5px);
+}
+
+.pricing-card-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+/* Little Bundle Button */
+.pricing-card-little-bundle .pricing-card-btn {
+  background: linear-gradient(135deg, #3A9FE8, #82B8E8);
+  color: white;
+}
+
+.pricing-card-little-bundle .pricing-card-btn:hover {
+  box-shadow: 0 8px 20px rgba(58, 159, 232, 0.35);
+}
+
+/* Bundle of Joy Button */
+.pricing-card-bundle-of-joy .pricing-card-btn {
+  background: linear-gradient(135deg, #E8449A, #FF7EC8);
+  color: white;
+}
+
+.pricing-card-bundle-of-joy .pricing-card-btn:hover {
+  box-shadow: 0 8px 20px rgba(232, 68, 154, 0.35);
+}
+
+/* Feature List */
+.pricing-card-features {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+}
+
+.pricing-card-feature-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.6rem;
+  font-size: 0.82rem;
+  color: #374151;
+  font-weight: 600;
+  line-height: 1.45;
+}
+
+.pricing-card-feature-icon {
+  font-weight: 900;
+  flex-shrink: 0;
+  font-size: 0.95rem;
+}
+
+.pricing-card-little-bundle .pricing-card-feature-icon {
+  color: #3A9FE8; /* Pastel Blue icon */
+}
+
+.pricing-card-bundle-of-joy .pricing-card-feature-icon {
+  color: #E8449A; /* Pastel Pink icon */
+}
+
+/* Popular Badge */
+.pricing-card-popular-badge {
+  position: absolute;
+  top: 15px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: linear-gradient(135deg, #E8449A, #FF7EC8);
+  color: white;
+  font-family: 'Plus Jakarta Sans', 'Nunito', sans-serif;
+  font-size: 0.72rem;
+  font-weight: 800;
+  padding: 0.35rem 1.2rem;
+  border-radius: 9999px;
+  box-shadow: 0 4px 12px rgba(232, 68, 154, 0.3);
+  z-index: 10;
+  letter-spacing: 0.05em;
+  white-space: nowrap;
+}
+
+/* Responsive styles */
+@media (max-width: 1120px) {
+  .pricing-card-redesign {
+    grid-template-columns: 130px 1.1fr 1fr;
+    max-width: 480px;
+    min-height: 620px;
+    padding: 2rem 1.5rem 2rem 1rem;
+    gap: 1.2rem;
+  }
+}
+
+@media (max-width: 990px) {
+  /* Tablet scale down */
+  .pricing-card-redesign {
+    grid-template-columns: 90px 1.2fr 1fr;
+    max-width: 440px;
+    min-height: 580px;
+    gap: 1rem;
+  }
+  .pricing-card-title {
+    font-size: 1.35rem;
+  }
+  .pricing-card-current-price {
+    font-size: 2.8rem;
+  }
+  .pricing-card-price-curr {
+    font-size: 1.4rem;
+  }
+  .pricing-card-feature-item {
+    font-size: 0.78rem;
+  }
+}
+
+@media (max-width: 768px) {
+  /* Mobile stack */
+  .pricing-section-container {
+    flex-direction: column;
+    align-items: center;
+    gap: 2.5rem;
+    padding: 2rem 1rem;
+  }
+  .pricing-card-redesign {
+    grid-template-columns: 80px 1fr;
+    grid-template-rows: auto auto;
+    min-height: auto;
+    max-width: 480px;
+    padding: 2.5rem 2rem;
+    gap: 1rem 1.5rem;
+  }
+  .pricing-card-left-column {
+    grid-row: 1 / span 2;
+    height: 100%;
+  }
+  .pricing-card-center-column {
+    grid-column: 2;
+    grid-row: 1;
+    text-align: left;
+    align-items: flex-start;
+    padding: 0;
+  }
+  .pricing-card-right-column {
+    grid-column: 2;
+    grid-row: 2;
+    padding-left: 0;
+  }
+  .pricing-card-price-container {
+    align-items: flex-start;
+    margin-bottom: 1.2rem;
+  }
+}
+
