@@ -51,6 +51,7 @@ interface RevealSummary {
   babyName: string | null;
   babyNameGirl: string | null;
   babyNameBoy: string | null;
+  revealerName: string | null;
   revealerEmail: string | null;
   revealerRelation: RevealerRelation | null;
   revealAt: Date | null;
@@ -71,6 +72,7 @@ interface RevealEditForm {
   mode: EnquiryMode;
   parentName: string;
   announcementGender: "" | GenderValue;
+  revealerName: string;
   revealerEmail: string;
   revealerRelation: RevealerRelation;
   revealAt: string;
@@ -600,6 +602,7 @@ function DashboardContent() {
           babyName: typeof data.babyName === "string" ? data.babyName : null,
           babyNameGirl: typeof data.babyNameGirl === "string" ? data.babyNameGirl : null,
           babyNameBoy: typeof data.babyNameBoy === "string" ? data.babyNameBoy : null,
+          revealerName: typeof data.revealerName === "string" ? data.revealerName : null,
           revealerEmail: typeof data.revealerEmail === "string" ? data.revealerEmail : null,
           revealerRelation: (data.revealerRelation as RevealerRelation | null) ?? null,
           revealAt: timestampToDate(data.revealAt),
@@ -931,6 +934,7 @@ function DashboardContent() {
       parentName: reveal.parentName,
       dueDate: reveal.dueDate ? new Date(reveal.dueDate).toISOString().slice(0, 10) : "",
       announcementGender: "",
+      revealerName: reveal.revealerName || "",
       revealerEmail: reveal.revealerEmail || "",
       revealerRelation: reveal.revealerRelation || "doctor",
       revealAt: formatDateTimeLocal(reveal.revealAt),
@@ -954,9 +958,15 @@ function DashboardContent() {
       setToast({ type: "error", message: "Reveal date and time are required." });
       return;
     }
-    if (editForm.mode === "reveal" && !EMAIL_RE.test(editForm.revealerEmail.trim())) {
-      setToast({ type: "error", message: "A valid revealer email is required." });
-      return;
+    if (editForm.mode === "reveal") {
+      if (!editForm.revealerName.trim()) {
+        setToast({ type: "error", message: "Revealer's name is required." });
+        return;
+      }
+      if (!EMAIL_RE.test(editForm.revealerEmail.trim())) {
+        setToast({ type: "error", message: "A valid revealer email is required." });
+        return;
+      }
     }
 
     setSavingReveal(true);
@@ -987,6 +997,8 @@ function DashboardContent() {
               : undefined,
           babyNameGirl: null,
           babyNameBoy: null,
+          revealerName:
+            editForm.mode === "reveal" ? editForm.revealerName.trim() : undefined,
           revealerEmail:
             editForm.mode === "reveal" ? editForm.revealerEmail.trim().toLowerCase() : undefined,
           revealerRelation: editForm.mode === "reveal" ? editForm.revealerRelation : undefined,
@@ -1205,7 +1217,7 @@ function DashboardContent() {
 
                     {/* View Details Grid */}
                     {!isEditing && (
-                      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                      <div className={`grid grid-cols-2 ${reveal.mode === 'reveal' ? 'sm:grid-cols-3 lg:grid-cols-6' : 'md:grid-cols-4'} gap-4`}>
                         <div className="bg-gray-50/50 rounded-xl p-3 border border-gray-100">
                           <span className="text-[9px] text-gray-400 block uppercase font-bold tracking-wider mb-0.5">Reveal Mode</span>
                           <span className="text-xs font-semibold text-gray-800">{reveal.mode === "announcement" ? "We Already Know!" : "Surprise Reveal"}</span>
@@ -1222,6 +1234,18 @@ function DashboardContent() {
                           <span className="text-[9px] text-gray-400 block uppercase font-bold tracking-wider mb-0.5">Payment Status</span>
                           <span className="text-xs font-bold text-gray-800">{getPaymentStatusLabel(reveal.paymentStatus)}</span>
                         </div>
+                        {reveal.mode === "reveal" && (
+                          <>
+                            <div className="bg-gray-50/50 rounded-xl p-3 border border-gray-100">
+                              <span className="text-[9px] text-gray-400 block uppercase font-bold tracking-wider mb-0.5">Revealer Name</span>
+                              <span className="text-xs font-semibold text-gray-800 truncate block">{reveal.revealerName || "Not Set"}</span>
+                            </div>
+                            <div className="bg-gray-50/50 rounded-xl p-3 border border-gray-100">
+                              <span className="text-[9px] text-gray-400 block uppercase font-bold tracking-wider mb-0.5">Revealer Email</span>
+                              <span className="text-xs font-semibold text-gray-800 truncate block">{reveal.revealerEmail || "Not Set"}</span>
+                            </div>
+                          </>
+                        )}
                       </div>
                     )}
 
@@ -1301,7 +1325,15 @@ function DashboardContent() {
                             </div>
                           </div>
                         ) : (
-                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            <div className="flex flex-col gap-1">
+                              <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Revealer Name</label>
+                              <input
+                                className="w-full bg-white border border-gray-200 rounded-xl px-4 py-2.5 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#3A9FE8]"
+                                value={editForm.revealerName}
+                                onChange={(e) => updateEditForm("revealerName", e.target.value)}
+                              />
+                            </div>
                             <div className="flex flex-col gap-1">
                               <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Revealer Email</label>
                               <input
