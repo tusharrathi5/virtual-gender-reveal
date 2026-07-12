@@ -836,102 +836,106 @@ function LandingPage() {
         <div className="faq-modal-overlay" onClick={() => setShowFaqModal(false)}>
           <div className="faq-modal-content" onClick={(e) => e.stopPropagation()}>
             <button type="button" className="faq-modal-close" onClick={() => setShowFaqModal(false)}>✕</button>
-            <div className="faq-header">
-              <div className="faq-badge">💡 Got Questions?</div>
-              <h2 className="faq-title">Frequently Asked Questions</h2>
-              <p className="faq-sub">Everything you need to know about celebrating your virtual reveal with family and friends.</p>
-            </div>
+            <div className="faq-scroll-container">
+              <div className="faq-top-spacer" />
+              <div className="faq-content-curtain">
+                <div className="faq-header">
+                  <h2 className="faq-title">Frequently Asked Questions</h2>
+                  <p className="faq-sub">Everything you need to know about celebrating your virtual reveal with family and friends.</p>
+                </div>
 
-            <div className="faq-scroll-area" style={{ maxHeight: '55vh', overflowY: 'auto', paddingRight: '0.5rem', scrollbarWidth: 'thin', position: 'relative', zIndex: 1 }}>
-              <div className="faq-list">
-                {[
-                  {
-                    q: "What is Virtual Gender Reveal?",
-                    a: "Virtual Gender Reveal is a modern, interactive, and safe way to celebrate one of life’s biggest moments. Family and friends gather online from anywhere in the world to watch an exciting animated baby race that ends with the unforgettable reveal of whether you’re having a boy or a girl."
-                  },
-                  {
-                    q: "How does everyone watch?",
-                    a: "Simply share your unique viewing link with your guests. They can watch from anywhere on their phone, tablet, computer, or smart TV."
-                  },
-                  {
-                    q: "Can we watch on our TV?",
-                    a: "Yes! Most guests watch on a big-screen TV using AirPlay, Chromecast, a smart TV browser, or an HDMI connection for the best experience."
-                  },
-                  {
-                    q: "Do the parents know the gender beforehand?",
-                    a: "No. You choose someone you trust (doctor, friend, or family member). They can securely submit the baby’s gender so the surprise stays a surprise for everyone, including you."
-                  },
-                  {
-                    q: "How is the gender kept secret?",
-                    a: "Your private reveal link allows only your chosen “revealer” to submit the gender. Parents never see the selection before the race begins."
-                  },
-                  {
-                    q: "How long is the race?",
-                    a: "The race lasts about 3 minutes, making it exciting without keeping guests waiting."
-                  },
-                  {
-                    q: "Can guests join from different locations?",
-                    a: "Absolutely! Friends and family from anywhere in the world can watch together."
-                  },
-                  {
-                    q: "Can we all watch at exactly the same time?",
-                    a: "Yes! Once the countdown reaches zero, everyone watching your private reveal page sees the race begin together, creating one shared moment no matter where they are."
-                  },
-                  {
-                    q: "Do guests need to download an app?",
-                    a: "No downloads are required. Guests simply click the link and enjoy the reveal."
-                  },
-                  {
-                    q: "Will there be a countdown before the reveal?",
-                    a: "Yes! A fun countdown builds anticipation before the race automatically begins."
-                  },
-                  {
-                    q: "Can I schedule my reveal in advance?",
-                    a: "Yes! Pick your reveal date and time, and your page will automatically count down until it’s time."
-                  },
-                  {
-                    q: "Is my reveal private?",
-                    a: "Yes. Every reveal has its own private viewing link that you control."
-                  },
-                  {
-                    q: "What devices work?",
-                    a: "Phones, tablets, laptops, desktop computers, and most smart TVs all work great."
-                  },
-                  {
-                    q: "What happens if my internet is slow?",
-                    a: "The video is optimized to stream smoothly on most internet connections. For the best experience, we recommend using Wi-Fi whenever possible."
-                  },
-                  {
-                    q: "Can I send invitations through the website?",
-                    a: "Yes! We make it easy to invite your guests using your personalized reveal page."
-                  },
-                  {
-                    q: "What if I need help?",
-                    a: "Our support team is here to help before your reveal so everything runs smoothly."
-                  },
-                  {
-                    q: "Should I turn my sound on?",
-                    a: "Definitely! 🔊 This isn’t just a video…it’s a show. Enjoy exciting race commentary, epic music, crowd reactions, and fun sound effects that make the reveal feel like a live sporting event. Grab some snacks, turn up the volume, and get ready for an unforgettable finish!"
-                  }
-                ].map((faq, idx) => {
-                  const isActive = activeFaq === idx;
-                  return (
-                    <div key={idx} className={`faq-item ${isActive ? "active" : ""}`}>
-                      <button
-                        type="button"
-                        className="faq-question-btn"
-                        onClick={() => setActiveFaq(isActive ? null : idx)}
-                        aria-expanded={isActive}
-                      >
-                        <span>{faq.q}</span>
-                        <span className="faq-icon">{isActive ? "✕" : "＋"}</span>
-                      </button>
-                      <div className="faq-answer">
-                        <p>{faq.a}</p>
+                <div className="faq-list">
+                  {[
+                    {
+                      q: "What is Virtual Gender Reveal?",
+                      a: "Virtual Gender Reveal is a modern, interactive, and safe way to celebrate one of life’s biggest moments. Family and friends gather online from anywhere in the world to watch an exciting animated baby race that ends with the unforgettable reveal of whether you’re having a boy or a girl."
+                    },
+                    {
+                      q: "How does everyone watch?",
+                      a: "Simply share your unique viewing link with your guests. They can watch from anywhere on their phone, tablet, computer, or smart TV."
+                    },
+                    {
+                      q: "Can we watch on our TV?",
+                      a: "Yes! Most guests watch on a big-screen TV using AirPlay, Chromecast, a smart TV browser, or an HDMI connection for the best experience."
+                    },
+                    {
+                      q: "Do the parents know the gender beforehand?",
+                      a: "No. You choose someone you trust (doctor, friend, or family member). They can securely submit the baby’s gender so the surprise stays a surprise for everyone, including you."
+                    },
+                    {
+                      q: "How is the gender kept secret?",
+                      a: "Your private reveal link allows only your chosen “revealer” to submit the gender. Parents never see the selection before the race begins."
+                    },
+                    {
+                      q: "How long is the race?",
+                      a: "The race lasts about 3 minutes, making it exciting without keeping guests waiting."
+                    },
+                    {
+                      q: "Can guests join from different locations?",
+                      a: "Absolutely! Friends and family from anywhere in the world can watch together."
+                    },
+                    {
+                      q: "Can we all watch at exactly the same time?",
+                      a: "Yes! Once the countdown reaches zero, everyone watching your private reveal page sees the race begin together, creating one shared moment no matter where they are."
+                    },
+                    {
+                      q: "Do guests need to download an app?",
+                      a: "No downloads are required. Guests simply click the link and enjoy the reveal."
+                    },
+                    {
+                      q: "Will there be a countdown before the reveal?",
+                      a: "Yes! A fun countdown builds anticipation before the race automatically begins."
+                    },
+                    {
+                      q: "Can I schedule my reveal in advance?",
+                      a: "Yes! Pick your reveal date and time, and your page will automatically count down until it’s time."
+                    },
+                    {
+                      q: "Is my reveal private?",
+                      a: "Yes. Every reveal has its own private viewing link that you control."
+                    },
+                    {
+                      q: "What devices work?",
+                      a: "Phones, tablets, laptops, desktop computers, and most smart TVs all work great."
+                    },
+                    {
+                      q: "What happens if my internet is slow?",
+                      a: "The video is optimized to stream smoothly on most internet connections. For the best experience, we recommend using Wi-Fi whenever possible."
+                    },
+                    {
+                      q: "Can I send invitations through the website?",
+                      a: "Yes! We make it easy to invite your guests using your personalized reveal page."
+                    },
+                    {
+                      q: "What if I need help?",
+                      a: "Our support team is here to help before your reveal so everything runs smoothly."
+                    },
+                    {
+                      q: "Should I turn my sound on?",
+                      a: "Definitely! 🔊 This isn’t just a video…it’s a show. Enjoy exciting race commentary, epic music, crowd reactions, and fun sound effects that make the reveal feel like a live sporting event. Grab some snacks, turn up the volume, and get ready for an unforgettable finish!"
+                    }
+                  ].map((faq, idx) => {
+                    const isActive = activeFaq === idx;
+                    return (
+                      <div key={idx} className={`faq-item ${isActive ? "active" : ""}`}>
+                        <button
+                          type="button"
+                          className="faq-question-btn"
+                          onClick={() => setActiveFaq(isActive ? null : idx)}
+                          aria-expanded={isActive}
+                        >
+                          <span>{faq.q}</span>
+                          <div className="faq-icon-wrapper">
+                            <span className="faq-icon">＋</span>
+                          </div>
+                        </button>
+                        <div className="faq-answer">
+                          <p>{faq.a}</p>
+                        </div>
                       </div>
-                    </div>
-                  );
-                })}
+                    );
+                  })}
+                </div>
               </div>
             </div>
           </div>
@@ -1455,33 +1459,44 @@ nav#main-nav.solid{box-shadow:0 6px 28px rgba(0,0,0,0.14);}
 }
 
 /* ── FAQ Modal & Support ── */
-.faq-modal-overlay{position:fixed;inset:0;background:rgba(10,10,20,0.5);z-index:99999;display:flex;align-items:center;justify-content:center;padding:2rem;}
-.faq-modal-content{width:100%;max-width:840px;max-height:85vh;overflow:hidden;background-image:url('/images/faq-background.png');background-size:cover;background-position:center;border:1.5px solid rgba(255,255,255,0.4);border-radius:24px;padding:3rem 2rem;position:relative;box-shadow:0 20px 50px rgba(0,0,0,0.15);}
-.faq-modal-content::before{content:'';position:absolute;inset:0;background:rgba(255,255,255,0.7);z-index:0;border-radius:22px;}
-.faq-modal-close{position:absolute;top:20px;right:20px;width:36px;height:36px;border-radius:50%;border:1px solid rgba(0,0,0,0.1);background:white;color:#1a1a2e;font-size:1.1rem;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all 0.2s;z-index:10;}
-.faq-modal-close:hover{background:#fafafa;transform:scale(1.05);color:#E8449A;}
+.faq-modal-overlay{position:fixed;inset:0;background:rgba(10,10,20,0.55);backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);z-index:99999;display:flex;align-items:center;justify-content:center;padding:1.5rem;}
+.faq-modal-content{width:100%;max-width:780px;height:90vh;max-height:880px;overflow:hidden;background-image:url('/images/faqbg.png');background-size:cover;background-position:top center;background-color:#FAF8FD;border:1.5px solid rgba(255,255,255,0.5);border-radius:32px;padding:0;position:relative;box-shadow:0 30px 60px rgba(0,0,0,0.2);display:flex;flex-direction:column;}
+.faq-modal-close{position:absolute;top:24px;right:24px;width:40px;height:40px;border-radius:50%;border:1px solid rgba(0,0,0,0.08);background:white;color:#1a1a2e;font-size:1.2rem;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all 0.2s ease;z-index:20;box-shadow:0 4px 12px rgba(0,0,0,0.05);}
+.faq-modal-close:hover{background:#fafafa;transform:scale(1.05);color:#E8449A;box-shadow:0 4px 15px rgba(232,68,154,0.15);}
 .cta-support-section{padding:3.5rem 2rem;background:#fafafd;text-align:center;border-top:1px dashed rgba(0,0,0,0.05);}
 .cta-support-inner{max-width:720px;margin:0 auto;}
 .cta-support-text{font-size:0.95rem;color:#6b7280;line-height:1.7;font-weight:600;}
 .cta-support-text a{color:#3A9FE8;text-decoration:none;font-weight:700;}
 .cta-support-text a:hover{text-decoration:underline;color:#E8449A;}
 
-.faq-header{text-align:center;margin-bottom:3.5rem;position:relative;z-index:1;}
-.faq-badge{display:inline-flex;align-items:center;gap:0.4rem;padding:0.38rem 1.2rem;border:1.5px solid #3A9FE8;border-radius:50px;font-size:0.72rem;font-weight:600;color:#3A9FE8;letter-spacing:0.1em;text-transform:uppercase;margin-bottom:1rem;}
-.faq-title{font-family:'Nunito',sans-serif;font-size:clamp(2rem,4vw,2.8rem);font-weight:900;color:#1a1a2e;line-height:1.2;margin-bottom:0.8rem;}
-.faq-sub{font-size:0.95rem;color:#666;max-width:540px;margin:0 auto;line-height:1.6;}
-.faq-list{display:flex;flex-direction:column;gap:1.2rem;position:relative;z-index:1;max-width:720px;margin:0 auto;}
-.faq-item{background:rgba(255,255,255,0.45);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);border:1px solid rgba(255,255,255,0.5);border-radius:18px;overflow:hidden;transition:all 0.3s cubic-bezier(0.16, 1, 0.3, 1);box-shadow:0 4px 15px rgba(0,0,0,0.03);}
-.faq-item:hover{transform:scale(1.02) translateY(-2px);background:rgba(255,255,255,0.55);border-color:rgba(58,159,232,0.45);box-shadow:0 10px 25px rgba(232,68,154,0.15), 0 10px 25px rgba(58,159,232,0.15);}
-.faq-item.active{background:rgba(255,255,255,0.65);border-color:rgba(58,159,232,0.4);box-shadow:0 8px 30px rgba(58,159,232,0.06);}
-.faq-question-btn{width:100%;display:flex;align-items:center;justify-content:space-between;padding:1.4rem 1.8rem;border:none;background:transparent;cursor:pointer;text-align:left;font-family:'Plus Jakarta Sans',sans-serif;font-size:1.02rem;font-weight:700;color:#1a1a2e;transition:color 0.2s;}
-.faq-question-btn:hover{color:#3A9FE8;}
-.faq-icon{font-size:1.2rem;color:#3A9FE8;transition:transform 0.25s;font-weight:bold;}
-.faq-item.active .faq-icon{transform:rotate(45deg);color:#E8449A;}
+.faq-scroll-container{width:100%;height:100%;overflow-y:auto;scrollbar-width:thin;padding:0;display:flex;flex-direction:column;position:relative;}
+.faq-top-spacer{height:340px;flex-shrink:0;pointer-events:none;}
+.faq-content-curtain{background:linear-gradient(to bottom, #ffffff 0%, #FAF8FD 100%);border-radius:32px 32px 0 0;padding:2.5rem 2.5rem 4rem 2.5rem;box-shadow:0 -15px 40px rgba(45,40,92,0.04);position:relative;z-index:2;flex:1;}
+.faq-header{text-align:center;margin-bottom:2.5rem;position:relative;z-index:2;}
+.faq-title{font-family:'Plus Jakarta Sans',sans-serif;font-size:clamp(1.8rem,3.5vw,2.4rem);font-weight:900;color:#2D285C;line-height:1.2;margin-bottom:0.8rem;display:flex;align-items:center;justify-content:center;gap:0.5rem;}
+.faq-title::before, .faq-title::after{content:'✦';color:#E8449A;font-size:1.2rem;vertical-align:middle;}
+.faq-sub{font-size:0.95rem;color:#555375;max-width:520px;margin:0 auto;line-height:1.6;font-weight:600;}
+.faq-list{display:flex;flex-direction:column;gap:1rem;max-width:680px;width:100%;margin:0 auto;}
+.faq-item{background:rgba(255,255,255,0.95);border:1px solid rgba(241, 241, 245, 0.8);border-radius:20px;overflow:hidden;transition:all 0.3s cubic-bezier(0.16, 1, 0.3, 1);box-shadow:0 4px 15px rgba(0,0,0,0.02);}
+.faq-item:hover{transform:translateY(-2px);box-shadow:0 10px 25px rgba(232, 68, 154, 0.05);}
+.faq-item.active{box-shadow:0 10px 25px rgba(232, 68, 154, 0.05);}
+.faq-question-btn{width:100%;display:flex;align-items:center;justify-content:space-between;padding:1.25rem 1.6rem;border:none;background:transparent;cursor:pointer;text-align:left;font-family:'Plus Jakarta Sans',sans-serif;font-size:1.05rem;font-weight:800;color:#2D285C;transition:color 0.2s;gap:1rem;}
+.faq-question-btn:hover{color:#E8449A;}
+.faq-icon-wrapper{width:32px;height:32px;border-radius:50%;border:1.5px solid rgba(232, 68, 154, 0.25);background-color:rgba(253, 232, 242, 0.45);display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:all 0.25s ease;}
+.faq-icon{font-size:1.1rem;color:#E8449A;transition:transform 0.25s;font-weight:bold;}
+.faq-item.active .faq-icon-wrapper{background-color:#E8449A;border-color:#E8449A;}
+.faq-item.active .faq-icon{transform:rotate(45deg);color:white;}
 .faq-answer{max-height:0;overflow:hidden;transition:max-height 0.3s cubic-bezier(0.16, 1, 0.3, 1), padding 0.3s;}
-.faq-item.active .faq-answer{max-height:500px;padding:0 1.8rem 1.4rem;border-top:1px dashed rgba(229,231,235,0.4);}
-.faq-answer p{font-size:0.92rem;color:#444;line-height:1.7;}
+.faq-item.active .faq-answer{max-height:500px;padding:0 1.6rem 1.25rem;}
+.faq-answer p{font-size:0.92rem;color:#555375;line-height:1.7;font-weight:600;}
 @media(max-width:860px){
   .faq-list{grid-template-columns:1fr !important;}
+}
+@media(max-width:640px){
+  .faq-modal-content{height:95vh;}
+  .faq-top-spacer{height:220px;}
+  .faq-scroll-container{padding:0 1rem 2rem 1rem;}
+  .faq-question-btn{padding:1.1rem 1.2rem;font-size:0.95rem;}
+  .faq-answer p{font-size:0.88rem;}
 }
 `;
