@@ -158,7 +158,7 @@ export default function NewRevealPage() {
     return () => {
       cancelled = true;
     };
-  }, [authLoading, user, router]);
+  }, [user, authLoading, router]);
 
   // Shared fields
   const [mode, setMode] = useState<EnquiryMode>("reveal");
@@ -651,16 +651,14 @@ export default function NewRevealPage() {
                 1. What type of event?
               </h2>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                 {/* Gender Reveal Option */}
                 <div
                   tabIndex={0}
                   role="radio"
                   aria-checked={mode === "reveal"}
-                  className={`relative p-7 md:p-9 rounded-2xl border-2 cursor-pointer transition-all duration-300 flex flex-col gap-3 focus-visible:ring-2 focus-visible:ring-[#3A9FE8] focus-visible:outline-none ${
-                    mode === "reveal"
-                      ? "border-[#E8449A] bg-[#FDE8F2]/30 shadow-md shadow-[#e8449a0a] scale-[1.01]"
-                      : "border-gray-100 hover:border-gray-200 bg-white"
+                  className={`reveal-mode-card ${
+                    mode === "reveal" ? "selected-surprise" : ""
                   }`}
                   onClick={() => !loading && setMode("reveal")}
                   onKeyDown={(e) => {
@@ -670,21 +668,25 @@ export default function NewRevealPage() {
                     }
                   }}
                 >
-                  <div className="flex flex-col gap-1">
-                    <span className="text-[10px] uppercase font-bold tracking-widest text-[#E8449A]">THE SECRET STAYS SAFE WITH US! 🔐</span>
-                    <div className="flex items-center gap-3 mt-1">
-                      <span className="text-3xl select-none" aria-hidden="true">🎀</span>
-                      <h3 className="font-black text-slate-900 text-base md:text-lg">Surprise Reveal</h3>
+                  <img
+                    src="/images/gift_box.png"
+                    alt="Surprise Reveal Illustration"
+                    className="reveal-mode-card-img"
+                  />
+                  <div className="flex flex-col gap-2">
+                    <div>
+                      <span className="reveal-mode-card-badge badge-surprise">THE SECRET STAYS SAFE WITH US! 🔒</span>
                     </div>
+                    <h3 className="reveal-mode-card-title text-surprise">Surprise Reveal</h3>
+                    <p className="text-xs md:text-sm text-gray-600 leading-relaxed font-semibold">
+                      You don&apos;t know the gender yet! A private link is sent to a doctor or friend to enter it, and we handle the rest.
+                    </p>
                   </div>
-                  <p className="text-xs md:text-sm text-gray-600 leading-relaxed font-semibold mt-1">
-                    You don&apos;t know the gender yet! A private link is sent to a doctor or friend to enter it, and we handle the rest.
-                  </p>
-                  {mode === "reveal" && (
-                    <div className="absolute top-4 right-4 w-5 h-5 rounded-full bg-[#E8449A] flex items-center justify-center">
-                      <span className="text-[10px] text-white font-bold select-none">✓</span>
-                    </div>
-                  )}
+                  <div className={`reveal-mode-indicator ${
+                    mode === "reveal" ? "indicator-surprise-selected" : "indicator-unselected"
+                  }`}>
+                    {mode === "reveal" && <span className="text-[10px] text-white font-bold select-none">✓</span>}
+                  </div>
                 </div>
 
                 {/* Gender Announcement Option */}
@@ -692,10 +694,8 @@ export default function NewRevealPage() {
                   tabIndex={0}
                   role="radio"
                   aria-checked={mode === "announcement"}
-                  className={`relative p-7 md:p-9 rounded-2xl border-2 cursor-pointer transition-all duration-300 flex flex-col gap-3 focus-visible:ring-2 focus-visible:ring-[#3A9FE8] focus-visible:outline-none ${
-                    mode === "announcement"
-                      ? "border-[#3A9FE8] bg-[#D6EAFE]/30 shadow-md shadow-[#3a9fe80a] scale-[1.01]"
-                      : "border-gray-100 hover:border-gray-200 bg-white"
+                  className={`reveal-mode-card ${
+                    mode === "announcement" ? "selected-announcement" : ""
                   }`}
                   onClick={() => !loading && setMode("announcement")}
                   onKeyDown={(e) => {
@@ -705,21 +705,25 @@ export default function NewRevealPage() {
                     }
                   }}
                 >
-                  <div className="flex flex-col gap-1">
-                    <span className="text-[10px] uppercase font-bold tracking-widest text-[#3A9FE8]">LET&apos;S SHARE THE GOOD NEWS! 📣</span>
-                    <div className="flex items-center gap-3 mt-1">
-                      <span className="text-3xl select-none" aria-hidden="true">📣</span>
-                      <h3 className="font-black text-slate-900 text-base md:text-lg">We Already Know!</h3>
+                  <img
+                    src="/images/stork_bg.png"
+                    alt="We Already Know Illustration"
+                    className="reveal-mode-card-img"
+                  />
+                  <div className="flex flex-col gap-2">
+                    <div>
+                      <span className="reveal-mode-card-badge badge-announcement">LET&apos;S SHARE THE GOOD NEWS! 💙</span>
                     </div>
+                    <h3 className="reveal-mode-card-title text-announcement">We Already Know!</h3>
+                    <p className="text-xs md:text-sm text-gray-600 leading-relaxed font-semibold">
+                      You already know the gender. We&apos;ll create a beautiful cinematic announcement to share with family &amp; friends.
+                    </p>
                   </div>
-                  <p className="text-xs md:text-sm text-gray-600 leading-relaxed font-semibold mt-1">
-                    You already know the gender. We&apos;ll create a beautiful cinematic announcement to share with family &amp; friends.
-                  </p>
-                  {mode === "announcement" && (
-                    <div className="absolute top-4 right-4 w-5 h-5 rounded-full bg-[#3A9FE8] flex items-center justify-center">
-                      <span className="text-[10px] text-white font-bold select-none">✓</span>
-                    </div>
-                  )}
+                  <div className={`reveal-mode-indicator ${
+                    mode === "announcement" ? "indicator-announcement-selected" : "indicator-unselected"
+                  }`}>
+                    {mode === "announcement" && <span className="text-[10px] text-white font-bold select-none">✓</span>}
+                  </div>
                 </div>
               </div>
             </div>
