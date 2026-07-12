@@ -864,8 +864,8 @@ export default function GuestInvitePage() {
                 <div className="flex flex-wrap gap-1.5 mt-2 mb-1 justify-start">
                   {[
                     { text: "🎉 Congratulations!", label: "🎉 Congrats!" },
-                    { text: "💙 Welcome Baby Boy!", label: "💙 Baby Boy!" },
-                    { text: "🩷 Welcome Baby Girl!", label: "🩷 Baby Girl!" }
+                    { text: "💙 Team Boy!", label: "💙 Team Boy!" },
+                    { text: "🩷 Team Girl!", label: "🩷 Team Girl!" }
                   ].map((quick) => (
                     <button
                       key={quick.text}
