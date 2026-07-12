@@ -767,14 +767,16 @@ function LandingPage() {
 
       {showStoryModal && (
         <div className="faq-modal-overlay" onClick={() => setShowStoryModal(false)}>
-          <div className="faq-modal-content" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '780px' }}>
-            <button type="button" className="faq-modal-close" onClick={() => setShowStoryModal(false)}>✕</button>
-            <div className="faq-header" style={{ marginBottom: '2.5rem' }}>
-              <div className="faq-badge" style={{ borderColor: '#E8449A', color: '#E8449A' }}>💙🩷 Our Story</div>
-              <h2 className="faq-title" style={{ fontFamily: "'Nunito', sans-serif", fontSize: '2.2rem', fontWeight: 900 }}>Because Every Reveal Deserves a Story</h2>
-            </div>
-            
-            <div className="story-content-text" style={{ position: 'relative', zIndex: 1, color: '#2c3e50', fontSize: '0.96rem', lineHeight: '1.85', display: 'flex', flexDirection: 'column', gap: '1.2rem', maxHeight: '55vh', overflowY: 'auto', paddingRight: '0.8rem', scrollbarWidth: 'thin', textAlign: 'left', fontWeight: 500 }}>
+          <div className="story-modal-box" onClick={(e) => e.stopPropagation()}>
+            <div className="story-image-panel" style={{ backgroundImage: "url('/images/our_story.jpeg')" }} />
+            <div className="story-content-panel">
+              <button type="button" className="faq-modal-close" onClick={() => setShowStoryModal(false)}>✕</button>
+              <div className="faq-header" style={{ marginBottom: '1.8rem', textAlign: 'left' }}>
+                <div className="faq-badge" style={{ borderColor: '#E8449A', color: '#E8449A', display: 'inline-block' }}>💙🩷 Our Story</div>
+                <h2 className="faq-title" style={{ fontFamily: "'Nunito', sans-serif", fontSize: '2rem', fontWeight: 900, color: '#2D285C', justifyContent: 'flex-start', margin: '0.4rem 0 0' }}>Because Every Reveal Deserves a Story</h2>
+              </div>
+              
+              <div className="story-content-text" style={{ position: 'relative', zIndex: 1, color: '#4B5563', fontSize: '0.94rem', lineHeight: '1.8', display: 'flex', flexDirection: 'column', gap: '1.1rem', flex: 1, overflowY: 'auto', paddingRight: '0.8rem', scrollbarWidth: 'thin', textAlign: 'left', fontWeight: 600 }}>
               <p className="font-bold text-slate-800 text-lg">It started with a simple question…</p>
               
               <p>Like so many expecting parents, we started planning our gender reveal the same way everyone else does: <strong>Balloon pops. Cake cutting. Confetti cannons. Colored smoke.</strong></p>
@@ -842,6 +844,7 @@ function LandingPage() {
             </div>
           </div>
         </div>
+      </div>
       )}
 
       {showFaqModal && (
@@ -1479,6 +1482,16 @@ nav#main-nav.solid{box-shadow:0 6px 28px rgba(0,0,0,0.14);}
   .hiw-cards-row {
     grid-template-columns: 1fr !important;
   }
+}
+
+/* ── Our Story Split Modal ── */
+.story-modal-box{width:100%;max-width:900px;height:85vh;max-height:720px;background:white;border-radius:32px;border:1px solid rgba(255,255,255,0.7);box-shadow:0 30px 60px rgba(0,0,0,0.2);display:flex;overflow:hidden;position:relative;}
+.story-image-panel{width:42%;height:100%;background-size:cover;background-position:center;background-repeat:no-repeat;flex-shrink:0;border-right:1px solid rgba(0,0,0,0.04);}
+.story-content-panel{flex:1;display:flex;flex-direction:column;padding:3rem 2.5rem;position:relative;height:100%;}
+@media (max-width:768px){
+  .story-modal-box{flex-direction:column;max-width:500px;height:90vh;max-height:680px;}
+  .story-image-panel{width:100%;height:200px;border-right:none;border-bottom:1px solid rgba(0,0,0,0.04);}
+  .story-content-panel{padding:2rem 1.5rem;}
 }
 
 /* ── FAQ Modal & Support ── */
