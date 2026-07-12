@@ -9,6 +9,7 @@ export type GuestInviteData = {
   tokenHash?: string | null;
   inviteStatus?: string;
   lastChatAt?: Timestamp;
+  isHost?: boolean;
 };
 
 type GuestInviteAuthSuccess = {
@@ -52,7 +53,8 @@ export async function verifyGuestInviteToken(raw: string): Promise<GuestInviteAu
     return { ok: false, status: 401, error: "Invite is no longer active." };
   }
 
-  if (guestData.enquiryId !== payload.enquiryId || tokenHash !== CryptoJS.SHA256(token).toString()) {
+  const isHost = Boolean(guestData.isHost);
+  if (guestData.enquiryId !== payload.enquiryId || (!isHost && tokenHash !== CryptoJS.SHA256(token).toString())) {
     return { ok: false, status: 401, error: "Invalid invite." };
   }
 

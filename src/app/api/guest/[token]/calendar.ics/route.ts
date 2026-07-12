@@ -21,7 +21,8 @@ export async function GET(_: NextRequest, { params }: { params: Promise<{ token:
   if (!payload) return new NextResponse("Invalid invite", { status: 401 });
   const guestRef = getAdminDb().collection("guest_invites").doc(payload.guestId);
   const guest = await guestRef.get();
-  if (!guest.exists || (guest.data()?.tokenHash as string) !== CryptoJS.SHA256(token).toString()) {
+  const isHost = Boolean(guest.data()?.isHost);
+  if (!guest.exists || (!isHost && (guest.data()?.tokenHash as string) !== CryptoJS.SHA256(token).toString())) {
     return new NextResponse("Invalid invite", { status: 401 });
   }
   const enquiry = await getAdminDb().collection("enquiries").doc(payload.enquiryId).get();

@@ -18,7 +18,8 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ toke
   const guestRef = getAdminDb().collection("guest_invites").doc(payload.guestId);
   const guest = await guestRef.get();
   if (!guest.exists) return NextResponse.json({ error: "Invite not found." }, { status: 404 });
-  if ((guest.data()?.tokenHash as string) !== CryptoJS.SHA256(token).toString()) {
+  const isHost = Boolean(guest.data()?.isHost);
+  if (!isHost && (guest.data()?.tokenHash as string) !== CryptoJS.SHA256(token).toString()) {
     return NextResponse.json({ error: "Invalid invite." }, { status: 401 });
   }
 
@@ -125,7 +126,8 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ tok
   const guestRef = getAdminDb().collection("guest_invites").doc(payload.guestId);
   const guest = await guestRef.get();
   if (!guest.exists) return NextResponse.json({ error: "Invite not found." }, { status: 404 });
-  if ((guest.data()?.tokenHash as string) !== CryptoJS.SHA256(token).toString()) return NextResponse.json({ error: "Invalid invite." }, { status: 401 });
+  const isHost = Boolean(guest.data()?.isHost);
+  if (!isHost && (guest.data()?.tokenHash as string) !== CryptoJS.SHA256(token).toString()) return NextResponse.json({ error: "Invalid invite." }, { status: 401 });
   if (guest.data()?.prediction) {
     return NextResponse.json({ error: "Response already submitted." }, { status: 409 });
   }
