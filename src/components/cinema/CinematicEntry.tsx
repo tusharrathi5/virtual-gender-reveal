@@ -1229,11 +1229,11 @@ nav#main-nav.solid{box-shadow:0 6px 28px rgba(0,0,0,0.14);}
 .nav-login-btn:hover{background:#2E8AD4;transform:translateY(-1px);}
 @media(max-width:768px){nav#main-nav{width:calc(100% - 2rem);padding:0 1rem;}.nav-links{display:none;}.nav-login-btn{padding:0.45rem 1rem;font-size:0.8rem;}}
 /* ── Pricing Redesign ── */
-.pricing-section{padding:5rem 2rem 5rem;position:relative;overflow:hidden;background:url('/images/pricing-bg.png') center/cover no-repeat;min-height:85vh;display:flex;align-items:center;justify-content:center;}
+.pricing-section{padding:2.5rem 2rem 2.5rem;position:relative;overflow:hidden;background:url('/images/pricing-bg.png') center/cover no-repeat;min-height:60vh;display:flex;align-items:center;justify-content:center;}
 .pricing-bg-dec{position:absolute;font-size:5rem;line-height:1.3;pointer-events:none;opacity:0.7;animation:balloonFloat 5s ease-in-out infinite alternate;}
 .pricing-bg-left{left:1%;top:8%;animation-direction:alternate;}
 .pricing-bg-right{right:1%;top:10%;font-size:7rem;animation-direction:alternate-reverse;}
-.pricing-inner{max-width:1240px;margin:0 auto;position:relative;z-index:2;width:100%;}
+.pricing-inner{max-width:1340px;margin:0 auto;position:relative;z-index:2;width:100%;}
 .pricing-header{text-align:center;margin-bottom:1.5rem;}
 .pricing-pill-badge{display:inline-flex;align-items:center;gap:0.4rem;padding:0.38rem 1.2rem;border:1.5px solid #B07EE8;border-radius:50px;font-size:0.72rem;font-weight:600;color:#7B4FC4;letter-spacing:0.1em;text-transform:uppercase;margin-bottom:1.2rem;}
 .pricing-main-title{margin-bottom:0.7rem;}
@@ -1412,7 +1412,7 @@ nav#main-nav.solid{box-shadow:0 6px 28px rgba(0,0,0,0.14);}
     justify-content: flex-start !important;
   }
   .pricing-section {
-    padding: 4rem 1.2rem 4rem !important;
+    padding: 2.5rem 1.2rem 2.5rem !important;
   }
   .pnew-card {
     padding: 2rem 1.2rem 1.8rem !important;
