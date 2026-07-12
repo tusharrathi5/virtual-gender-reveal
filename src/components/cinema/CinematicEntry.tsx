@@ -454,6 +454,25 @@ function LandingPage() {
               className="hero-title-img"
             />
             <p className="hero-sub-new">Because every reveal deserves a story.</p>
+
+            <div className="social-proof-banner">
+              <div className="social-avatars">
+                <img src="/images/avatar1.jpg" alt="Family avatar 1" className="avatar-img" />
+                <img src="/images/avatar2.jpg" alt="Family avatar 2" className="avatar-img" />
+                <img src="/images/avatar3.jpg" alt="Family avatar 3" className="avatar-img" />
+                <img src="/images/avatar4.jpg" alt="Family avatar 4" className="avatar-img" />
+                <img src="/images/avatar5.jpg" alt="Family avatar 5" className="avatar-img" />
+              </div>
+              <div className="social-text">
+                <span className="social-main-text">Join over 3,000+ families</span>
+                <span className="social-sub-text">who&apos;ve celebrated with us!</span>
+              </div>
+              <div className="social-icon">
+                <svg viewBox="0 0 24 24" className="heart-icon-svg" fill="none" stroke="#E8449A" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
+                </svg>
+              </div>
+            </div>
             <button type="button" className="btn-create-party" onClick={() => routeToReveal()} disabled={checkingEntitlement}>{checkingEntitlement ? "Checking..." : "🎉 Create Your Party"}</button>
             <div className="hero-tagline">👥 Invite. Reveal. Celebrate!</div>
           </div>
@@ -1190,10 +1209,115 @@ footer{background:#111827;padding:4rem 2rem 2rem;}
 .ht-virtual{font-family:'Nunito',sans-serif;font-size:clamp(3rem,6vw,5.5rem);font-weight:900;color:#E8449A;display:block;letter-spacing:-0.01em;}
 .ht-gender{font-family:'Nunito',sans-serif;font-size:clamp(2.2rem,4.5vw,4rem);font-weight:900;color:#7B3FC4;display:block;letter-spacing:-0.01em;}
 .ht-party{font-family:'Nunito',sans-serif;font-size:clamp(2.5rem,5vw,4.5rem);font-weight:900;color:#3A9FE8;display:block;letter-spacing:-0.01em;}
-.hero-sub-new{font-size:1.05rem;color:#333;line-height:1.65;margin-bottom:1.8rem;font-weight:400;}
-.btn-create-party{display:inline-flex;align-items:center;gap:0.5rem;padding:1rem 2.4rem;border-radius:50px;border:none;cursor:pointer;font-family:'Nunito',sans-serif;font-size:1.05rem;font-weight:800;background:linear-gradient(135deg,#E8449A,#FF7EC8);color:white;box-shadow:0 6px 24px rgba(232,68,154,0.4);transition:transform 0.2s,box-shadow 0.2s;margin-bottom:1rem;}
+.hero-sub-new{font-size:1.05rem;color:#333;line-height:1.65;margin-bottom:20px;font-weight:400;}
+.btn-create-party{display:inline-flex;align-items:center;gap:0.5rem;padding:1rem 2.4rem;border-radius:50px;border:none;cursor:pointer;font-family:'Nunito',sans-serif;font-size:1.05rem;font-weight:800;background:linear-gradient(135deg,#E8449A,#FF7EC8);color:white;box-shadow:0 6px 24px rgba(232,68,154,0.4);transition:transform 0.2s,box-shadow 0.2s;margin-bottom:1rem;margin-top:0;}
 .btn-create-party:hover{transform:translateY(-3px);box-shadow:0 10px 32px rgba(232,68,154,0.5);}
 .hero-tagline{font-size:1rem;color:#444;font-weight:600;display:flex;align-items:center;gap:0.4rem;}
+
+/* ── Social Proof Banner ── */
+.social-proof-banner {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  background: rgba(255, 255, 255, 0.78);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+  padding: 12px 18px;
+  border-radius: 999px;
+  max-width: 520px;
+  width: 100%;
+  margin-top: 0;
+  margin-bottom: 20px;
+  box-shadow: 0 12px 35px rgba(74, 85, 150, 0.15);
+  position: relative;
+  border: 1.5px solid transparent;
+  background-clip: padding-box;
+  background-image: linear-gradient(rgba(255,255,255,0.78), rgba(255,255,255,0.78)), linear-gradient(135deg, #E8449A, #3A9FE8);
+  background-origin: border-box;
+}
+
+.social-avatars {
+  display: flex;
+  align-items: center;
+}
+
+.avatar-img {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  border: 2px solid #fff;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.08);
+  object-fit: cover;
+  flex-shrink: 0;
+}
+
+.avatar-img:not(:first-child) {
+  margin-left: -10px;
+}
+
+.social-text {
+  display: flex;
+  flex-direction: column;
+  text-align: left;
+  line-height: 1.25;
+}
+
+.social-main-text {
+  font-family: 'Nunito', sans-serif;
+  font-size: 15.5px;
+  font-weight: 800;
+  color: #111827;
+}
+
+.social-sub-text {
+  font-family: 'Nunito', sans-serif;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: #6B7280;
+}
+
+.social-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  margin-left: auto;
+  transform: rotate(-6deg);
+}
+
+.heart-icon-svg {
+  width: 24px;
+  height: 24px;
+  filter: drop-shadow(0 2px 4px rgba(232, 68, 154, 0.2));
+}
+
+@media (max-width: 768px) {
+  .social-proof-banner {
+    padding: 8px 14px;
+    gap: 10px;
+    margin-bottom: 18px;
+    max-width: 100%;
+    justify-content: center;
+  }
+  .avatar-img {
+    width: 34px;
+    height: 34px;
+    border-width: 1.5px;
+  }
+  .avatar-img:not(:first-child) {
+    margin-left: -8px;
+  }
+  .social-main-text {
+    font-size: 13.5px;
+  }
+  .social-sub-text {
+    font-size: 11.5px;
+  }
+  .heart-icon-svg {
+    width: 20px;
+    height: 20px;
+  }
+}
 .hero-right{display:flex;justify-content:center;align-items:center;}
 .hero-card-mock{background:white;border-radius:28px;padding:2.4rem 2rem 1.6rem;box-shadow:0 24px 64px rgba(100,60,160,0.22);text-align:center;width:50vw;width:100%;}
 .mock-logo-circle{width:120px;height:120px;border-radius:50%;background:linear-gradient(135deg,#FFB8D8 0%,#B8D8FF 100%);margin:0 auto 1rem;display:flex;align-items:center;justify-content:center;font-size:3.2rem;box-shadow:0 8px 24px rgba(180,100,200,0.2);}
