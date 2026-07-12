@@ -1703,90 +1703,73 @@ function PlanSection({
         </div>
       )}
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-2xl">
+      <div className="pricing-section-container">
         {plans.map((plan) => {
-          const isPremium = plan.id === "premium";
-          const isCustom = plan.id === "custom";
-          return (
-            <div
-              key={plan.id}
-              className={`relative bg-white/40 backdrop-blur-md border border-white/30 shadow-lg rounded-[20px] p-6 shadow-sm flex flex-col justify-between transition-all duration-200 ${
-                isPremium
-                  ? "border-[#E8449A] ring-2 ring-[#E8449A]/10 scale-100 lg:scale-[1.02]"
-                  : "border-white/60"
-              }`}
-            >
-              {isPremium && (
-                <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 bg-gradient-to-r from-[#E8449A] to-[#3A9FE8] text-white text-[9px] font-bold tracking-widest uppercase py-1 px-3 rounded-full shadow-sm">
-                  Most Popular
-                </div>
-              )}
+          const isBasic = plan.id === "basic";
+          const p = {
+            cardCls: isBasic ? "pricing-card-little-bundle" : "pricing-card-bundle-of-joy",
+            name: isBasic ? "Little Bundle" : "Bundle of Joy",
+            desc: isBasic ? "Everything you need for a simple & fun reveal!" : "The most loved plan for unforgettable memories!",
+            price: isBasic ? "0" : "59.99",
+            originalPrice: isBasic ? "29.99" : undefined,
+            priceSub: isBasic ? "Free for a limited time" : "One-time payment",
+            feats: isBasic
+              ? ["Basic reveal page", "Doctor secure link", "Up to 20 guests", "Email invitations", "7-day replay"]
+              : ["Cinematic reveal video — made by us", "Live virtual party room", "Up to 200 guests", "Live chat & Boy/Girl polls", "Personalized guest invitations", "30-day replay window", "Custom overlay"],
+            popular: plan.id === "premium",
+          };
 
-              <div>
-                <h3 className="font-nunito font-extrabold text-xl text-gray-900 mb-2">{plan.name}</h3>
-                <div className="flex flex-col mb-4">
-                  {plan.id === "basic" && (
-                    <span className="text-xs line-through text-gray-400 font-bold mb-1">$29.99</span>
+          return (
+            <div className={`pricing-card-redesign ${p.cardCls}`} key={plan.id}>
+              {p.popular && <div className="pricing-card-popular-badge">⭐ MOST POPULAR</div>}
+              
+              {/* Left Side: Reserved for background illustration */}
+              <div className="pricing-card-left-column" />
+              
+              {/* Center Side: Dynamic pricing and CTA */}
+              <div className="pricing-card-center-column">
+                <h3 className="pricing-card-title">{p.name}</h3>
+                <p className="pricing-card-description">{p.desc}</p>
+                
+                <div className="pricing-card-price-container">
+                  {p.originalPrice && (
+                    <span className="pricing-card-original-price">${p.originalPrice}</span>
                   )}
-                  <div className="flex items-baseline gap-1">
-                    <span className="text-3xl font-extrabold text-gray-900">
-                      {plan.id === "basic" ? "Free" : `$${(plan.priceCents / 100).toFixed(2)}`}
-                    </span>
-                    {plan.priceCents > 0 && (
-                      <span className="text-xs text-gray-400 font-semibold ml-0.5">one-time</span>
+                  <div className="pricing-card-current-price">
+                    <span className="pricing-card-price-curr">$</span>
+                    {p.price.split(".")[0]}
+                    {p.price.includes(".") && (
+                      <span style={{ fontSize: "1.8rem" }}>.{p.price.split(".")[1]}</span>
                     )}
                   </div>
-                  {plan.id === "basic" && (
-                    <span className="text-[10px] text-[#E8449A] font-bold mt-1.5 uppercase tracking-wider">Free for a limited time</span>
-                  )}
+                  <span className="pricing-card-price-sub">{p.priceSub}</span>
                 </div>
-                <p className="text-xs text-gray-500 leading-relaxed font-semibold mb-5">{plan.description}</p>
-                <div className="border-t border-gray-100 my-4" />
                 
-                <ul className="space-y-2.5 mb-6 text-xs text-gray-600 font-semibold">
-                  <li className="flex items-center gap-2">
-                    <span className="text-[#3A9FE8]">✓</span>
-                    {plan.revealsGranted} reveal{plan.revealsGranted === 1 ? "" : "s"}
-                  </li>
-                  <li className="flex items-center gap-2">
-                    <span className="text-[#3A9FE8]">✓</span>
-                    Secure revealer link
-                  </li>
-                  <li className="flex items-center gap-2">
-                    <span className="text-[#3A9FE8]">✓</span>
-                    Live broadcast to guests
-                  </li>
-                  {isPremium && (
-                    <li className="flex items-center gap-2 text-[#E8449A]">
-                      <span className="text-[#E8449A]">★</span>
-                      Custom cinematic video
+                <button
+                  type="button"
+                  disabled={!!activatingPlan}
+                  onClick={() => onSelect(plan)}
+                  className="pricing-card-btn"
+                >
+                  {activatingPlan === plan.id
+                    ? "Activating..."
+                    : plan.priceCents === 0
+                    ? `Choose ${p.name}`
+                    : `Buy ${p.name}`}
+                </button>
+              </div>
+              
+              {/* Right Side: Feature list */}
+              <div className="pricing-card-right-column">
+                <ul className="pricing-card-features">
+                  {p.feats.map((f, j) => (
+                    <li className="pricing-card-feature-item" key={j}>
+                      <span className="pricing-card-feature-icon">✔</span>
+                      <span>{f}</span>
                     </li>
-                  )}
-                  {isCustom && (
-                    <li className="flex items-center gap-2 text-[#3A9FE8]">
-                      <span className="text-[#3A9FE8]">★</span>
-                      Fully tailored assets
-                    </li>
-                  )}
+                  ))}
                 </ul>
               </div>
-
-              <button
-                type="button"
-                disabled={!!activatingPlan}
-                onClick={() => onSelect(plan)}
-                className={`w-full py-3 px-4 rounded-xl text-xs font-bold tracking-wider uppercase transition-all duration-200 ${
-                  isPremium
-                    ? "bg-gradient-to-r from-[#E8449A] to-[#3A9FE8] text-white shadow-md hover:opacity-95"
-                    : "border border-gray-200 text-[#374151] hover:bg-gray-50"
-                } disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-[#3A9FE8]`}
-              >
-                {activatingPlan === plan.id
-                  ? "Activating..."
-                  : plan.priceCents === 0
-                  ? `Choose ${plan.name}`
-                  : `Buy ${plan.name}`}
-              </button>
             </div>
           );
         })}

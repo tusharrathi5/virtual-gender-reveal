@@ -536,47 +536,82 @@ function LandingPage() {
               <p style={{ fontSize: 13, color: "#E8449A", marginTop: 8, fontStyle: "italic" }}>Sign in or create an account to choose a plan ✦</p>
             )}
           </div>
-          <div className="pricing-grid fade-up">
+          <div className="pricing-section-container fade-up">
             {[
-              { cardCls: "pnew-basic",   iconCls: "pic-pink",   icon: "🎈", nameCls: "pn-pink", name: "Freemium", desc: "Everything you need for a simple & fun reveal!",   priceCls: "pp-pink", price: "0",   priceSub: "Free for a limited time", checkCls: "pnew-check-pink", feats: ["Basic reveal page", "Doctor secure link", "Up to 20 guests", "Email invitations", "7-day replay"], btnCls: "pbtn-pink",     btnLabel: "Start Freemium",        planId: "basic",    popular: false },
-              { cardCls: "pnew-premium", iconCls: "pic-purple", icon: "👑", nameCls: "pn-blue", name: "Premium", desc: "The most loved plan for unforgettable memories!", priceCls: "pp-blue", price: "59.99", priceSub: "One-time payment", checkCls: "pnew-check-blue", feats: ["Cinematic reveal video — made by us", "Live virtual party room", "Up to 200 guests", "Live chat & Boy/Girl polls", "Personalized guest invitations", "30-day replay window", "Custom overlay"], btnCls: "pbtn-gradient", btnLabel: "Choose Premium",        planId: "premium", popular: true  },
+              {
+                cardCls: "pricing-card-little-bundle",
+                name: "Little Bundle",
+                desc: "Everything you need for a simple & fun reveal!",
+                price: "0",
+                originalPrice: "29.99",
+                priceSub: "Free for a limited time",
+                feats: ["Basic reveal page", "Doctor secure link", "Up to 20 guests", "Email invitations", "7-day replay"],
+                btnLabel: "Start Freemium",
+                planId: "basic",
+                popular: false,
+              },
+              {
+                cardCls: "pricing-card-bundle-of-joy",
+                name: "Bundle of Joy",
+                desc: "The most loved plan for unforgettable memories!",
+                price: "59.99",
+                priceSub: "One-time payment",
+                feats: ["Cinematic reveal video — made by us", "Live virtual party room", "Up to 200 guests", "Live chat & Boy/Girl polls", "Personalized guest invitations", "30-day replay window", "Custom overlay"],
+                btnLabel: "Choose Premium",
+                planId: "premium",
+                popular: true,
+              },
             ].map((p, i) => (
-              <div className={`pnew-card ${p.cardCls}`} key={i}>
-                {p.popular && <div className="pnew-popular-badge">⭐ MOST POPULAR</div>}
-                <div className={`pnew-icon-circle ${p.iconCls}`}>{p.icon}</div>
-                <div className={`pnew-name ${p.nameCls}`}>{p.name}</div>
-                <div className="pnew-desc">{p.desc}</div>
-                <div className="pnew-price">
-                  {p.planId === "basic" ? (
-                    <div style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
-                      <span style={{ fontSize: "14px", textDecoration: "line-through", color: "#bbb", fontWeight: "bold" }}>$29.99</span>
-                      <span className={`pnew-price-main ${p.priceCls}`} style={{ marginTop: "4px" }}>
-                        <span className="pnew-price-curr">$</span><span className="pnew-price-amt">0</span>
-                      </span>
+              <div className={`pricing-card-redesign ${p.cardCls}`} key={i}>
+                {p.popular && <div className="pricing-card-popular-badge">⭐ MOST POPULAR</div>}
+                
+                {/* Left Side: Reserved for background illustration */}
+                <div className="pricing-card-left-column" />
+                
+                {/* Center Side: Dynamic pricing and CTA */}
+                <div className="pricing-card-center-column">
+                  <h3 className="pricing-card-title">{p.name}</h3>
+                  <p className="pricing-card-description">{p.desc}</p>
+                  
+                  <div className="pricing-card-price-container">
+                    {p.originalPrice && (
+                      <span className="pricing-card-original-price">${p.originalPrice}</span>
+                    )}
+                    <div className="pricing-card-current-price">
+                      <span className="pricing-card-price-curr">$</span>
+                      {p.price.split(".")[0]}
+                      {p.price.includes(".") && (
+                        <span style={{ fontSize: "1.8rem" }}>.{p.price.split(".")[1]}</span>
+                      )}
                     </div>
-                  ) : (
-                    <span className={`pnew-price-main ${p.priceCls}`}>
-                      <span className="pnew-price-curr">$</span><span className="pnew-price-amt">{p.price}</span>
-                    </span>
-                  )}
+                    <span className="pricing-card-price-sub">{p.priceSub}</span>
+                  </div>
+                  
+                  <button
+                    className="pricing-card-btn"
+                    onClick={() => handlePricingPlanClick({
+                      id: p.planId,
+                      name: p.name,
+                      price: Number(p.price),
+                      priceLabel: p.price === "0" ? "Free" : `$${p.price}`,
+                      color: p.popular ? "#82B8E8" : "#E8449A",
+                    })}
+                  >
+                    {p.btnLabel}
+                  </button>
                 </div>
-                <div className="pnew-price-sub">{p.priceSub}</div>
-                <div className="pnew-divider" />
-                <ul className="pnew-feats">
-                  {p.feats.map((f, j) => <li key={j}><span className={p.checkCls}>✓</span>{f}</li>)}
-                </ul>
-                <button
-                  className={`pnew-btn ${p.btnCls}`}
-                  onClick={() => handlePricingPlanClick({
-                    id: p.planId,
-                    name: p.name,
-                    price: Number(p.price),
-                    priceLabel: p.price === "0" ? "Free" : `$${p.price}`,
-                    color: p.popular ? "#82B8E8" : "#E8449A",
-                  })}
-                >
-                  {p.btnLabel}
-                </button>
+                
+                {/* Right Side: Feature list */}
+                <div className="pricing-card-right-column">
+                  <ul className="pricing-card-features">
+                    {p.feats.map((f, j) => (
+                      <li className="pricing-card-feature-item" key={j}>
+                        <span className="pricing-card-feature-icon">✔</span>
+                        <span>{f}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
               </div>
             ))}
           </div>
