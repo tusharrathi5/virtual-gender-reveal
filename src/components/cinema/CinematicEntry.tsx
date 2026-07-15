@@ -750,65 +750,69 @@ function LandingPage() {
       </section>
 
       <section className="testi-new-section">
-        <div className="testi-heart-left">💗</div>
-        <div className="testi-heart-right">💙</div>
         <div className="testi-new-inner">
-          <div className="testi-new-header fade-up">
-            <div className="testi-pill-badge">💗 Loved by Thousands</div>
-            <h2 className="testi-main-title">What Our <span className="testi-title-pink">Users</span> Say</h2>
-            <p className="testi-new-sub">Real stories. Real smiles. Real celebrations. 💗</p>
-          </div>
           <div className="testi-new-grid fade-up">
             {[
               {
                 title: "This was 100% worth it.",
-                q: "“We wanted something different, exciting, and most importantly, a safe way to share our big news. The virtual horse race made the reveal unforgettable, and our friends are still talking about it weeks later.”",
+                q: "We wanted something different, exciting, and most importantly, a safe way to share our big news. The virtual horse race made the reveal unforgettable, and our friends are still talking about it weeks later!",
                 name: "Brandon C.",
                 role: "Dad-to-be",
-                av: "👨",
+                avatarUrl: "/images/avatar1.jpg",
                 starCls: "testi-stars-pink",
                 nameCls: "tn-pink",
-                heart: "💗"
+                heart: "💗",
+                quoteCls: "tq-pink"
               },
               {
                 title: "So easy, so simple, so exciting.",
-                q: "“Setting everything up was so quick and stress-free. Invites went out in minutes, and everyone joined right on time. We all experienced the surprise at the exact same moment. It was perfect!”",
+                q: "Setting everything up was so quick and stress-free. Invites went out in minutes, and everyone joined right on time. We all experienced the surprise at the exact same moment. It was perfect!",
                 name: "Lauren M.",
                 role: "Mom-to-be",
-                av: "👩",
+                avatarUrl: "/images/avatar2.jpg",
                 starCls: "testi-stars-purple",
                 nameCls: "tn-purple",
-                heart: "💜"
-              },
-              {
-                title: "Safe, meaningful, and magical.",
-                q: "“We wanted a way to celebrate that was safe for everyone but still felt just as special. The horse race had us on the edge of our seats and the ending brought happy tears!”",
-                name: "Jessica R.",
-                role: "Mom-to-be",
-                av: "👩",
-                starCls: "testi-stars-blue",
-                nameCls: "tn-blue",
-                heart: "💙"
+                heart: "💜",
+                quoteCls: "tq-purple"
               },
               {
                 title: "Finally, a gender reveal that's more than just a balloon pop.",
-                q: "“It felt like watching a mini Pixar movie with an unforgettable surprise at the end. We were literally on the edge of our seats through the entire race!”",
+                q: "It felt like watching a mini Pixar movie with an unforgettable surprise at the end. We were literally on the edge of our seats through the entire race!",
                 name: "Megan B.",
                 role: "Aunt",
-                av: "👩",
-                starCls: "testi-stars-purple",
-                nameCls: "tn-purple",
-                heart: "💜"
+                avatarUrl: "/images/avatar3.jpg",
+                starCls: "testi-stars-blue",
+                nameCls: "tn-blue",
+                heart: "💙",
+                quoteCls: "tq-blue"
+              },
+              {
+                title: "Safe, meaningful, and magical.",
+                q: "We loved a way to celebrate that was safe for everyone but still felt just as special. The horse race had us on the edge of our seats, and the ending brought happy tears!",
+                name: "Jessica R.",
+                role: "Mom-to-be",
+                avatarUrl: "/images/avatar4.jpg",
+                starCls: "testi-stars-pink",
+                nameCls: "tn-pink",
+                heart: "💗",
+                quoteCls: "tq-pink"
               },
             ].map((t, i) => (
               <div className="testi-new-card" key={i}>
-                <div className="testi-avatar-placeholder">{t.av}</div>
-                <div className={`testi-new-stars ${t.starCls}`}>★★★★★</div>
+                <div className="testi-card-header">
+                  <img src={t.avatarUrl} alt={t.name} className="testi-avatar-img" />
+                  <div className={`testi-new-stars ${t.starCls}`}>★★★★★</div>
+                  <div className={`testi-quote-mark ${t.quoteCls}`}>“</div>
+                </div>
                 <div className="testi-new-title">{t.title}</div>
-                <div className="testi-new-q">{t.q}</div>
-                <div className={`testi-new-name ${t.nameCls}`}>{t.name}</div>
-                <div className="testi-new-role">{t.role}</div>
-                <div className="testi-card-heart">{t.heart}</div>
+                <div className="testi-new-q">“{t.q}”</div>
+                <div className="testi-card-footer">
+                  <div className="testi-user-info">
+                    <div className={`testi-new-name ${t.nameCls}`}>{t.name}</div>
+                    <div className="testi-new-role">{t.role}</div>
+                  </div>
+                  <div className="testi-card-heart">{t.heart}</div>
+                </div>
               </div>
             ))}
           </div>
@@ -1738,29 +1742,145 @@ nav#main-nav.solid{box-shadow:0 6px 28px rgba(0,0,0,0.14);}
 .pricing-trust-divider{width:1px;height:20px;background:#e0e0e0;}
 @media(max-width:768px){.pricing-grid{grid-template-columns:1fr;}.pnew-premium{transform:none;}.pnew-premium:hover{transform:translateY(-6px);}}
 /* ── Testimonials Redesign ── */
-.testi-new-section{padding:5rem 2rem 5rem;background:url('/images/testimonials-bg.png') center/cover no-repeat;position:relative;overflow:hidden;}
-.testi-heart-left{position:absolute;left:2%;top:12%;font-size:5rem;pointer-events:none;animation:balloonFloat 5s ease-in-out infinite alternate;opacity:0.7;}
-.testi-heart-right{position:absolute;right:2%;top:18%;font-size:4.5rem;pointer-events:none;animation:balloonFloat 4.5s ease-in-out infinite alternate-reverse;opacity:0.6;}
-.testi-new-inner{max-width:1220px;margin:0 auto;position:relative;z-index:2;}
-.testi-new-header{text-align:center;margin-bottom:3rem;}
-.testi-pill-badge{display:inline-flex;align-items:center;gap:0.4rem;padding:0.38rem 1.2rem;border:1.5px solid #E8449A;border-radius:50px;font-size:0.72rem;font-weight:600;color:#E8449A;letter-spacing:0.1em;text-transform:uppercase;margin-bottom:1.2rem;}
-.testi-main-title{font-family:'Nunito',sans-serif;font-size:clamp(2rem,4.5vw,2.8rem);font-weight:900;color:#1a1a2e;line-height:1.15;}
-.testi-title-pink{color:#E8449A;}
-.testi-new-sub{font-size:0.95rem;color:#888;margin-top:0.6rem;}
-.testi-new-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:1.5rem;margin-bottom:0;}
-@media(max-width:1024px){.testi-new-grid{grid-template-columns:repeat(2,1fr);}}
+.testi-new-section {
+  padding: 33vw 2rem 5rem 2rem;
+  background: url('/images/testimonials-bg.png') center top/100% auto no-repeat;
+  background-color: #ecdffa;
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+.testi-heart-left, .testi-heart-right {
+  display: none !important;
+}
+.testi-new-inner {
+  max-width: 1260px;
+  width: 100%;
+  margin: 0 auto;
+  position: relative;
+  z-index: 3;
+}
+.testi-new-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1.25rem;
+}
+@media(max-width:1024px){.testi-new-grid{grid-template-columns:repeat(2, 1fr);}}
 @media(max-width:640px){.testi-new-grid{grid-template-columns:1fr;}}
-.testi-new-card{background:rgba(255,255,255,0.25);backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);border-radius:20px;padding:1.4rem 1.3rem;box-shadow:0 8px 32px rgba(0,0,0,0.04);border:1px solid rgba(255,255,255,0.18);position:relative;transition:all 0.3s ease;opacity:0.85;}
-.testi-new-card:hover{transform:translateY(-5px);box-shadow:0 12px 36px rgba(100,60,200,0.15);background:rgba(255,255,255,0.7);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border:1px solid rgba(255,255,255,0.45);opacity:1;}
-.testi-avatar-placeholder{width:46px;height:46px;border-radius:50%;background:linear-gradient(135deg,#FFB8D8,#B8D8FF);display:flex;align-items:center;justify-content:center;font-size:1.5rem;margin-bottom:0.7rem;}
-.testi-new-stars{font-size:0.9rem;margin-bottom:0.6rem;letter-spacing:0.05em;}
-.testi-stars-pink{color:#E8449A;}.testi-stars-purple{color:#7B6EE8;}.testi-stars-blue{color:#3A9FE8;}
-.testi-new-title{font-family:'Nunito',sans-serif;font-size:0.86rem;font-weight:900;color:#1a1a2e;margin-bottom:0.4rem;line-height:1.25;}
-.testi-new-q{font-size:0.78rem;color:#444;line-height:1.6;margin-bottom:0.9rem;font-style:italic;}
-.testi-new-name{font-family:'Nunito',sans-serif;font-size:0.86rem;font-weight:800;}
-.tn-pink{color:#E8449A;}.tn-blue{color:#3A9FE8;}.tn-purple{color:#7B6EE8;}
-.testi-new-role{font-size:0.7rem;color:#aaa;margin-top:0.15rem;}
-.testi-card-heart{position:absolute;bottom:1.2rem;right:1.4rem;font-size:1.2rem;}
+.testi-new-card {
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border-radius: 24px;
+  padding: 1.8rem;
+  box-shadow: 0 10px 30px rgba(100, 60, 200, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.85);
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  transition: transform 0.25s, box-shadow 0.25s;
+}
+.testi-new-card:hover {
+  transform: translateY(-6px);
+  box-shadow: 0 12px 36px rgba(100, 60, 200, 0.12);
+  background: #ffffff;
+}
+.testi-card-header {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+  position: relative;
+}
+.testi-avatar-img {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+.testi-new-stars {
+  font-size: 1rem;
+  letter-spacing: 0.05em;
+}
+.testi-stars-pink {
+  color: #E8449A;
+}
+.testi-stars-purple {
+  color: #7B6EE8;
+}
+.testi-stars-blue {
+  color: #3A9FE8;
+}
+.testi-quote-mark {
+  position: absolute;
+  right: 0;
+  top: -8px;
+  font-family: 'Georgia', serif;
+  font-size: 2.8rem;
+  line-height: 1;
+  font-weight: bold;
+}
+.tq-pink {
+  color: rgba(232, 68, 154, 0.22);
+}
+.tq-purple {
+  color: rgba(123, 110, 232, 0.22);
+}
+.tq-blue {
+  color: rgba(58, 159, 232, 0.22);
+}
+.testi-new-title {
+  font-family: 'Nunito', sans-serif;
+  font-size: 0.94rem;
+  font-weight: 800;
+  color: #1a1a2e;
+  margin-bottom: 0.5rem;
+  line-height: 1.35;
+}
+.testi-new-q {
+  font-size: 0.78rem;
+  color: #444;
+  line-height: 1.55;
+  font-weight: 500;
+  margin-bottom: 1.25rem;
+  flex-grow: 1;
+}
+.testi-card-footer {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  margin-top: auto;
+}
+.testi-user-info {
+  display: flex;
+  flex-direction: column;
+}
+.testi-new-name {
+  font-family: 'Nunito', sans-serif;
+  font-size: 0.86rem;
+  font-weight: 800;
+}
+.tn-pink {
+  color: #E8449A;
+}
+.tn-purple {
+  color: #7B6EE8;
+}
+.tn-blue {
+  color: #3A9FE8;
+}
+.testi-new-role {
+  font-size: 0.72rem;
+  color: #94a3b8;
+  font-weight: 600;
+  margin-top: 0.1rem;
+}
+.testi-card-heart {
+  font-size: 1.2rem;
+  line-height: 1;
+}
 @media(max-width:768px){.testi-new-grid{grid-template-columns:1fr;}.pricing-trust{gap:0.8rem;font-size:0.78rem;}}
 /* ── How It Works section color ── */
 /* hiw-new-section background overridden */
@@ -1878,7 +1998,9 @@ nav#main-nav.solid{box-shadow:0 6px 28px rgba(0,0,0,0.14);}
     display: none !important;
   }
   .testi-new-section {
-    padding: 4rem 1.2rem 4rem !important;
+    padding: 52vw 1.2rem 4rem !important;
+    background: url('/images/testimonials-bg.png') center top/100% auto no-repeat !important;
+    background-color: #ecdffa !important;
   }
   .testi-new-card {
     padding: 1.8rem 1.2rem !important;
