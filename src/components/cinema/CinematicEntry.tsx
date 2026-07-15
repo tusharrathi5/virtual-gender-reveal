@@ -678,25 +678,27 @@ function LandingPage() {
                   <img src={p.imgSrc} alt={p.name} />
                 </div>
                 
-                {/* Bottom Area: Content & Button */}
+                {/* Right Area: Content & Button */}
                 <div className="pricing-card-content-area">
-                  <div className="pricing-card-header-block">
-                    <h3 className={`pricing-card-title ${p.titleColorClass}`}>{p.name}</h3>
-                    <p className="pricing-card-description">{p.desc}</p>
-                  </div>
-
-                  <div className="pricing-card-price-container">
-                    {p.originalPrice && (
-                      <span className="pricing-card-original-price">${p.originalPrice}</span>
-                    )}
-                    <div className="pricing-card-current-price">
-                      <span className="pricing-card-price-curr">$</span>
-                      {p.price.split(".")[0]}
-                      {p.price.includes(".") && (
-                        <span style={{ fontSize: "1.5rem" }}>.{p.price.split(".")[1]}</span>
-                      )}
+                  <div className="pricing-card-header-row">
+                    <div className="pricing-card-header-block">
+                      <h3 className={`pricing-card-title ${p.titleColorClass}`}>{p.name}</h3>
+                      <p className="pricing-card-description">{p.desc}</p>
                     </div>
-                    <span className="pricing-card-price-sub">{p.priceSub}</span>
+
+                    <div className="pricing-card-price-container">
+                      {p.originalPrice && (
+                        <span className="pricing-card-original-price">${p.originalPrice}</span>
+                      )}
+                      <div className="pricing-card-current-price">
+                        <span className="pricing-card-price-curr">$</span>
+                        {p.price.split(".")[0]}
+                        {p.price.includes(".") && (
+                          <span style={{ fontSize: "1.2rem" }}>.{p.price.split(".")[1]}</span>
+                        )}
+                      </div>
+                      <span className="pricing-card-price-sub">{p.priceSub}</span>
+                    </div>
                   </div>
                   
                   <ul className="pricing-card-features">
