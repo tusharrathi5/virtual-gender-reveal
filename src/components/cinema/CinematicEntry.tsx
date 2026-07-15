@@ -727,6 +727,9 @@ function LandingPage() {
               </div>
             ))}
           </div>
+          <div className="pricing-strip-container fade-up">
+            <img src="/assets/pricing_strip.png" alt="Watch on any device" className="pricing-strip-img" />
+          </div>
           <div className="pricing-trust fade-up">
             <span>🔒 Secure Payments</span>
             <div className="pricing-trust-divider" />
@@ -1749,6 +1752,8 @@ nav#main-nav.solid{box-shadow:0 6px 28px rgba(0,0,0,0.14);}
 .pbtn-blue{background:linear-gradient(135deg,#3A9FE8,#7EC8FF);color:white;box-shadow:0 4px 16px rgba(58,159,232,0.35);}
 .pricing-trust{display:flex;align-items:center;justify-content:center;gap:1.2rem;background:white;border-radius:16px;padding:1rem 2rem;box-shadow:0 4px 16px rgba(0,0,0,0.06);font-size:0.85rem;color:#555;flex-wrap:wrap;}
 .pricing-trust-divider{width:1px;height:20px;background:#e0e0e0;}
+.pricing-strip-container{display:flex;justify-content:center;align-items:center;width:100%;margin:2rem auto 2.5rem;max-width:960px;padding:0 1rem;}
+.pricing-strip-img{width:100%;height:auto;max-height:220px;object-fit:contain;}
 @media(max-width:768px){.pricing-grid{grid-template-columns:1fr;}.pnew-premium{transform:none;}.pnew-premium:hover{transform:translateY(-6px);}}
 /* ── Testimonials Redesign ── */
 .testi-new-section {
