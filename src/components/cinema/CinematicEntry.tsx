@@ -1654,7 +1654,7 @@ nav#main-nav.solid{box-shadow:0 6px 28px rgba(0,0,0,0.14);}
 .faq-modal-top-section{height:380px;flex-shrink:0;pointer-events:none;}
 .faq-scroll-container{width:100%;flex:1;overflow-y:auto;scrollbar-width:thin;padding:0 1.5rem 3rem 1.5rem;display:flex;flex-direction:column;position:relative;}
 .faq-header{text-align:center;margin-bottom:2.5rem;}
-.faq-title{font-family:'Nunito',sans-serif;font-size:clamp(1.8rem,3.5vw,2.4rem);font-weight:900;color:#ffffff;line-height:1.2;margin-bottom:0.8rem;display:flex;align-items:center;justify-content:center;gap:0.5rem;text-shadow:0 2px 10px rgba(0,0,0,0.4);}
+.faq-title{font-family:'Nunito',sans-serif;font-size:clamp(1.1rem,3.8vw,1.7rem);font-weight:900;color:#ffffff;line-height:1.2;margin-bottom:0.8rem;display:flex;align-items:center;justify-content:center;gap:0.5rem;text-shadow:0 2px 10px rgba(0,0,0,0.4);white-space:nowrap;}
 .faq-title::before, .faq-title::after{content:'✦';color:#FF7EC8;font-size:1.2rem;vertical-align:middle;}
 .faq-sub{font-family:'Nunito',sans-serif;font-size:0.95rem;color:rgba(255,255,255,0.85);max-width:520px;margin:0 auto;line-height:1.6;font-weight:600;text-shadow:0 1px 5px rgba(0,0,0,0.3);}
 .faq-list{display:flex;flex-direction:column;gap:1rem;max-width:680px;width:100%;margin:0 auto;}
