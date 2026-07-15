@@ -628,6 +628,8 @@ function LandingPage() {
             {[
               {
                 cardCls: "pricing-card-little-bundle",
+                imgSrc: "/assets/little_bundle_pricing.png",
+                isContain: true,
                 name: "Little Bundle",
                 desc: "Everything you need for a simple & fun reveal!",
                 price: "0",
@@ -639,9 +641,13 @@ function LandingPage() {
                 planId: "basic",
                 popular: false,
                 heart: "💙",
+                titleColorClass: "pricing-card-title-basic",
+                iconColorClass: "pricing-card-feature-icon-circle-basic",
               },
               {
                 cardCls: "pricing-card-bundle-of-joy",
+                imgSrc: "/assets/bundle_of_joy.png",
+                isContain: false,
                 name: "Bundle of Joy",
                 desc: "The most loved plan for unforgettable memories!",
                 price: "59.99",
@@ -660,46 +666,47 @@ function LandingPage() {
                 planId: "premium",
                 popular: true,
                 heart: "🩷",
+                titleColorClass: "pricing-card-title-premium",
+                iconColorClass: "pricing-card-feature-icon-circle-premium",
               },
             ].map((p, i) => (
               <div className={`pricing-card-redesign ${p.cardCls}`} key={i}>
                 {p.popular && <div className="pricing-card-popular-badge">⭐ MOST POPULAR</div>}
                 
-                {/* Left Column: Reserved for background illustration */}
-                <div className="pricing-card-left-column" />
+                {/* Top Image Container Box */}
+                <div className={`pricing-card-img-container ${p.isContain ? 'little-bundle-img' : ''}`}>
+                  <img src={p.imgSrc} alt={p.name} />
+                </div>
                 
-                {/* Right Area: Content & Button */}
+                {/* Bottom Area: Content & Button */}
                 <div className="pricing-card-content-area">
-                  <div className="pricing-card-top-row">
-                    {/* Details Column */}
-                    <div className="pricing-card-details-col">
-                      <div className="pricing-card-price-container">
-                        {p.originalPrice && (
-                          <span className="pricing-card-original-price">${p.originalPrice}</span>
-                        )}
-                        <div className="pricing-card-current-price">
-                          <span className="pricing-card-price-curr">$</span>
-                          {p.price.split(".")[0]}
-                          {p.price.includes(".") && (
-                            <span style={{ fontSize: "2rem" }}>.{p.price.split(".")[1]}</span>
-                          )}
-                        </div>
-                        <span className="pricing-card-price-sub">{p.priceSub}</span>
-                      </div>
-                    </div>
-                    
-                    {/* Features Column */}
-                    <div className="pricing-card-features-col">
-                      <ul className="pricing-card-features">
-                        {p.feats.map((f, j) => (
-                          <li className="pricing-card-feature-item" key={j}>
-                            <span className="pricing-card-feature-icon-circle">✓</span>
-                            <span>{f}</span>
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
+                  <div className="pricing-card-header-block">
+                    <h3 className={`pricing-card-title ${p.titleColorClass}`}>{p.name}</h3>
+                    <p className="pricing-card-description">{p.desc}</p>
                   </div>
+
+                  <div className="pricing-card-price-container">
+                    {p.originalPrice && (
+                      <span className="pricing-card-original-price">${p.originalPrice}</span>
+                    )}
+                    <div className="pricing-card-current-price">
+                      <span className="pricing-card-price-curr">$</span>
+                      {p.price.split(".")[0]}
+                      {p.price.includes(".") && (
+                        <span style={{ fontSize: "1.5rem" }}>.{p.price.split(".")[1]}</span>
+                      )}
+                    </div>
+                    <span className="pricing-card-price-sub">{p.priceSub}</span>
+                  </div>
+                  
+                  <ul className="pricing-card-features">
+                    {p.feats.map((f, j) => (
+                      <li className="pricing-card-feature-item" key={j}>
+                        <span className={`pricing-card-feature-icon-circle ${p.iconColorClass}`}>✓</span>
+                        <span>{f}</span>
+                      </li>
+                    ))}
+                  </ul>
 
                   {/* Bottom Row: CTA Button */}
                   <div className="pricing-card-btn-row">
