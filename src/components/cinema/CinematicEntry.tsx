@@ -1771,7 +1771,7 @@ nav#main-nav.solid{box-shadow:0 6px 28px rgba(0,0,0,0.14);}
 @media(max-width:768px){.pricing-grid{grid-template-columns:1fr;}.pnew-premium{transform:none;}.pnew-premium:hover{transform:translateY(-6px);}}
 /* ── Testimonials Redesign ── */
 .testi-new-section {
-  padding: 5.5rem 2rem 5rem 2rem;
+  padding: 27vw 2rem 5rem 2rem;
   background: url('/images/testimonials-bg.png') center top/100% auto no-repeat;
   background-color: #ecdffa;
   position: relative;
@@ -1784,11 +1784,14 @@ nav#main-nav.solid{box-shadow:0 6px 28px rgba(0,0,0,0.14);}
   display: none !important;
 }
 .testi-new-header {
-  text-align: center;
-  margin-bottom: 2.5rem;
+  position: absolute;
+  top: 6vw;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 100%;
   max-width: 600px;
-  margin-left: auto;
-  margin-right: auto;
+  text-align: center;
+  z-index: 4;
 }
 .testi-pill-badge {
   display: inline-flex;
@@ -2085,6 +2088,14 @@ nav#main-nav.solid{box-shadow:0 6px 28px rgba(0,0,0,0.14);}
     padding: 52vw 1.2rem 4rem !important;
     background: url('/images/testimonials-bg.png') center top/100% auto no-repeat !important;
     background-color: #ecdffa !important;
+  }
+  .testi-new-header {
+    position: relative !important;
+    top: 0 !important;
+    left: 0 !important;
+    transform: none !important;
+    margin-bottom: 2rem !important;
+    max-width: 100% !important;
   }
   .testi-new-card {
     padding: 1.8rem 1.2rem !important;
