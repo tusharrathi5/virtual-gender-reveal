@@ -728,6 +728,10 @@ function LandingPage() {
             ))}
           </div>
           <div className="pricing-strip-container fade-up">
+            <div className="pricing-strip-header">
+              <h4 className="pricing-strip-title">Works on any device ✦</h4>
+              <p className="pricing-strip-sub">Watch on your TV, laptop, mobile, projector, tablet, etc.</p>
+            </div>
             <img src="/assets/pricing_strip.png" alt="Watch on any device" className="pricing-strip-img" />
           </div>
           <div className="pricing-trust fade-up">
@@ -1752,8 +1756,11 @@ nav#main-nav.solid{box-shadow:0 6px 28px rgba(0,0,0,0.14);}
 .pbtn-blue{background:linear-gradient(135deg,#3A9FE8,#7EC8FF);color:white;box-shadow:0 4px 16px rgba(58,159,232,0.35);}
 .pricing-trust{display:flex;align-items:center;justify-content:center;gap:1.2rem;background:white;border-radius:16px;padding:1rem 2rem;box-shadow:0 4px 16px rgba(0,0,0,0.06);font-size:0.85rem;color:#555;flex-wrap:wrap;}
 .pricing-trust-divider{width:1px;height:20px;background:#e0e0e0;}
-.pricing-strip-container{display:flex;justify-content:center;align-items:center;width:100%;margin:2rem auto 2.5rem;max-width:960px;padding:0 1rem;}
-.pricing-strip-img{width:100%;height:auto;max-height:220px;object-fit:contain;}
+.pricing-strip-container{display:flex;flex-direction:column;align-items:center;width:100%;margin:2rem auto 2.5rem;max-width:960px;padding:0 1rem;text-align:center;}
+.pricing-strip-header{margin-bottom:1rem;}
+.pricing-strip-title{font-family:'Nunito',sans-serif;font-weight:900;font-size:1.25rem;color:#111827;margin:0 0 0.25rem 0;text-shadow:0 1px 2px rgba(255,255,255,0.85);}
+.pricing-strip-sub{font-family:'Nunito',sans-serif;font-size:0.86rem;color:#4b5563;font-weight:700;margin:0;text-shadow:0 1px 2px rgba(255,255,255,0.85);}
+.pricing-strip-img{width:100%;height:auto;max-height:200px;object-fit:contain;}
 @media(max-width:768px){.pricing-grid{grid-template-columns:1fr;}.pnew-premium{transform:none;}.pnew-premium:hover{transform:translateY(-6px);}}
 /* ── Testimonials Redesign ── */
 .testi-new-section {
