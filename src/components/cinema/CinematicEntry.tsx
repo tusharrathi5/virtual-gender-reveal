@@ -750,20 +750,20 @@ function LandingPage() {
       </section>
 
       <section className="testi-new-section">
+        <div className="testi-new-header fade-up">
+          <div className="testi-pill-badge">💗 LOVED BY THOUSANDS</div>
+          <h2 className="testi-main-title">What Our <span className="testi-title-pink">Users</span> Say</h2>
+          <p className="testi-new-sub">
+            Real stories. Real smiles.<br />
+            Real celebrations. 💗
+          </p>
+          <svg className="testi-ornament" viewBox="0 0 100 20" fill="none" stroke="#e2b857" strokeWidth="1.5" strokeLinecap="round">
+            <path d="M10 10c15 0 20-5 35-5s5 5 5 5" />
+            <path d="M90 10c-15 0-20-5-35-5s-5 5-5 5" />
+            <path d="M50 7c-2-2-5 0-5 3 0 3 5 5 5 5s5-2 5-5c0-3-3-5-5-3z" />
+          </svg>
+        </div>
         <div className="testi-new-inner">
-          <div className="testi-new-header fade-up">
-            <div className="testi-pill-badge">💗 LOVED BY THOUSANDS</div>
-            <h2 className="testi-main-title">What Our <span className="testi-title-pink">Users</span> Say</h2>
-            <p className="testi-new-sub">
-              Real stories. Real smiles.<br />
-              Real celebrations. 💗
-            </p>
-            <svg className="testi-ornament" viewBox="0 0 100 20" fill="none" stroke="#e2b857" strokeWidth="1.5" strokeLinecap="round">
-              <path d="M10 10c15 0 20-5 35-5s5 5 5 5" />
-              <path d="M90 10c-15 0-20-5-35-5s-5 5-5 5" />
-              <path d="M50 7c-2-2-5 0-5 3 0 3 5 5 5 5s5-2 5-5c0-3-3-5-5-3z" />
-            </svg>
-          </div>
           <div className="testi-new-grid fade-up">
             {[
               {
@@ -1771,7 +1771,7 @@ nav#main-nav.solid{box-shadow:0 6px 28px rgba(0,0,0,0.14);}
 @media(max-width:768px){.pricing-grid{grid-template-columns:1fr;}.pnew-premium{transform:none;}.pnew-premium:hover{transform:translateY(-6px);}}
 /* ── Testimonials Redesign ── */
 .testi-new-section {
-  padding: 27vw 2rem 5rem 2rem;
+  padding: 32vw 2rem 5rem 2rem;
   background: url('/images/testimonials-bg.png') center top/100% auto no-repeat;
   background-color: #ecdffa;
   position: relative;
@@ -2085,7 +2085,7 @@ nav#main-nav.solid{box-shadow:0 6px 28px rgba(0,0,0,0.14);}
     display: none !important;
   }
   .testi-new-section {
-    padding: 52vw 1.2rem 4rem !important;
+    padding: 58vw 1.2rem 4rem !important;
     background: url('/images/testimonials-bg.png') center top/100% auto no-repeat !important;
     background-color: #ecdffa !important;
   }
