@@ -335,7 +335,7 @@ function buildVgrEmailTemplateHtml(props: VgrEmailTemplateProps): string {
 
               <!-- Greeting and Message -->
               <div style="font-size: 15px; line-height: 1.6; color: #4b5563; margin-bottom: 28px;">
-                <p style="margin: 0 0 12px 0; font-size: 16px; font-weight: 700; color: #111827;">${escapeHtml(greetingText)}</p>
+                <p style="margin: 0 0 12px 0; font-size: 16px; font-weight: 700; color: #111827;">${greetingText}</p>
                 <div style="margin: 0;">${messageHtml}</div>
               </div>
 
