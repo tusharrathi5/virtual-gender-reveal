@@ -453,6 +453,33 @@ export default function GuestInvitePage() {
           text-shadow: 1px 1px 0px rgba(255,255,255,0.8), -1px -1px 0px rgba(0,0,0,0.06), 0px 4px 10px rgba(0,0,0,0.08);
           animation: bounce-gentle 2s ease-in-out infinite alternate;
         }
+        .party-header-new {
+          background-image: url('/assets/party-page-header.png');
+          background-size: 100% 100%;
+          background-position: center;
+          background-repeat: no-repeat;
+          padding: 3vw 24% 3vw 24%;
+          min-height: 25vw;
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          justify-content: center;
+          gap: 0.35vw;
+        }
+        @media (max-width: 1024px) {
+          .party-header-new {
+            padding: 3vw 15% 3vw 15%;
+            min-height: auto;
+          }
+        }
+        @media (max-width: 768px) {
+          .party-header-new {
+            padding: 2.5rem 1.2rem;
+            background-size: cover;
+            min-height: auto;
+            gap: 0.75rem;
+          }
+        }
       `}</style>
 
       <div className="relative min-h-screen overflow-x-hidden w-full font-sans antialiased text-[#1f2937] bg-gradient-to-tr from-[#E8449A]/10 via-white/80 to-[#3A9FE8]/10">
@@ -477,49 +504,69 @@ export default function GuestInvitePage() {
         
         {/* Main Content (z-index 20) */}
         <div className="relative z-20 max-w-[1080px] mx-auto px-4 py-8 md:py-12 flex flex-col gap-6">
-          {/* 1. PARTY HERO HEADER (Glassmorphic Transparent - Full Width) */}
-          <header className="relative overflow-hidden bg-white/10 backdrop-blur-xl border border-white/20 shadow-2xl rounded-[24px] p-6 md:p-8 text-center flex flex-col items-center gap-4 w-full">
+          {/* 1. PARTY HERO HEADER (Custom Illustrated Banner Background) */}
+          <header className="party-header-new relative overflow-hidden text-center w-full border border-white/20 shadow-2xl rounded-[24px]">
             {/* Home Navigation Button */}
             <div className="absolute top-4 left-4 z-30">
               <a
                 href="/"
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white/25 hover:bg-white/40 backdrop-blur-md border border-white/30 rounded-xl text-[10px] md:text-xs font-black text-slate-800 transition-all hover:scale-105 active:scale-95 shadow-sm"
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white/40 hover:bg-white/60 backdrop-blur-md border border-white/40 rounded-xl text-[10px] md:text-xs font-black text-slate-800 transition-all hover:scale-105 active:scale-95 shadow-sm"
               >
                 🏠 Home
               </a>
             </div>
 
-            {/* Ambient Glows */}
-            <div className="absolute top-0 left-0 w-32 h-full bg-[#E8449A]/10 blur-2xl pointer-events-none" />
-            <div className="absolute top-0 right-0 w-32 h-full bg-[#3A9FE8]/10 blur-2xl pointer-events-none" />
-            
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-gradient-to-r from-[#E8449A]/20 to-[#3A9FE8]/20 border border-white/30 text-[11px] font-black uppercase tracking-wider text-[#c2527a]">
-              ✨ Virtual Celebration ✨
+            {/* Welcome Banner Text Layout */}
+            <div className="flex items-center justify-center gap-1 text-[10px] md:text-xs font-black text-[#1b4f8c] tracking-widest uppercase mb-0.5 md:mb-1">
+              <span className="text-[#E8449A] text-xs">💗</span> WELCOME {guestName.toUpperCase()} TO <span className="text-[#3A9FE8] text-xs">💙</span>
             </div>
-            
-            <h1 className="font-black text-3xl md:text-4xl text-slate-900 leading-tight drop-shadow-sm">
-              {parentName}&apos;s Virtual Gender Reveal
+
+            <h1 className="font-extrabold text-xl md:text-4xl leading-tight select-none">
+              {(() => {
+                const parts = parentName.split(/(\s*&\s*|\s+and\s+)/i);
+                return parts.map((part, idx) => {
+                  if (part.trim() === "&" || part.trim().toLowerCase() === "and") {
+                    return <span key={idx} className="text-[#E8449A]"> & </span>;
+                  }
+                  return <span key={part + idx} className="text-[#1B4F8C]">{part}</span>;
+                });
+              })()}&apos;s
             </h1>
-            
-            <p className="text-sm md:text-base text-slate-800 font-semibold drop-shadow-sm">
-              Hi <span className="font-bold text-[#c2527a]">{guestName}</span>, welcome to the celebration 🎉
+
+            <div className="flex items-center justify-center gap-1.5 font-black text-xs md:text-lg text-[#3A9FE8] tracking-[0.18em] uppercase my-0.5 md:my-1">
+              <span className="text-[#e2b857] text-[10px] md:text-xs">✦</span>
+              <span className="bg-gradient-to-r from-[#3A9FE8] via-[#E8449A] to-[#3A9FE8] bg-clip-text text-transparent">VIRTUAL GENDER REVEAL</span>
+              <span className="text-[#e2b857] text-[10px] md:text-xs">✦</span>
+            </div>
+
+            <div className="flex items-center justify-center gap-2.5 my-1.5 opacity-90 select-none">
+              <span className="w-8 md:w-12 h-[1px] bg-slate-300" />
+              <span className="text-[#E8449A] text-xs md:text-sm">💗</span>
+              <span className="w-8 md:w-12 h-[1px] bg-slate-300" />
+            </div>
+
+            <p className="text-[10px] md:text-xs text-slate-700 font-semibold italic mb-1 md:mb-2">
+              Thank you for being part of our baby&apos;s big day.
             </p>
-            
-            <div className="flex flex-wrap justify-center items-center gap-4 text-xs font-semibold text-slate-800 mt-1">
-              <span className="flex items-center gap-1.5 bg-white/20 backdrop-blur-sm px-3 py-1.5 rounded-lg border border-white/30 shadow-sm">
+
+            <div className="flex flex-wrap justify-center items-center gap-3 text-[10px] md:text-xs font-bold text-slate-800 mt-0.5 border-t border-slate-200/50 pt-2 w-full max-w-sm justify-center">
+              <span className="flex items-center gap-1">
                 <Globe className="w-3.5 h-3.5 text-[#3A9FE8]" />
                 Timezone: {revealTimezone}
               </span>
               
               {googleCalendarUrl && (
-                <button
-                  type="button"
-                  onClick={() => setShowCalendarOptions(true)}
-                  className="flex items-center gap-1.5 bg-white/30 hover:bg-white/40 backdrop-blur-sm text-slate-900 border border-white/40 px-3 py-1.5 rounded-lg transition-all duration-200 shadow-sm font-black"
-                >
-                  <Calendar className="w-3.5 h-3.5" />
-                  Add to Calendar
-                </button>
+                <>
+                  <span className="text-slate-300 select-none">|</span>
+                  <button
+                    type="button"
+                    onClick={() => setShowCalendarOptions(true)}
+                    className="flex items-center gap-1 hover:text-[#E8449A] transition-colors"
+                  >
+                    <Calendar className="w-3.5 h-3.5 text-[#3A9FE8]" />
+                    Add to Calendar
+                  </button>
+                </>
               )}
             </div>
           </header>
