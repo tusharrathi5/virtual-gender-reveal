@@ -455,26 +455,25 @@ function LandingPage() {
             />
             <p className="hero-sub-new">Because every reveal deserves a story.</p>
 
-            <div className="social-proof-card">
-              <div className="social-proof-banner">
-                <div className="social-avatars">
-                  <img src="/images/avatar1.jpg" alt="Family avatar 1" className="avatar-img" />
-                  <img src="/images/avatar2.jpg" alt="Family avatar 2" className="avatar-img" />
-                  <img src="/images/avatar3.jpg" alt="Family avatar 3" className="avatar-img" />
-                  <img src="/images/avatar4.jpg" alt="Family avatar 4" className="avatar-img" />
-                  <img src="/images/avatar5.jpg" alt="Family avatar 5" className="avatar-img" />
-                </div>
-                <div className="social-text">
-                  <span className="social-main-text">Join over 3,000+ families</span>
-                  <span className="social-sub-text">who&apos;ve celebrated with us!</span>
-                </div>
-                <div className="social-icon">
-                  <svg viewBox="0 0 24 24" className="heart-icon-svg" fill="none" stroke="#E8449A" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
-                  </svg>
-                </div>
+            <div className="social-proof-banner">
+              <div className="social-avatars">
+                <img src="/images/avatar1.jpg" alt="Family avatar 1" className="avatar-img" />
+                <img src="/images/avatar2.jpg" alt="Family avatar 2" className="avatar-img" />
+                <img src="/images/avatar3.jpg" alt="Family avatar 3" className="avatar-img" />
+                <img src="/images/avatar4.jpg" alt="Family avatar 4" className="avatar-img" />
+                <img src="/images/avatar5.jpg" alt="Family avatar 5" className="avatar-img" />
               </div>
+              <div className="social-text">
+                <span className="social-main-text">Join over 3,000+ families</span>
+              </div>
+              <div className="social-icon">
+                <svg viewBox="0 0 24 24" className="heart-icon-svg" fill="none" stroke="#E8449A" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
+                </svg>
+              </div>
+            </div>
 
+            <div className="hero-features-card">
               <div className="hero-features-row">
                 <div className="hero-feature-item">
                   <div className="hero-feature-icon-wrapper pink-solid">
@@ -1261,7 +1260,7 @@ footer{background:#111827;padding:4rem 2rem 2rem;}
 .hero-tagline{font-size:1rem;color:#444;font-weight:600;display:flex;align-items:center;gap:0.4rem;}
 
 /* ── Social Proof Card & Banner ── */
-.social-proof-card {
+.hero-features-card {
   background: rgba(255, 255, 255, 0.45);
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
@@ -1279,7 +1278,7 @@ footer{background:#111827;padding:4rem 2rem 2rem;}
   transition: transform 0.3s ease, box-shadow 0.3s ease;
 }
 
-.social-proof-card:hover {
+.hero-features-card:hover {
   transform: translateY(-2px);
   box-shadow: 0 20px 48px rgba(74, 85, 150, 0.14);
 }
@@ -1288,23 +1287,15 @@ footer{background:#111827;padding:4rem 2rem 2rem;}
   display: flex;
   align-items: center;
   gap: 14px;
-  background: none;
-  backdrop-filter: none;
-  -webkit-backdrop-filter: none;
-  padding: 0;
-  border-radius: 0;
-  max-width: 100%;
   width: 100%;
-  box-shadow: none;
-  border: none;
-  background-image: none;
+  max-width: 520px;
+  margin-top: 0;
+  margin-bottom: 24px;
   transition: transform 0.3s ease;
 }
 
 .social-proof-banner:hover {
-  transform: none;
-  box-shadow: none;
-  background-image: none;
+  transform: translateY(-2px);
 }
 
 .hero-features-row {
@@ -1312,8 +1303,6 @@ footer{background:#111827;padding:4rem 2rem 2rem;}
   grid-template-columns: repeat(4, 1fr);
   gap: 1.5rem;
   width: 100%;
-  border-top: 1.5px solid rgba(0, 0, 0, 0.06);
-  padding-top: 1.5rem;
 }
 
 .hero-feature-item {
@@ -1470,7 +1459,7 @@ footer{background:#111827;padding:4rem 2rem 2rem;}
 }
 
 @media (max-width: 768px) {
-  .social-proof-card {
+  .hero-features-card {
     padding: 1.25rem;
     gap: 1.25rem;
     border-radius: 24px;
@@ -1478,20 +1467,19 @@ footer{background:#111827;padding:4rem 2rem 2rem;}
   .social-proof-banner {
     padding: 0;
     gap: 10px;
-    margin-bottom: 0;
+    margin-bottom: 18px;
     max-width: 100%;
     justify-content: flex-start;
     background: none;
     background-image: none;
   }
   .social-proof-banner:hover {
-    transform: none;
+    transform: translateY(-2px);
     box-shadow: none;
   }
   .hero-features-row {
     grid-template-columns: repeat(2, 1fr);
     gap: 1rem;
-    padding-top: 1.25rem;
   }
   .avatar-img {
     width: 34px;
