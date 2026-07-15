@@ -539,33 +539,48 @@ function LandingPage() {
       </section>
 
             <section className="hiw-new-section" id="how">
-        <div className="hiw-overlay" />
         <div className="hiw-new-inner">
-          <div className="hiw-new-header fade-up">
-            <span className="hiw-sparkle">✨</span>
-            <h2 className="hiw-main-title">How it Works</h2>
-            <span className="hiw-sparkle">✨</span>
-          </div>
           <div className="hiw-cards-row fade-up">
             {[
-              { img: "/assets/how-it-works/create-your-party.png",  tc: "hct-1", title: "Create Your Party",  desc: "Set up your virtual gender reveal party in minutes and customize every detail." },
-              { img: "/assets/how-it-works/invite-loved-ones.png",  tc: "hct-2", title: "Invite Loved Ones",  desc: "Send invites to friends and family near or far. Everyone can join!" },
-              { img: "/assets/how-it-works/time-to-reveal.png",     tc: "hct-3", title: "Time to Reveal",     desc: "Open the box and reveal the big surprise together in real-time!" },
-              { img: "/assets/how-it-works/celebrate-together.png", tc: "hct-4", title: "Celebrate Together", desc: "Share reactions, take photos, and make memories that last forever." },
+              { img: "/assets/how-it-works/create-your-party.png",  tc: "hct-1", title: "Create Your Party",  desc: "Set up your virtual gender reveal in minutes and customize every detail." },
+              { img: "/assets/how-it-works/invite-loved-ones.png",  tc: "hct-2", title: "Send E-Vites",        desc: "Send e-vites to friends and family near or far. Everyone can join!" },
+              { img: "/assets/how-it-works/time-to-reveal.png",     tc: "hct-3", title: "Experience The Race", desc: "Experience a virtual horse race where two babies, two horses, and one winner reveal your baby's gender!" },
+              { img: "/assets/how-it-works/celebrate-together.png", tc: "hct-4", title: "Celebrate The Moment",desc: "Share the joy, happy tears, and hugs! Celebrate together and create memories that last forever." },
             ].map((s, i) => (
               <div className="hiw-new-card" key={i}>
-                <img src={s.img} alt={s.title} className="hiw-card-img" />
-                <div className={`hiw-card-title ${s.tc}`}>{s.title}</div>
+                <div className="hiw-card-header">
+                  <span className={`hiw-num-circle hnc-${i + 1}`}>{i + 1}</span>
+                  <div className={`hiw-card-title ${s.tc}`}>{s.title}</div>
+                </div>
                 <div className="hiw-card-desc">{s.desc}</div>
+                <img src={s.img} alt={s.title} className="hiw-card-img" />
               </div>
             ))}
           </div>
           <div className="hiw-feat-bar fade-up">
             {[
-              { icon: "👥", cls: "",       label: "Join Anywhere",    sub: "Everyone can join from any device."        },
-              { icon: "🔒", cls: "blue",   label: "Private & Secure", sub: "Your moment, your privacy."               },
-              { icon: "💬", cls: "purple", label: "Live Chat",        sub: "Chat, react and share the excitement!"    },
-              { icon: "📸", cls: "green",  label: "Capture Memories", sub: "Save and download your special moments."  },
+              {
+                icon: (
+                  <svg viewBox="0 0 24 24" className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2.5">
+                    <circle cx="12" cy="12" r="10" />
+                    <path d="M2 12h20" />
+                    <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" />
+                  </svg>
+                ),
+                cls: "blue",
+                label: "JOIN ANYWHERE",
+                sub: "Everyone can join from any device."
+              },
+              {
+                icon: (
+                  <svg viewBox="0 0 24 24" className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2.5">
+                    <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+                  </svg>
+                ),
+                cls: "purple",
+                label: "LIVE CHAT",
+                sub: "Chat, react and share the excitement!"
+              }
             ].map((f, i) => (
               <div className="hiw-feat-item" key={i}>
                 <div className={`hiw-feat-icon ${f.cls}`}>{f.icon}</div>
@@ -1508,33 +1523,156 @@ footer{background:#111827;padding:4rem 2rem 2rem;}
 .mock-ctrl{width:40px;height:40px;border-radius:50%;background:#f4f4f4;display:flex;align-items:center;justify-content:center;font-size:1.1rem;}
 .mock-ctrl-end{background:#FF4E6A;}
 /* ── How It Works Redesign ── */
-.hiw-new-section{padding:6rem 2rem;position:relative;overflow:hidden;background:url('/images/how-it-works-bg.png') center/cover no-repeat;min-height:90vh;display:flex;align-items:center;justify-content:center;}
-.hiw-overlay{position:absolute;top:0;left:0;width:100%;height:100%;background:rgba(255,255,255,0.18);z-index:2;}
+/* ── How It Works Redesign ── */
+.hiw-new-section {
+  padding: 22vw 2rem 6rem 2rem;
+  position: relative;
+  overflow: hidden;
+  background: url('/images/how-it-works-bg.png') center top/100% auto no-repeat;
+  background-color: #e0f2fe;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  align-items: center;
+  min-height: auto;
+}
 .hiw-new-inner{max-width:1060px;margin:0 auto;position:relative;z-index:3;background:transparent;box-shadow:none;border-radius:0;padding:0;width:100%;}
-.hiw-new-header{display:flex;align-items:center;justify-content:center;gap:1rem;margin-bottom:3.5rem;}
-.hiw-sparkle{font-size:1.8rem;}
-.hiw-main-title{font-family:'Nunito',sans-serif;font-size:clamp(2.2rem,4vw,3.2rem);font-weight:900;text-align:center;background:linear-gradient(90deg,#E8449A,#3A9FE8);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;text-shadow:0 2px 10px rgba(0,0,0,0.1);}
 .hiw-cards-row{display:grid;grid-template-columns:repeat(4,1fr);gap:1.2rem;margin-bottom:3rem;position:relative;align-items:stretch;}
-.hiw-new-card{display:flex;flex-direction:column;align-items:center;text-align:center;padding:2.2rem 1.4rem 1.8rem;position:relative;background:rgba(255,255,255,0.65);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);border-radius:24px;transition:transform 0.25s,box-shadow 0.25s;}
+.hiw-new-card {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  text-align: left;
+  padding: 1.8rem 1.5rem;
+  position: relative;
+  background: rgba(255, 255, 255, 0.65);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border-radius: 24px;
+  transition: transform 0.25s, box-shadow 0.25s;
+}
 .hiw-new-card:hover{transform:translateY(-6px);box-shadow:0 12px 36px rgba(100,60,200,0.12);}
 .hiw-new-card::after{display:none !important;}
-.hiw-num-circle{width:46px;height:46px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:'Nunito',sans-serif;font-size:1.2rem;font-weight:900;color:white;margin:0 auto 1.2rem;box-shadow:0 4px 14px rgba(0,0,0,0.15);}
-.hnc-1{background:linear-gradient(135deg,#E8449A,#FF7EC8);}.hnc-2{background:linear-gradient(135deg,#3A9FE8,#7EC8FF);}.hnc-3{background:linear-gradient(135deg,#7B6EE8,#B09CFF);}.hnc-4{background:linear-gradient(135deg,#E8449A,#FF7EC8);}
-.hiw-icon-bubble{width:76px;height:76px;border-radius:50%;margin:0 auto 1rem;display:flex;align-items:center;justify-content:center;}
-.hib-1{background:rgba(232,68,154,0.1);}.hib-2{background:rgba(58,159,232,0.1);}.hib-3{background:rgba(123,110,232,0.1);}.hib-4{background:rgba(232,68,154,0.1);}
-.hiw-card-img{width:140px;height:140px;object-fit:contain;margin:0 auto 1.2rem;display:block;}
-.hiw-card-title{font-family:'Nunito',sans-serif;font-size:1.1rem;font-weight:800;margin-bottom:0.5rem;}
-.hct-1{color:#E8449A;}.hct-2{color:#3A9FE8;}.hct-3{color:#7B6EE8;}.hct-4{color:#E8449A;}
-.hiw-card-desc{font-size:0.84rem;color:#374151;line-height:1.7;font-weight:600;flex-grow:1;}
-.hiw-feat-bar{background:rgba(255,255,255,0.55);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);border:1px solid rgba(255,255,255,0.4);border-radius:24px;padding:1.4rem 2.5rem;display:grid;grid-template-columns:repeat(4,1fr);gap:1rem;margin-bottom:0;box-shadow:0 8px 32px rgba(0,0,0,0.04);}
+.hiw-card-header {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 0.75rem;
+}
+.hiw-num-circle {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: 'Nunito', sans-serif;
+  font-size: 1.1rem;
+  font-weight: 900;
+  color: white;
+  flex-shrink: 0;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+}
+.hnc-1{background:linear-gradient(135deg,#E8449A,#FF7EC8);}
+.hnc-2{background:linear-gradient(135deg,#3A9FE8,#7EC8FF);}
+.hnc-3{background:linear-gradient(135deg,#F97316,#FBBF24);}
+.hnc-4{background:linear-gradient(135deg,#8B5CF6,#C084FC);}
+.hiw-card-img {
+  width: 100%;
+  height: 140px;
+  object-fit: contain;
+  margin-top: auto;
+  display: block;
+}
+.hiw-card-title {
+  font-family: 'Nunito', sans-serif;
+  font-size: 1.02rem;
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: 0.01em;
+}
+.hct-1{color:#E8449A;}
+.hct-2{color:#3A9FE8;}
+.hct-3{color:#F97316;}
+.hct-4{color:#8B5CF6;}
+.hiw-card-desc {
+  font-family: 'Nunito', sans-serif;
+  font-size: 0.84rem;
+  color: #374151;
+  line-height: 1.55;
+  font-weight: 600;
+  margin-bottom: 1rem;
+  flex-grow: 1;
+}
+.hiw-feat-bar {
+  background: rgba(255, 255, 255, 0.55);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  border-radius: 24px;
+  padding: 1.4rem 3rem;
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 3rem;
+  margin-bottom: 0;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.04);
+  max-width: 820px;
+  width: 100%;
+  margin: 0 auto;
+}
 .hiw-feat-item{display:flex;align-items:center;gap:0.8rem;}
 .hiw-feat-icon{width:40px;height:40px;border-radius:50%;background:rgba(232,68,154,0.2);display:flex;align-items:center;justify-content:center;font-size:1.2rem;flex-shrink:0;}
 .hiw-feat-icon.blue{background:rgba(58,159,232,0.2);}.hiw-feat-icon.purple{background:rgba(123,110,232,0.2);}.hiw-feat-icon.green{background:rgba(58,200,120,0.2);}
 .hiw-feat-text{display:flex;flex-direction:column;gap:0.15rem;}
 .hiw-feat-text strong{font-family:'Nunito',sans-serif;font-size:0.88rem;font-weight:800;color:#111827;}
 .hiw-feat-text span{font-size:0.73rem;color:#4b5563;}
-@media(max-width:900px){.hiw-cards-row{grid-template-columns:repeat(2,1fr);}.hiw-new-card:nth-child(2)::after,.hiw-new-card:nth-child(4)::after{display:none;}.hiw-feat-bar{grid-template-columns:repeat(2,1fr);}}
-@media(max-width:640px){.hero-content{grid-template-columns:1fr;}.hero-right{display:none;}.hiw-cards-row{grid-template-columns:1fr 1fr;}.hiw-new-card::after{display:none;}.hiw-feat-bar{grid-template-columns:1fr 1fr;}}
+@media(max-width:900px){
+  .hiw-cards-row{grid-template-columns:repeat(2,1fr);}
+  .hiw-feat-bar{grid-template-columns:repeat(2,1fr);gap:1.5rem;padding:1.2rem;}
+}
+@media(max-width:768px){
+  .hiw-new-section {
+    background: url('/images/how-it-works-bg-mobile.png') center top/100% auto no-repeat;
+    background-color: #e0f2fe;
+    padding: 52vw 1rem 3rem 1rem;
+    min-height: auto;
+  }
+  .hiw-cards-row {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+  }
+  .hiw-new-card {
+    display: grid;
+    grid-template-columns: 1.4fr 1fr;
+    gap: 1rem;
+    align-items: center;
+    padding: 1.25rem 1rem;
+    border-radius: 16px;
+  }
+  .hiw-card-header {
+    grid-column: 1;
+    margin-bottom: 0.5rem;
+  }
+  .hiw-card-desc {
+    grid-column: 1;
+    margin-bottom: 0;
+  }
+  .hiw-card-img {
+    grid-column: 2;
+    grid-row: 1 / span 2;
+    height: 110px;
+    margin-top: 0;
+  }
+  .hiw-feat-bar {
+    grid-template-columns: 1fr;
+    gap: 1.2rem;
+    padding: 1.2rem;
+  }
+}
+@media(max-width:640px){
+  .hero-content{grid-template-columns:1fr;}
+  .hero-right{display:none;}
+}
 /* ── Navbar Redesign ── */
 nav#main-nav{position:fixed;top:1rem;left:50%;transform:translateX(-50%);width:calc(100% - 3rem);max-width:980px;height:70px;display:flex;align-items:center;justify-content:space-between;padding:0 1.8rem;background:rgba(255,255,255,0.96);backdrop-filter:blur(20px);border-radius:50px;box-shadow:0 4px 20px rgba(0,0,0,0.1);border:1px solid rgba(255,255,255,0.9);transition:box-shadow 0.3s;}
 nav#main-nav.solid{box-shadow:0 6px 28px rgba(0,0,0,0.14);}
