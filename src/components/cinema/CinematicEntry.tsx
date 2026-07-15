@@ -1383,6 +1383,12 @@ footer{background:#111827;padding:4rem 2rem 2rem;}
   font-size: 0.88rem;
   font-weight: 800;
   color: #111827;
+  white-space: nowrap;
+}
+@media (max-width: 768px) {
+  .hero-feature-title {
+    white-space: normal;
+  }
 }
 
 .hero-feature-desc {
