@@ -744,6 +744,12 @@ function LandingPage() {
         </div>
       </section>
 
+      <section className="testimonial-banner-section fade-up">
+        <div className="testimonial-banner-img-wrapper">
+          <img src="/assets/testimonial_page_bg.png" alt="Family watching gender reveal" className="testimonial-banner-img" />
+        </div>
+      </section>
+
       <section className="testi-new-section">
         <div className="testi-new-inner">
           <div className="testi-new-grid fade-up">
@@ -1761,6 +1767,9 @@ nav#main-nav.solid{box-shadow:0 6px 28px rgba(0,0,0,0.14);}
 .pricing-strip-title{font-family:'Nunito',sans-serif;font-weight:900;font-size:1.25rem;color:#111827;margin:0 0 0.25rem 0;text-shadow:0 1px 2px rgba(255,255,255,0.85);}
 .pricing-strip-sub{font-family:'Nunito',sans-serif;font-size:0.86rem;color:#4b5563;font-weight:700;margin:0;text-shadow:0 1px 2px rgba(255,255,255,0.85);}
 .pricing-strip-img{width:100%;height:auto;max-height:200px;object-fit:contain;}
+.testimonial-banner-section{width:100%;position:relative;overflow:hidden;background-color:#ecdffa;}
+.testimonial-banner-img-wrapper{width:100%;line-height:0;}
+.testimonial-banner-img{width:100%;height:auto;display:block;}
 @media(max-width:768px){.pricing-grid{grid-template-columns:1fr;}.pnew-premium{transform:none;}.pnew-premium:hover{transform:translateY(-6px);}}
 /* ── Testimonials Redesign ── */
 .testi-new-section {
