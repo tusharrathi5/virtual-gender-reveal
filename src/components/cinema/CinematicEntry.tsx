@@ -484,7 +484,6 @@ function LandingPage() {
                   </div>
                   <div className="hero-feature-text">
                     <span className="hero-feature-title">100% Safe</span>
-                    <span className="hero-feature-desc">No smoke. No mess. Just joy.</span>
                   </div>
                 </div>
 
@@ -498,7 +497,6 @@ function LandingPage() {
                   </div>
                   <div className="hero-feature-text">
                     <span className="hero-feature-title">Watch Anywhere</span>
-                    <span className="hero-feature-desc">On any device, anywhere in the world.</span>
                   </div>
                 </div>
 
@@ -513,7 +511,6 @@ function LandingPage() {
                   </div>
                   <div className="hero-feature-text">
                     <span className="hero-feature-title">Everyone Included</span>
-                    <span className="hero-feature-desc">Friends and family can join from anywhere.</span>
                   </div>
                 </div>
 
@@ -526,7 +523,6 @@ function LandingPage() {
                   </div>
                   <div className="hero-feature-text">
                     <span className="hero-feature-title">Private &amp; Secure</span>
-                    <span className="hero-feature-desc">For you, your family and friends.</span>
                   </div>
                 </div>
               </div>
@@ -1265,14 +1261,13 @@ footer{background:#111827;padding:4rem 2rem 2rem;}
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
   border: 1.5px solid rgba(255, 255, 255, 0.5);
-  border-radius: 28px;
-  padding: 1.5rem 2rem;
+  border-radius: 20px;
+  padding: 0.65rem 1.5rem;
   max-width: 820px;
   width: 100%;
   box-shadow: 0 15px 40px rgba(74, 85, 150, 0.08);
   display: flex;
   flex-direction: column;
-  gap: 1.5rem;
   margin-top: 0;
   margin-bottom: 2rem;
   transition: transform 0.3s ease, box-shadow 0.3s ease;
@@ -1460,9 +1455,8 @@ footer{background:#111827;padding:4rem 2rem 2rem;}
 
 @media (max-width: 768px) {
   .hero-features-card {
-    padding: 1.25rem;
-    gap: 1.25rem;
-    border-radius: 24px;
+    padding: 0.65rem 1rem;
+    border-radius: 16px;
   }
   .social-proof-banner {
     padding: 0;
