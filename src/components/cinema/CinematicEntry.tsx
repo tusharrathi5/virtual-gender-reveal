@@ -455,22 +455,81 @@ function LandingPage() {
             />
             <p className="hero-sub-new">Because every reveal deserves a story.</p>
 
-            <div className="social-proof-banner">
-              <div className="social-avatars">
-                <img src="/images/avatar1.jpg" alt="Family avatar 1" className="avatar-img" />
-                <img src="/images/avatar2.jpg" alt="Family avatar 2" className="avatar-img" />
-                <img src="/images/avatar3.jpg" alt="Family avatar 3" className="avatar-img" />
-                <img src="/images/avatar4.jpg" alt="Family avatar 4" className="avatar-img" />
-                <img src="/images/avatar5.jpg" alt="Family avatar 5" className="avatar-img" />
+            <div className="social-proof-card">
+              <div className="social-proof-banner">
+                <div className="social-avatars">
+                  <img src="/images/avatar1.jpg" alt="Family avatar 1" className="avatar-img" />
+                  <img src="/images/avatar2.jpg" alt="Family avatar 2" className="avatar-img" />
+                  <img src="/images/avatar3.jpg" alt="Family avatar 3" className="avatar-img" />
+                  <img src="/images/avatar4.jpg" alt="Family avatar 4" className="avatar-img" />
+                  <img src="/images/avatar5.jpg" alt="Family avatar 5" className="avatar-img" />
+                </div>
+                <div className="social-text">
+                  <span className="social-main-text">Join over 3,000+ families</span>
+                  <span className="social-sub-text">who&apos;ve celebrated with us!</span>
+                </div>
+                <div className="social-icon">
+                  <svg viewBox="0 0 24 24" className="heart-icon-svg" fill="none" stroke="#E8449A" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
+                  </svg>
+                </div>
               </div>
-              <div className="social-text">
-                <span className="social-main-text">Join over 3,000+ families</span>
-                <span className="social-sub-text">who&apos;ve celebrated with us!</span>
-              </div>
-              <div className="social-icon">
-                <svg viewBox="0 0 24 24" className="heart-icon-svg" fill="none" stroke="#E8449A" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
-                </svg>
+
+              <div className="hero-features-row">
+                <div className="hero-feature-item">
+                  <div className="hero-feature-icon-wrapper pink-solid">
+                    <svg viewBox="0 0 24 24" className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2.5">
+                      <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+                      <path d="m9 11 2 2 4-4" />
+                    </svg>
+                  </div>
+                  <div className="hero-feature-text">
+                    <span className="hero-feature-title">100% Safe</span>
+                    <span className="hero-feature-desc">No smoke. No mess. Just joy.</span>
+                  </div>
+                </div>
+
+                <div className="hero-feature-item">
+                  <div className="hero-feature-icon-wrapper purple-solid">
+                    <svg viewBox="0 0 24 24" className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2">
+                      <circle cx="12" cy="12" r="10" />
+                      <path d="M2 12h20" />
+                      <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" />
+                    </svg>
+                  </div>
+                  <div className="hero-feature-text">
+                    <span className="hero-feature-title">Watch Anywhere</span>
+                    <span className="hero-feature-desc">On any device, anywhere in the world.</span>
+                  </div>
+                </div>
+
+                <div className="hero-feature-item">
+                  <div className="hero-feature-icon-wrapper blue-solid">
+                    <svg viewBox="0 0 24 24" className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2">
+                      <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+                      <circle cx="9" cy="7" r="4" />
+                      <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
+                      <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+                    </svg>
+                  </div>
+                  <div className="hero-feature-text">
+                    <span className="hero-feature-title">Everyone Included</span>
+                    <span className="hero-feature-desc">Friends and family can join from anywhere.</span>
+                  </div>
+                </div>
+
+                <div className="hero-feature-item">
+                  <div className="hero-feature-icon-wrapper green-outline">
+                    <svg viewBox="0 0 24 24" className="w-6 h-6" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                      <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
+                      <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+                    </svg>
+                  </div>
+                  <div className="hero-feature-text">
+                    <span className="hero-feature-title">Private &amp; Secure</span>
+                    <span className="hero-feature-desc">For you, your family and friends.</span>
+                  </div>
+                </div>
               </div>
             </div>
             <button type="button" className="btn-create-party" onClick={() => routeToReveal()} disabled={checkingEntitlement}>{checkingEntitlement ? "Checking..." : "🎉 Create Your Party"}</button>
@@ -1201,33 +1260,123 @@ footer{background:#111827;padding:4rem 2rem 2rem;}
 .btn-create-party:hover{transform:translateY(-3px);box-shadow:0 10px 32px rgba(232,68,154,0.5);}
 .hero-tagline{font-size:1rem;color:#444;font-weight:600;display:flex;align-items:center;gap:0.4rem;}
 
-/* ── Social Proof Banner ── */
+/* ── Social Proof Card & Banner ── */
+.social-proof-card {
+  background: rgba(255, 255, 255, 0.45);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1.5px solid rgba(255, 255, 255, 0.5);
+  border-radius: 28px;
+  padding: 1.5rem 2rem;
+  max-width: 820px;
+  width: 100%;
+  box-shadow: 0 15px 40px rgba(74, 85, 150, 0.08);
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  margin-top: 0;
+  margin-bottom: 2rem;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.social-proof-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 20px 48px rgba(74, 85, 150, 0.14);
+}
+
 .social-proof-banner {
   display: flex;
   align-items: center;
   gap: 14px;
-  background: rgba(255, 255, 255, 0.35);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-  padding: 12px 18px;
-  border-radius: 999px;
-  max-width: 520px;
+  background: none;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  padding: 0;
+  border-radius: 0;
+  max-width: 100%;
   width: 100%;
-  margin-top: 0;
-  margin-bottom: 20px;
-  box-shadow: 0 12px 35px rgba(74, 85, 150, 0.12);
-  position: relative;
-  border: 1.5px solid transparent;
-  background-clip: padding-box;
-  background-image: linear-gradient(rgba(255,255,255,0.35), rgba(255,255,255,0.35)), linear-gradient(135deg, rgba(232, 68, 154, 0.5), rgba(58, 159, 232, 0.5));
-  background-origin: border-box;
-  transition: transform 0.3s ease, box-shadow 0.3s ease, background-color 0.3s ease;
+  box-shadow: none;
+  border: none;
+  background-image: none;
+  transition: transform 0.3s ease;
 }
 
 .social-proof-banner:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 16px 40px rgba(74, 85, 150, 0.18);
-  background-image: linear-gradient(rgba(255,255,255,0.45), rgba(255,255,255,0.45)), linear-gradient(135deg, rgba(232, 68, 154, 0.7), rgba(58, 159, 232, 0.7));
+  transform: none;
+  box-shadow: none;
+  background-image: none;
+}
+
+.hero-features-row {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1.5rem;
+  width: 100%;
+  border-top: 1.5px solid rgba(0, 0, 0, 0.06);
+  padding-top: 1.5rem;
+}
+
+.hero-feature-item {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  text-align: left;
+}
+
+.hero-feature-icon-wrapper {
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.hero-feature-icon-wrapper.pink-solid {
+  background: linear-gradient(135deg, #E8449A, #FF7EC8);
+  color: white;
+  box-shadow: 0 4px 12px rgba(232, 68, 154, 0.15);
+}
+
+.hero-feature-icon-wrapper.purple-solid {
+  background: linear-gradient(135deg, #8B5CF6, #C084FC);
+  color: white;
+  box-shadow: 0 4px 12px rgba(139, 92, 246, 0.15);
+}
+
+.hero-feature-icon-wrapper.blue-solid {
+  background: linear-gradient(135deg, #3A9FE8, #60A5FA);
+  color: white;
+  box-shadow: 0 4px 12px rgba(58, 159, 232, 0.15);
+}
+
+.hero-feature-icon-wrapper.green-outline {
+  color: #84CC16;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.hero-feature-text {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.hero-feature-title {
+  font-family: 'Nunito', sans-serif;
+  font-size: 0.88rem;
+  font-weight: 800;
+  color: #111827;
+}
+
+.hero-feature-desc {
+  font-family: 'Nunito', sans-serif;
+  font-size: 0.72rem;
+  color: #6B7280;
+  font-weight: 600;
+  line-height: 1.35;
 }
 
 .social-avatars {
@@ -1289,7 +1438,7 @@ footer{background:#111827;padding:4rem 2rem 2rem;}
   transition: transform 0.3s ease;
 }
 
-.social-proof-banner:hover .social-icon {
+.social-proof-card:hover .social-icon {
   animation: heartBeat 1.2s infinite alternate;
 }
 
@@ -1321,18 +1470,28 @@ footer{background:#111827;padding:4rem 2rem 2rem;}
 }
 
 @media (max-width: 768px) {
+  .social-proof-card {
+    padding: 1.25rem;
+    gap: 1.25rem;
+    border-radius: 24px;
+  }
   .social-proof-banner {
-    padding: 8px 14px;
+    padding: 0;
     gap: 10px;
-    margin-bottom: 18px;
+    margin-bottom: 0;
     max-width: 100%;
-    justify-content: center;
-    background: rgba(255, 255, 255, 0.45);
-    background-image: linear-gradient(rgba(255,255,255,0.45), rgba(255,255,255,0.45)), linear-gradient(135deg, rgba(232, 68, 154, 0.4), rgba(58, 159, 232, 0.4));
+    justify-content: flex-start;
+    background: none;
+    background-image: none;
   }
   .social-proof-banner:hover {
     transform: none;
-    box-shadow: 0 12px 35px rgba(74, 85, 150, 0.12);
+    box-shadow: none;
+  }
+  .hero-features-row {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1rem;
+    padding-top: 1.25rem;
   }
   .avatar-img {
     width: 34px;
