@@ -138,8 +138,8 @@ export default function DashboardShell({
   const planName = firestoreUser?.activePlan ?? "none";
   const planDisplayNames: Record<string, string> = {
     none: "No Plan",
-    basic: "Freemium Plan",
-    premium: "Premium Plan",
+    basic: "Little Bundle",
+    premium: "Bundle of Joy",
     custom: "Custom Plan",
   };
   const isPremium = planName === "premium" || planName === "custom";

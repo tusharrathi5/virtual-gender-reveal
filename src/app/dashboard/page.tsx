@@ -892,7 +892,7 @@ function DashboardContent() {
     if (activatingPlan) return;
     setActivatingPlan(plan.id);
     setToast({
-      message: plan.priceCents > 0 ? "Taking you to the payment gateway..." : "Activating your Freemium plan...",
+      message: plan.priceCents > 0 ? "Taking you to the payment gateway..." : "Activating your Little Bundle...",
       type: "info",
     });
     try {
@@ -1098,36 +1098,7 @@ function DashboardContent() {
           )}
         </div>
 
-        {/* Overview Stat Cards */}
-        {hasPlan && (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-            <div className="bg-white/40 backdrop-blur-md border border-white/30 shadow-lg rounded-[20px] p-6 shadow-sm flex flex-col justify-between">
-              <span className="text-[10px] text-gray-400 block uppercase font-bold tracking-wider mb-2">Billing Tier</span>
-              <div className="flex items-center justify-between">
-                <span className="text-lg font-bold text-gray-900">{PLANS.find((p) => p.id === activePlan)?.name ?? activePlan}</span>
-                <span className="text-xs bg-[#FDE8F2] text-[#C2527A] px-2 py-0.5 rounded-full font-bold uppercase tracking-wider">
-                  {getPaymentStatusLabel(accountPaymentStatus)}
-                </span>
-              </div>
-            </div>
 
-            <div className="bg-white/40 backdrop-blur-md border border-white/30 shadow-lg rounded-[20px] p-6 shadow-sm flex flex-col justify-between">
-              <span className="text-[10px] text-gray-400 block uppercase font-bold tracking-wider mb-2">Reveals Remaining</span>
-              <div className="flex items-baseline gap-1.5">
-                <span className="text-3xl font-extrabold text-gray-900">{revealsAllowed}</span>
-                <span className="text-xs text-gray-400 font-semibold font-jakarta">reveals allowed</span>
-              </div>
-            </div>
-
-            <div className="bg-white/40 backdrop-blur-md border border-white/30 shadow-lg rounded-[20px] p-6 shadow-sm flex flex-col justify-between">
-              <span className="text-[10px] text-gray-400 block uppercase font-bold tracking-wider mb-2">Reveals Created</span>
-              <div className="flex items-baseline gap-1.5">
-                <span className="text-3xl font-extrabold text-gray-900">{revealsCreated}</span>
-                <span className="text-xs text-gray-400 font-semibold font-jakarta">published to date</span>
-              </div>
-            </div>
-          </div>
-        )}
 
         {/* Recent Reveals List or Empty State */}
         {reveals.length > 0 ? (
@@ -1162,13 +1133,15 @@ function DashboardContent() {
                       </div>
 
                       <div className="flex items-center gap-2 flex-wrap">
-                        <span className={`px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider ${
-                          getRevealVideoStatus(reveal) === "ready" 
-                            ? "bg-purple-100 text-purple-800" 
-                            : "bg-yellow-100 text-yellow-800"
-                        }`}>
-                          {getRevealVideoLabel(reveal)}
-                        </span>
+                        {reveal.plan !== "basic" && (
+                          <span className={`px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider ${
+                            getRevealVideoStatus(reveal) === "ready" 
+                              ? "bg-purple-100 text-purple-800" 
+                              : "bg-yellow-100 text-yellow-800"
+                          }`}>
+                            {getRevealVideoLabel(reveal)}
+                          </span>
+                        )}
                         
                         <span className={`px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider flex items-center gap-1 ${
                           editable ? "bg-green-100 text-green-800" : "bg-gray-100 text-gray-500"
@@ -1565,14 +1538,10 @@ function DashboardContent() {
                             <td className="p-4 text-gray-500">{guest.phone || "-"}</td>
                             <td className="p-4 text-gray-500">{guest.email}</td>
                             <td className="p-4 font-semibold">
-                              {revealUnlocked ? (
-                                guest.prediction === "boy" ? "💙 Boy" : guest.prediction === "girl" ? "🩷 Girl" : "-"
-                              ) : (
-                                <span className="text-gray-300 italic font-normal">Locked</span>
-                              )}
+                              {guest.prediction === "boy" ? "💙 Boy" : guest.prediction === "girl" ? "🩷 Girl" : "-"}
                             </td>
                             <td className="p-4 max-w-[200px] truncate text-gray-500">
-                              {revealUnlocked ? guest.message || "-" : guest.hasMessage ? "🔐 Locked" : "-"}
+                              {guest.message || "-"}
                             </td>
                             <td className="p-4 text-right flex items-center justify-end gap-2">
                               <button
@@ -1731,7 +1700,7 @@ function PlanSection({
 
       {upgrade && (
         <div className="bg-gradient-to-r from-[#FDE8F2] to-[#D6EAFE] border border-white rounded-2xl p-5 shadow-sm text-sm text-gray-700 leading-relaxed font-semibold">
-          🎉 You are on the Freemium plan. Upgrade anytime for a cinematic reveal experience!
+          🎉 You are on the Little Bundle plan. Upgrade anytime for a cinematic reveal experience!
         </div>
       )}
 
