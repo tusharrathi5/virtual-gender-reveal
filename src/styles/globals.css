@@ -508,6 +508,7 @@ body {
   height: 110px;
   object-fit: contain;
   pointer-events: none;
+  padding: 6px;
 }
 
 .reveal-mode-card-title {
