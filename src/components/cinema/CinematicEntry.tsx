@@ -1720,7 +1720,7 @@ nav#main-nav.solid{box-shadow:0 6px 28px rgba(0,0,0,0.14);}
   .nav-links .nav-link{width:100%;text-align:center;padding:0.6rem 0;font-size:0.95rem;}
 }
 /* ── Pricing Redesign ── */
-.pricing-section{padding:33vw 2rem 3rem 2rem;position:relative;overflow:hidden;background:url('/assets/pricing_page_bg.png') center top/100% 100% no-repeat;background-color:#fdf2f8;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;}
+.pricing-section{padding:28vw 2rem 2rem 2rem;position:relative;overflow:hidden;background:url('/assets/pricing_page_bg.png') center top/100% auto no-repeat;background-color:#fdf2f8;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;}
 .pricing-bg-dec{position:absolute;font-size:5rem;line-height:1.3;pointer-events:none;opacity:0.7;animation:balloonFloat 5s ease-in-out infinite alternate;}
 .pricing-bg-left{left:1%;top:8%;animation-direction:alternate;}
 .pricing-bg-right{right:1%;top:10%;font-size:7rem;animation-direction:alternate-reverse;}
