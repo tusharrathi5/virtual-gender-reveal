@@ -750,19 +750,6 @@ function LandingPage() {
       </section>
 
       <section className="testi-new-section">
-        <div className="testi-new-header fade-up">
-          <div className="testi-pill-badge">💗 LOVED BY THOUSANDS</div>
-          <h2 className="testi-main-title">What Our <span className="testi-title-pink">Users</span> Say</h2>
-          <p className="testi-new-sub">
-            Real stories. Real smiles.<br />
-            Real celebrations. 💗
-          </p>
-          <svg className="testi-ornament" viewBox="0 0 100 20" fill="none" stroke="#e2b857" strokeWidth="1.5" strokeLinecap="round">
-            <path d="M10 10c15 0 20-5 35-5s5 5 5 5" />
-            <path d="M90 10c-15 0-20-5-35-5s-5 5-5 5" />
-            <path d="M50 7c-2-2-5 0-5 3 0 3 5 5 5 5s5-2 5-5c0-3-3-5-5-3z" />
-          </svg>
-        </div>
         <div className="testi-new-inner">
           <div className="testi-new-grid fade-up">
             {[
@@ -1771,7 +1758,7 @@ nav#main-nav.solid{box-shadow:0 6px 28px rgba(0,0,0,0.14);}
 @media(max-width:768px){.pricing-grid{grid-template-columns:1fr;}.pnew-premium{transform:none;}.pnew-premium:hover{transform:translateY(-6px);}}
 /* ── Testimonials Redesign ── */
 .testi-new-section {
-  padding: 6rem 2rem 5rem 2rem;
+  padding: 33vw 2rem 5rem 2rem;
   background: url('/images/testimonials-bg.png') center top/100% auto no-repeat;
   background-color: #ecdffa;
   position: relative;
@@ -1782,54 +1769,6 @@ nav#main-nav.solid{box-shadow:0 6px 28px rgba(0,0,0,0.14);}
 }
 .testi-heart-left, .testi-heart-right {
   display: none !important;
-}
-.testi-new-header {
-  position: relative;
-  margin-bottom: 0;
-  width: 100%;
-  max-width: 600px;
-  text-align: center;
-  z-index: 4;
-}
-.testi-pill-badge {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.4rem;
-  padding: 0.38rem 1.2rem;
-  border: 1.5px solid #E8449A;
-  border-radius: 50px;
-  font-size: 0.72rem;
-  font-weight: 700;
-  color: #E8449A;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  margin-bottom: 1rem;
-  background: rgba(255, 255, 255, 0.95);
-  box-shadow: 0 2px 8px rgba(232, 68, 154, 0.08);
-}
-.testi-main-title {
-  font-family: 'Nunito', sans-serif;
-  font-size: clamp(2rem, 3.8vw, 2.8rem);
-  font-weight: 900;
-  color: #1b2a4a;
-  line-height: 1.2;
-}
-.testi-title-pink {
-  color: #E8449A;
-}
-.testi-new-sub {
-  font-size: 0.95rem;
-  color: #4b5563;
-  margin-top: 0.6rem;
-  line-height: 1.45;
-  font-weight: 600;
-}
-.testi-ornament {
-  width: 140px;
-  height: 28px;
-  margin: 0.8rem auto 0;
-  display: block;
-  opacity: 0.85;
 }
 .testi-avatar-icon {
   width: 44px;
@@ -1851,7 +1790,6 @@ nav#main-nav.solid{box-shadow:0 6px 28px rgba(0,0,0,0.14);}
   display: grid;
   grid-template-columns: repeat(4, 1fr);
   gap: 1.25rem;
-  margin-top: 14vw;
 }
 @media(max-width:1024px){.testi-new-grid{grid-template-columns:repeat(2, 1fr);}}
 @media(max-width:640px){.testi-new-grid{grid-template-columns:1fr;}}
@@ -2084,20 +2022,9 @@ nav#main-nav.solid{box-shadow:0 6px 28px rgba(0,0,0,0.14);}
     display: none !important;
   }
   .testi-new-section {
-    padding: 4rem 1.2rem 4rem !important;
+    padding: 58vw 1.2rem 4rem !important;
     background: url('/images/testimonials-bg.png') center top/100% auto no-repeat !important;
     background-color: #ecdffa !important;
-  }
-  .testi-new-header {
-    position: relative !important;
-    top: 0 !important;
-    left: 0 !important;
-    transform: none !important;
-    margin-bottom: 0 !important;
-    max-width: 100% !important;
-  }
-  .testi-new-grid {
-    margin-top: 48vw !important;
   }
   .testi-new-card {
     padding: 1.8rem 1.2rem !important;
