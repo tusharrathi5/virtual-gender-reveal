@@ -548,11 +548,13 @@ function LandingPage() {
               { img: "/assets/how-it-works/celebrate-together.png", tc: "hct-4", title: "Celebrate The Moment",desc: "Share the joy, happy tears, and hugs! Celebrate together and create memories that last forever." },
             ].map((s, i) => (
               <div className="hiw-new-card" key={i}>
-                <div className="hiw-card-header">
-                  <span className={`hiw-num-circle hnc-${i + 1}`}>{i + 1}</span>
-                  <div className={`hiw-card-title ${s.tc}`}>{s.title}</div>
+                <div className="hiw-card-content">
+                  <div className="hiw-card-header">
+                    <span className={`hiw-num-circle hnc-${i + 1}`}>{i + 1}</span>
+                    <div className={`hiw-card-title ${s.tc}`}>{s.title}</div>
+                  </div>
+                  <div className="hiw-card-desc">{s.desc}</div>
                 </div>
-                <div className="hiw-card-desc">{s.desc}</div>
                 <img src={s.img} alt={s.title} className="hiw-card-img" />
               </div>
             ))}
@@ -566,11 +568,7 @@ function LandingPage() {
                 sub: "Everyone can join from any device."
               },
               {
-                icon: (
-                  <svg viewBox="0 0 24 24" className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2.5">
-                    <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
-                  </svg>
-                ),
+                img: "/assets/how-it-works/live-chat.png",
                 cls: "purple",
                 label: "LIVE CHAT",
                 sub: "Chat, react and share the excitement!"
@@ -1523,7 +1521,7 @@ footer{background:#111827;padding:4rem 2rem 2rem;}
 /* ── How It Works Redesign ── */
 /* ── How It Works Redesign ── */
 .hiw-new-section {
-  padding: 22vw 2rem 6rem 2rem;
+  padding: 22vw 2rem 3rem 2rem;
   position: relative;
   overflow: hidden;
   background: url('/images/how-it-works-bg.png') center top/100% auto no-repeat;
@@ -1534,14 +1532,14 @@ footer{background:#111827;padding:4rem 2rem 2rem;}
   align-items: center;
   min-height: auto;
 }
-.hiw-new-inner{max-width:1060px;margin:0 auto;position:relative;z-index:3;background:transparent;box-shadow:none;border-radius:0;padding:0;width:100%;}
-.hiw-cards-row{display:grid;grid-template-columns:repeat(4,1fr);gap:1.2rem;margin-bottom:3rem;position:relative;align-items:stretch;}
+.hiw-new-inner{max-width:1260px;margin:0 auto;position:relative;z-index:3;background:transparent;box-shadow:none;border-radius:0;padding:0;width:100%;}
+.hiw-cards-row{display:grid;grid-template-columns:repeat(4,1fr);gap:1rem;margin-bottom:2.5rem;position:relative;align-items:stretch;}
 .hiw-new-card {
-  display: flex;
-  flex-direction: column;
-  align-items: stretch;
-  text-align: left;
-  padding: 1.8rem 1.5rem;
+  display: grid;
+  grid-template-columns: 1.25fr 1fr;
+  gap: 0.75rem;
+  align-items: center;
+  padding: 1.5rem 1.1rem;
   position: relative;
   background: rgba(255, 255, 255, 0.65);
   backdrop-filter: blur(10px);
@@ -1551,21 +1549,27 @@ footer{background:#111827;padding:4rem 2rem 2rem;}
 }
 .hiw-new-card:hover{transform:translateY(-6px);box-shadow:0 12px 36px rgba(100,60,200,0.12);}
 .hiw-new-card::after{display:none !important;}
+.hiw-card-content {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  text-align: left;
+}
 .hiw-card-header {
   display: flex;
   align-items: center;
-  gap: 0.75rem;
-  margin-bottom: 0.75rem;
+  gap: 0.6rem;
+  margin-bottom: 0.5rem;
 }
 .hiw-num-circle {
-  width: 36px;
-  height: 36px;
+  width: 32px;
+  height: 32px;
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
   font-family: 'Nunito', sans-serif;
-  font-size: 1.1rem;
+  font-size: 1rem;
   font-weight: 900;
   color: white;
   flex-shrink: 0;
@@ -1577,14 +1581,13 @@ footer{background:#111827;padding:4rem 2rem 2rem;}
 .hnc-4{background:linear-gradient(135deg,#8B5CF6,#C084FC);}
 .hiw-card-img {
   width: 100%;
-  height: 140px;
+  height: 110px;
   object-fit: contain;
-  margin-top: auto;
   display: block;
 }
 .hiw-card-title {
   font-family: 'Nunito', sans-serif;
-  font-size: 1.02rem;
+  font-size: 0.94rem;
   font-weight: 900;
   text-transform: uppercase;
   letter-spacing: 0.01em;
@@ -1595,12 +1598,10 @@ footer{background:#111827;padding:4rem 2rem 2rem;}
 .hct-4{color:#8B5CF6;}
 .hiw-card-desc {
   font-family: 'Nunito', sans-serif;
-  font-size: 0.84rem;
+  font-size: 0.78rem;
   color: #374151;
-  line-height: 1.55;
+  line-height: 1.45;
   font-weight: 600;
-  margin-bottom: 1rem;
-  flex-grow: 1;
 }
 .hiw-feat-bar {
   background: rgba(255, 255, 255, 0.55);
@@ -1633,7 +1634,7 @@ footer{background:#111827;padding:4rem 2rem 2rem;}
   .hiw-new-section {
     background: url('/images/how-it-works-bg-mobile.png') center top/100% auto no-repeat;
     background-color: #e0f2fe;
-    padding: 64vw 1rem 3rem 1rem;
+    padding: 64vw 1rem 2rem 1rem;
     min-height: auto;
   }
   .hiw-cards-row {
@@ -1648,17 +1649,11 @@ footer{background:#111827;padding:4rem 2rem 2rem;}
     padding: 1.25rem 1rem;
     border-radius: 16px;
   }
-  .hiw-card-header {
+  .hiw-card-content {
     grid-column: 1;
-    margin-bottom: 0.5rem;
-  }
-  .hiw-card-desc {
-    grid-column: 1;
-    margin-bottom: 0;
   }
   .hiw-card-img {
     grid-column: 2;
-    grid-row: 1 / span 2;
     height: 110px;
     margin-top: 0;
   }
