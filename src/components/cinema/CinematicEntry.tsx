@@ -549,7 +549,6 @@ function LandingPage() {
             ].map((s, i) => (
               <div className="hiw-new-card" key={i}>
                 <div className="hiw-card-header">
-                  <span className={`hiw-num-circle hnc-${i + 1}`}>{i + 1}</span>
                   <div className={`hiw-card-title ${s.tc}`}>{s.title}</div>
                 </div>
                 <div className="hiw-card-desc">{s.desc}</div>
@@ -1634,7 +1633,7 @@ footer{background:#111827;padding:4rem 2rem 2rem;}
   .hiw-new-section {
     background: url('/images/how-it-works-bg-mobile.png') center top/100% auto no-repeat;
     background-color: #e0f2fe;
-    padding: 52vw 1rem 3rem 1rem;
+    padding: 64vw 1rem 3rem 1rem;
     min-height: auto;
   }
   .hiw-cards-row {
