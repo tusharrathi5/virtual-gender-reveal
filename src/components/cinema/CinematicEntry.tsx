@@ -1714,7 +1714,7 @@ nav#main-nav.solid{box-shadow:0 6px 28px rgba(0,0,0,0.14);}
   .nav-links .nav-link{width:100%;text-align:center;padding:0.6rem 0;font-size:0.95rem;}
 }
 /* ── Pricing Redesign ── */
-.pricing-section{padding:24vw 2rem 5rem 2rem;position:relative;overflow:hidden;background:url('/assets/pricing_page_bg.png') center top/100% 100% no-repeat;background-color:#fdf2f8;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;}
+.pricing-section{padding:33vw 2rem 3rem 2rem;position:relative;overflow:hidden;background:url('/assets/pricing_page_bg.png') center top/100% 100% no-repeat;background-color:#fdf2f8;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;}
 .pricing-bg-dec{position:absolute;font-size:5rem;line-height:1.3;pointer-events:none;opacity:0.7;animation:balloonFloat 5s ease-in-out infinite alternate;}
 .pricing-bg-left{left:1%;top:8%;animation-direction:alternate;}
 .pricing-bg-right{right:1%;top:10%;font-size:7rem;animation-direction:alternate-reverse;}
@@ -1756,7 +1756,7 @@ nav#main-nav.solid{box-shadow:0 6px 28px rgba(0,0,0,0.14);}
 .pbtn-blue{background:linear-gradient(135deg,#3A9FE8,#7EC8FF);color:white;box-shadow:0 4px 16px rgba(58,159,232,0.35);}
 .pricing-trust{display:flex;align-items:center;justify-content:center;gap:1.2rem;background:white;border-radius:16px;padding:1rem 2rem;box-shadow:0 4px 16px rgba(0,0,0,0.06);font-size:0.85rem;color:#555;flex-wrap:wrap;}
 .pricing-trust-divider{width:1px;height:20px;background:#e0e0e0;}
-.pricing-strip-container{display:flex;flex-direction:column;align-items:center;width:100%;margin:2rem auto 2.5rem;max-width:960px;padding:0 1rem;text-align:center;}
+.pricing-strip-container{display:flex;flex-direction:column;align-items:center;width:100%;margin:1.25rem auto 1.5rem;max-width:960px;padding:0 1rem;text-align:center;}
 .pricing-strip-header{margin-bottom:1rem;}
 .pricing-strip-title{font-family:'Nunito',sans-serif;font-weight:900;font-size:1.25rem;color:#111827;margin:0 0 0.25rem 0;text-shadow:0 1px 2px rgba(255,255,255,0.85);}
 .pricing-strip-sub{font-family:'Nunito',sans-serif;font-size:0.86rem;color:#4b5563;font-weight:700;margin:0;text-shadow:0 1px 2px rgba(255,255,255,0.85);}
@@ -2013,9 +2013,12 @@ nav#main-nav.solid{box-shadow:0 6px 28px rgba(0,0,0,0.14);}
     justify-content: flex-start !important;
   }
   .pricing-section {
-    padding: 56vw 1.2rem 4rem !important;
+    padding: 58vw 1.2rem 3rem !important;
     background: url('/assets/pricing_page_bg.png') center top/100% auto no-repeat !important;
     background-color: #fdf2f8 !important;
+  }
+  .pricing-strip-container {
+    margin: 1rem auto 1.25rem !important;
   }
   .pnew-card {
     padding: 2rem 1.2rem 1.8rem !important;
