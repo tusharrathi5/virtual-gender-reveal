@@ -863,7 +863,7 @@ function LandingPage() {
               <button type="button" className="faq-modal-close" onClick={() => setShowStoryModal(false)}>✕</button>
               <div className="faq-header" style={{ marginBottom: '1.8rem', textAlign: 'left' }}>
                 <div className="faq-badge" style={{ borderColor: '#E8449A', color: '#E8449A', display: 'inline-block' }}>💙🩷 Our Story</div>
-                <h2 className="faq-title" style={{ fontFamily: "'Nunito', sans-serif", fontSize: '2rem', fontWeight: 900, color: '#2D285C', justifyContent: 'flex-start', margin: '0.4rem 0 0' }}>Because Every Reveal Deserves a Story</h2>
+                <h2 className="faq-title" style={{ fontFamily: "'Nunito', sans-serif", fontSize: 'clamp(1.5rem, 4vw, 2rem)', fontWeight: 900, color: '#2D285C', justifyContent: 'flex-start', margin: '0.4rem 0 0', whiteSpace: 'normal', wordBreak: 'break-word', display: 'block' }}>Because Every Reveal Deserves a Story</h2>
               </div>
               
               <div className="story-content-text" style={{ position: 'relative', zIndex: 1, color: '#4B5563', fontSize: '0.94rem', lineHeight: '1.8', display: 'flex', flexDirection: 'column', gap: '1.1rem', flex: 1, overflowY: 'auto', paddingRight: '0.8rem', scrollbarWidth: 'thin', textAlign: 'left', fontWeight: 600 }}>
