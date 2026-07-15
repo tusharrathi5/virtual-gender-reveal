@@ -1759,7 +1759,7 @@ nav#main-nav.solid{box-shadow:0 6px 28px rgba(0,0,0,0.14);}
 /* ── Testimonials Redesign ── */
 .testi-new-section {
   padding: 33vw 2rem 5rem 2rem;
-  background: url('/images/testimonials-bg.png') center top/100% auto no-repeat;
+  background: url('/images/testimonials-bg.png') center top/100% 100% no-repeat;
   background-color: #ecdffa;
   position: relative;
   overflow: hidden;
@@ -2023,7 +2023,7 @@ nav#main-nav.solid{box-shadow:0 6px 28px rgba(0,0,0,0.14);}
   }
   .testi-new-section {
     padding: 58vw 1.2rem 4rem !important;
-    background: url('/images/testimonials-bg.png') center top/100% auto no-repeat !important;
+    background: url('/images/testimonials-bg-mobile.png') center top/100% auto no-repeat !important;
     background-color: #ecdffa !important;
   }
   .testi-new-card {
