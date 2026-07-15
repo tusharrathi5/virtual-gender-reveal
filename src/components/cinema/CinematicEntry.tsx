@@ -671,10 +671,8 @@ function LandingPage() {
               },
             ].map((p, i) => (
               <div className={`pricing-card-redesign ${p.cardCls}`} key={i}>
-                {p.popular && <div className="pricing-card-popular-badge">⭐ MOST POPULAR</div>}
-                
                 {/* Top Image Container Box */}
-                <div className={`pricing-card-img-container ${p.isContain ? 'little-bundle-img' : ''}`}>
+                <div className="pricing-card-img-container">
                   <img src={p.imgSrc} alt={p.name} />
                 </div>
                 
