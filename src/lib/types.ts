@@ -196,7 +196,7 @@ export interface PlanDefinition {
 export const PLANS: PlanDefinition[] = [
   {
     id: "basic",
-    name: "Freemium",
+    name: "Little Bundle",
     priceCents: 0,
     priceLabel: "Free",
     revealsGranted: 1,
@@ -204,7 +204,7 @@ export const PLANS: PlanDefinition[] = [
   },
   {
     id: "premium",
-    name: "Premium",
+    name: "Bundle of Joy",
     priceCents: 5999,
     priceLabel: "$59.99",
     revealsGranted: 1,
