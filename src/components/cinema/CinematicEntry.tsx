@@ -618,20 +618,12 @@ function LandingPage() {
       */}
 
       <section className="pricing-section" id="pricing">
-        <div className="pricing-bg-dec pricing-bg-left">🎈<br />🎈</div>
-        <div className="pricing-bg-dec pricing-bg-right">🎈</div>
         <div className="pricing-inner">
-          <div className="pricing-header fade-up">
-            <div className="pricing-pill-badge">💜 Choose Your Plan</div>
-            <h2 className="pricing-main-title">
-              <span className="pricing-title-line1">Simple Plans,</span>
-              <span className="pricing-title-line2">Perfect Celebrations!</span>
-            </h2>
-            <p className="pricing-sub">Pick the perfect plan for your virtual gender reveal party.</p>
-            {!loading && !user && (
-              <p style={{ fontSize: 13, color: "#E8449A", marginTop: 8, fontStyle: "italic" }}>Sign in or create an account to choose a plan ✦</p>
-            )}
-          </div>
+          {!loading && !user && (
+            <div className="pricing-auth-prompt fade-up text-center mb-6" style={{ position: 'relative', zIndex: 10 }}>
+              <p style={{ fontSize: 14, color: "#E8449A", fontStyle: "italic", fontWeight: 700, textShadow: '0 1px 2px rgba(255,255,255,0.8)' }}>Sign in or create an account to choose a plan ✦</p>
+            </div>
+          )}
           <div className="pricing-section-container fade-up">
             {[
               {
@@ -681,17 +673,6 @@ function LandingPage() {
                   <div className="pricing-card-top-row">
                     {/* Details Column */}
                     <div className="pricing-card-details-col">
-                      <h3 className="pricing-card-title">{p.name}</h3>
-                      
-                      {/* Heart Divider */}
-                      <div className="pricing-card-heart-divider">
-                        <span className="heart-line" />
-                        <span className="heart-icon">{p.heart}</span>
-                        <span className="heart-line" />
-                      </div>
-
-                      <p className="pricing-card-description">{p.desc}</p>
-                      
                       <div className="pricing-card-price-container">
                         {p.originalPrice && (
                           <span className="pricing-card-original-price">${p.originalPrice}</span>
@@ -1719,7 +1700,7 @@ nav#main-nav.solid{box-shadow:0 6px 28px rgba(0,0,0,0.14);}
   .nav-links .nav-link{width:100%;text-align:center;padding:0.6rem 0;font-size:0.95rem;}
 }
 /* ── Pricing Redesign ── */
-.pricing-section{padding:2.5rem 2rem 2.5rem;position:relative;overflow:hidden;background:linear-gradient(rgba(255, 255, 255, 0.22), rgba(255, 255, 255, 0.22)), url('/assets/pricing_page_bg.png') center/cover no-repeat;min-height:60vh;display:flex;align-items:center;justify-content:center;}
+.pricing-section{padding:24vw 2rem 5rem 2rem;position:relative;overflow:hidden;background:url('/assets/pricing_page_bg.png') center top/100% 100% no-repeat;background-color:#fdf2f8;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;}
 .pricing-bg-dec{position:absolute;font-size:5rem;line-height:1.3;pointer-events:none;opacity:0.7;animation:balloonFloat 5s ease-in-out infinite alternate;}
 .pricing-bg-left{left:1%;top:8%;animation-direction:alternate;}
 .pricing-bg-right{right:1%;top:10%;font-size:7rem;animation-direction:alternate-reverse;}
@@ -2013,7 +1994,9 @@ nav#main-nav.solid{box-shadow:0 6px 28px rgba(0,0,0,0.14);}
     justify-content: flex-start !important;
   }
   .pricing-section {
-    padding: 2.5rem 1.2rem 2.5rem !important;
+    padding: 56vw 1.2rem 4rem !important;
+    background: url('/assets/pricing_page_bg.png') center top/100% auto no-repeat !important;
+    background-color: #fdf2f8 !important;
   }
   .pnew-card {
     padding: 2rem 1.2rem 1.8rem !important;
