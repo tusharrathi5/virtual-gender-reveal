@@ -1633,8 +1633,8 @@ footer{background:#111827;padding:4rem 2rem 2rem;}
 @media(max-width:768px){
   .hiw-new-section {
     background: url('/images/how-it-works-bg-mobile.png') center top/100% auto no-repeat;
-    background-color: #e0f2fe;
-    padding: 64vw 1rem 2rem 1rem;
+    background-color: #ecdffa;
+    padding: 42vw 1rem 2rem 1rem;
     min-height: auto;
   }
   .hiw-cards-row {
