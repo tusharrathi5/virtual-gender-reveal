@@ -549,6 +549,7 @@ function LandingPage() {
             ].map((s, i) => (
               <div className="hiw-new-card" key={i}>
                 <div className="hiw-card-header">
+                  <span className={`hiw-num-circle hnc-${i + 1}`}>{i + 1}</span>
                   <div className={`hiw-card-title ${s.tc}`}>{s.title}</div>
                 </div>
                 <div className="hiw-card-desc">{s.desc}</div>
@@ -559,13 +560,7 @@ function LandingPage() {
           <div className="hiw-feat-bar fade-up">
             {[
               {
-                icon: (
-                  <svg viewBox="0 0 24 24" className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2.5">
-                    <circle cx="12" cy="12" r="10" />
-                    <path d="M2 12h20" />
-                    <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" />
-                  </svg>
-                ),
+                img: "/assets/how-it-works/join-anywhere.png",
                 cls: "blue",
                 label: "JOIN ANYWHERE",
                 sub: "Everyone can join from any device."
@@ -582,7 +577,11 @@ function LandingPage() {
               }
             ].map((f, i) => (
               <div className="hiw-feat-item" key={i}>
-                <div className={`hiw-feat-icon ${f.cls}`}>{f.icon}</div>
+                {f.img ? (
+                  <img src={f.img} alt={f.label} className="hiw-feat-img" />
+                ) : (
+                  <div className={`hiw-feat-icon ${f.cls}`}>{f.icon}</div>
+                )}
                 <div className="hiw-feat-text"><strong>{f.label}</strong><span>{f.sub}</span></div>
               </div>
             ))}
@@ -1621,6 +1620,7 @@ footer{background:#111827;padding:4rem 2rem 2rem;}
 }
 .hiw-feat-item{display:flex;align-items:center;gap:0.8rem;}
 .hiw-feat-icon{width:40px;height:40px;border-radius:50%;background:rgba(232,68,154,0.2);display:flex;align-items:center;justify-content:center;font-size:1.2rem;flex-shrink:0;}
+.hiw-feat-img{width:48px;height:48px;object-fit:contain;flex-shrink:0;}
 .hiw-feat-icon.blue{background:rgba(58,159,232,0.2);}.hiw-feat-icon.purple{background:rgba(123,110,232,0.2);}.hiw-feat-icon.green{background:rgba(58,200,120,0.2);}
 .hiw-feat-text{display:flex;flex-direction:column;gap:0.15rem;}
 .hiw-feat-text strong{font-family:'Nunito',sans-serif;font-size:0.88rem;font-weight:800;color:#111827;}
