@@ -538,52 +538,9 @@ function LandingPage() {
         </div>
       </section>
 
-            <section className="hiw-new-section" id="how">
-        <div className="hiw-new-inner">
-          <div className="hiw-cards-row fade-up">
-            {[
-              { img: "/assets/how-it-works/create-your-party.png",  tc: "hct-1", title: "Create Your Party",  desc: "Set up your virtual gender reveal in minutes and customize every detail." },
-              { img: "/assets/how-it-works/invite-loved-ones.png",  tc: "hct-2", title: "Send E-Vites",        desc: "Send e-vites to friends and family near or far. Everyone can join!" },
-              { img: "/assets/how-it-works/time-to-reveal.png",     tc: "hct-3", title: "Experience The Race", desc: "Experience a virtual horse race where two babies, two horses, and one winner reveal your baby's gender!" },
-              { img: "/assets/how-it-works/celebrate-together.png", tc: "hct-4", title: "Celebrate The Moment",desc: "Share the joy, happy tears, and hugs! Celebrate together and create memories that last forever." },
-            ].map((s, i) => (
-              <div className="hiw-new-card" key={i}>
-                <div className="hiw-card-content">
-                  <div className="hiw-card-header">
-                    <span className={`hiw-num-circle hnc-${i + 1}`}>{i + 1}</span>
-                    <div className={`hiw-card-title ${s.tc}`}>{s.title}</div>
-                  </div>
-                  <div className="hiw-card-desc">{s.desc}</div>
-                </div>
-                <img src={s.img} alt={s.title} className="hiw-card-img" />
-              </div>
-            ))}
-          </div>
-          <div className="hiw-feat-bar fade-up">
-            {[
-              {
-                img: "/assets/how-it-works/join-anywhere.png",
-                cls: "blue",
-                label: "JOIN ANYWHERE",
-                sub: "Everyone can join from any device."
-              },
-              {
-                img: "/assets/how-it-works/live-chat.png",
-                cls: "purple",
-                label: "LIVE CHAT",
-                sub: "Chat, react and share the excitement!"
-              }
-            ].map((f, i) => (
-              <div className="hiw-feat-item" key={i}>
-                {f.img ? (
-                  <img src={f.img} alt={f.label} className="hiw-feat-img" />
-                ) : (
-                  <div className={`hiw-feat-icon ${f.cls}`}>{f.icon}</div>
-                )}
-                <div className="hiw-feat-text"><strong>{f.label}</strong><span>{f.sub}</span></div>
-              </div>
-            ))}
-          </div>
+      <section className="hiw-new-section fade-up" id="how">
+        <div className="hiw-new-img-wrapper">
+          <img src="/assets/how_it_works_web.png" alt="How it works" className="hiw-new-img" />
         </div>
       </section>
 
@@ -1547,16 +1504,19 @@ footer{background:#111827;padding:4rem 2rem 2rem;}
 /* ── How It Works Redesign ── */
 /* ── How It Works Redesign ── */
 .hiw-new-section {
-  padding: 22vw 2rem 3rem 2rem;
+  width: 100%;
   position: relative;
   overflow: hidden;
-  background: url('/images/how-it-works-bg.png') center top/100% auto no-repeat;
   background-color: #e0f2fe;
-  display: flex;
-  flex-direction: column;
-  justify-content: flex-start;
-  align-items: center;
-  min-height: auto;
+}
+.hiw-new-img-wrapper {
+  width: 100%;
+  line-height: 0;
+}
+.hiw-new-img {
+  width: 100%;
+  height: auto;
+  display: block;
 }
 .hiw-new-inner{max-width:1260px;margin:0 auto;position:relative;z-index:3;background:transparent;box-shadow:none;border-radius:0;padding:0;width:100%;}
 .hiw-cards-row{display:grid;grid-template-columns:repeat(4,1fr);gap:1rem;margin-bottom:2.5rem;position:relative;align-items:stretch;}
@@ -1658,10 +1618,8 @@ footer{background:#111827;padding:4rem 2rem 2rem;}
 }
 @media(max-width:768px){
   .hiw-new-section {
-    background: url('/images/how-it-works-bg-mobile.png') center top/100% auto no-repeat;
-    background-color: #ecdffa;
-    padding: 42vw 1rem 2rem 1rem;
-    min-height: auto;
+    background: none !important;
+    padding: 0 !important;
   }
   .hiw-cards-row {
     grid-template-columns: 1fr;
