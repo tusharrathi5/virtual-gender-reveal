@@ -1763,23 +1763,23 @@ nav#main-nav.solid{box-shadow:0 6px 28px rgba(0,0,0,0.14);}
 @media(max-width:1024px){.testi-new-grid{grid-template-columns:repeat(2, 1fr);}}
 @media(max-width:640px){.testi-new-grid{grid-template-columns:1fr;}}
 .testi-new-card {
-  background: rgba(255, 255, 255, 0.45);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.3) 0%, rgba(255, 255, 255, 0.1) 100%);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
   border-radius: 24px;
   padding: 1.8rem;
-  box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.06);
-  border: 1px solid rgba(255, 255, 255, 0.5);
+  box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.08), inset 0 0 0 1px rgba(255, 255, 255, 0.35);
+  border: 1px solid rgba(255, 255, 255, 0.45);
   position: relative;
   display: flex;
   flex-direction: column;
-  transition: transform 0.25s, box-shadow 0.25s, background 0.25s, border-color 0.25s;
+  transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275), box-shadow 0.3s ease, background 0.3s ease, border-color 0.3s ease;
 }
 .testi-new-card:hover {
-  transform: translateY(-6px);
-  box-shadow: 0 16px 36px rgba(100, 60, 200, 0.15);
-  background: rgba(255, 255, 255, 0.65);
-  border-color: rgba(255, 255, 255, 0.8);
+  transform: translateY(-8px);
+  box-shadow: 0 20px 40px rgba(100, 60, 200, 0.18), inset 0 0 0 1px rgba(255, 255, 255, 0.5);
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.45) 0%, rgba(255, 255, 255, 0.2) 100%);
+  border-color: rgba(255, 255, 255, 0.6);
 }
 .testi-card-header {
   display: flex;
