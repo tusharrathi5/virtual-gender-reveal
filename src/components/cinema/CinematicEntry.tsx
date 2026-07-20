@@ -540,7 +540,10 @@ function LandingPage() {
 
       <section className="hiw-new-section fade-up" id="how">
         <div className="hiw-new-img-wrapper">
-          <img src="/assets/how_it_works_web.png" alt="How it works" className="hiw-new-img" />
+          <picture>
+            <source media="(max-width: 768px)" srcSet="/assets/how_it_works_mobile.png" />
+            <img src="/assets/how_it_works_web.png" alt="How it works" className="hiw-new-img" />
+          </picture>
         </div>
       </section>
 
