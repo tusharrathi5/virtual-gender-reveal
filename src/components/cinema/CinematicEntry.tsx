@@ -720,6 +720,7 @@ function LandingPage() {
                 name: "Brandon C.",
                 role: "Dad-to-be",
                 gender: "male",
+                avatar: "/assets/avatar_brandon.jpg",
                 iconCls: "bg-pink-50 text-[#E8449A]",
                 starCls: "testi-stars-pink",
                 nameCls: "tn-pink",
@@ -732,6 +733,7 @@ function LandingPage() {
                 name: "Lauren M.",
                 role: "Mom-to-be",
                 gender: "female",
+                avatar: "/assets/avatar_lauren.jpg",
                 iconCls: "bg-purple-50 text-[#7B6EE8]",
                 starCls: "testi-stars-purple",
                 nameCls: "tn-purple",
@@ -744,6 +746,7 @@ function LandingPage() {
                 name: "Megan B.",
                 role: "Aunt",
                 gender: "female",
+                avatar: "/assets/avatar_megan.jpg",
                 iconCls: "bg-blue-50 text-[#3A9FE8]",
                 starCls: "testi-stars-blue",
                 nameCls: "tn-blue",
@@ -756,6 +759,7 @@ function LandingPage() {
                 name: "Jessica R.",
                 role: "Mom-to-be",
                 gender: "female",
+                avatar: "/assets/avatar_jessica.jpg",
                 iconCls: "bg-pink-50 text-[#E8449A]",
                 starCls: "testi-stars-pink",
                 nameCls: "tn-pink",
@@ -765,18 +769,7 @@ function LandingPage() {
             ].map((t, i) => (
               <div className="testi-new-card" key={i}>
                 <div className="testi-card-header">
-                  <div className={`testi-avatar-icon ${t.iconCls}`}>
-                    {t.gender === "male" ? (
-                      <svg className="w-5.5 h-5.5" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                      </svg>
-                    ) : (
-                      <svg className="w-5.5 h-5.5" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M15 4.5a1.2 1.2 0 11-2.4 0 1.2 1.2 0 012.4 0z" />
-                      </svg>
-                    )}
-                  </div>
+                  <img src={t.avatar} alt={t.name} className="testi-avatar-img" />
                   <div className={`testi-new-stars ${t.starCls}`}>★★★★★</div>
                   <div className={`testi-quote-mark ${t.quoteCls}`}>“</div>
                 </div>
@@ -1770,22 +1763,23 @@ nav#main-nav.solid{box-shadow:0 6px 28px rgba(0,0,0,0.14);}
 @media(max-width:1024px){.testi-new-grid{grid-template-columns:repeat(2, 1fr);}}
 @media(max-width:640px){.testi-new-grid{grid-template-columns:1fr;}}
 .testi-new-card {
-  background: rgba(255, 255, 255, 0.95);
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
+  background: rgba(255, 255, 255, 0.45);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
   border-radius: 24px;
   padding: 1.8rem;
-  box-shadow: 0 10px 30px rgba(100, 60, 200, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.85);
+  box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.5);
   position: relative;
   display: flex;
   flex-direction: column;
-  transition: transform 0.25s, box-shadow 0.25s;
+  transition: transform 0.25s, box-shadow 0.25s, background 0.25s, border-color 0.25s;
 }
 .testi-new-card:hover {
   transform: translateY(-6px);
-  box-shadow: 0 12px 36px rgba(100, 60, 200, 0.12);
-  background: #ffffff;
+  box-shadow: 0 16px 36px rgba(100, 60, 200, 0.15);
+  background: rgba(255, 255, 255, 0.65);
+  border-color: rgba(255, 255, 255, 0.8);
 }
 .testi-card-header {
   display: flex;
