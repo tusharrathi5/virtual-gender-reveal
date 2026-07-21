@@ -668,80 +668,17 @@ function LandingPage() {
         </div>
       </section>
 
-      <section className="testi-new-section">
+      <section className="testi-new-section" id="testimonials">
         <div className="testi-new-inner">
-          <div className="testi-new-grid fade-up">
-            {[
-              {
-                title: "This was 100% worth it.",
-                q: "We wanted something different, exciting, and most importantly, a safe way to share our big news. The virtual horse race made the reveal unforgettable, and our friends are still talking about it weeks later!",
-                name: "Brandon C.",
-                role: "Dad-to-be",
-                gender: "male",
-                avatar: "/assets/avatar_brandon.jpg",
-                iconCls: "bg-pink-50 text-[#E8449A]",
-                starCls: "testi-stars-pink",
-                nameCls: "tn-pink",
-                heart: "💗",
-                quoteCls: "tq-pink"
-              },
-              {
-                title: "So easy, so simple, so exciting.",
-                q: "Setting everything up was so quick and stress-free. Invites went out in minutes, and everyone joined right on time. We all experienced the surprise at the exact same moment. It was perfect!",
-                name: "Lauren M.",
-                role: "Mom-to-be",
-                gender: "female",
-                avatar: "/assets/avatar_lauren.jpg",
-                iconCls: "bg-purple-50 text-[#7B6EE8]",
-                starCls: "testi-stars-purple",
-                nameCls: "tn-purple",
-                heart: "💜",
-                quoteCls: "tq-purple"
-              },
-              {
-                title: "Finally, a gender reveal that's more than just a balloon pop.",
-                q: "It felt like watching a mini Pixar movie with an unforgettable surprise at the end. We were literally on the edge of our seats through the entire race!",
-                name: "Megan B.",
-                role: "Aunt",
-                gender: "female",
-                avatar: "/assets/avatar_megan.jpg",
-                iconCls: "bg-blue-50 text-[#3A9FE8]",
-                starCls: "testi-stars-blue",
-                nameCls: "tn-blue",
-                heart: "💙",
-                quoteCls: "tq-blue"
-              },
-              {
-                title: "Safe, meaningful, and magical.",
-                q: "We loved a way to celebrate that was safe for everyone but still felt just as special. The horse race had us on the edge of our seats, and the ending brought happy tears!",
-                name: "Jessica R.",
-                role: "Mom-to-be",
-                gender: "female",
-                avatar: "/assets/avatar_jessica.jpg",
-                iconCls: "bg-pink-50 text-[#E8449A]",
-                starCls: "testi-stars-pink",
-                nameCls: "tn-pink",
-                heart: "💗",
-                quoteCls: "tq-pink"
-              },
-            ].map((t, i) => (
-              <div className="testi-new-card" key={i}>
-                <div className="testi-card-header">
-                  <img src={t.avatar} alt={t.name} className="testi-avatar-img" />
-                  <div className={`testi-new-stars ${t.starCls}`}>★★★★★</div>
-                  <div className={`testi-quote-mark ${t.quoteCls}`}>“</div>
-                </div>
-                <div className="testi-new-title">{t.title}</div>
-                <div className="testi-new-q">“{t.q}”</div>
-                <div className="testi-card-footer">
-                  <div className="testi-user-info">
-                    <div className={`testi-new-name ${t.nameCls}`}>{t.name}</div>
-                    <div className="testi-new-role">{t.role}</div>
-                  </div>
-                  <div className="testi-card-heart">{t.heart}</div>
-                </div>
-              </div>
-            ))}
+          <div className="testi-image-container fade-up">
+            <picture>
+              <source media="(max-width: 768px)" srcSet="/assets/what_our_user_say_mobile.png" />
+              <img 
+                src="/assets/what_our_user_say_web.png" 
+                alt="What Our Users Say" 
+                className="testi-design-img" 
+              />
+            </picture>
           </div>
         </div>
       </section>
@@ -1766,155 +1703,31 @@ nav#main-nav.solid{box-shadow:0 6px 28px rgba(0,0,0,0.14);}
 
 /* ── Testimonials Redesign ── */
 .testi-new-section {
-  padding: 33vw 2rem 5rem 2rem;
-  background: url('/images/testimonials-bg.png') center top/100% 100% no-repeat;
-  background-color: #ecdffa;
+  padding: 0;
   position: relative;
   overflow: hidden;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-}
-.testi-heart-left, .testi-heart-right {
-  display: none !important;
-}
-.testi-avatar-icon {
-  width: 44px;
-  height: 44px;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
+  background-color: #ecdffa;
+  width: 100% !important;
+  max-width: 100% !important;
 }
 .testi-new-inner {
-  max-width: 1260px;
-  width: 100%;
+  width: 100% !important;
+  max-width: 100% !important;
   margin: 0 auto;
   position: relative;
   z-index: 3;
 }
-.testi-new-grid {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 1.25rem;
-}
-@media(max-width:1024px){.testi-new-grid{grid-template-columns:repeat(2, 1fr);}}
-@media(max-width:640px){.testi-new-grid{grid-template-columns:1fr;}}
-.testi-new-card {
-  background: linear-gradient(135deg, rgba(255, 255, 255, 0.3) 0%, rgba(255, 255, 255, 0.1) 100%);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-  border-radius: 24px;
-  padding: 1.8rem;
-  box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.08), inset 0 0 0 1px rgba(255, 255, 255, 0.35);
-  border: 1px solid rgba(255, 255, 255, 0.45);
+.testi-image-container {
   position: relative;
-  display: flex;
-  flex-direction: column;
-  transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275), box-shadow 0.3s ease, background 0.3s ease, border-color 0.3s ease;
+  width: 100% !important;
+  max-width: 100% !important;
+  margin: 0 auto;
 }
-.testi-new-card:hover {
-  transform: translateY(-8px);
-  box-shadow: 0 20px 40px rgba(100, 60, 200, 0.18), inset 0 0 0 1px rgba(255, 255, 255, 0.5);
-  background: linear-gradient(135deg, rgba(255, 255, 255, 0.45) 0%, rgba(255, 255, 255, 0.2) 100%);
-  border-color: rgba(255, 255, 255, 0.6);
+.testi-design-img {
+  width: 100%;
+  height: auto;
+  display: block;
 }
-.testi-card-header {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  margin-bottom: 1rem;
-  position: relative;
-}
-.testi-avatar-img {
-  width: 44px;
-  height: 44px;
-  border-radius: 50%;
-  object-fit: cover;
-}
-.testi-new-stars {
-  font-size: 1rem;
-  letter-spacing: 0.05em;
-}
-.testi-stars-pink {
-  color: #E8449A;
-}
-.testi-stars-purple {
-  color: #7B6EE8;
-}
-.testi-stars-blue {
-  color: #3A9FE8;
-}
-.testi-quote-mark {
-  position: absolute;
-  right: 0;
-  top: -8px;
-  font-family: 'Georgia', serif;
-  font-size: 2.8rem;
-  line-height: 1;
-  font-weight: bold;
-}
-.tq-pink {
-  color: rgba(232, 68, 154, 0.22);
-}
-.tq-purple {
-  color: rgba(123, 110, 232, 0.22);
-}
-.tq-blue {
-  color: rgba(58, 159, 232, 0.22);
-}
-.testi-new-title {
-  font-family: 'Nunito', sans-serif;
-  font-size: 0.94rem;
-  font-weight: 800;
-  color: #1a1a2e;
-  margin-bottom: 0.5rem;
-  line-height: 1.35;
-}
-.testi-new-q {
-  font-size: 0.78rem;
-  color: #444;
-  line-height: 1.55;
-  font-weight: 500;
-  margin-bottom: 1.25rem;
-  flex-grow: 1;
-}
-.testi-card-footer {
-  display: flex;
-  align-items: flex-end;
-  justify-content: space-between;
-  margin-top: auto;
-}
-.testi-user-info {
-  display: flex;
-  flex-direction: column;
-}
-.testi-new-name {
-  font-family: 'Nunito', sans-serif;
-  font-size: 0.86rem;
-  font-weight: 800;
-}
-.tn-pink {
-  color: #E8449A;
-}
-.tn-purple {
-  color: #7B6EE8;
-}
-.tn-blue {
-  color: #3A9FE8;
-}
-.testi-new-role {
-  font-size: 0.72rem;
-  color: #94a3b8;
-  font-weight: 600;
-  margin-top: 0.1rem;
-}
-.testi-card-heart {
-  font-size: 1.2rem;
-  line-height: 1;
-}
-@media(max-width:768px){.testi-new-grid{grid-template-columns:1fr;}.pricing-trust{gap:0.8rem;font-size:0.78rem;}}
 /* ── How It Works section color ── */
 /* hiw-new-section background overridden */
 /* hiw-new-inner background overridden */
@@ -2036,12 +1849,9 @@ nav#main-nav.solid{box-shadow:0 6px 28px rgba(0,0,0,0.14);}
     display: none !important;
   }
   .testi-new-section {
-    padding: 58vw 1.2rem 4rem !important;
-    background: url('/images/testimonials-bg-mobile.png') center top/100% auto no-repeat !important;
+    padding: 0 !important;
+    background: none !important;
     background-color: #ecdffa !important;
-  }
-  .testi-new-card {
-    padding: 1.8rem 1.2rem !important;
   }
   .cta-new-section {
     padding: 4rem 1.2rem !important;
