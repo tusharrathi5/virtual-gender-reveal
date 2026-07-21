@@ -584,122 +584,77 @@ function LandingPage() {
               <p style={{ fontSize: 14, color: "#E8449A", fontStyle: "italic", fontWeight: 700, textShadow: '0 1px 2px rgba(255,255,255,0.8)' }}>Sign in or create an account to choose a plan ✦</p>
             </div>
           )}
-          <div className="pricing-section-container fade-up">
-            {[
-              {
-                cardCls: "pricing-card-little-bundle",
-                imgSrc: "/assets/little_bundle_pricing.png",
-                isContain: true,
-                name: "Little Bundle",
-                desc: "Everything you need for a simple & fun reveal!",
-                price: "0",
-                originalPrice: "29.99",
-                priceSub: "Free for a limited time",
-                feats: ["Basic reveal page", "Doctor secure link", "Up to 20 guests", "Email invitations", "7-day replay"],
-                btnLabel: "Choose Little Bundle",
-                btnEmoji: "🤍",
-                planId: "basic",
-                popular: false,
-                heart: "💙",
-                titleColorClass: "pricing-card-title-basic",
-                iconColorClass: "pricing-card-feature-icon-circle-basic",
-              },
-              {
-                cardCls: "pricing-card-bundle-of-joy",
-                imgSrc: "/assets/bundle_of_joy.png",
-                isContain: false,
-                name: "Bundle of Joy",
-                desc: "The most loved plan for unforgettable memories!",
-                price: "59.99",
-                priceSub: "One-time payment",
-                feats: [
-                  "Everything in Little Bundle",
-                  "Secure revealer link",
-                  "Live broadcast to guests",
-                  "Custom cinematic video",
-                  "Download keepsake",
-                  "Unlimited guests",
-                  "Priority support",
-                ],
-                btnLabel: "Choose Bundle of Joy",
-                btnEmoji: "⭐",
-                planId: "premium",
-                popular: true,
-                heart: "🩷",
-                titleColorClass: "pricing-card-title-premium",
-                iconColorClass: "pricing-card-feature-icon-circle-premium",
-              },
-            ].map((p, i) => (
-              <div className={`pricing-card-redesign ${p.cardCls}`} key={i}>
-                {/* Top Image Container Box */}
-                <div className="pricing-card-img-container">
-                  <img src={p.imgSrc} alt={p.name} />
-                </div>
-                
-                {/* Right Area: Content & Button */}
-                <div className="pricing-card-content-area">
-                  <div className="pricing-card-header-row">
-                    <div className="pricing-card-header-block">
-                      <h3 className={`pricing-card-title ${p.titleColorClass}`}>{p.name}</h3>
-                      <p className="pricing-card-description">{p.desc}</p>
-                    </div>
-
-                    <div className="pricing-card-price-container">
-                      {p.originalPrice && (
-                        <span className="pricing-card-original-price">${p.originalPrice}</span>
-                      )}
-                      <div className="pricing-card-current-price">
-                        <span className="pricing-card-price-curr">$</span>
-                        {p.price.split(".")[0]}
-                        {p.price.includes(".") && (
-                          <span style={{ fontSize: "1.2rem" }}>.{p.price.split(".")[1]}</span>
-                        )}
-                      </div>
-                      <span className="pricing-card-price-sub">{p.priceSub}</span>
-                    </div>
-                  </div>
-                  
-                  <ul className="pricing-card-features">
-                    {p.feats.map((f, j) => (
-                      <li className="pricing-card-feature-item" key={j}>
-                        <span className={`pricing-card-feature-icon-circle ${p.iconColorClass}`}>✓</span>
-                        <span>{f}</span>
-                      </li>
-                    ))}
-                  </ul>
-
-                  {/* Bottom Row: CTA Button */}
-                  <div className="pricing-card-btn-row">
-                    <button
-                      className="pricing-card-btn"
-                      onClick={() => handlePricingPlanClick({
-                        id: p.planId,
-                        name: p.name,
-                        price: Number(p.price),
-                        priceLabel: p.price === "0" ? "Free" : `$${p.price}`,
-                        color: p.popular ? "#82B8E8" : "#E8449A",
-                      })}
-                    >
-                      {p.btnLabel} {p.btnEmoji}
-                    </button>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-          <div className="pricing-strip-container fade-up">
-            <div className="pricing-strip-header">
-              <h4 className="pricing-strip-title">Works on any device ✦</h4>
-              <p className="pricing-strip-sub">Watch on your TV, laptop, mobile, projector, tablet, etc.</p>
+          
+          <div className="pricing-image-container fade-up">
+            {/* Desktop View */}
+            <div className="pricing-design-web">
+              <img 
+                src="/assets/choose_your_plan_web.png" 
+                alt="Choose Your Perfect Plan - Little Bundle (Free for a limited time) or Bundle of Joy ($59.99 one-time payment)" 
+                className="pricing-design-img" 
+              />
+              <button
+                className="pricing-btn-overlay pricing-btn-blue-glossy pricing-btn-web-basic"
+                onClick={() => handlePricingPlanClick({
+                  id: "basic",
+                  name: "Little Bundle",
+                  price: 0,
+                  priceLabel: "Free",
+                  color: "#E8449A",
+                })}
+                aria-label="Start My Reveal with the Little Bundle free plan"
+              >
+                START MY REVEAL <span className="btn-icon">🤍</span>
+              </button>
+              <button
+                className="pricing-btn-overlay pricing-btn-pink-glossy pricing-btn-web-premium"
+                onClick={() => handlePricingPlanClick({
+                  id: "premium",
+                  name: "Bundle of Joy",
+                  price: 59.99,
+                  priceLabel: "$59.99",
+                  color: "#82B8E8",
+                })}
+                aria-label="Create My Personalized Reveal with the Bundle of Joy premium plan"
+              >
+                CREATE MY PERSONALIZED REVEAL <span className="btn-icon">✨</span>
+              </button>
             </div>
-            <img src="/assets/pricing_strip.png" alt="Watch on any device" className="pricing-strip-img" />
-          </div>
-          <div className="pricing-trust fade-up">
-            <span>🔒 Secure Payments</span>
-            <div className="pricing-trust-divider" />
-            <span>100% Safe &amp; Encrypted</span>
-            <div className="pricing-trust-divider" />
-            <span>No hidden fees.</span>
+
+            {/* Mobile View */}
+            <div className="pricing-design-mobile">
+              <img 
+                src="/assets/choose_your_plan_mobile.png" 
+                alt="Choose Your Perfect Plan - Little Bundle (Free for a limited time) or Bundle of Joy ($59.99 one-time payment)" 
+                className="pricing-design-img" 
+              />
+              <button
+                className="pricing-btn-overlay pricing-btn-blue-glossy pricing-btn-mobile-basic"
+                onClick={() => handlePricingPlanClick({
+                  id: "basic",
+                  name: "Little Bundle",
+                  price: 0,
+                  priceLabel: "Free",
+                  color: "#E8449A",
+                })}
+                aria-label="Start My Reveal with the Little Bundle free plan"
+              >
+                START MY REVEAL <span className="btn-icon">🤍</span>
+              </button>
+              <button
+                className="pricing-btn-overlay pricing-btn-pink-glossy pricing-btn-mobile-premium"
+                onClick={() => handlePricingPlanClick({
+                  id: "premium",
+                  name: "Bundle of Joy",
+                  price: 59.99,
+                  priceLabel: "$59.99",
+                  color: "#82B8E8",
+                })}
+                aria-label="Create My Personalized Reveal with the Bundle of Joy premium plan"
+              >
+                CREATE MY PERSONALIZED REVEAL <span className="btn-icon">✨</span>
+              </button>
+            </div>
           </div>
         </div>
       </section>
@@ -1673,8 +1628,136 @@ nav#main-nav.solid{box-shadow:0 6px 28px rgba(0,0,0,0.14);}
   .nav-links.mobile-open{display:flex;}
   .nav-links .nav-link{width:100%;text-align:center;padding:0.6rem 0;font-size:0.95rem;}
 }
+
 /* ── Pricing Redesign ── */
-.pricing-section{padding:33vw 2rem 2rem 2rem;position:relative;overflow:hidden;background:url('/assets/pricing_page_bg.png') center top/100% 100% no-repeat;background-color:#fdf2f8;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;}
+.pricing-section {
+  padding: 0;
+  position: relative;
+  overflow: hidden;
+  background-color: #fdf2f8;
+  width: 100%;
+}
+.pricing-inner {
+  width: 100%;
+  margin: 0 auto;
+  position: relative;
+  z-index: 2;
+}
+.pricing-image-container {
+  position: relative;
+  width: 100%;
+  max-width: 1360px;
+  margin: 0 auto;
+}
+.pricing-design-web {
+  display: block;
+  position: relative;
+  width: 100%;
+}
+.pricing-design-mobile {
+  display: none;
+  position: relative;
+  width: 100%;
+}
+.pricing-design-img {
+  width: 100%;
+  height: auto;
+  display: block;
+}
+.pricing-btn-overlay {
+  position: absolute;
+  border: none;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  color: #ffffff;
+  font-family: 'Nunito', sans-serif;
+  font-weight: 800;
+  text-transform: uppercase;
+  border-radius: 9999px;
+  white-space: nowrap;
+  letter-spacing: 0.05em;
+  text-decoration: none;
+  z-index: 10;
+  transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275), box-shadow 0.2s ease, filter 0.2s ease;
+}
+.pricing-btn-blue-glossy {
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.25) 0%, rgba(255, 255, 255, 0) 50%), 
+              linear-gradient(135deg, #3A9FE8 0%, #7EC8FF 100%);
+  box-shadow: 0 4px 14px rgba(58, 159, 232, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.4);
+}
+.pricing-btn-blue-glossy:hover {
+  transform: scale(1.03);
+  box-shadow: 0 6px 20px rgba(58, 159, 232, 0.65), inset 0 1px 0 rgba(255, 255, 255, 0.5);
+}
+.pricing-btn-blue-glossy:active {
+  transform: scale(0.97);
+}
+.pricing-btn-pink-glossy {
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.25) 0%, rgba(255, 255, 255, 0) 50%), 
+              linear-gradient(135deg, #E8449A 0%, #FF7EC8 100%);
+  box-shadow: 0 4px 14px rgba(232, 68, 154, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.4);
+}
+.pricing-btn-pink-glossy:hover {
+  transform: scale(1.03);
+  box-shadow: 0 6px 20px rgba(232, 68, 154, 0.65), inset 0 1px 0 rgba(255, 255, 255, 0.5);
+}
+.pricing-btn-pink-glossy:active {
+  transform: scale(0.97);
+}
+.pricing-btn-web-basic {
+  left: 15%;
+  top: 68%;
+  width: 17%;
+  height: 4.5%;
+  font-size: clamp(0.7rem, 1.1vw, 1.1rem);
+}
+.pricing-btn-web-premium {
+  left: 59.5%;
+  top: 69.5%;
+  width: 21%;
+  height: 4.5%;
+  font-size: clamp(0.7rem, 1.1vw, 1.1rem);
+}
+.pricing-btn-mobile-basic {
+  left: 50%;
+  transform: translateX(-50%);
+  top: 44.3%;
+  width: 65%;
+  height: 3.2%;
+  font-size: clamp(0.65rem, 2.8vw, 1rem);
+}
+.pricing-btn-mobile-basic:hover {
+  transform: translateX(-50%) scale(1.03);
+}
+.pricing-btn-mobile-basic:active {
+  transform: translateX(-50%) scale(0.97);
+}
+.pricing-btn-mobile-premium {
+  left: 50%;
+  transform: translateX(-50%);
+  top: 79.2%;
+  width: 76%;
+  height: 3.2%;
+  font-size: clamp(0.65rem, 2.8vw, 1rem);
+}
+.pricing-btn-mobile-premium:hover {
+  transform: translateX(-50%) scale(1.03);
+}
+.pricing-btn-mobile-premium:active {
+  transform: translateX(-50%) scale(0.97);
+}
+@media (max-width: 768px) {
+  .pricing-design-web {
+    display: none;
+  }
+  .pricing-design-mobile {
+    display: block;
+  }
+}
+
 .pricing-bg-dec{position:absolute;font-size:5rem;line-height:1.3;pointer-events:none;opacity:0.7;animation:balloonFloat 5s ease-in-out infinite alternate;}
 .pricing-bg-left{left:1%;top:8%;animation-direction:alternate;}
 .pricing-bg-right{right:1%;top:10%;font-size:7rem;animation-direction:alternate-reverse;}
