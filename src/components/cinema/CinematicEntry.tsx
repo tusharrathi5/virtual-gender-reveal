@@ -1710,25 +1710,25 @@ nav#main-nav.solid{box-shadow:0 6px 28px rgba(0,0,0,0.14);}
   transform: scale(0.97);
 }
 .pricing-btn-web-basic {
-  left: 15%;
-  top: 63.8%;
-  width: 17%;
-  height: 4.5%;
+  left: 14.4%;
+  top: 68%;
+  width: 18.3%;
+  height: 5%;
   font-size: clamp(0.7rem, 1.1vw, 1.1rem);
 }
 .pricing-btn-web-premium {
-  left: 59.5%;
-  top: 65.3%;
-  width: 21%;
-  height: 4.5%;
+  left: 58.75%;
+  top: 69.5%;
+  width: 22.5%;
+  height: 5%;
   font-size: clamp(0.7rem, 1.1vw, 1.1rem);
 }
 .pricing-btn-mobile-basic {
   left: 50%;
   transform: translateX(-50%);
-  top: 44.3%;
-  width: 65%;
-  height: 3.2%;
+  top: 44.05%;
+  width: 69%;
+  height: 3.7%;
   font-size: clamp(0.65rem, 2.8vw, 1rem);
 }
 .pricing-btn-mobile-basic:hover {
@@ -1740,9 +1740,9 @@ nav#main-nav.solid{box-shadow:0 6px 28px rgba(0,0,0,0.14);}
 .pricing-btn-mobile-premium {
   left: 50%;
   transform: translateX(-50%);
-  top: 79.2%;
-  width: 76%;
-  height: 3.2%;
+  top: 78.95%;
+  width: 80%;
+  height: 3.7%;
   font-size: clamp(0.65rem, 2.8vw, 1rem);
 }
 .pricing-btn-mobile-premium:hover {
