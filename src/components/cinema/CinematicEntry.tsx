@@ -661,10 +661,7 @@ function LandingPage() {
 
       <section className="testimonial-banner-section fade-up">
         <div className="testimonial-banner-img-wrapper">
-          <picture>
-            <source media="(max-width: 768px)" srcSet="/assets/testimonial_page_mobile.png" />
-            <img src="/assets/testimonial_page_bg.png" alt="Family watching gender reveal" className="testimonial-banner-img" />
-          </picture>
+          <img src="/assets/testimonial_page_bg.png" alt="Family watching gender reveal" className="testimonial-banner-img" />
         </div>
       </section>
 
