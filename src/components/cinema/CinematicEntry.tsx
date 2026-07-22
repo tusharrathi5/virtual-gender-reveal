@@ -714,7 +714,7 @@ function LandingPage() {
       {showStoryModal && (
         <div className="faq-modal-overlay" onClick={() => setShowStoryModal(false)}>
           <div className="story-modal-box" onClick={(e) => e.stopPropagation()}>
-            <div className="story-image-panel" style={{ backgroundImage: "url('/images/our_story.jpeg')" }} />
+            <div className="story-image-panel" style={{ backgroundImage: "url('/images/faq_dark_bg_old.png')" }} />
             <div className="story-content-panel">
               <button type="button" className="faq-modal-close" onClick={() => setShowStoryModal(false)}>✕</button>
               <div className="faq-header" style={{ marginBottom: '1.8rem', textAlign: 'left' }}>
@@ -1929,7 +1929,7 @@ nav#main-nav.solid{box-shadow:0 6px 28px rgba(0,0,0,0.14);}
 .story-image-panel{width:42%;height:100%;background-size:cover;background-position:95% center;background-repeat:no-repeat;flex-shrink:0;border-right:1px solid rgba(0,0,0,0.04);}
 .story-content-panel{flex:1;display:flex;flex-direction:column;padding:3rem 2.5rem;position:relative;height:100%;z-index:2;}
 @media (max-width:768px){
-  .story-modal-box{flex-direction:column;max-width:500px;height:90vh;max-height:680px;background-image:url('/images/our_story.jpeg') !important;background-size:cover !important;background-position:center !important;}
+  .story-modal-box{flex-direction:column;max-width:500px;height:90vh;max-height:680px;background-image:url('/images/faq_dark_bg_old.png') !important;background-size:cover !important;background-position:center !important;}
   .story-modal-box::before{content:'';position:absolute;inset:0;background:rgba(255,255,255,0.65);z-index:1;border-radius:30px;}
   .story-image-panel{display:none !important;}
   .story-content-panel{padding:2rem 1.5rem;z-index:2;}
