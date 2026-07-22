@@ -1794,7 +1794,7 @@ nav#main-nav.solid{box-shadow:0 6px 28px rgba(0,0,0,0.14);}
   display: block;
   left: 41.7%;
   transform: translateX(-50%);
-  top: 56.6%;
+  top: 49.2%;
   width: 25.5%;
   height: 7.5%;
   font-size: clamp(0.7rem, 1.2vw, 1.2rem);
@@ -1809,7 +1809,7 @@ nav#main-nav.solid{box-shadow:0 6px 28px rgba(0,0,0,0.14);}
   display: none;
   left: 50%;
   transform: translateX(-50%);
-  top: 36.3%;
+  top: 33.2%;
   width: 65%;
   height: 5%;
   font-size: clamp(0.65rem, 3.2vw, 1.1rem);
