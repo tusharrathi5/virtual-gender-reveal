@@ -1125,10 +1125,12 @@ function DashboardContent() {
                             {reveal.mode === "announcement" ? "We Already Know!" : "Surprise Reveal"}
                           </span>
                           <h3 className="font-nunito font-extrabold text-lg text-gray-900 mt-1">{reveal.parentName || "Untitled Reveal"}</h3>
-                          <span className="text-xs text-gray-500 font-semibold flex items-center gap-1 mt-0.5">
-                            <Clock className="w-3.5 h-3.5 text-gray-400" />
-                            {formatRevealDate(reveal.revealAt)}
-                          </span>
+                          {!(reveal.plan === "basic" && reveal.mode === "announcement") && (
+                            <span className="text-xs text-gray-500 font-semibold flex items-center gap-1 mt-0.5">
+                              <Clock className="w-3.5 h-3.5 text-gray-400" />
+                              {formatRevealDate(reveal.revealAt)}
+                            </span>
+                          )}
                         </div>
                       </div>
 
@@ -1195,14 +1197,18 @@ function DashboardContent() {
                           <span className="text-[9px] text-gray-400 block uppercase font-bold tracking-wider mb-0.5">Reveal Mode</span>
                           <span className="text-xs font-semibold text-gray-800">{reveal.mode === "announcement" ? "We Already Know!" : "Surprise Reveal"}</span>
                         </div>
-                        <div className="bg-gray-50/50 rounded-xl p-3 border border-gray-100">
-                          <span className="text-[9px] text-gray-400 block uppercase font-bold tracking-wider mb-0.5">Reveal Time</span>
-                          <span className="text-xs font-semibold text-gray-800">{formatRevealDate(reveal.revealAt)}</span>
-                        </div>
-                        <div className="bg-gray-50/50 rounded-xl p-3 border border-gray-100">
-                          <span className="text-[9px] text-gray-400 block uppercase font-bold tracking-wider mb-0.5">Selected Timezone</span>
-                          <span className="text-xs font-semibold text-gray-800 truncate block">{reveal.revealTimezone}</span>
-                        </div>
+                        {!(reveal.plan === "basic" && reveal.mode === "announcement") && (
+                          <>
+                            <div className="bg-gray-50/50 rounded-xl p-3 border border-gray-100">
+                              <span className="text-[9px] text-gray-400 block uppercase font-bold tracking-wider mb-0.5">Reveal Time</span>
+                              <span className="text-xs font-semibold text-gray-800">{formatRevealDate(reveal.revealAt)}</span>
+                            </div>
+                            <div className="bg-gray-50/50 rounded-xl p-3 border border-gray-100">
+                              <span className="text-[9px] text-gray-400 block uppercase font-bold tracking-wider mb-0.5">Selected Timezone</span>
+                              <span className="text-xs font-semibold text-gray-800 truncate block">{reveal.revealTimezone}</span>
+                            </div>
+                          </>
+                        )}
                         <div className="bg-gray-50/50 rounded-xl p-3 border border-gray-100">
                           <span className="text-[9px] text-gray-400 block uppercase font-bold tracking-wider mb-0.5">Payment Status</span>
                           <span className="text-xs font-bold text-gray-800">{getPaymentStatusLabel(reveal.paymentStatus)}</span>
@@ -1250,35 +1256,39 @@ function DashboardContent() {
                           </button>
                         </div>
 
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                          <div className="flex flex-col gap-1">
-                            <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Parent Name(s)</label>
-                            <input
-                              className="w-full bg-white border border-gray-200 rounded-xl px-4 py-2.5 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#3A9FE8]"
-                              value={editForm.parentName}
-                              onChange={(e) => updateEditForm("parentName", e.target.value)}
-                            />
-                          </div>
+                         <div className={`grid grid-cols-1 ${reveal.plan === 'basic' && editForm.mode === 'announcement' ? '' : 'md:grid-cols-3'} gap-4`}>
+                           <div className="flex flex-col gap-1">
+                             <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Parent Name(s)</label>
+                             <input
+                               className="w-full bg-white border border-gray-200 rounded-xl px-4 py-2.5 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#3A9FE8]"
+                               value={editForm.parentName}
+                               onChange={(e) => updateEditForm("parentName", e.target.value)}
+                             />
+                           </div>
 
-                          <div className="flex flex-col gap-1">
-                            <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Reveal Date & Time</label>
-                            <input
-                              className="w-full bg-white border border-gray-200 rounded-xl px-4 py-2.5 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#3A9FE8]"
-                              type="datetime-local"
-                              value={editForm.revealAt}
-                              onChange={(e) => updateEditForm("revealAt", e.target.value)}
-                            />
-                          </div>
+                           {!(reveal.plan === "basic" && editForm.mode === "announcement") && (
+                             <>
+                               <div className="flex flex-col gap-1">
+                                 <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Reveal Date & Time</label>
+                                 <input
+                                   className="w-full bg-white border border-gray-200 rounded-xl px-4 py-2.5 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#3A9FE8]"
+                                   type="datetime-local"
+                                   value={editForm.revealAt}
+                                   onChange={(e) => updateEditForm("revealAt", e.target.value)}
+                                 />
+                               </div>
 
-                          <div className="flex flex-col gap-1">
-                            <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Timezone</label>
-                            <input
-                              className="w-full bg-white border border-gray-200 rounded-xl px-4 py-2.5 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#3A9FE8]"
-                              value={editForm.revealTimezone}
-                              onChange={(e) => updateEditForm("revealTimezone", e.target.value)}
-                            />
-                          </div>
-                        </div>
+                               <div className="flex flex-col gap-1">
+                                 <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Timezone</label>
+                                 <input
+                                   className="w-full bg-white border border-gray-200 rounded-xl px-4 py-2.5 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#3A9FE8]"
+                                   value={editForm.revealTimezone}
+                                   onChange={(e) => updateEditForm("revealTimezone", e.target.value)}
+                                 />
+                               </div>
+                             </>
+                           )}
+                         </div>
 
                         {editForm.mode === "announcement" ? (
                           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
