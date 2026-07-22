@@ -1925,11 +1925,11 @@ nav#main-nav.solid{box-shadow:0 6px 28px rgba(0,0,0,0.14);}
 }
 
 /* ── Our Story Split Modal ── */
-.story-modal-box{width:100%;max-width:900px;height:85vh;max-height:720px;background:white;border-radius:32px;border:1px solid rgba(255,255,255,0.7);box-shadow:0 30px 60px rgba(0,0,0,0.2);display:flex;overflow:hidden;position:relative;}
-.story-image-panel{width:42%;height:100%;background-size:cover;background-position:95% center;background-repeat:no-repeat;flex-shrink:0;border-right:1px solid rgba(0,0,0,0.04);}
+.story-modal-box{width:100%;max-width:900px;height:85vh;max-height:720px;background:white;border-radius:32px;border:none;box-shadow:0 30px 60px rgba(0,0,0,0.2);display:flex;overflow:hidden;position:relative;-webkit-mask-image:-webkit-radial-gradient(white, black);transform:translateZ(0);}
+.story-image-panel{width:42%;height:100%;background-size:cover;background-position:95% center;background-repeat:no-repeat;flex-shrink:0;border-right:1px solid rgba(0,0,0,0.04);border-top-left-radius:32px;border-bottom-left-radius:32px;}
 .story-content-panel{flex:1;display:flex;flex-direction:column;padding:3rem 2.5rem;position:relative;height:100%;z-index:2;}
 @media (max-width:768px){
-  .story-modal-box{flex-direction:column;max-width:500px;height:90vh;max-height:680px;background-image:url('/images/our_story_bg.png') !important;background-size:cover !important;background-position:center !important;}
+  .story-modal-box{flex-direction:column;max-width:500px;height:90vh;max-height:680px;background-image:url('/images/our_story_bg.png') !important;background-size:cover !important;background-position:center !important;border-radius:32px;}
   .story-modal-box::before{content:'';position:absolute;inset:0;background:rgba(255,255,255,0.65);z-index:1;border-radius:30px;}
   .story-image-panel{display:none !important;}
   .story-content-panel{padding:2rem 1.5rem;z-index:2;}
