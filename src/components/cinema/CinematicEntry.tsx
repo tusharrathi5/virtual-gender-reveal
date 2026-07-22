@@ -681,21 +681,27 @@ function LandingPage() {
       </section>
 
       <section className="cta-new-section" id="contact">
-        <div className="cta-bg-dec cta-bg-left">🎈</div>
-        <div className="cta-bg-dec cta-bg-right">💗</div>
-        <div className="cta-new-inner">
-          <div className="cta-pill-badge">💗 Your Moment Awaits</div>
-          <h2 className="cta-new-title">
-            Your family is waiting<br />
-            <span className="cta-title-gradient">to find out together.</span>
-          </h2>
-          <p className="cta-new-sub">Book your reveal today and your doctor link will be ready within the hour.</p>
-          <p className="cta-new-sub2">Grandma in Florida and your best friend in New York will both be there.</p>
-          <button type="button" className="cta-new-btn" onClick={() => routeToReveal()} disabled={checkingEntitlement}>{checkingEntitlement ? "Checking..." : "🎉 Start Your Reveal"}</button>
-          <div className="cta-new-box">
-            <p>Virtual Baby Reveal is designed to make your special moment joyful, seamless, and completely stress-free.</p>
-            <p><em>Because moments like these deserve to be felt together.</em></p>
-          </div>
+        <div className="cta-image-container">
+          <picture>
+            <source media="(max-width: 768px)" srcSet="/assets/family_is_waiting_mobile.png" />
+            <img src="/assets/family_is_waiting_web.png" alt="Family is waiting" className="cta-design-img" />
+          </picture>
+          <button 
+            type="button" 
+            className="cta-btn-overlay cta-btn-web" 
+            onClick={() => routeToReveal()} 
+            disabled={checkingEntitlement}
+          >
+            {checkingEntitlement ? "Checking..." : "🎉 Start Your Reveal"}
+          </button>
+          <button 
+            type="button" 
+            className="cta-btn-overlay cta-btn-mobile" 
+            onClick={() => routeToReveal()} 
+            disabled={checkingEntitlement}
+          >
+            {checkingEntitlement ? "Checking..." : "🎉 Start Your Reveal"}
+          </button>
         </div>
       </section>
 
@@ -1749,22 +1755,50 @@ nav#main-nav.solid{box-shadow:0 6px 28px rgba(0,0,0,0.14);}
 */
 
 /* ── CTA Section Redesign ── */
-.cta-new-section{padding:6rem 2rem;position:relative;overflow:hidden;background:url('/images/cta-bg.png') center/cover no-repeat;text-align:center;}
-.cta-bg-dec{position:absolute;pointer-events:none;font-size:6rem;opacity:0.65;animation:balloonFloat 5s ease-in-out infinite alternate;}
-.cta-bg-left{left:3%;top:10%;}
-.cta-bg-right{right:3%;top:15%;animation-direction:alternate-reverse;font-size:5rem;}
-.cta-new-inner{position:relative;z-index:2;max-width:680px;margin:0 auto;}
-.cta-pill-badge{display:inline-flex;align-items:center;gap:0.4rem;padding:0.38rem 1.2rem;border:1.5px solid #E8449A;border-radius:50px;font-size:0.72rem;font-weight:600;color:#E8449A;letter-spacing:0.1em;text-transform:uppercase;margin-bottom:1.4rem;}
-.cta-new-title{font-family:'Nunito',sans-serif;font-size:clamp(2.2rem,5vw,3.4rem);font-weight:900;color:#1a1a2e;line-height:1.15;margin-bottom:1rem;}
-.cta-title-gradient{background:linear-gradient(90deg,#E8449A,#3A9FE8);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;display:block;}
-.cta-new-sub{font-size:1rem;color:#555;line-height:1.7;margin-bottom:0.4rem;}
-.cta-new-sub2{font-size:0.88rem;color:#888;margin-bottom:2.2rem;font-style:italic;}
-.cta-new-btn{display:inline-flex;align-items:center;gap:0.5rem;padding:1rem 2.8rem;border-radius:50px;border:none;cursor:pointer;font-family:'Nunito',sans-serif;font-size:1.05rem;font-weight:800;background:linear-gradient(135deg,#E8449A,#FF7EC8);color:white;box-shadow:0 6px 24px rgba(232,68,154,0.4);transition:transform 0.2s,box-shadow 0.2s;margin-bottom:2.2rem;}
-.cta-new-btn:hover{transform:translateY(-3px);box-shadow:0 10px 32px rgba(232,68,154,0.5);}
-.cta-new-box{background:white;border-radius:20px;padding:1.8rem 2rem;border:1px solid rgba(232,68,154,0.1);box-shadow:0 4px 20px rgba(100,60,200,0.06);}
-.cta-new-box p{font-size:0.88rem;color:#555;line-height:1.85;margin-bottom:0.5rem;}
-.cta-new-box p:last-child{margin-bottom:0;}
-.cta-new-box em{color:#E8449A;}
+.cta-new-section {
+  padding: 0;
+  position: relative;
+  overflow: hidden;
+  width: 100% !important;
+  max-width: 100% !important;
+  background: none;
+}
+.cta-image-container {
+  position: relative;
+  width: 100% !important;
+  max-width: 100% !important;
+  margin: 0 auto;
+}
+.cta-design-img {
+  width: 100%;
+  height: auto;
+  display: block;
+}
+.cta-btn-overlay {
+  position: absolute;
+  border: none;
+  cursor: pointer;
+  background: transparent;
+  color: transparent;
+  text-indent: -9999px;
+  outline: none;
+  border-radius: 50px;
+}
+.cta-btn-web {
+  display: block;
+  left: 41.7%;
+  top: 56.6%;
+  width: 25.5%;
+  height: 7.5%;
+}
+.cta-btn-mobile {
+  display: none;
+  left: 50%;
+  transform: translateX(-50%);
+  top: 36.3%;
+  width: 65%;
+  height: 5%;
+}
 /* ── Footer Redesign ── */
 .footer-new{background:#fff;border-top:3px solid transparent;border-image:linear-gradient(90deg,#E8449A,#7B6EE8,#3A9FE8) 1;padding:4rem 2rem 2rem;}
 .footer-new-inner{max-width:1060px;margin:0 auto;}
@@ -1851,14 +1885,13 @@ nav#main-nav.solid{box-shadow:0 6px 28px rgba(0,0,0,0.14);}
     background-color: #ecdffa !important;
   }
   .cta-new-section {
-    padding: 4rem 1.2rem !important;
+    padding: 0 !important;
   }
-  .cta-new-box {
-    padding: 1.2rem !important;
+  .cta-btn-web {
+    display: none !important;
   }
-  .cta-new-btn {
-    padding: 0.9rem 2rem !important;
-    font-size: 0.95rem !important;
+  .cta-btn-mobile {
+    display: block !important;
   }
 }
 @media(max-width:480px){
