@@ -484,6 +484,7 @@ function LandingPage() {
                   </div>
                   <div className="hero-feature-text">
                     <span className="hero-feature-title">100% Safe</span>
+                    <span className="hero-feature-desc">No smoke. No mess. Just joy.</span>
                   </div>
                 </div>
 
@@ -497,6 +498,7 @@ function LandingPage() {
                   </div>
                   <div className="hero-feature-text">
                     <span className="hero-feature-title">Watch Anywhere</span>
+                    <span className="hero-feature-desc">On any device, anywhere in the world.</span>
                   </div>
                 </div>
 
@@ -511,18 +513,20 @@ function LandingPage() {
                   </div>
                   <div className="hero-feature-text">
                     <span className="hero-feature-title">Everyone Included</span>
+                    <span className="hero-feature-desc">Friends and family can join from anywhere.</span>
                   </div>
                 </div>
 
                 <div className="hero-feature-item">
-                  <div className="hero-feature-icon-wrapper green-outline">
-                    <svg viewBox="0 0 24 24" className="w-6 h-6" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                  <div className="hero-feature-icon-wrapper green-solid">
+                    <svg viewBox="0 0 24 24" className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                       <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
                       <path d="M7 11V7a5 5 0 0 1 10 0v4" />
                     </svg>
                   </div>
                   <div className="hero-feature-text">
                     <span className="hero-feature-title">Private &amp; Secure</span>
+                    <span className="hero-feature-desc">For you, your family and friends.</span>
                   </div>
                 </div>
               </div>
@@ -1144,8 +1148,8 @@ footer{background:#111827;padding:4rem 2rem 2rem;}
   -webkit-backdrop-filter: blur(20px);
   border: 1.5px solid rgba(255, 255, 255, 0.5);
   border-radius: 20px;
-  padding: 0.65rem 1.5rem;
-  max-width: 820px;
+  padding: 0.5rem 1rem;
+  max-width: 760px;
   width: 100%;
   box-shadow: 0 15px 40px rgba(74, 85, 150, 0.08);
   display: flex;
@@ -1178,20 +1182,20 @@ footer{background:#111827;padding:4rem 2rem 2rem;}
 .hero-features-row {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
-  gap: 1.5rem;
+  gap: 0.75rem;
   width: 100%;
 }
 
 .hero-feature-item {
   display: flex;
   align-items: center;
-  gap: 0.75rem;
+  gap: 0.5rem;
   text-align: left;
 }
 
 .hero-feature-icon-wrapper {
-  width: 42px;
-  height: 42px;
+  width: 36px;
+  height: 36px;
   border-radius: 50%;
   display: flex;
   align-items: center;
@@ -1217,22 +1221,21 @@ footer{background:#111827;padding:4rem 2rem 2rem;}
   box-shadow: 0 4px 12px rgba(58, 159, 232, 0.15);
 }
 
-.hero-feature-icon-wrapper.green-outline {
-  color: #84CC16;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+.hero-feature-icon-wrapper.green-solid {
+  background: linear-gradient(135deg, #84CC16, #A3E635);
+  color: white;
+  box-shadow: 0 4px 12px rgba(132, 204, 22, 0.15);
 }
 
 .hero-feature-text {
   display: flex;
   flex-direction: column;
-  gap: 1px;
+  gap: 0px;
 }
 
 .hero-feature-title {
   font-family: 'Nunito', sans-serif;
-  font-size: 0.88rem;
+  font-size: 0.8rem;
   font-weight: 800;
   color: #111827;
   white-space: nowrap;
@@ -1245,10 +1248,10 @@ footer{background:#111827;padding:4rem 2rem 2rem;}
 
 .hero-feature-desc {
   font-family: 'Nunito', sans-serif;
-  font-size: 0.72rem;
-  color: #6B7280;
+  font-size: 0.65rem;
+  color: #4B5563;
   font-weight: 600;
-  line-height: 1.35;
+  line-height: 1.2;
 }
 
 .social-avatars {
