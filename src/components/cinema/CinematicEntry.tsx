@@ -688,7 +688,7 @@ function LandingPage() {
           </picture>
           <button 
             type="button" 
-            className="cta-btn-overlay cta-btn-web" 
+            className="cta-btn-overlay pricing-btn-pink-glossy cta-btn-web" 
             onClick={() => routeToReveal()} 
             disabled={checkingEntitlement}
           >
@@ -696,7 +696,7 @@ function LandingPage() {
           </button>
           <button 
             type="button" 
-            className="cta-btn-overlay cta-btn-mobile" 
+            className="cta-btn-overlay pricing-btn-pink-glossy cta-btn-mobile" 
             onClick={() => routeToReveal()} 
             disabled={checkingEntitlement}
           >
@@ -1778,18 +1778,32 @@ nav#main-nav.solid{box-shadow:0 6px 28px rgba(0,0,0,0.14);}
   position: absolute;
   border: none;
   cursor: pointer;
-  background: transparent;
-  color: transparent;
-  text-indent: -9999px;
-  outline: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: 'Nunito', sans-serif;
+  font-weight: 900;
+  color: white !important;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.25);
+  transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275), box-shadow 0.2s ease;
+  z-index: 10;
   border-radius: 50px;
+  outline: none;
 }
 .cta-btn-web {
   display: block;
   left: 41.7%;
+  transform: translateX(-50%);
   top: 56.6%;
   width: 25.5%;
   height: 7.5%;
+  font-size: clamp(0.7rem, 1.2vw, 1.2rem);
+}
+.cta-btn-web:hover {
+  transform: translateX(-50%) scale(1.03);
+}
+.cta-btn-web:active {
+  transform: translateX(-50%) scale(0.97);
 }
 .cta-btn-mobile {
   display: none;
@@ -1798,6 +1812,13 @@ nav#main-nav.solid{box-shadow:0 6px 28px rgba(0,0,0,0.14);}
   top: 36.3%;
   width: 65%;
   height: 5%;
+  font-size: clamp(0.65rem, 3.2vw, 1.1rem);
+}
+.cta-btn-mobile:hover {
+  transform: translateX(-50%) scale(1.03);
+}
+.cta-btn-mobile:active {
+  transform: translateX(-50%) scale(0.97);
 }
 /* ── Footer Redesign ── */
 .footer-new{background:#fff;border-top:3px solid transparent;border-image:linear-gradient(90deg,#E8449A,#7B6EE8,#3A9FE8) 1;padding:4rem 2rem 2rem;}
