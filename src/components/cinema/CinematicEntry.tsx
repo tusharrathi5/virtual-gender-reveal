@@ -1018,13 +1018,7 @@ html{scroll-behavior:smooth;}
 body{font-family:'Plus Jakarta Sans',sans-serif;background:#fff;color:#111827;overflow-x:hidden;}
 .fade-up{opacity:0;transform:translateY(28px);transition:opacity 0.7s,transform 0.7s;}
 .fade-up.visible{opacity:1;transform:translateY(0);}
-nav{position:fixed;top:0;left:0;right:0;z-index:200;height:68px;display:flex;align-items:center;justify-content:space-between;padding:0 2.5rem;transition:background 0.4s,box-shadow 0.4s;}
-nav.solid{background:rgba(255,255,255,0.92);backdrop-filter:blur(20px);box-shadow:0 1px 0 rgba(0,0,0,0.07);}
-.nav-logo{font-family:'Playfair Display',serif;font-size:1.2rem;font-weight:400;color:#111827;text-decoration:none;line-height:1.2;}
-.nav-logo strong{display:block;font-size:0.6rem;font-family:'Plus Jakarta Sans',sans-serif;letter-spacing:0.2em;text-transform:uppercase;color:#E07FAA;font-weight:400;}
-.nav-links{display:flex;gap:1.8rem;align-items:center;}
-.nav-links a{font-size:0.82rem;text-decoration:none;color:#6B7280;transition:color 0.2s;}
-.nav-links a:hover{color:#111827;}
+.nav-logo{display:flex;align-items:center;gap:0.4rem;text-decoration:none;}
 .nav-user{font-size:0.75rem;color:#1B4F8C;max-width:220px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
 .nav-user-link{font-size:0.78rem !important;color:#1B4F8C !important;font-weight:500;max-width:260px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
 .nav-user-link:hover{text-decoration:underline;}
@@ -1549,7 +1543,7 @@ footer{background:#111827;padding:4rem 2rem 2rem;}
   .hero-right{display:none;}
 }
 /* ── Navbar Redesign ── */
-nav#main-nav{position:fixed;top:1rem;left:50%;transform:translateX(-50%);width:calc(100% - 3rem);max-width:980px;height:70px;display:flex;align-items:center;justify-content:space-between;padding:0 1.8rem;background:rgba(255,255,255,0.96);backdrop-filter:blur(20px);border-radius:50px;box-shadow:0 4px 20px rgba(0,0,0,0.1);border:1px solid rgba(255,255,255,0.9);transition:box-shadow 0.3s;}
+nav#main-nav{position:fixed;top:1rem;left:50%;transform:translateX(-50%);width:calc(100% - 3rem);max-width:980px;height:70px;display:flex;align-items:center;justify-content:space-between;padding:0 1.8rem;background:rgba(255,255,255,0.96);backdrop-filter:blur(20px);border-radius:50px;box-shadow:0 4px 20px rgba(0,0,0,0.1);border:1px solid rgba(255,255,255,0.9);transition:box-shadow 0.3s;z-index:2000;}
 nav#main-nav.solid{box-shadow:0 6px 28px rgba(0,0,0,0.14);}
 .nav-logo{display:flex;align-items:center;gap:0.4rem;text-decoration:none;}
 .nav-logo-img{width:56px;height:44px;object-fit:contain;display:block;}
