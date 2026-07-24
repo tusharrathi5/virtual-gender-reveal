@@ -1131,8 +1131,10 @@ footer{background:#111827;padding:4rem 2rem 2rem;}
 .ht-gender{font-family:'Nunito',sans-serif;font-size:clamp(2.2rem,4.5vw,4rem);font-weight:900;color:#7B3FC4;display:block;letter-spacing:-0.01em;}
 .ht-party{font-family:'Nunito',sans-serif;font-size:clamp(2.5rem,5vw,4.5rem);font-weight:900;color:#3A9FE8;display:block;letter-spacing:-0.01em;}
 .hero-sub-new{font-size:1.05rem;color:#333;line-height:1.65;margin-bottom:20px;font-weight:400;}
-.btn-create-party{display:inline-flex;align-items:center;gap:0.5rem;padding:1rem 2.4rem;border-radius:50px;border:none;cursor:pointer;font-family:'Nunito',sans-serif;font-size:1.05rem;font-weight:800;background:linear-gradient(135deg,#E8449A,#FF7EC8);color:white;box-shadow:0 6px 24px rgba(232,68,154,0.4);transition:transform 0.2s,box-shadow 0.2s;margin-bottom:1rem;margin-top:0;}
-.btn-create-party:hover{transform:translateY(-3px);box-shadow:0 10px 32px rgba(232,68,154,0.5);}
+.btn-create-party{display:inline-flex;align-items:center;justify-content:center;gap:0.5rem;padding:1rem 2.4rem;border-radius:50px;border:1px solid rgba(255,255,255,0.58);cursor:pointer;font-family:'Nunito',sans-serif;font-size:1.05rem;font-weight:800;background:linear-gradient(135deg,#E8449A 0%,#F552B0 48%,#FF7EC8 100%);color:white;text-shadow:0 1px 2px rgba(117,16,76,0.2);box-shadow:0 8px 24px rgba(232,68,154,0.34),inset 0 1px 0 rgba(255,255,255,0.42);transition:transform 0.25s cubic-bezier(0.2,0.8,0.2,1),box-shadow 0.25s ease,filter 0.25s ease;margin-bottom:1rem;margin-top:0;}
+.btn-create-party:hover{transform:translateY(-3px) scale(1.04);filter:saturate(1.08) brightness(1.04);box-shadow:0 14px 34px rgba(232,68,154,0.48),inset 0 1px 0 rgba(255,255,255,0.55);}
+.btn-create-party:active{transform:translateY(0) scale(0.98);}
+.btn-create-party:focus-visible{outline:3px solid rgba(255,255,255,0.92);outline-offset:3px;}
 .hero-tagline{font-size:1rem;color:#444;font-weight:600;display:flex;align-items:center;gap:0.4rem;}
 
 /* Desktop alignment */
@@ -1152,13 +1154,20 @@ footer{background:#111827;padding:4rem 2rem 2rem;}
   }
   .btn-create-party {
     position: absolute;
-    bottom: 5.5vh;
+    bottom: 3.5vh;
     left: 44.5vh;
     transform: translateX(-50%) !important;
     z-index: 100;
     margin: 0 !important;
-    padding: 0.65rem 2rem !important;
-    font-size: 0.95rem !important;
+    width: clamp(270px, 17vw, 330px);
+    padding: 0.78rem 2.4rem !important;
+    font-size: 1rem !important;
+  }
+  .btn-create-party:hover {
+    transform: translateX(-50%) translateY(-3px) scale(1.045) !important;
+  }
+  .btn-create-party:active {
+    transform: translateX(-50%) scale(0.98) !important;
   }
 }
 
