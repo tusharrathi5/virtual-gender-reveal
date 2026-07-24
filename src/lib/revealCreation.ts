@@ -2,6 +2,7 @@ import { FieldValue, Timestamp } from "firebase-admin/firestore";
 import { getAdminDb } from "@/lib/firebase-admin";
 import type { Purchase } from "@/lib/userService";
 import type { EnquiryMode, EnquiryStages, RevealerRelation } from "@/lib/types";
+import { findUnusedPurchaseEntry } from "@/lib/purchaseSelection";
 
 // Types
 
@@ -87,6 +88,7 @@ export async function createRevealAndConsumeEntitlement(
       revealsAllowed?: number;
       revealsCreated?: number;
       purchases?: Purchase[];
+      activePlan?: string;
       isDeleted?: boolean;
     };
 
@@ -99,21 +101,13 @@ export async function createRevealAndConsumeEntitlement(
       throw new Error("NO_ENTITLEMENT");
     }
 
-    // 2. Find oldest unused completed purchase
+    // 2. Prefer an unused purchase from the plan the user most recently
+    // activated. Fall back to the oldest unused purchase only when that plan
+    // has no entitlement remaining.
     const purchases = [...(userData.purchases ?? [])];
-    const sortedIndexes = purchases
-      .map((p, idx) => ({ p, idx }))
-      .sort((a, b) => {
-        const ta = a.p.purchasedAt?.toMillis?.() ?? 0;
-        const tb = b.p.purchasedAt?.toMillis?.() ?? 0;
-        return ta - tb;
-      });
-
-    const target = sortedIndexes.find(
-      ({ p }) =>
-        p.status === "completed" &&
-        p.revealEnquiryId === null &&
-        p.revealsGranted > 0
+    const target = findUnusedPurchaseEntry(
+      purchases,
+      userData.activePlan
     );
 
     if (!target) {
@@ -125,7 +119,7 @@ export async function createRevealAndConsumeEntitlement(
     // Capture the plan from the consumed purchase for denormalization onto enquiry.
     // This lets the admin panel show plan without a join. Falls back to null if
     // somehow the purchase has no plan field (shouldn't happen, but defensive).
-    const consumedPlan = target.p.plan ?? null;
+    const consumedPlan = target.purchase.plan ?? null;
     if (!consumedPlan || consumedPlan !== expectedPlan) {
       throw new Error("ENTITLEMENT_CHANGED");
     }
@@ -141,8 +135,8 @@ export async function createRevealAndConsumeEntitlement(
     const paymentReceivedAt = Timestamp.now();
 
     // 3 + 4. Update purchase array with enquiryId attached, decrement/increment counters
-    purchases[target.idx] = {
-      ...purchases[target.idx],
+    purchases[target.index] = {
+      ...purchases[target.index],
       revealEnquiryId: enquiryId,
     };
 
@@ -173,9 +167,9 @@ export async function createRevealAndConsumeEntitlement(
       guestCount: 0,
       genderStatus: "not_submitted",
       doctorTokenHash: null,
-      stripeSessionId: target.p.stripeSessionId ?? null,
-      stripePaymentIntentId: target.p.stripePaymentIntentId ?? null,
-      amountTotal: target.p.amountPaid ?? null,
+      stripeSessionId: target.purchase.stripeSessionId ?? null,
+      stripePaymentIntentId: target.purchase.stripePaymentIntentId ?? null,
+      amountTotal: target.purchase.amountPaid ?? null,
       paymentStatus: "completed",
       videoUrl: null,
       downloadUrl: null,
@@ -196,7 +190,7 @@ export async function createRevealAndConsumeEntitlement(
 
     return {
       enquiryId,
-      consumedPurchaseId: target.p.purchaseId,
+      consumedPurchaseId: target.purchase.purchaseId,
       consumedPlan,
       newStatus,
     };

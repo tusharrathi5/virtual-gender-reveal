@@ -5,24 +5,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { verifyAuthHeader } from "@/lib/authServer";
 import { getAdminDb } from "@/lib/firebase-admin";
 import type { Purchase } from "@/lib/userService";
-
-function getNextUnusedPlan(
-  purchases: Purchase[]
-): Purchase["plan"] | null {
-  const next = [...purchases]
-    .sort((a, b) => {
-      const aTime = a.purchasedAt?.toMillis?.() ?? 0;
-      const bTime = b.purchasedAt?.toMillis?.() ?? 0;
-      return aTime - bTime;
-    })
-    .find(
-      (purchase) =>
-        purchase.status === "completed" &&
-        purchase.revealEnquiryId === null &&
-        purchase.revealsGranted > 0
-    );
-  return next?.plan ?? null;
-}
+import { findUnusedPurchaseEntry } from "@/lib/purchaseSelection";
 
 export async function GET(req: NextRequest) {
   const session = await verifyAuthHeader(req.headers.get("Authorization"));
@@ -38,9 +21,11 @@ export async function GET(req: NextRequest) {
   const user = snap.data() ?? {};
   const revealsAllowed = typeof user.revealsAllowed === "number" ? user.revealsAllowed : 0;
   const activePlan = typeof user.activePlan === "string" ? user.activePlan : "none";
-  const nextPlan = getNextUnusedPlan(
-    Array.isArray(user.purchases) ? (user.purchases as Purchase[]) : []
+  const nextPurchase = findUnusedPurchaseEntry(
+    Array.isArray(user.purchases) ? (user.purchases as Purchase[]) : [],
+    activePlan
   );
+  const nextPlan = nextPurchase?.purchase.plan ?? null;
   const isDeleted = user.isDeleted === true;
 
   return NextResponse.json({
