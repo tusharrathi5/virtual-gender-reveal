@@ -1675,6 +1675,7 @@ nav#main-nav.solid{box-shadow:0 6px 28px rgba(0,0,0,0.14);}
 }
 .pricing-btn-overlay {
   position: absolute;
+  box-sizing: border-box;
   border: none;
   cursor: pointer;
   display: inline-flex;
@@ -1690,7 +1691,13 @@ nav#main-nav.solid{box-shadow:0 6px 28px rgba(0,0,0,0.14);}
   letter-spacing: 0.05em;
   text-decoration: none;
   z-index: 10;
+  padding: 0 0.75rem;
+  line-height: 1;
+  overflow: hidden;
   transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275), box-shadow 0.2s ease, filter 0.2s ease;
+}
+.pricing-btn-overlay .btn-icon {
+  flex: 0 0 auto;
 }
 .pricing-btn-blue-glossy {
   background: linear-gradient(180deg, rgba(255, 255, 255, 0.25) 0%, rgba(255, 255, 255, 0) 50%), 
@@ -1717,26 +1724,29 @@ nav#main-nav.solid{box-shadow:0 6px 28px rgba(0,0,0,0.14);}
   transform: scale(0.97);
 }
 .pricing-btn-web-basic {
-  left: 14.4%;
-  top: 68%;
-  width: 18.3%;
-  height: 5%;
-  font-size: clamp(0.7rem, 1.1vw, 1.1rem);
+  left: 15.01%;
+  top: 68.23%;
+  width: 17.23%;
+  height: 4.36%;
+  font-size: clamp(0.68rem, 0.95vw, 1rem);
 }
 .pricing-btn-web-premium {
-  left: 58.75%;
-  top: 69.5%;
-  width: 22.5%;
-  height: 5%;
-  font-size: clamp(0.7rem, 1.1vw, 1.1rem);
+  left: 59.69%;
+  top: 69.71%;
+  width: 20.87%;
+  height: 4.25%;
+  gap: 0.3rem;
+  padding-inline: 0.6rem;
+  font-size: clamp(0.62rem, 0.85vw, 0.92rem);
+  letter-spacing: 0.025em;
 }
 .pricing-btn-mobile-basic {
   left: 50%;
   transform: translateX(-50%);
-  top: 44.05%;
-  width: 69%;
-  height: 3.7%;
-  font-size: clamp(0.65rem, 2.8vw, 1rem);
+  top: 44.26%;
+  width: 75.35%;
+  height: 3.35%;
+  font-size: clamp(0.65rem, 2.8vw, 0.95rem);
 }
 .pricing-btn-mobile-basic:hover {
   transform: translateX(-50%) scale(1.03);
@@ -1747,10 +1757,13 @@ nav#main-nav.solid{box-shadow:0 6px 28px rgba(0,0,0,0.14);}
 .pricing-btn-mobile-premium {
   left: 50%;
   transform: translateX(-50%);
-  top: 78.95%;
-  width: 80%;
-  height: 3.7%;
-  font-size: clamp(0.65rem, 2.8vw, 1rem);
+  top: 79.31%;
+  width: 77.80%;
+  height: 2.81%;
+  gap: 0.3rem;
+  padding-inline: 0.6rem;
+  font-size: clamp(0.58rem, 2.55vw, 0.9rem);
+  letter-spacing: 0.02em;
 }
 .pricing-btn-mobile-premium:hover {
   transform: translateX(-50%) scale(1.03);
