@@ -1154,17 +1154,17 @@ footer{background:#111827;padding:4rem 2rem 2rem;}
   }
   .btn-create-party {
     position: absolute;
-    bottom: 3.5vh;
+    bottom: 5.2vh;
     left: 44.5vh;
     transform: translateX(-50%) !important;
     z-index: 100;
     margin: 0 !important;
-    width: clamp(270px, 17vw, 330px);
-    padding: 0.78rem 2.4rem !important;
-    font-size: 1rem !important;
+    width: clamp(240px, 14.5vw, 285px);
+    padding: 0.58rem 1.8rem !important;
+    font-size: 0.92rem !important;
   }
   .btn-create-party:hover {
-    transform: translateX(-50%) translateY(-3px) scale(1.045) !important;
+    transform: translateX(-50%) translateY(-3px) scale(1.035) !important;
   }
   .btn-create-party:active {
     transform: translateX(-50%) scale(0.98) !important;
