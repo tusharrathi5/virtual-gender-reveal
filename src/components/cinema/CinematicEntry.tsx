@@ -1119,7 +1119,7 @@ footer{background:#111827;padding:4rem 2rem 2rem;}
 .footer-bottom{max-width:1060px;margin:0 auto;padding-top:1.8rem;border-top:1px solid rgba(255,255,255,0.07);display:flex;justify-content:space-between;flex-wrap:wrap;gap:1rem;font-size:0.74rem;color:rgba(255,255,255,0.28);}
 @media(max-width:768px){.nav-links{display:none;}.pc-prem{transform:none;}.pc-prem:hover{transform:translateY(-4px);}}
 /* ── Hero Redesign ── */
-.hero-section{min-height:100vh;display:flex;align-items:center;padding:5rem 2rem 3rem;position:relative;overflow:hidden;background:url('/images/heropage_bg_final.png') left center/cover no-repeat;}
+.hero-section{min-height:100vh;display:flex;align-items:center;padding:5rem 2rem 3rem;position:relative;overflow:hidden;background:url('/images/Bgiamgehero.png') left center/cover no-repeat;}
 .hero-overlay{position:absolute;inset:0;background:linear-gradient(135deg,rgba(255,182,214,0.45) 0%,rgba(196,225,255,0.45) 100%);z-index:1;}
 .balloons-wrap{position:absolute;inset:0;z-index:2;pointer-events:none;}
 .balloon{position:absolute;animation:balloonFloat 4s ease-in-out infinite alternate;}
@@ -1138,7 +1138,7 @@ footer{background:#111827;padding:4rem 2rem 2rem;}
 /* Desktop alignment */
 @media (min-width: 769px) {
   .hero-section {
-    background: url('/images/heropage_bg_final.png') left center/cover no-repeat;
+    background: url('/images/Bgiamgehero.png') left center/cover no-repeat;
   }
   .hero-content {
     position: static;
@@ -1163,11 +1163,11 @@ footer{background:#111827;padding:4rem 2rem 2rem;}
 /* Mobile responsive layout */
 @media (max-width: 768px) {
   .hero-section {
-    background: url('/images/hero-bg.png') center center/cover no-repeat !important;
+    background: url('/images/hero_mobile.png') center center/cover no-repeat !important;
     padding: 6rem 1rem 3rem !important;
   }
   .hero-content {
-    position: relative !important;
+    position: static !important;
     grid-template-columns: 1fr !important;
     gap: 1.5rem !important;
   }
@@ -1176,15 +1176,16 @@ footer{background:#111827;padding:4rem 2rem 2rem;}
   .social-proof-banner,
   .hero-features-card,
   .hero-tagline {
-    display: flex !important;
-  }
-  .hero-title-img {
-    display: block !important;
+    display: none !important;
   }
   .btn-create-party {
-    position: static !important;
-    transform: none !important;
-    margin: 1.5rem auto 1.2rem !important;
+    position: absolute !important;
+    bottom: 12vh !important;
+    left: 50% !important;
+    transform: translateX(-50%) !important;
+    z-index: 100 !important;
+    margin: 0 !important;
+    white-space: nowrap !important;
   }
 }
 
