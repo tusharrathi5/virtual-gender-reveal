@@ -1241,10 +1241,10 @@ footer{background:#111827;padding:4rem 2rem 2rem;}
 /* Mobile responsive layout */
 @media (max-width: 768px) {
   .hero-section {
-    min-height: calc(216.67vw + 5.5rem) !important;
+    min-height: 216.67vw !important;
     background-color: #f8cbd5 !important;
     background-image: url('/images/hero-mobile-final.png') !important;
-    background-position: center 5.5rem !important;
+    background-position: center top !important;
     background-size: 100% auto !important;
     background-repeat: no-repeat !important;
     padding: 0 !important;
@@ -1266,14 +1266,14 @@ footer{background:#111827;padding:4rem 2rem 2rem;}
   }
   .btn-create-party {
     position: absolute !important;
-    top: calc(5.5rem + 188vw) !important;
+    top: 188vw !important;
     bottom: auto !important;
     left: 50% !important;
     transform: translateX(-50%) !important;
     z-index: 100 !important;
     margin: 0 !important;
     white-space: nowrap !important;
-    width: min(82%, 360px) !important;
+    width: min(90%, 400px) !important;
     min-height: 52px !important;
     padding: 0.8rem 1.9rem !important;
     font-size: 1.05rem !important;
