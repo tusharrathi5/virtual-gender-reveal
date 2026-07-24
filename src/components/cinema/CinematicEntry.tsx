@@ -331,7 +331,7 @@ function ConfirmDialog({ plan, onConfirm, onCancel }: { plan: PlanMeta; onConfir
 
 // ── Landing Page ─────────────────────────────────────────────
 function LandingPage() {
-  const { user, loading, firestoreUser } = useAuth();
+  const { user, loading, firestoreUser, logout } = useAuth();
   const router = useRouter();
   const [toast, setToast] = useState<{ message: string; type: "success" | "error" | "info" } | null>(null);
   const [confirmPlan, setConfirmPlan] = useState<PlanMeta | null>(null);
@@ -340,6 +340,18 @@ function LandingPage() {
   const [showFaqModal, setShowFaqModal] = useState(false);
   const [showStoryModal, setShowStoryModal] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [accountMenuOpen, setAccountMenuOpen] = useState(false);
+  const accountMenuRef = useRef<HTMLDivElement>(null);
+
+  const accountName = (user?.displayName || user?.email?.split("@")[0] || "Account").trim();
+  const accountFirstName = accountName.split(/\s+/)[0] || "Account";
+  const accountInitials = accountName
+    .split(/\s+/)
+    .slice(0, 2)
+    .map((part) => part.charAt(0).toUpperCase())
+    .join("") || "A";
+  const accountDestination =
+    firestoreUser?.role?.toLowerCase?.() === "admin" ? "/admin" : "/dashboard";
 
   useEffect(() => {
     if (showFaqModal || showStoryModal) {
@@ -351,6 +363,32 @@ function LandingPage() {
       document.body.style.overflow = '';
     };
   }, [showFaqModal, showStoryModal]);
+
+  useEffect(() => {
+    if (!accountMenuOpen) return;
+
+    const closeOnOutsideClick = (event: MouseEvent) => {
+      if (!accountMenuRef.current?.contains(event.target as Node)) {
+        setAccountMenuOpen(false);
+      }
+    };
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setAccountMenuOpen(false);
+    };
+
+    document.addEventListener("mousedown", closeOnOutsideClick);
+    document.addEventListener("keydown", closeOnEscape);
+    return () => {
+      document.removeEventListener("mousedown", closeOnOutsideClick);
+      document.removeEventListener("keydown", closeOnEscape);
+    };
+  }, [accountMenuOpen]);
+
+  const handleLogout = async () => {
+    setAccountMenuOpen(false);
+    await logout();
+    router.push("/");
+  };
 
   function handleConfirm() {
     if (!confirmPlan) return;
@@ -427,7 +465,34 @@ function LandingPage() {
         </div>
         <div className="nav-right">
           {loading ? null : user ? (
-            <a href={(firestoreUser?.role?.toLowerCase?.() === "admin") ? "/admin" : "/dashboard"} className="nav-user-link">Logged in as {user.displayName || user.email || "Account"}</a>
+            <div className="nav-account" ref={accountMenuRef}>
+              <a href={accountDestination} className="nav-account-main" aria-label={`Open ${accountFirstName}'s dashboard`}>
+                <span className="nav-account-avatar" aria-hidden="true">{accountInitials}</span>
+                <span className="nav-account-name">{accountFirstName}</span>
+              </a>
+              <button
+                type="button"
+                className="nav-account-toggle"
+                onClick={() => setAccountMenuOpen((open) => !open)}
+                aria-label="Open account menu"
+                aria-haspopup="menu"
+                aria-expanded={accountMenuOpen}
+              >
+                <svg viewBox="0 0 20 20" aria-hidden="true">
+                  <path d="m5.5 7.5 4.5 4.5 4.5-4.5" />
+                </svg>
+              </button>
+              {accountMenuOpen && (
+                <div className="nav-account-menu" role="menu">
+                  <button type="button" role="menuitem" className="nav-account-logout" onClick={() => void handleLogout()}>
+                    <svg viewBox="0 0 24 24" aria-hidden="true">
+                      <path d="M10 17l5-5-5-5M15 12H3M14 4h4a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-4" />
+                    </svg>
+                    Log Out
+                  </button>
+                </div>
+              )}
+            </div>
           ) : (
             <a href="/login" className="nav-login-btn">👤 Log In</a>
           )}
@@ -1020,8 +1085,6 @@ body{font-family:'Plus Jakarta Sans',sans-serif;background:#fff;color:#111827;ov
 .fade-up.visible{opacity:1;transform:translateY(0);}
 .nav-logo{display:flex;align-items:center;gap:0.4rem;text-decoration:none;}
 .nav-user{font-size:0.75rem;color:#1B4F8C;max-width:220px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-.nav-user-link{font-size:0.78rem !important;color:#1B4F8C !important;font-weight:500;max-width:260px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-.nav-user-link:hover{text-decoration:underline;}
 .nav-cta-btn{font-size:0.78rem;font-weight:500;letter-spacing:0.1em;text-transform:uppercase;padding:0.6rem 1.4rem;border-radius:3px;text-decoration:none;background:linear-gradient(135deg,#2E7DD1,#C2527A);color:white;}
 .nav-cta-btn{border:none;cursor:pointer;}
 .hero-section{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:7rem 2rem 5rem;position:relative;overflow:hidden;background:#fff;}
@@ -1620,6 +1683,21 @@ nav#main-nav.solid{box-shadow:0 6px 28px rgba(0,0,0,0.14);}
 .nav-link:hover{color:#E8449A;background:rgba(232,68,154,0.07);}
 .nav-link-active{color:#E8449A !important;background:rgba(232,68,154,0.1);}
 .nav-right{display:flex;align-items:center;gap:0.7rem;}
+.nav-account{position:relative;display:flex;align-items:center;min-width:0;border:1px solid rgba(232,68,154,0.2);border-radius:999px;background:linear-gradient(135deg,rgba(255,255,255,0.96),rgba(253,238,247,0.86));box-shadow:0 5px 18px rgba(92,54,113,0.1),inset 0 1px 0 rgba(255,255,255,0.95);transition:transform 0.2s ease,box-shadow 0.2s ease,border-color 0.2s ease;}
+.nav-account:hover{transform:translateY(-1px);border-color:rgba(232,68,154,0.34);box-shadow:0 8px 24px rgba(92,54,113,0.15),inset 0 1px 0 white;}
+.nav-account-main{display:flex;align-items:center;gap:0.55rem;min-width:0;padding:0.35rem 0.45rem 0.35rem 0.38rem;color:#25325B !important;text-decoration:none;}
+.nav-account-avatar{display:grid;place-items:center;width:32px;height:32px;flex:0 0 32px;border-radius:50%;background:linear-gradient(135deg,#E8449A 0%,#A86DDF 48%,#3A9FE8 100%);border:2px solid rgba(255,255,255,0.92);box-shadow:0 3px 10px rgba(123,110,232,0.28);color:white;font-family:'Nunito',sans-serif;font-size:0.68rem;font-weight:900;letter-spacing:0.03em;}
+.nav-account-name{display:block;max-width:96px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-family:'Nunito',sans-serif;font-size:0.84rem;font-weight:800;color:#25325B;}
+.nav-account-toggle{display:grid;place-items:center;width:32px;height:32px;margin-right:0.2rem;padding:0;border:0;border-left:1px solid rgba(123,110,232,0.14);background:transparent;color:#59617A;cursor:pointer;border-radius:0 999px 999px 0;transition:color 0.2s ease,background 0.2s ease;}
+.nav-account-toggle:hover{background:rgba(232,68,154,0.08);color:#E8449A;}
+.nav-account-toggle svg{width:15px;height:15px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;transition:transform 0.2s ease;}
+.nav-account-toggle[aria-expanded="true"] svg{transform:rotate(180deg);}
+.nav-account-menu{position:absolute;top:calc(100% + 0.65rem);right:0;width:150px;padding:0.45rem;background:rgba(255,255,255,0.98);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border:1px solid rgba(232,68,154,0.18);border-radius:16px;box-shadow:0 18px 46px rgba(45,36,70,0.2);animation:accountMenuIn 0.18s ease-out;transform-origin:top right;}
+.nav-account-menu::before{content:"";position:absolute;top:-5px;right:17px;width:10px;height:10px;background:white;border-left:1px solid rgba(232,68,154,0.18);border-top:1px solid rgba(232,68,154,0.18);transform:rotate(45deg);}
+.nav-account-logout{position:relative;z-index:1;width:100%;display:flex;align-items:center;gap:0.65rem;padding:0.72rem 0.8rem;border:0;border-radius:11px;background:transparent;color:#A73569;font-family:'Nunito',sans-serif;font-size:0.82rem;font-weight:800;cursor:pointer;text-align:left;transition:background 0.18s ease,color 0.18s ease,transform 0.18s ease;}
+.nav-account-logout:hover{background:linear-gradient(135deg,rgba(232,68,154,0.1),rgba(123,110,232,0.08));color:#E0297D;transform:translateX(2px);}
+.nav-account-logout svg{width:17px;height:17px;fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round;}
+@keyframes accountMenuIn{from{opacity:0;transform:translateY(-5px) scale(0.97)}to{opacity:1;transform:translateY(0) scale(1)}}
 .nav-login-btn{display:inline-flex;align-items:center;gap:0.4rem;padding:0.5rem 1.3rem;border-radius:50px;background:#3A9FE8;color:white !important;font-family:'Nunito',sans-serif;font-size:0.86rem;font-weight:700;text-decoration:none;transition:background 0.2s,transform 0.2s;}
 .nav-login-btn:hover{background:#2E8AD4;transform:translateY(-1px);}
 .mobile-nav-toggle{display:none;flex-direction:column;justify-content:space-between;width:24px;height:16px;background:transparent;border:none;cursor:pointer;padding:0;margin-left:0.4rem;}
@@ -1631,6 +1709,10 @@ nav#main-nav.solid{box-shadow:0 6px 28px rgba(0,0,0,0.14);}
   nav#main-nav{width:calc(100% - 2rem);padding:0 1rem;}
   .mobile-nav-toggle{display:flex;}
   .nav-login-btn{padding:0.45rem 1rem;font-size:0.8rem;}
+  .nav-account-name{display:none;}
+  .nav-account-main{padding-right:0.25rem;}
+  .nav-account-toggle{width:29px;}
+  .nav-account-menu{right:-2px;}
   .nav-links{display:none;position:absolute;top:80px;left:0;right:0;background:rgba(255,255,255,0.98);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border:1px solid rgba(0,0,0,0.06);border-radius:24px;flex-direction:column;padding:1.2rem;gap:0.6rem;box-shadow:0 15px 30px rgba(0,0,0,0.08);z-index:999;}
   .nav-links.mobile-open{display:flex;}
   .nav-links .nav-link{width:100%;text-align:center;padding:0.6rem 0;font-size:0.95rem;}
