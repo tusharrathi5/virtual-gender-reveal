@@ -1255,6 +1255,9 @@ footer{background:#111827;padding:4rem 2rem 2rem;}
     grid-template-columns: 1fr !important;
     gap: 1.5rem !important;
   }
+  .hero-right {
+    display: none !important;
+  }
   .hero-title-img,
   .hero-sub-new,
   .social-proof-banner,
@@ -2018,7 +2021,7 @@ nav#main-nav.solid{box-shadow:0 6px 28px rgba(0,0,0,0.14);}
 }
 /* ── Hero card mock — larger ── */
 .hero-title-img{width:100%;max-width:480px;height:auto;display:block;margin-bottom:1.2rem;filter:drop-shadow(0 0 18px rgba(255,255,255,0.9)) drop-shadow(0 0 40px rgba(255,255,255,0.5));}
-.hero-card-mock{width:100%;max-width:680px;padding:3rem 2.8rem 2.2rem;transform:perspective(1000px) rotateY(-6deg) rotateX(3deg);transition:transform 0.4s ease;}
+.hero-card-mock{width:100%;max-width:600px;padding:3rem 2.8rem 2.2rem;transform:perspective(1000px) rotateY(-5deg) rotateX(2deg);transition:transform 0.4s ease;}
 .hero-card-mock:hover{transform:perspective(1000px) rotateY(-2deg) rotateX(1deg);}
 .hero-card-video{padding:0;overflow:hidden;}
 .hero-mock-video{width:100%;height:auto;display:block;border-radius:28px;}
