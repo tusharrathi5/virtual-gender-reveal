@@ -648,13 +648,12 @@ function LandingPage() {
 
       <section className="pricing-section" id="pricing">
         <div className="pricing-inner">
-          {!loading && !user && (
-            <div className="pricing-auth-prompt fade-up text-center mb-6" style={{ position: 'relative', zIndex: 10 }}>
-              <p style={{ fontSize: 14, color: "#E8449A", fontStyle: "italic", fontWeight: 700, textShadow: '0 1px 2px rgba(255,255,255,0.8)' }}>Sign in or create an account to choose a plan ✦</p>
-            </div>
-          )}
-          
           <div className="pricing-image-container fade-up">
+            {!loading && !user && (
+              <div className="pricing-auth-prompt">
+                Sign in or create an account to choose a plan ✦
+              </div>
+            )}
             {/* Desktop View */}
             <div className="pricing-design-web">
               <img 
@@ -1755,6 +1754,28 @@ nav#main-nav.solid{box-shadow:0 6px 28px rgba(0,0,0,0.14);}
   max-width: 100% !important;
   margin: 0 auto;
 }
+.pricing-auth-prompt {
+  position: absolute;
+  top: 0;
+  left: 50%;
+  z-index: 20;
+  transform: translate(-50%, -50%);
+  width: max-content;
+  max-width: calc(100% - 2rem);
+  padding: 0.55rem 1.25rem;
+  border: 1px solid rgba(232, 68, 154, 0.2);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.94);
+  box-shadow: 0 7px 22px rgba(91, 53, 112, 0.14);
+  color: #E8449A;
+  font-family: 'Nunito', sans-serif;
+  font-size: clamp(0.72rem, 0.9vw, 0.88rem);
+  font-style: italic;
+  font-weight: 800;
+  line-height: 1.2;
+  text-align: center;
+  white-space: nowrap;
+}
 .pricing-design-web {
   display: block;
   position: relative;
@@ -1869,6 +1890,12 @@ nav#main-nav.solid{box-shadow:0 6px 28px rgba(0,0,0,0.14);}
   transform: translateX(-50%) scale(0.97);
 }
 @media (max-width: 768px) {
+  .pricing-auth-prompt {
+    max-width: calc(100% - 1.25rem);
+    padding: 0.48rem 0.9rem;
+    font-size: 0.72rem;
+    white-space: normal;
+  }
   .pricing-design-web {
     display: none;
   }
