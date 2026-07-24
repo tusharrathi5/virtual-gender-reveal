@@ -673,9 +673,9 @@ function LandingPage() {
         <div className="testi-new-inner">
           <div className="testi-image-container fade-up">
             <picture>
-              <source media="(max-width: 768px)" srcSet="/assets/what_our_user_say_mobile.png" />
+              <source media="(max-width: 768px)" srcSet="/assets/whatoursuersaymobile.png" />
               <img 
-                src="/assets/what_our_user_say_web.png" 
+                src="/assets/whatourusersay_new.png" 
                 alt="What Our Users Say" 
                 className="testi-design-img" 
               />
