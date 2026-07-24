@@ -1847,11 +1847,11 @@ nav#main-nav.solid{box-shadow:0 6px 28px rgba(0,0,0,0.14);}
 }
 .cta-btn-web {
   display: block;
-  left: 39.41%;
+  left: 41.96%;
   transform: translateX(-50%);
-  top: 52%;
-  width: 29.67%;
-  height: 6%;
+  top: 52.28%;
+  width: 24.70%;
+  height: 8.29%;
   font-size: clamp(0.7rem, 1.2vw, 1.2rem);
 }
 .cta-btn-web:hover {
@@ -1864,9 +1864,9 @@ nav#main-nav.solid{box-shadow:0 6px 28px rgba(0,0,0,0.14);}
   display: none;
   left: 50%;
   transform: translateX(-50%);
-  top: 28%;
-  width: 79.06%;
-  height: 11.9%;
+  top: 35.35%;
+  width: 64.29%;
+  height: 4.90%;
   font-size: clamp(0.65rem, 3.2vw, 1.1rem);
 }
 .cta-btn-mobile:hover {
