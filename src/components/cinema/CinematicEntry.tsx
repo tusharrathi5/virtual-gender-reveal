@@ -1273,9 +1273,10 @@ footer{background:#111827;padding:4rem 2rem 2rem;}
     z-index: 100 !important;
     margin: 0 !important;
     white-space: nowrap !important;
-    width: min(70%, 310px) !important;
-    padding: 0.64rem 1.6rem !important;
-    font-size: 0.94rem !important;
+    width: min(82%, 360px) !important;
+    min-height: 52px !important;
+    padding: 0.8rem 1.9rem !important;
+    font-size: 1.05rem !important;
   }
 }
 
