@@ -1152,11 +1152,13 @@ footer{background:#111827;padding:4rem 2rem 2rem;}
   }
   .btn-create-party {
     position: absolute;
-    bottom: 5.8vh;
-    left: 38.5vh;
+    bottom: 5.5vh;
+    left: 44.5vh;
     transform: translateX(-50%) !important;
     z-index: 100;
     margin: 0 !important;
+    padding: 0.65rem 2rem !important;
+    font-size: 0.95rem !important;
   }
 }
 
@@ -1186,6 +1188,8 @@ footer{background:#111827;padding:4rem 2rem 2rem;}
     z-index: 100 !important;
     margin: 0 !important;
     white-space: nowrap !important;
+    padding: 0.65rem 2rem !important;
+    font-size: 0.95rem !important;
   }
 }
 
