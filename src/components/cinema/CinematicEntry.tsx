@@ -1181,7 +1181,7 @@ footer{background:#111827;padding:4rem 2rem 2rem;}
 .footer-bottom{max-width:1060px;margin:0 auto;padding-top:1.8rem;border-top:1px solid rgba(255,255,255,0.07);display:flex;justify-content:space-between;flex-wrap:wrap;gap:1rem;font-size:0.74rem;color:rgba(255,255,255,0.28);}
 @media(max-width:768px){.nav-links{display:none;}.pc-prem{transform:none;}.pc-prem:hover{transform:translateY(-4px);}}
 /* ── Hero Redesign ── */
-.hero-section{min-height:max(100vh,calc(56.28vw + 5.5rem));display:flex;align-items:center;padding:5rem 2rem 3rem;position:relative;overflow:hidden;background-color:#f8cbd5;background-image:url('/images/hero-web-final.png');background-position:center 5.5rem;background-size:100% auto;background-repeat:no-repeat;}
+.hero-section{min-height:max(100vh,56.28vw);display:flex;align-items:center;padding:5rem 2rem 3rem;position:relative;overflow:hidden;background-color:#f8cbd5;background-image:url('/images/hero-web-final.png');background-position:center top;background-size:100% auto;background-repeat:no-repeat;}
 .hero-overlay{position:absolute;inset:0;background:linear-gradient(135deg,rgba(255,182,214,0.45) 0%,rgba(196,225,255,0.45) 100%);z-index:1;}
 .balloons-wrap{position:absolute;inset:0;z-index:2;pointer-events:none;}
 .balloon{position:absolute;animation:balloonFloat 4s ease-in-out infinite alternate;}
@@ -1204,7 +1204,7 @@ footer{background:#111827;padding:4rem 2rem 2rem;}
   .hero-section {
     background-color: #f8cbd5;
     background-image: url('/images/hero-web-final.png');
-    background-position: center 5.5rem;
+    background-position: center top;
     background-size: 100% auto;
     background-repeat: no-repeat;
   }
@@ -1220,15 +1220,15 @@ footer{background:#111827;padding:4rem 2rem 2rem;}
   }
   .btn-create-party {
     position: absolute;
-    top: calc(5.5rem + 27vw);
+    top: 47.3vw;
     bottom: auto;
-    left: 75%;
+    left: 29.55%;
     transform: translateX(-50%) !important;
     z-index: 100;
     margin: 0 !important;
-    width: clamp(265px, 19vw, 340px);
-    padding: 0.85rem 2rem !important;
-    font-size: 1rem !important;
+    width: clamp(230px, 15.5vw, 290px);
+    padding: 0.62rem 1.7rem !important;
+    font-size: 0.92rem !important;
   }
   .btn-create-party:hover {
     transform: translateX(-50%) translateY(-3px) scale(1.035) !important;
