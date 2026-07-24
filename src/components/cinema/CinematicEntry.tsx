@@ -1181,7 +1181,7 @@ footer{background:#111827;padding:4rem 2rem 2rem;}
 .footer-bottom{max-width:1060px;margin:0 auto;padding-top:1.8rem;border-top:1px solid rgba(255,255,255,0.07);display:flex;justify-content:space-between;flex-wrap:wrap;gap:1rem;font-size:0.74rem;color:rgba(255,255,255,0.28);}
 @media(max-width:768px){.nav-links{display:none;}.pc-prem{transform:none;}.pc-prem:hover{transform:translateY(-4px);}}
 /* ── Hero Redesign ── */
-.hero-section{min-height:max(100vh,calc(56.28vw + 2.5rem));display:flex;align-items:center;padding:5rem 2rem 3rem;position:relative;overflow:hidden;background-color:#f8cbd5;background-image:url('/images/hero_page_1new.png');background-position:left 2.5rem;background-size:100% auto;background-repeat:no-repeat;}
+.hero-section{min-height:max(100vh,calc(56.28vw + 5.5rem));display:flex;align-items:center;padding:5rem 2rem 3rem;position:relative;overflow:hidden;background-color:#f8cbd5;background-image:url('/images/hero-web-final.png');background-position:center 5.5rem;background-size:100% auto;background-repeat:no-repeat;}
 .hero-overlay{position:absolute;inset:0;background:linear-gradient(135deg,rgba(255,182,214,0.45) 0%,rgba(196,225,255,0.45) 100%);z-index:1;}
 .balloons-wrap{position:absolute;inset:0;z-index:2;pointer-events:none;}
 .balloon{position:absolute;animation:balloonFloat 4s ease-in-out infinite alternate;}
@@ -1203,8 +1203,8 @@ footer{background:#111827;padding:4rem 2rem 2rem;}
 @media (min-width: 769px) {
   .hero-section {
     background-color: #f8cbd5;
-    background-image: url('/images/hero_page_1new.png');
-    background-position: left 2.5rem;
+    background-image: url('/images/hero-web-final.png');
+    background-position: center 5.5rem;
     background-size: 100% auto;
     background-repeat: no-repeat;
   }
@@ -1220,15 +1220,15 @@ footer{background:#111827;padding:4rem 2rem 2rem;}
   }
   .btn-create-party {
     position: absolute;
-    top: calc(2.5rem + 46vw);
+    top: calc(5.5rem + 27vw);
     bottom: auto;
-    left: 29.55vw;
+    left: 75%;
     transform: translateX(-50%) !important;
     z-index: 100;
     margin: 0 !important;
-    width: clamp(265px, 15.5vw, 310px);
-    padding: 0.68rem 2rem !important;
-    font-size: 0.98rem !important;
+    width: clamp(265px, 19vw, 340px);
+    padding: 0.85rem 2rem !important;
+    font-size: 1rem !important;
   }
   .btn-create-party:hover {
     transform: translateX(-50%) translateY(-3px) scale(1.035) !important;
@@ -1241,10 +1241,10 @@ footer{background:#111827;padding:4rem 2rem 2rem;}
 /* Mobile responsive layout */
 @media (max-width: 768px) {
   .hero-section {
-    min-height: calc(177.68vw + 3rem) !important;
+    min-height: calc(216.67vw + 5.5rem) !important;
     background-color: #f8cbd5 !important;
-    background-image: url('/images/hero_mobile_new.png') !important;
-    background-position: center 3rem !important;
+    background-image: url('/images/hero-mobile-final.png') !important;
+    background-position: center 5.5rem !important;
     background-size: 100% auto !important;
     background-repeat: no-repeat !important;
     padding: 0 !important;
@@ -1266,7 +1266,7 @@ footer{background:#111827;padding:4rem 2rem 2rem;}
   }
   .btn-create-party {
     position: absolute !important;
-    top: calc(3rem + 150vw) !important;
+    top: calc(5.5rem + 188vw) !important;
     bottom: auto !important;
     left: 50% !important;
     transform: translateX(-50%) !important;
