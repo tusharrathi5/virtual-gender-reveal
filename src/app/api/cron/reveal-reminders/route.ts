@@ -9,6 +9,7 @@ import {
   sendHostDownloadReminder24hEmail,
 } from "@/lib/resendEmail";
 import { generateGuestToken } from "@/lib/guestToken";
+import { isBundleOfJoyAnnouncement } from "@/lib/revealAccess";
 
 type ReminderWindow = "7d" | "24h";
 
@@ -64,7 +65,15 @@ export async function GET(req: NextRequest) {
       revealTimezone?: string;
       userId?: string;
       hostReminder24hSentAt?: Timestamp | null;
+      mode?: string;
+      plan?: string;
+      partyEnabled?: boolean;
     };
+
+    if (isBundleOfJoyAnnouncement(enquiry)) {
+      skippedCount += 1;
+      continue;
+    }
 
     const revealAt = enquiry.revealAt?.toDate?.();
     if (!revealAt) {

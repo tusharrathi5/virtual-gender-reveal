@@ -4,6 +4,10 @@ export const runtime = "nodejs";
 import { NextRequest, NextResponse } from "next/server";
 import { verifyAuthHeader } from "@/lib/authServer";
 import { getAdminDb } from "@/lib/firebase-admin";
+import {
+  isBundleOfJoyAnnouncement,
+  PARTY_UNAVAILABLE_MESSAGE,
+} from "@/lib/revealAccess";
 
 export async function GET(req: NextRequest) {
   const session = await verifyAuthHeader(req.headers.get("Authorization"));
@@ -15,8 +19,20 @@ export async function GET(req: NextRequest) {
   const enquiryRef = getAdminDb().collection("enquiries").doc(enquiryId);
   const enquirySnap = await enquiryRef.get();
   if (!enquirySnap.exists) return NextResponse.json({ error: "Enquiry not found." }, { status: 404 });
-  const enquiry = enquirySnap.data() as { userId: string; revealAt?: { toDate: () => Date } };
+  const enquiry = enquirySnap.data() as {
+    userId: string;
+    revealAt?: { toDate: () => Date };
+    mode?: string;
+    plan?: string;
+    partyEnabled?: boolean;
+  };
   if (enquiry.userId !== session.uid) return NextResponse.json({ error: "Forbidden." }, { status: 403 });
+  if (isBundleOfJoyAnnouncement(enquiry)) {
+    return NextResponse.json(
+      { error: PARTY_UNAVAILABLE_MESSAGE },
+      { status: 409 }
+    );
+  }
 
   const revealAt = enquiry.revealAt?.toDate?.() ?? null;
   const revealUnlocked = !!revealAt && Date.now() >= revealAt.getTime();
@@ -45,4 +61,3 @@ export async function GET(req: NextRequest) {
 
   return NextResponse.json({ success: true, revealUnlocked, guests });
 }
-

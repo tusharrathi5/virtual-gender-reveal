@@ -61,6 +61,7 @@ export async function POST(req: NextRequest) {
 
   await enquiryRef.update({
     videoUrl: FieldValue.delete(),
+    downloadUrl: FieldValue.delete(),
     streamUid: FieldValue.delete(),
     pendingStreamUid: FieldValue.delete(),
     videoUploadStatus: "idle",

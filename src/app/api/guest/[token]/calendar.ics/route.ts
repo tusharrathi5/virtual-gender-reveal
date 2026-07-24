@@ -5,6 +5,10 @@ import { NextRequest, NextResponse } from "next/server";
 import CryptoJS from "crypto-js";
 import { getAdminDb } from "@/lib/firebase-admin";
 import { parseGuestToken } from "@/lib/guestToken";
+import {
+  isBundleOfJoyAnnouncement,
+  PARTY_UNAVAILABLE_MESSAGE,
+} from "@/lib/revealAccess";
 
 function normalize(raw: string) { try { return decodeURIComponent(raw).trim(); } catch { return raw.trim(); } }
 function toICSDate(d: Date): string { return d.toISOString().replace(/[-:]/g, "").replace(/\.\d{3}Z$/, "Z"); }
@@ -27,7 +31,17 @@ export async function GET(_: NextRequest, { params }: { params: Promise<{ token:
   }
   const enquiry = await getAdminDb().collection("enquiries").doc(payload.enquiryId).get();
   if (!enquiry.exists) return new NextResponse("Reveal not found", { status: 404 });
-  const data = enquiry.data() as { parentName?: string; revealAt?: { toDate: () => Date }; revealTimezone?: string };
+  const data = enquiry.data() as {
+    parentName?: string;
+    revealAt?: { toDate: () => Date };
+    revealTimezone?: string;
+    mode?: string;
+    plan?: string;
+    partyEnabled?: boolean;
+  };
+  if (isBundleOfJoyAnnouncement(data)) {
+    return new NextResponse(PARTY_UNAVAILABLE_MESSAGE, { status: 409 });
+  }
   const start = data.revealAt?.toDate?.() ?? new Date();
   const end = new Date(start.getTime() + 60 * 60 * 1000);
   const title = `${data.parentName || "Parents"}'s Virtual Gender Reveal`;

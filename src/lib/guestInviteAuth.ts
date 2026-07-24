@@ -2,6 +2,10 @@ import CryptoJS from "crypto-js";
 import type { DocumentReference, Timestamp } from "firebase-admin/firestore";
 import { getAdminDb } from "@/lib/firebase-admin";
 import { parseGuestToken } from "@/lib/guestToken";
+import {
+  isBundleOfJoyAnnouncement,
+  PARTY_UNAVAILABLE_MESSAGE,
+} from "@/lib/revealAccess";
 
 export type GuestInviteData = {
   enquiryId?: string;
@@ -56,6 +60,17 @@ export async function verifyGuestInviteToken(raw: string): Promise<GuestInviteAu
   const isHost = Boolean(guestData.isHost);
   if (guestData.enquiryId !== payload.enquiryId || (!isHost && tokenHash !== CryptoJS.SHA256(token).toString())) {
     return { ok: false, status: 401, error: "Invalid invite." };
+  }
+
+  const enquirySnap = await getAdminDb()
+    .collection("enquiries")
+    .doc(payload.enquiryId)
+    .get();
+  if (!enquirySnap.exists) {
+    return { ok: false, status: 404, error: "Reveal not found." };
+  }
+  if (isBundleOfJoyAnnouncement(enquirySnap.data())) {
+    return { ok: false, status: 409, error: PARTY_UNAVAILABLE_MESSAGE };
   }
 
   return {

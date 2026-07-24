@@ -7,6 +7,10 @@ import { verifyAuthHeader } from "@/lib/authServer";
 import { getAdminDb } from "@/lib/firebase-admin";
 import { generateGuestToken } from "@/lib/guestToken";
 import { sendGuestInviteEmail } from "@/lib/resendEmail";
+import {
+  isBundleOfJoyAnnouncement,
+  PARTY_UNAVAILABLE_MESSAGE,
+} from "@/lib/revealAccess";
 
 export async function POST(req: NextRequest) {
   const session = await verifyAuthHeader(req.headers.get("Authorization"));
@@ -25,8 +29,22 @@ export async function POST(req: NextRequest) {
   const enquiryRef = getAdminDb().collection("enquiries").doc(guest.enquiryId);
   const enquirySnap = await enquiryRef.get();
   if (!enquirySnap.exists) return NextResponse.json({ error: "Enquiry not found." }, { status: 404 });
-  const enquiry = enquirySnap.data() as { userId: string; parentName?: string; revealAt?: { toDate: () => Date }; revealTimezone?: string };
+  const enquiry = enquirySnap.data() as {
+    userId: string;
+    parentName?: string;
+    revealAt?: { toDate: () => Date };
+    revealTimezone?: string;
+    mode?: string;
+    plan?: string;
+    partyEnabled?: boolean;
+  };
   if (enquiry.userId !== session.uid) return NextResponse.json({ error: "Forbidden." }, { status: 403 });
+  if (isBundleOfJoyAnnouncement(enquiry)) {
+    return NextResponse.json(
+      { error: PARTY_UNAVAILABLE_MESSAGE },
+      { status: 409 }
+    );
+  }
 
   if (action === "revoke") {
     await guestRef.update({ inviteStatus: "revoked", tokenHash: null, updatedAt: new Date() });

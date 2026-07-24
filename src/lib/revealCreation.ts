@@ -11,8 +11,9 @@ export interface CreateRevealParams {
   mode: EnquiryMode;
   parentName: string;
   photos: string[];              // download URLs (already uploaded client-side)
-  revealAtMs: number;            // parent-provided reveal time as epoch ms
-  revealTimezone: string;
+  revealAtMs: number | null;     // null only for Bundle of Joy announcements
+  revealTimezone: string | null;
+  expectedPlan: "basic" | "premium" | "custom";
   dueDate: string | null;
   initialStages: EnquiryStages;
   // Announcement mode fields
@@ -28,6 +29,7 @@ export interface CreateRevealParams {
 export interface CreateRevealResult {
   enquiryId: string;
   consumedPurchaseId: string;
+  consumedPlan: "basic" | "premium" | "custom";
   newStatus: "video_in_progress";
 }
 
@@ -58,6 +60,7 @@ export async function createRevealAndConsumeEntitlement(
     photos,
     revealAtMs,
     revealTimezone,
+    expectedPlan,
     dueDate,
     initialStages,
     babyName,
@@ -123,6 +126,18 @@ export async function createRevealAndConsumeEntitlement(
     // This lets the admin panel show plan without a join. Falls back to null if
     // somehow the purchase has no plan field (shouldn't happen, but defensive).
     const consumedPlan = target.p.plan ?? null;
+    if (!consumedPlan || consumedPlan !== expectedPlan) {
+      throw new Error("ENTITLEMENT_CHANGED");
+    }
+    const isPaidAnnouncement =
+      mode === "announcement" && consumedPlan === "premium";
+    const storedRevealAt =
+      isPaidAnnouncement || revealAtMs === null
+        ? null
+        : Timestamp.fromMillis(revealAtMs);
+    const storedRevealTimezone = isPaidAnnouncement
+      ? null
+      : revealTimezone;
     const paymentReceivedAt = Timestamp.now();
 
     // 3 + 4. Update purchase array with enquiryId attached, decrement/increment counters
@@ -150,8 +165,9 @@ export async function createRevealAndConsumeEntitlement(
       plan: consumedPlan,           // denormalized for admin queries
       photos,
       photoCount: photos.length,
-      revealAt: Timestamp.fromMillis(revealAtMs),
-      revealTimezone,
+      revealAt: storedRevealAt,
+      revealTimezone: storedRevealTimezone,
+      partyEnabled: !isPaidAnnouncement,
       dueDate: dueDate ? Timestamp.fromDate(new Date(dueDate)) : null,
       stages: { ...initialStages, paymentReceived: paymentReceivedAt },
       guestCount: 0,
@@ -162,6 +178,7 @@ export async function createRevealAndConsumeEntitlement(
       amountTotal: target.p.amountPaid ?? null,
       paymentStatus: "completed",
       videoUrl: null,
+      downloadUrl: null,
       streamUid: null,
       pendingStreamUid: null,
       videoUploadStatus: "idle",
@@ -180,6 +197,7 @@ export async function createRevealAndConsumeEntitlement(
     return {
       enquiryId,
       consumedPurchaseId: target.p.purchaseId,
+      consumedPlan,
       newStatus,
     };
   });

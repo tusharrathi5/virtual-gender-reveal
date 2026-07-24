@@ -53,8 +53,8 @@ export interface Enquiry {
   revealerName: string | null;
 
   // Event timing
-  revealAt: Timestamp;
-  revealTimezone: string;            // IANA e.g. "Asia/Kolkata"
+  revealAt: Timestamp | null;
+  revealTimezone: string | null;     // IANA e.g. "Asia/Kolkata"; null for paid announcements
   dueDate: Timestamp | null;
 
   // Progress
@@ -75,9 +75,11 @@ export interface Enquiry {
 
   // Reveal video
   videoUrl?: string | null;
+  downloadUrl?: string | null;
   streamUid?: string | null;
   pendingStreamUid?: string | null;
   videoUploadStatus?: "idle" | "uploading" | "uploaded" | "failed" | null;
+  partyEnabled?: boolean;
 
   // Status
   status: EnquiryStatus;

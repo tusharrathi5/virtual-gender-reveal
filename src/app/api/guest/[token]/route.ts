@@ -6,6 +6,10 @@ import CryptoJS from "crypto-js";
 import { getAdminDb } from "@/lib/firebase-admin";
 import { parseGuestToken } from "@/lib/guestToken";
 import { FieldValue } from "firebase-admin/firestore";
+import {
+  isBundleOfJoyAnnouncement,
+  PARTY_UNAVAILABLE_MESSAGE,
+} from "@/lib/revealAccess";
 
 function normalize(raw: string) { try { return decodeURIComponent(raw).trim(); } catch { return raw.trim(); } }
 
@@ -32,7 +36,16 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ toke
     revealTimezone?: string;
     videoUrl?: string | null;
     stages?: { eventCompleted?: unknown };
+    mode?: string;
+    plan?: string;
+    partyEnabled?: boolean;
   };
+  if (isBundleOfJoyAnnouncement(data)) {
+    return NextResponse.json(
+      { error: PARTY_UNAVAILABLE_MESSAGE },
+      { status: 409 }
+    );
+  }
   const revealAt = data.revealAt?.toDate?.() ?? null;
   const isLive = !!revealAt && Date.now() >= revealAt.getTime();
   const isCompleted = Boolean(data?.stages?.eventCompleted);
@@ -118,7 +131,11 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ tok
   const payload = parseGuestToken(token);
   if (!payload) return NextResponse.json({ error: "Invalid or expired invite." }, { status: 401 });
 
-  const body = await req.json().catch(() => null) as { prediction?: "boy"|"girl"; message?: string } | null;
+  const body = await req.json().catch(() => null) as {
+    prediction?: "boy" | "girl";
+    message?: string;
+    browserId?: string;
+  } | null;
   const prediction = body?.prediction;
   const message = body?.message?.trim() || null;
   if (prediction !== "boy" && prediction !== "girl") return NextResponse.json({ error: "Prediction required." }, { status: 400 });
@@ -130,6 +147,20 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ tok
   if (!isHost && (guest.data()?.tokenHash as string) !== CryptoJS.SHA256(token).toString()) return NextResponse.json({ error: "Invalid invite." }, { status: 401 });
   if (guest.data()?.prediction) {
     return NextResponse.json({ error: "Response already submitted." }, { status: 409 });
+  }
+
+  const enquirySnap = await getAdminDb()
+    .collection("enquiries")
+    .doc(payload.enquiryId)
+    .get();
+  if (!enquirySnap.exists) {
+    return NextResponse.json({ error: "Reveal not found." }, { status: 404 });
+  }
+  if (isBundleOfJoyAnnouncement(enquirySnap.data())) {
+    return NextResponse.json(
+      { error: PARTY_UNAVAILABLE_MESSAGE },
+      { status: 409 }
+    );
   }
 
   const browserId = body?.browserId;

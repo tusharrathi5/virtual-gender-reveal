@@ -9,6 +9,10 @@ import { getAdminDb } from "@/lib/firebase-admin";
 import { generateGuestToken } from "@/lib/guestToken";
 import { sendGuestInviteEmail, sendHostInvitationConfirmationEmail } from "@/lib/resendEmail";
 import { sendInviteSms } from "@/lib/twilioSms";
+import {
+  isBundleOfJoyAnnouncement,
+  PARTY_UNAVAILABLE_MESSAGE,
+} from "@/lib/revealAccess";
 
 interface GuestInput {
   name: string;
@@ -42,8 +46,22 @@ export async function POST(req: NextRequest) {
   const enquiryRef = getAdminDb().collection("enquiries").doc(validatedEnquiryId);
   const enquirySnap = await enquiryRef.get();
   if (!enquirySnap.exists) return NextResponse.json({ error: "Enquiry not found." }, { status: 404 });
-  const enquiry = enquirySnap.data() as { userId: string; parentName?: string; revealAt?: Timestamp; revealTimezone?: string };
+  const enquiry = enquirySnap.data() as {
+    userId: string;
+    parentName?: string;
+    revealAt?: Timestamp;
+    revealTimezone?: string;
+    mode?: string;
+    plan?: string;
+    partyEnabled?: boolean;
+  };
   if (enquiry.userId !== session.uid) return NextResponse.json({ error: "Forbidden." }, { status: 403 });
+  if (isBundleOfJoyAnnouncement(enquiry)) {
+    return NextResponse.json(
+      { error: PARTY_UNAVAILABLE_MESSAGE },
+      { status: 409 }
+    );
+  }
 
   const appUrl = process.env.NEXT_PUBLIC_APP_URL || req.headers.get("origin") || "";
   if (!appUrl) return NextResponse.json({ error: "Missing app URL." }, { status: 500 });

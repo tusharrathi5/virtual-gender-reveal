@@ -254,11 +254,13 @@ interface VgrEmailTemplateProps {
   headingHtml: string;
   greetingText: string;
   messageHtml: string;
-  revealDateLabel: string;
-  revealTimeLabel: string;
-  revealTimezone: string;
+  revealDateLabel?: string;
+  revealTimeLabel?: string;
+  revealTimezone?: string;
   primaryCtaUrl: string;
   primaryCtaText: string;
+  detailEyebrow?: string;
+  detailIcon?: string;
   googleCalendarUrl?: string | null;
   icsUrl?: string | null;
   troubleshootingNote?: string;
@@ -272,11 +274,13 @@ function buildVgrEmailTemplateHtml(props: VgrEmailTemplateProps): string {
     headingHtml,
     greetingText,
     messageHtml,
-    revealDateLabel,
-    revealTimeLabel,
-    revealTimezone,
+    revealDateLabel = "Keepsake Video",
+    revealTimeLabel = "Ready to download",
+    revealTimezone = "Secure download",
     primaryCtaUrl,
     primaryCtaText,
+    detailEyebrow = "Scheduled Event",
+    detailIcon = "📅",
     googleCalendarUrl,
     icsUrl,
     troubleshootingNote = "Having trouble opening the invite? Contact the host for a fresh link.",
@@ -344,11 +348,11 @@ function buildVgrEmailTemplateHtml(props: VgrEmailTemplateProps): string {
                 <tr>
                   <!-- Left Side Stub (Icon / Calendar Emoji) -->
                   <td width="20%" align="center" style="padding: 16px; border-right: 1.5px dashed #d1d5db; background-color: #f5f8fb; text-align: center; vertical-align: middle;">
-                    <span style="font-size: 26px; line-height: 1; display: inline-block;">📅</span>
+                    <span style="font-size: 26px; line-height: 1; display: inline-block;">${detailIcon}</span>
                   </td>
                   <!-- Right Side Stub (Date & Time details) -->
                   <td width="80%" style="padding: 16px 20px; text-align: left; vertical-align: middle;">
-                    <p style="margin: 0 0 4px 0; font-size: 9px; font-weight: 700; color: #E8449A; letter-spacing: 0.15em; text-transform: uppercase;">Scheduled Event</p>
+                    <p style="margin: 0 0 4px 0; font-size: 9px; font-weight: 700; color: #E8449A; letter-spacing: 0.15em; text-transform: uppercase;">${escapeHtml(detailEyebrow)}</p>
                     <p style="margin: 0 0 2px 0; font-size: 15px; font-weight: 800; color: #111827;">${escapeHtml(revealDateLabel)}</p>
                     <p style="margin: 0; font-size: 13px; font-weight: 600; color: #4b5563;">${escapeHtml(revealTimeLabel)} <span style="font-size: 11px; font-weight: 700; color: #9ca3af;">(${escapeHtml(revealTimezone)})</span></p>
                   </td>
@@ -585,6 +589,19 @@ export interface SendHostVideoReadyEmailParams {
   dashboardUrl: string;
 }
 
+export interface SendHostAnnouncementCreationEmailParams {
+  to: string;
+  parentName: string;
+  dashboardUrl: string;
+}
+
+export interface SendHostAnnouncementVideoReadyEmailParams {
+  to: string;
+  parentName: string;
+  downloadUrl: string;
+  dashboardUrl: string;
+}
+
 export interface SendHostRevealReminderEmailParams {
   to: string;
   parentName: string;
@@ -636,6 +653,74 @@ export async function sendHostCreationConfirmationEmail(params: SendHostCreation
   await sendEmail({
     to: params.to,
     subject: "Your Virtual Gender Reveal has been created!",
+    html,
+  });
+}
+
+export async function sendHostAnnouncementCreationEmail(
+  params: SendHostAnnouncementCreationEmailParams
+): Promise<void> {
+  const parentName = escapeHtml(params.parentName);
+  const dashboardUrl = escapeHtml(params.dashboardUrl);
+  const baseUrl = new URL(params.dashboardUrl).origin;
+  const logoUrl = `${baseUrl}/Favicon-VGR.png`;
+  const bannerUrl = `${baseUrl}/assets/email-banner.png`;
+
+  const html = buildVgrEmailTemplateHtml({
+    logoUrl,
+    bannerUrl,
+    badgeText: "Custom Video Requested",
+    headingHtml: `<span style="color: #E8449A;">Your Personalized Video</span> <span style="color: #3A9FE8;">Is in Production!</span>`,
+    greetingText: `Hi ${parentName},`,
+    messageHtml: `<p style="margin: 0 0 12px 0;">We received your Bundle of Joy announcement request and our team will now prepare a customized video just for you.</p>
+                  <p style="margin: 0;">There is no party date to manage. We will email you as soon as your video is ready to download, and the download button will also appear in your dashboard.</p>`,
+    revealDateLabel: "Personalized Video",
+    revealTimeLabel: "Customization in progress",
+    revealTimezone: "We’ll notify you when it’s ready",
+    detailEyebrow: "Production Status",
+    detailIcon: "🎬",
+    primaryCtaUrl: dashboardUrl,
+    primaryCtaText: "VIEW VIDEO STATUS",
+  });
+
+  await sendEmail({
+    to: params.to,
+    subject: "Your personalized announcement video is in production",
+    html,
+  });
+}
+
+export async function sendHostAnnouncementVideoReadyEmail(
+  params: SendHostAnnouncementVideoReadyEmailParams
+): Promise<void> {
+  const parentName = escapeHtml(params.parentName);
+  const downloadUrl = escapeHtml(params.downloadUrl);
+  const baseUrl = new URL(params.dashboardUrl).origin;
+  const logoUrl = `${baseUrl}/Favicon-VGR.png`;
+  const bannerUrl = `${baseUrl}/assets/email-banner.png`;
+
+  const html = buildVgrEmailTemplateHtml({
+    logoUrl,
+    bannerUrl,
+    badgeText: "Custom Video Ready",
+    headingHtml: `<span style="color: #E8449A;">Your Personalized Video</span> <span style="color: #3A9FE8;">Is Ready!</span> 🎬`,
+    greetingText: `Hi ${parentName},`,
+    messageHtml: `<p style="margin: 0 0 12px 0;">Your customized Bundle of Joy announcement video has been prepared and is ready to keep forever.</p>
+                  <p style="margin: 0;">Click the button below to download the MP4. You can also download it anytime from your dashboard.</p>`,
+    revealDateLabel: "Personalized Announcement",
+    revealTimeLabel: "Ready to download",
+    revealTimezone: "MP4 keepsake",
+    detailEyebrow: "Video Status",
+    detailIcon: "✨",
+    primaryCtaUrl: downloadUrl,
+    primaryCtaText: "DOWNLOAD YOUR VIDEO",
+    troubleshootingNote:
+      "If the download is still preparing, wait a moment and use the download button in your dashboard.",
+  });
+
+  await sendEmail({
+    to: params.to,
+    subject: "Your personalized announcement video is ready to download!",
     html,
   });
 }

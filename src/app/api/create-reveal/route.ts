@@ -8,9 +8,13 @@ import { saveGender } from "@/lib/secureGenderService";
 import { generateDoctorToken } from "@/lib/doctorToken";
 import CryptoJS from "crypto-js";
 import { getAdminDb, getAdminAuth } from "@/lib/firebase-admin";
-import { sendDoctorInviteEmail, sendHostCreationConfirmationEmail } from "@/lib/resendEmail";
+import {
+  sendDoctorInviteEmail,
+  sendHostAnnouncementCreationEmail,
+  sendHostCreationConfirmationEmail,
+} from "@/lib/resendEmail";
 import { deleteEnquiryPhotosAdmin } from "@/lib/storageServiceAdmin";
-import { FieldValue, Timestamp } from "firebase-admin/firestore";
+import { Timestamp } from "firebase-admin/firestore";
 import {
   INITIAL_STAGES,
   PHOTO_MAX,
@@ -23,11 +27,12 @@ import {
 
 interface CreateRevealBody {
   enquiryId?: string;
+  expectedPlan?: "basic" | "premium" | "custom";
   mode?: EnquiryMode;
   parentName?: string;
   photos?: string[];
-  revealAtMs?: number;
-  revealTimezone?: string;
+  revealAtMs?: number | null;
+  revealTimezone?: string | null;
   dueDate?: string | null;
   // Announcement mode
   babyName?: string | null;
@@ -37,6 +42,7 @@ interface CreateRevealBody {
   babyNameBoy?: string | null;
   revealerEmail?: string;
   revealerRelation?: RevealerRelation;
+  revealerName?: string;
 }
 
 
@@ -86,6 +92,7 @@ export async function POST(req: NextRequest) {
 
   const {
     enquiryId,
+    expectedPlan,
     mode,
     parentName,
     photos,
@@ -101,14 +108,14 @@ export async function POST(req: NextRequest) {
     revealerName,
   } = body;
 
-  const parsedRevealAtMs = revealAtMs;
+  const parsedRevealAtMs = revealAtMs ?? null;
 
   const userSnap = await getAdminDb().collection("users").doc(session.uid).get();
-  const plan = userSnap.data()?.activePlan ?? "basic";
 
   // 3. Validate — bail early, no Firestore writes yet
   const validationError = validateCreateRevealInput({
     enquiryId,
+    expectedPlan,
     mode,
     parentName,
     photos,
@@ -118,7 +125,6 @@ export async function POST(req: NextRequest) {
     revealerEmail,
     revealerRelation,
     revealerName,
-    plan,
   });
   if (validationError) {
     // Photos may already be in Storage — clean them up since we're rejecting
@@ -149,7 +155,8 @@ export async function POST(req: NextRequest) {
       parentName: validatedParentName,
       photos: validatedPhotos,
       revealAtMs: parsedRevealAtMs!,
-      revealTimezone: revealTimezone!,
+      revealTimezone: revealTimezone ?? null,
+      expectedPlan: expectedPlan!,
       dueDate: dueDate?.trim() || null,
       initialStages: INITIAL_STAGES,
       babyName: validatedMode === "announcement" ? (babyName?.trim() || null) : null,
@@ -230,6 +237,12 @@ export async function POST(req: NextRequest) {
           submittedBy: "parent",
           submittedByUid: session.uid,
         });
+        if (result.consumedPlan === "premium") {
+          await getAdminDb()
+            .collection("enquiries")
+            .doc(validatedEnquiryId)
+            .update({ genderStatus: "submitted" });
+        }
       } catch (genderErr) {
         // Enquiry was created + entitlement was consumed, but gender save failed.
         // Log loudly — this is a data-integrity issue that needs manual intervention.
@@ -251,7 +264,10 @@ export async function POST(req: NextRequest) {
     }
 
     const enquiryRef = getAdminDb().collection("enquiries").doc(validatedEnquiryId);
-    const isBasic = plan === "basic" || plan === "free";
+    const isBasic = result.consumedPlan === "basic";
+    const isPaidAnnouncement =
+      result.consumedPlan === "premium" &&
+      validatedMode === "announcement";
 
     if (isBasic && validatedMode === "announcement" && announcementGender) {
       const videoUrl = `https://firebasestorage.googleapis.com/v0/b/${process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET}/o/static%2Fvideos%2F${announcementGender}_reveal.mov?alt=media`;
@@ -262,7 +278,19 @@ export async function POST(req: NextRequest) {
       });
     }
 
-    if (hostEmail) {
+    if (hostEmail && isPaidAnnouncement) {
+      const appUrl = getAppUrl(req);
+      await sendHostAnnouncementCreationEmail({
+        to: hostEmail,
+        parentName: validatedParentName,
+        dashboardUrl: `${appUrl}/dashboard`,
+      }).catch((emailErr) => {
+        console.error(
+          `[create-reveal] Failed to send paid announcement confirmation email:`,
+          emailErr
+        );
+      });
+    } else if (hostEmail) {
       const appUrl = getAppUrl(req);
       await sendHostCreationConfirmationEmail({
         to: hostEmail,
@@ -311,6 +339,15 @@ export async function POST(req: NextRequest) {
         { status: 403 }
       );
     }
+    if (message === "ENTITLEMENT_CHANGED") {
+      return NextResponse.json(
+        {
+          error:
+            "Your available plan changed while this reveal was being created. Please refresh and try again.",
+        },
+        { status: 409 }
+      );
+    }
 
     console.error("[create-reveal] Unexpected error:", err);
     return NextResponse.json(
@@ -324,20 +361,21 @@ export async function POST(req: NextRequest) {
 
 function validateCreateRevealInput(input: {
   enquiryId?: string;
+  expectedPlan?: "basic" | "premium" | "custom";
   mode?: EnquiryMode;
   parentName?: string;
   photos?: string[];
-  revealAtMs?: number;
-  revealTimezone?: string;
+  revealAtMs?: number | null;
+  revealTimezone?: string | null;
   dueDate?: string | null;
   announcementGender?: GenderValue;
   revealerEmail?: string;
   revealerRelation?: RevealerRelation;
   revealerName?: string;
-  plan?: string;
 }): string | null {
   const {
     enquiryId,
+    expectedPlan,
     mode,
     parentName,
     photos,
@@ -347,12 +385,14 @@ function validateCreateRevealInput(input: {
     revealerEmail,
     revealerRelation,
     revealerName,
-    plan,
   } = input;
 
   // Basic presence checks
   if (!enquiryId || typeof enquiryId !== "string") {
     return "Missing or invalid enquiryId.";
+  }
+  if (!["basic", "premium", "custom"].includes(expectedPlan as string)) {
+    return "Missing or invalid plan.";
   }
   if (mode !== "reveal" && mode !== "announcement") {
     return "Mode must be 'reveal' or 'announcement'.";
@@ -366,16 +406,23 @@ function validateCreateRevealInput(input: {
   if (photos.some((url) => typeof url !== "string" || !/^https?:\/\//.test(url))) {
     return "Invalid photo URL format.";
   }
-  if (typeof revealAtMs !== "number" || isNaN(revealAtMs)) {
-    return "Invalid reveal time.";
-  }
   if (mode === "reveal") {
+    if (typeof revealAtMs !== "number" || isNaN(revealAtMs)) {
+      return "Invalid reveal time.";
+    }
     if (revealAtMs < Date.now() + 30 * 60 * 1000) {
       return "Reveal time must be at least 30 minutes in the future.";
     }
-  }
-  if (!revealTimezone || typeof revealTimezone !== "string") {
-    return "Timezone is required.";
+    if (!revealTimezone || typeof revealTimezone !== "string") {
+      return "Timezone is required.";
+    }
+  } else if (expectedPlan !== "premium") {
+    if (typeof revealAtMs !== "number" || isNaN(revealAtMs)) {
+      return "Invalid reveal time.";
+    }
+    if (!revealTimezone || typeof revealTimezone !== "string") {
+      return "Timezone is required.";
+    }
   }
 
   // Mode-specific

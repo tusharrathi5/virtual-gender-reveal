@@ -8,6 +8,7 @@ import { collection, getDocs, orderBy, query, where } from "firebase/firestore";
 import { useAuth } from "@/lib/AuthContext";
 import { getFirebaseDb } from "@/lib/firebase";
 import { uploadPhotos, validatePhotoFiles } from "@/lib/storageService";
+import { isBundleOfJoyAnnouncement } from "@/lib/revealAccess";
 import {
   derivePaymentStatusFromPurchases,
   getPaymentStatusLabel,
@@ -63,6 +64,7 @@ interface RevealSummary {
   photos: string[];
   createdAt: Date | null;
   videoUrl?: string | null;
+  downloadUrl?: string | null;
   videoReady?: boolean;
   plan: string;
 }
@@ -539,6 +541,11 @@ function DashboardContent() {
 
   const handleOpenDownloadModal = async (reveal: RevealSummary) => {
     setActiveDownloadReveal(reveal);
+    if (isBundleOfJoyAnnouncement(reveal)) {
+      setModalDownloadUrl(reveal.downloadUrl || "");
+      setResolvingUrl(false);
+      return;
+    }
     setResolvingUrl(true);
     try {
       const storage = getFirebaseStorage();
@@ -573,6 +580,10 @@ function DashboardContent() {
   };
 
   const latestReveal = reveals[0];
+  const latestPartyReveal =
+    latestReveal && !isBundleOfJoyAnnouncement(latestReveal)
+      ? latestReveal
+      : null;
 
   const loadReveals = useCallback(async () => {
     if (!user) return;
@@ -614,6 +625,8 @@ function DashboardContent() {
           photos: Array.isArray(data.photos) ? data.photos.filter(Boolean) : [],
           createdAt: timestampToDate(data.createdAt),
           videoUrl: typeof data.videoUrl === "string" ? data.videoUrl : null,
+          downloadUrl:
+            typeof data.downloadUrl === "string" ? data.downloadUrl : null,
           videoReady: getRevealVideoStatus({ videoUrl: data.videoUrl }) === "ready",
           plan: data.plan ?? "basic",
         };
@@ -717,10 +730,13 @@ function DashboardContent() {
   }, [loadReveals]);
 
   useEffect(() => {
-    if (!user || !latestReveal?.id) return;
-    void loadGuestList(latestReveal.id);
+    if (!user || !latestPartyReveal?.id) {
+      setGuestRows([]);
+      return;
+    }
+    void loadGuestList(latestPartyReveal.id);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user, latestReveal?.id]);
+  }, [user, latestPartyReveal?.id]);
 
   const firstName = useMemo(
     () => user?.displayName?.split(" ")[0] || user?.email?.split("@")[0] || "there",
@@ -953,8 +969,19 @@ function DashboardContent() {
       setToast({ type: "error", message: "Parent name is required." });
       return;
     }
-    const revealAtMs = new Date(editForm.revealAt).getTime();
-    if (!editForm.revealAt || Number.isNaN(revealAtMs)) {
+    const revealBeingEdited = reveals.find(
+      (reveal) => reveal.id === editForm.id
+    );
+    const paidAnnouncementEdit =
+      revealBeingEdited?.plan === "premium" &&
+      editForm.mode === "announcement";
+    const revealAtMs = paidAnnouncementEdit
+      ? null
+      : new Date(editForm.revealAt).getTime();
+    if (
+      !paidAnnouncementEdit &&
+      (!editForm.revealAt || Number.isNaN(revealAtMs))
+    ) {
       setToast({ type: "error", message: "Reveal date and time are required." });
       return;
     }
@@ -988,7 +1015,9 @@ function DashboardContent() {
           parentName: editForm.parentName.trim(),
           photos: photoUrls,
           revealAtMs,
-          revealTimezone: editForm.revealTimezone.trim() || "UTC",
+          revealTimezone: paidAnnouncementEdit
+            ? null
+            : editForm.revealTimezone.trim() || "UTC",
           dueDate: editForm.dueDate || null,
           babyName: null,
           announcementGender:
@@ -1125,7 +1154,7 @@ function DashboardContent() {
                             {reveal.mode === "announcement" ? "We Already Know!" : "Surprise Reveal"}
                           </span>
                           <h3 className="font-nunito font-extrabold text-lg text-gray-900 mt-1">{reveal.parentName || "Untitled Reveal"}</h3>
-                          {!(reveal.plan === "basic" && reveal.mode === "announcement") && (
+                          {reveal.mode === "reveal" && (
                             <span className="text-xs text-gray-500 font-semibold flex items-center gap-1 mt-0.5">
                               <Clock className="w-3.5 h-3.5 text-gray-400" />
                               {formatRevealDate(reveal.revealAt)}
@@ -1163,7 +1192,9 @@ function DashboardContent() {
                         )}
 
                         {reveal.mode === "announcement" ? (
-                          reveal.videoUrl ? (
+                          reveal.videoUrl &&
+                          (!isBundleOfJoyAnnouncement(reveal) ||
+                            reveal.downloadUrl) ? (
                             <button
                               onClick={() => handleOpenDownloadModal(reveal)}
                               className="bg-gradient-to-r from-[#E8449A] to-[#3A9FE8] text-white hover:opacity-95 active:scale-[0.98] transition-all font-bold text-xs uppercase tracking-wider rounded-lg px-4 py-2 text-center focus:outline-none focus:ring-2 focus:ring-[#3A9FE8]"
@@ -1175,7 +1206,11 @@ function DashboardContent() {
                               disabled
                               className="bg-gray-100 text-gray-400 font-bold text-xs uppercase tracking-wider rounded-lg px-4 py-2 cursor-not-allowed"
                             >
-                              Waiting for Revealer's Response
+                              {isBundleOfJoyAnnouncement(reveal)
+                                ? reveal.videoUrl
+                                  ? "Preparing Download"
+                                  : "Custom Video in Production"
+                                : "Waiting for Revealer's Response"}
                             </button>
                           )
                         ) : (
@@ -1197,7 +1232,7 @@ function DashboardContent() {
                           <span className="text-[9px] text-gray-400 block uppercase font-bold tracking-wider mb-0.5">Reveal Mode</span>
                           <span className="text-xs font-semibold text-gray-800">{reveal.mode === "announcement" ? "We Already Know!" : "Surprise Reveal"}</span>
                         </div>
-                        {!(reveal.plan === "basic" && reveal.mode === "announcement") && (
+                        {reveal.mode === "reveal" && (
                           <>
                             <div className="bg-gray-50/50 rounded-xl p-3 border border-gray-100">
                               <span className="text-[9px] text-gray-400 block uppercase font-bold tracking-wider mb-0.5">Reveal Time</span>
@@ -1256,7 +1291,7 @@ function DashboardContent() {
                           </button>
                         </div>
 
-                         <div className={`grid grid-cols-1 ${reveal.plan === 'basic' && editForm.mode === 'announcement' ? '' : 'md:grid-cols-3'} gap-4`}>
+                         <div className={`grid grid-cols-1 ${editForm.mode === 'announcement' ? '' : 'md:grid-cols-3'} gap-4`}>
                            <div className="flex flex-col gap-1">
                              <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Parent Name(s)</label>
                              <input
@@ -1266,7 +1301,7 @@ function DashboardContent() {
                              />
                            </div>
 
-                           {!(reveal.plan === "basic" && editForm.mode === "announcement") && (
+                           {editForm.mode === "reveal" && (
                              <>
                                <div className="flex flex-col gap-1">
                                  <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Reveal Date & Time</label>
@@ -1398,7 +1433,7 @@ function DashboardContent() {
         )}
 
         {/* Guest Invites Portal */}
-        {latestReveal && (
+        {latestPartyReveal && (
           <section className="space-y-6">
             <div className="bg-white/40 backdrop-blur-md border border-white/30 shadow-lg rounded-2xl p-4 shadow-sm mb-4">
               <h2 className="text-xs font-bold text-gray-500 uppercase tracking-widest flex items-center gap-2">
@@ -1496,7 +1531,7 @@ function DashboardContent() {
                 <div className="flex flex-col gap-2 w-full md:w-auto md:items-end">
                   <button
                     type="button"
-                    onClick={() => sendGuestInvites(latestReveal.id)}
+                    onClick={() => sendGuestInvites(latestPartyReveal.id)}
                     disabled={sendingInvites}
                     className="w-full md:w-auto bg-gradient-to-r from-[#E8449A] to-[#3A9FE8] text-white hover:opacity-95 font-bold text-xs uppercase tracking-wider rounded-xl py-3.5 px-6 disabled:opacity-50 transition-all shadow-md shadow-[#e8449a0c] flex items-center justify-center gap-2 focus:outline-none focus:ring-2 focus:ring-[#3A9FE8]"
                   >
@@ -1555,14 +1590,14 @@ function DashboardContent() {
                             </td>
                             <td className="p-4 text-right flex items-center justify-end gap-2">
                               <button
-                                onClick={() => manageGuest(guest.guestId, "resend", latestReveal.id)}
+                                onClick={() => manageGuest(guest.guestId, "resend", latestPartyReveal.id)}
                                 className="border border-gray-200 text-[#374151] hover:bg-gray-50 font-bold text-xs uppercase tracking-wider rounded-lg px-2.5 py-1.5 transition-all focus:outline-none focus:ring-2 focus:ring-[#3A9FE8]"
                               >
                                 Resend
                               </button>
                               {/* Hidden from UI as requested, but keeping functionality intact */}
                               <button
-                                onClick={() => manageGuest(guest.guestId, "revoke", latestReveal.id)}
+                                onClick={() => manageGuest(guest.guestId, "revoke", latestPartyReveal.id)}
                                 className="hidden"
                               >
                                 Revoke
@@ -1628,13 +1663,21 @@ function DashboardContent() {
             ) : modalDownloadUrl ? (
               <a
                 href={modalDownloadUrl}
-                download={`gender_reveal_${activeDownloadReveal.id}.mov`}
+                download={
+                  isBundleOfJoyAnnouncement(activeDownloadReveal)
+                    ? `personalized_announcement_${activeDownloadReveal.id}.mp4`
+                    : `gender_reveal_${activeDownloadReveal.id}.mov`
+                }
                 target="_blank"
                 rel="noopener noreferrer"
                 onClick={() => handleDownloadComplete(activeDownloadReveal.id)}
                 className="block w-full py-3 px-4 bg-gradient-to-r from-[#E8449A] to-[#3A9FE8] text-white rounded-xl text-sm font-bold tracking-wider uppercase shadow-md hover:opacity-95 active:scale-[0.98] transition-all text-center"
               >
-                Download Video (.MOV)
+                Download Video (
+                {isBundleOfJoyAnnouncement(activeDownloadReveal)
+                  ? ".MP4"
+                  : ".MOV"}
+                )
               </a>
             ) : (
               <div className="text-xs text-red-500 font-bold">Video file not found in storage.</div>

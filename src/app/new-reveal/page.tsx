@@ -112,7 +112,7 @@ function formatRevealDate(d: Date | null): string {
 // ─── Component ──────────────────────────────────────────────
 
 export default function NewRevealPage() {
-  const { user, firestoreUser, loading: authLoading } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const router = useRouter();
 
   const [loading, setLoading] = useState(false);
@@ -123,7 +123,8 @@ export default function NewRevealPage() {
   const [createdDownloadUrl, setCreatedDownloadUrl] = useState("");
   const [resolvingUrl, setResolvingUrl] = useState(false);
   const [createdEnquiryId, setCreatedEnquiryId] = useState("");
-  const isBasicPlan = (firestoreUser?.activePlan ?? "none") === "basic" || (firestoreUser?.activePlan ?? "none") === "free";
+  const [creationPlan, setCreationPlan] = useState<"basic" | "premium" | "custom" | null>(null);
+  const isBasicPlan = creationPlan === "basic";
 
   // Entitlement guard: redirect if user can't create a reveal
   useEffect(() => {
@@ -149,6 +150,11 @@ export default function NewRevealPage() {
           router.replace("/dashboard?noEntitlement=1");
           return;
         }
+        if (!["basic", "premium", "custom"].includes(data?.nextPlan)) {
+          router.replace("/dashboard?noEntitlement=1");
+          return;
+        }
+        setCreationPlan(data.nextPlan);
         setEntitlementChecked(true);
       } catch {
         if (!cancelled) router.replace("/dashboard?noEntitlement=1");
@@ -162,6 +168,7 @@ export default function NewRevealPage() {
 
   // Shared fields
   const [mode, setMode] = useState<EnquiryMode>("reveal");
+  const isPaidAnnouncement = creationPlan === "premium" && mode === "announcement";
   const [parentName, setParentName] = useState("");
   const [revealAt, setRevealAt] = useState("");
   const [photoFiles, setPhotoFiles] = useState<File[]>([]);
@@ -230,12 +237,13 @@ export default function NewRevealPage() {
           !!revealerName.trim());
 
     const isStep3Complete = !!revealAt;
-    return [
+    const progressSteps = [
       { label: "Reveal Type", isComplete: isStep1Complete },
       { label: "Family Details", isComplete: isStep2Complete },
       { label: "Schedule", isComplete: isStep3Complete },
     ];
-  }, [mode, parentName, announcementGender, revealerEmail, revealerName, revealAt]);
+    return isPaidAnnouncement ? progressSteps.slice(0, 2) : progressSteps;
+  }, [mode, parentName, announcementGender, revealerEmail, revealerName, revealAt, isPaidAnnouncement]);
 
   // ─── Photo handlers ──────────────────────────────────────
 
@@ -304,6 +312,10 @@ export default function NewRevealPage() {
       setError("You must be logged in.");
       return;
     }
+    if (!creationPlan) {
+      setError("We could not confirm which plan this reveal should use. Please refresh and try again.");
+      return;
+    }
 
     const validationError = validateForm();
     if (validationError) {
@@ -337,11 +349,20 @@ export default function NewRevealPage() {
         },
         body: JSON.stringify({
           enquiryId,
+          expectedPlan: creationPlan,
           mode,
           parentName: parentName.trim(),
           photos: [],
-          revealAtMs: mode === "announcement" ? Date.now() : new Date(revealAt).getTime(),
-          revealTimezone: mode === "announcement" ? "UTC" : timezone,
+          revealAtMs: isPaidAnnouncement
+            ? null
+            : mode === "announcement"
+              ? Date.now()
+              : new Date(revealAt).getTime(),
+          revealTimezone: isPaidAnnouncement
+            ? null
+            : mode === "announcement"
+              ? "UTC"
+              : timezone,
           dueDate: null,
           // Announcement mode
           babyName: null,
@@ -466,7 +487,7 @@ export default function NewRevealPage() {
               </>
             )}
 
-            <div>
+            {!isPaidAnnouncement && <div>
               <span className="text-[10px] text-gray-400 block uppercase font-bold tracking-wider">Schedule</span>
               <span className="font-semibold text-gray-800 mt-0.5 block">
                 {revealAt ? formatRevealDate(new Date(revealAt)) : <span className="text-gray-300 italic font-normal">Not scheduled</span>}
@@ -474,7 +495,7 @@ export default function NewRevealPage() {
               <span className="text-xs text-gray-500 block mt-0.5 truncate font-medium">
                 Timezone: {formatTimezone(timezone)}
               </span>
-            </div>
+            </div>}
 
 
 
@@ -483,7 +504,7 @@ export default function NewRevealPage() {
         </div>
       </div>
     );
-  }, [mode, parentName, announcementGender, revealerEmail, revealerRelation, revealAt, timezone, isBasicPlan]);
+  }, [mode, parentName, announcementGender, revealerEmail, revealerRelation, revealAt, timezone, isPaidAnnouncement]);
 
   if (authLoading || !user || !entitlementChecked) {
     return (
@@ -716,7 +737,9 @@ export default function NewRevealPage() {
                     </div>
                     <h3 className="reveal-mode-card-title text-announcement">We Already Know!</h3>
                     <p className="text-xs md:text-sm text-gray-600 leading-relaxed font-semibold">
-                      You already know the gender. We&apos;ll create a beautiful cinematic announcement to share with family &amp; friends.
+                      {creationPlan === "premium"
+                        ? "You already know the gender. We’ll create a personalized cinematic video for you to download and keep."
+                        : "You already know the gender. We’ll create a beautiful cinematic announcement to share with family & friends."}
                     </p>
                   </div>
                   <div className={`reveal-mode-indicator ${
@@ -805,7 +828,9 @@ export default function NewRevealPage() {
                         </div>
                       </div>
                       <span className="text-xs text-gray-400 mt-0.5 font-medium">
-                        This stays encrypted and is only shown during the reveal event.
+                        {isPaidAnnouncement
+                          ? "This stays encrypted and is used only to create your personalized video."
+                          : "This stays encrypted and is only shown during the reveal event."}
                       </span>
                     </div>
                   </>
@@ -1013,10 +1038,14 @@ export default function NewRevealPage() {
                           id="revealerRelation"
                           className="w-full bg-white border border-gray-200 rounded-xl px-4 py-3 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#3A9FE8] focus:border-[#3A9FE8] disabled:bg-gray-50 disabled:text-gray-400 transition-all appearance-none cursor-pointer font-medium pr-10"
                           value={revealerRelation}
-                          onChange={(e) => setRevealerRelation(e.target.value)}
+                          onChange={(e) =>
+                            setRevealerRelation(
+                              e.target.value as RevealerRelation
+                            )
+                          }
                           disabled={loading}
                         >
-                          {(Object.keys(RELATION_LABELS)).map((key) => (
+                          {(Object.keys(RELATION_LABELS) as RevealerRelation[]).map((key) => (
                             <option key={key} value={key}>{RELATION_LABELS[key]}</option>
                           ))}
                         </select>
@@ -1041,7 +1070,9 @@ export default function NewRevealPage() {
                     {uploadProgress || "Setting up…"}
                   </>
                 ) : (
-                  "✦ Create My Reveal →"
+                  isPaidAnnouncement
+                    ? "✦ Create My Custom Video →"
+                    : "✦ Create My Reveal →"
                 )}
               </button>
               <p className="text-xs text-gray-400 text-center font-medium">

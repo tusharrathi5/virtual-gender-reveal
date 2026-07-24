@@ -21,8 +21,8 @@ interface UpdateRevealBody {
   mode?: EnquiryMode;
   parentName?: string;
   photos?: string[];
-  revealAtMs?: number;
-  revealTimezone?: string;
+  revealAtMs?: number | null;
+  revealTimezone?: string | null;
   dueDate?: string | null;
   babyName?: string | null;
   announcementGender?: GenderValue;
@@ -81,7 +81,8 @@ function getAppUrl(req: NextRequest): string {
 function validateInput(
   body: UpdateRevealBody,
   existingRevealAt: Date | null,
-  previousMode: EnquiryMode
+  previousMode: EnquiryMode,
+  plan: string
 ): string | null {
   const {
     enquiryId,
@@ -106,14 +107,20 @@ function validateInput(
     return "Invalid photo URL format.";
   }
 
-  if (typeof revealAtMs !== "number" || Number.isNaN(revealAtMs)) return "Invalid reveal time.";
-  const previousMs = existingRevealAt?.getTime() ?? 0;
-  const revealTimeChanged = Math.abs(previousMs - revealAtMs) > 60 * 1000;
-  if (mode === "reveal" && revealTimeChanged && revealAtMs < Date.now() + 30 * 60 * 1000) {
-    return "Reveal time must be at least 30 minutes in the future.";
+  const paidAnnouncement = plan === "premium" && mode === "announcement";
+  if (!paidAnnouncement) {
+    if (typeof revealAtMs !== "number" || Number.isNaN(revealAtMs)) {
+      return "Invalid reveal time.";
+    }
+    const previousMs = existingRevealAt?.getTime() ?? 0;
+    const revealTimeChanged = Math.abs(previousMs - revealAtMs) > 60 * 1000;
+    if (mode === "reveal" && revealTimeChanged && revealAtMs < Date.now() + 30 * 60 * 1000) {
+      return "Reveal time must be at least 30 minutes in the future.";
+    }
+    if (!revealTimezone || typeof revealTimezone !== "string") {
+      return "Timezone is required.";
+    }
   }
-
-  if (!revealTimezone || typeof revealTimezone !== "string") return "Timezone is required.";
 
   if (mode === "announcement") {
     if (previousMode !== "announcement" && announcementGender !== "boy" && announcementGender !== "girl") {
@@ -170,16 +177,28 @@ export async function POST(req: NextRequest) {
 
   const previousMode: EnquiryMode = existing.mode === "announcement" ? "announcement" : "reveal";
   const existingRevealAt = toDate(existing.revealAt);
+  const existingPlan = typeof existing.plan === "string" ? existing.plan : "basic";
 
 
-  const validationError = validateInput(body, existingRevealAt, previousMode);
+  const validationError = validateInput(
+    body,
+    existingRevealAt,
+    previousMode,
+    existingPlan
+  );
   if (validationError) return NextResponse.json({ error: validationError }, { status: 400 });
 
   const nextMode = body.mode!;
+  const isPaidAnnouncement =
+    existingPlan === "premium" && nextMode === "announcement";
   const nextParentName = body.parentName!.trim();
   const nextPhotos = body.photos ?? [];
-  const nextRevealAt = Timestamp.fromMillis(body.revealAtMs!);
-  const nextTimezone = body.revealTimezone!.trim();
+  const nextRevealAt = isPaidAnnouncement
+    ? null
+    : Timestamp.fromMillis(body.revealAtMs!);
+  const nextTimezone = isPaidAnnouncement
+    ? null
+    : body.revealTimezone!.trim();
 
   const update: Record<string, unknown> = {
     mode: nextMode,
@@ -188,6 +207,7 @@ export async function POST(req: NextRequest) {
     photoCount: nextPhotos.length,
     revealAt: nextRevealAt,
     revealTimezone: nextTimezone,
+    partyEnabled: !isPaidAnnouncement,
     dueDate: body.dueDate?.trim() ? Timestamp.fromDate(new Date(body.dueDate.trim())) : null,
     revealerName: nextMode === "reveal" ? (body.revealerName?.trim() || null) : null,
     updatedAt: FieldValue.serverTimestamp(),
@@ -203,7 +223,11 @@ export async function POST(req: NextRequest) {
     update.revealerRelation = null;
     update.revealerName = null;
     update.doctorTokenHash = null;
-    if (existing.status === "awaiting_revealer") update.status = "video_ready";
+    if (isPaidAnnouncement) {
+      update.status = existing.videoUrl ? "completed" : "video_in_progress";
+    } else if (existing.status === "awaiting_revealer") {
+      update.status = "video_ready";
+    }
 
     if (body.announcementGender) {
       await saveGender({
@@ -277,6 +301,22 @@ export async function POST(req: NextRequest) {
   }
 
   await enquiryRef.update(update);
+
+  if (isPaidAnnouncement) {
+    const inviteSnap = await db
+      .collection("guest_invites")
+      .where("enquiryId", "==", body.enquiryId.trim())
+      .get();
+    await Promise.all(
+      inviteSnap.docs.map((inviteDoc) =>
+        inviteDoc.ref.update({
+          inviteStatus: "revoked",
+          tokenHash: null,
+          updatedAt: FieldValue.serverTimestamp(),
+        })
+      )
+    );
+  }
 
   return NextResponse.json({
     success: true,

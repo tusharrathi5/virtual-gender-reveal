@@ -3,9 +3,8 @@ export const runtime = "nodejs";
 
 import { createHmac, timingSafeEqual } from "crypto";
 import { NextRequest, NextResponse } from "next/server";
-import { FieldValue, Timestamp } from "firebase-admin/firestore";
-import { getAdminDb, getAdminAuth } from "@/lib/firebase-admin";
-import { sendHostVideoReadyEmail } from "@/lib/resendEmail";
+import { getAdminDb } from "@/lib/firebase-admin";
+import { finalizeUploadedVideo } from "@/lib/videoReady";
 
 type CloudflareWebhookBody = {
   uid?: string;
@@ -87,45 +86,10 @@ export async function POST(req: NextRequest) {
   const enquirySnap = await enquiryRef.get();
   if (!enquirySnap.exists) return NextResponse.json({ success: true, ignored: true });
 
-  const enquiryData = enquirySnap.data() as {
-    userId?: string;
-    parentName?: string;
-    revealAt?: Timestamp;
-    revealTimezone?: string;
-  };
-
-  const customerSubdomain = process.env.CLOUDFLARE_STREAM_CUSTOMER_SUBDOMAIN?.trim();
-  const videoUrl = customerSubdomain
-    ? `https://${customerSubdomain}/${body.uid}/watch`
-    : `https://iframe.videodelivery.net/${body.uid}`;
-
-  await enquiryRef.update({
+  await finalizeUploadedVideo({
+    enquiryId,
     streamUid: body.uid,
-    videoUrl,
-    status: "video_ready",
-    "stages.videoGenerated": Timestamp.now(),
-    updatedAt: FieldValue.serverTimestamp(),
   });
-
-  // Dispatch video ready email to host
-  if (enquiryData.userId) {
-    try {
-      const userRecord = await getAdminAuth().getUser(enquiryData.userId);
-      const hostEmail = userRecord.email;
-      if (hostEmail) {
-        const appUrl = process.env.NEXT_PUBLIC_APP_URL || "https://virtualgenderreveal.com";
-        await sendHostVideoReadyEmail({
-          to: hostEmail,
-          parentName: enquiryData.parentName || "Parent",
-          revealAtIso: enquiryData.revealAt?.toDate().toISOString() || new Date().toISOString(),
-          revealTimezone: enquiryData.revealTimezone || "UTC",
-          dashboardUrl: `${appUrl}/dashboard`,
-        });
-      }
-    } catch (emailErr) {
-      console.error(`[cloudflare-webhook] Failed to send host video-ready email:`, emailErr);
-    }
-  }
 
   return NextResponse.json({ success: true });
 }

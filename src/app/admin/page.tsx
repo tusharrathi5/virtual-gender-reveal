@@ -13,6 +13,7 @@ import { getAuth, signOut } from "firebase/auth";
 import { LogOut, Sparkles, ChevronLeft, ChevronRight, Menu, X } from "lucide-react";
 import { getFirebaseDb } from "@/lib/firebase";
 import { useAuth } from "@/lib/AuthContext";
+import { isBundleOfJoyAnnouncement } from "@/lib/revealAccess";
 import {
   derivePaymentStatusFromPurchases,
   getAdminVideoLabel,
@@ -44,6 +45,7 @@ interface EnquiryData {
   photos: string[];
   videoUrl: string | null;
   streamUid: string | null;
+  partyEnabled: boolean;
   paymentStatus: "pending" | "completed";
   videoStatus: "uploaded" | "not_uploaded";
   stages: {
@@ -330,6 +332,13 @@ export default function AdminPage() {
           photos: (data.photos as string[]) ?? [],
           videoUrl: (data.videoUrl as string) ?? null,
           streamUid: (data.streamUid as string) ?? null,
+          partyEnabled:
+            typeof data.partyEnabled === "boolean"
+              ? data.partyEnabled
+              : !(
+                  data.mode === "announcement" &&
+                  data.plan === "premium"
+                ),
           paymentStatus: normalizePaymentStatus(
             data.paymentStatus ?? (stages.paymentReceived ? "completed" : "pending")
           ),
@@ -1796,7 +1805,7 @@ function UserTableRow({
         )}
       </td>
       <td onClick={(ev) => ev.stopPropagation()}>
-        {e ? (
+        {e && !isBundleOfJoyAnnouncement(e) ? (
           <button
             className="vgr-party-link-btn"
             onClick={openPartyLink}
@@ -2170,12 +2179,14 @@ function UserProfileOverlay({
                     <div className="vgr-field-label">Plan</div>
                     <div className="vgr-field-value">{e.plan || "-"}</div>
                   </div>
-                  <div>
-                    <div className="vgr-field-label">Reveal Date</div>
-                    <div className="vgr-field-value">
-                      {fmtDateTime(e.revealAt)} ({e.revealTimezone})
+                  {!isBundleOfJoyAnnouncement(e) && (
+                    <div>
+                      <div className="vgr-field-label">Reveal Date</div>
+                      <div className="vgr-field-value">
+                        {fmtDateTime(e.revealAt)} ({e.revealTimezone})
+                      </div>
                     </div>
-                  </div>
+                  )}
                   <div>
                     <div className="vgr-field-label">Guest Count</div>
                     <div className="vgr-field-value">{e.guestCount}</div>
@@ -2475,7 +2486,11 @@ function VideoUploadModal({
       const readyData = await readyRes.json().catch(() => ({}));
       if (!readyRes.ok) throw new Error(readyData?.error || "Failed to save uploaded video.");
 
-      setStatus("Video Uploaded");
+      setStatus(
+        readyData.processing
+          ? "Video uploaded and processing. The user will be emailed when it is ready."
+          : "Video uploaded and ready."
+      );
       setTimeout(onClose, 650);
     } catch (err) {
       setStatus(err instanceof Error ? err.message : "Upload failed.");

@@ -6,6 +6,7 @@ import { getAdminDb } from "@/lib/firebase-admin";
 import { FieldValue } from "firebase-admin/firestore";
 import { sendGuestReminderEmail } from "@/lib/resendEmail";
 import { generateGuestToken } from "@/lib/guestToken";
+import { isBundleOfJoyAnnouncement } from "@/lib/revealAccess";
 
 export async function GET(req: NextRequest) {
   const secret = process.env.CRON_SECRET;
@@ -19,7 +20,15 @@ export async function GET(req: NextRequest) {
   const enquiriesSnap = await getAdminDb().collection("enquiries").get();
   let sent = 0;
   for (const doc of enquiriesSnap.docs) {
-    const e = doc.data() as { revealAt?: { toDate: () => Date }; revealTimezone?: string; parentName?: string };
+    const e = doc.data() as {
+      revealAt?: { toDate: () => Date };
+      revealTimezone?: string;
+      parentName?: string;
+      mode?: string;
+      plan?: string;
+      partyEnabled?: boolean;
+    };
+    if (isBundleOfJoyAnnouncement(e)) continue;
     const revealAt = e.revealAt?.toDate?.();
     if (!revealAt) continue;
     const ms = revealAt.getTime();

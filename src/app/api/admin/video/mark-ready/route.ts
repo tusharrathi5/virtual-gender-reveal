@@ -2,10 +2,10 @@ export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
 
 import { NextRequest, NextResponse } from "next/server";
-import { FieldValue, Timestamp } from "firebase-admin/firestore";
 import { verifyAuthHeader } from "@/lib/authServer";
-import { getAdminDb, getAdminAuth } from "@/lib/firebase-admin";
-import { sendHostVideoReadyEmail } from "@/lib/resendEmail";
+import { getAdminDb } from "@/lib/firebase-admin";
+import { isStreamReady } from "@/lib/cloudflareStream";
+import { finalizeUploadedVideo } from "@/lib/videoReady";
 
 async function requireAdmin(req: NextRequest) {
   const session = await verifyAuthHeader(req.headers.get("Authorization"));
@@ -16,13 +16,6 @@ async function requireAdmin(req: NextRequest) {
   if (role !== "admin") return { error: NextResponse.json({ error: "Forbidden" }, { status: 403 }) };
 
   return { session };
-}
-
-function buildVideoUrl(streamUid: string): string {
-  const customerSubdomain = process.env.CLOUDFLARE_STREAM_CUSTOMER_SUBDOMAIN?.trim();
-  return customerSubdomain
-    ? `https://${customerSubdomain}/${streamUid}/watch`
-    : `https://iframe.videodelivery.net/${streamUid}`;
 }
 
 export async function POST(req: NextRequest) {
@@ -45,10 +38,6 @@ export async function POST(req: NextRequest) {
     videoUrl?: string | null;
     streamUid?: string | null;
     pendingStreamUid?: string | null;
-    userId?: string;
-    parentName?: string;
-    revealAt?: Timestamp;
-    revealTimezone?: string;
   };
   if (typeof enquiry.videoUrl === "string" && enquiry.videoUrl.trim() && enquiry.streamUid !== streamUid) {
     return NextResponse.json(
@@ -57,37 +46,14 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  const videoUrl = buildVideoUrl(streamUid);
-
-  await enquiryRef.update({
-    videoUrl,
-    streamUid,
-    pendingStreamUid: FieldValue.delete(),
-    videoUploadStatus: "uploaded",
-    status: "video_ready",
-    "stages.videoGenerated": Timestamp.now(),
-    updatedAt: FieldValue.serverTimestamp(),
-  });
-
-  // Dispatch video ready email to host
-  if (enquiry.userId) {
-    try {
-      const userRecord = await getAdminAuth().getUser(enquiry.userId);
-      const hostEmail = userRecord.email;
-      if (hostEmail) {
-        const appUrl = process.env.NEXT_PUBLIC_APP_URL || "https://virtualgenderreveal.com";
-        await sendHostVideoReadyEmail({
-          to: hostEmail,
-          parentName: enquiry.parentName || "Parent",
-          revealAtIso: enquiry.revealAt?.toDate().toISOString() || new Date().toISOString(),
-          revealTimezone: enquiry.revealTimezone || "UTC",
-          dashboardUrl: `${appUrl}/dashboard`,
-        });
-      }
-    } catch (emailErr) {
-      console.error(`[mark-ready] Failed to send host video-ready email:`, emailErr);
-    }
+  if (!(await isStreamReady(streamUid))) {
+    return NextResponse.json({
+      success: true,
+      processing: true,
+      message: "Video uploaded and is still processing.",
+    });
   }
 
-  return NextResponse.json({ success: true, videoUrl });
+  const ready = await finalizeUploadedVideo({ enquiryId, streamUid });
+  return NextResponse.json({ success: true, ...ready });
 }

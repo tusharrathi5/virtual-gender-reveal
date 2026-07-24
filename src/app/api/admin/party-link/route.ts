@@ -7,6 +7,10 @@ import { NextRequest, NextResponse } from "next/server";
 import { verifyAuthHeader } from "@/lib/authServer";
 import { getAdminDb } from "@/lib/firebase-admin";
 import { generateGuestToken } from "@/lib/guestToken";
+import {
+  isBundleOfJoyAnnouncement,
+  PARTY_UNAVAILABLE_MESSAGE,
+} from "@/lib/revealAccess";
 
 type AdminSession = {
   uid: string;
@@ -16,6 +20,9 @@ type AdminSession = {
 type EnquiryRecord = {
   userId?: string;
   parentName?: string;
+  mode?: string;
+  plan?: string;
+  partyEnabled?: boolean;
 };
 
 function getAppUrl(req: NextRequest) {
@@ -58,6 +65,12 @@ export async function POST(req: NextRequest) {
   if (!enquirySnap.exists) return NextResponse.json({ error: "Reveal not found." }, { status: 404 });
 
   const enquiry = enquirySnap.data() as EnquiryRecord;
+  if (isBundleOfJoyAnnouncement(enquiry)) {
+    return NextResponse.json(
+      { error: PARTY_UNAVAILABLE_MESSAGE },
+      { status: 409 }
+    );
+  }
   const adminGuestId = `admin-party-${enquiryId}`;
   const token = generateGuestToken(enquiryId, adminGuestId);
   const tokenHash = CryptoJS.SHA256(token).toString();

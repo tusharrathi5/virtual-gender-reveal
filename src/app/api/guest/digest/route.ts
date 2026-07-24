@@ -6,6 +6,10 @@ import { FieldValue, Timestamp } from "firebase-admin/firestore";
 import { verifyAuthHeader } from "@/lib/authServer";
 import { getAdminDb } from "@/lib/firebase-admin";
 import { sendGuestDigestEmail } from "@/lib/resendEmail";
+import {
+  isBundleOfJoyAnnouncement,
+  PARTY_UNAVAILABLE_MESSAGE,
+} from "@/lib/revealAccess";
 
 export async function POST(req: NextRequest) {
   const session = await verifyAuthHeader(req.headers.get("Authorization"));
@@ -17,8 +21,22 @@ export async function POST(req: NextRequest) {
   const enquiryRef = getAdminDb().collection("enquiries").doc(enquiryId);
   const enquirySnap = await enquiryRef.get();
   if (!enquirySnap.exists) return NextResponse.json({ error: "Enquiry not found." }, { status: 404 });
-  const enquiry = enquirySnap.data() as { userId: string; parentName?: string; revealAt?: Timestamp; stages?: { parentDigestSent?: unknown } };
+  const enquiry = enquirySnap.data() as {
+    userId: string;
+    parentName?: string;
+    revealAt?: Timestamp;
+    stages?: { parentDigestSent?: unknown };
+    mode?: string;
+    plan?: string;
+    partyEnabled?: boolean;
+  };
   if (enquiry.userId !== session.uid) return NextResponse.json({ error: "Forbidden." }, { status: 403 });
+  if (isBundleOfJoyAnnouncement(enquiry)) {
+    return NextResponse.json(
+      { error: PARTY_UNAVAILABLE_MESSAGE },
+      { status: 409 }
+    );
+  }
   if (enquiry.stages?.parentDigestSent) return NextResponse.json({ error: "Digest already sent." }, { status: 409 });
 
   const revealAt = enquiry.revealAt?.toDate?.() ?? null;
@@ -46,4 +64,3 @@ export async function POST(req: NextRequest) {
   await enquiryRef.update({ "stages.parentDigestSent": Timestamp.now(), updatedAt: FieldValue.serverTimestamp() });
   return NextResponse.json({ success: true, sent: responses.length });
 }
-
