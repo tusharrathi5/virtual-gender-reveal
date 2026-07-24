@@ -1226,9 +1226,9 @@ footer{background:#111827;padding:4rem 2rem 2rem;}
     transform: translateX(-50%) !important;
     z-index: 100;
     margin: 0 !important;
-    width: clamp(240px, 14.5vw, 285px);
-    padding: 0.58rem 1.8rem !important;
-    font-size: 0.92rem !important;
+    width: clamp(265px, 15.5vw, 310px);
+    padding: 0.68rem 2rem !important;
+    font-size: 0.98rem !important;
   }
   .btn-create-party:hover {
     transform: translateX(-50%) translateY(-3px) scale(1.035) !important;
@@ -1273,9 +1273,9 @@ footer{background:#111827;padding:4rem 2rem 2rem;}
     z-index: 100 !important;
     margin: 0 !important;
     white-space: nowrap !important;
-    width: min(64%, 285px) !important;
-    padding: 0.55rem 1.4rem !important;
-    font-size: 0.88rem !important;
+    width: min(70%, 310px) !important;
+    padding: 0.64rem 1.6rem !important;
+    font-size: 0.94rem !important;
   }
 }
 
