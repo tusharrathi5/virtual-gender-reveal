@@ -13,6 +13,12 @@ type CloudflareDownloadResponse = {
   errors?: Array<{ message?: string }>;
 };
 
+export type StreamMp4Download = {
+  ready: boolean;
+  status: string;
+  url: string | null;
+};
+
 function getCloudflareConfig() {
   const accountId = process.env.CLOUDFLARE_ACCOUNT_ID?.trim();
   const apiToken = process.env.CLOUDFLARE_STREAM_TOKEN?.trim();
@@ -68,6 +74,46 @@ export async function enableStreamMp4Download(
   return `https://${normalizeCustomerSubdomain(
     customerSubdomain
   )}/${streamUid}/downloads/default.mp4`;
+}
+
+/**
+ * Checks whether Cloudflare has finished generating the downloadable MP4.
+ * A Stream video can be ready to watch before its MP4 download is ready.
+ */
+export async function getStreamMp4Download(
+  streamUid: string
+): Promise<StreamMp4Download> {
+  const { accountId, apiToken } = getCloudflareConfig();
+  const response = await fetch(
+    `https://api.cloudflare.com/client/v4/accounts/${accountId}/stream/${streamUid}/downloads`,
+    {
+      headers: { Authorization: `Bearer ${apiToken}` },
+      cache: "no-store",
+    }
+  );
+  const data = (await response.json().catch(() => ({}))) as CloudflareDownloadResponse;
+
+  if (!response.ok || data.success === false) {
+    throw new Error(
+      data.errors?.[0]?.message || "Unable to check the downloadable video."
+    );
+  }
+
+  const download = data.result?.default;
+  const status = download?.status?.toLowerCase() || "unknown";
+  const customerSubdomain =
+    process.env.CLOUDFLARE_STREAM_CUSTOMER_SUBDOMAIN?.trim();
+  const fallbackUrl = customerSubdomain
+    ? `https://${normalizeCustomerSubdomain(
+        customerSubdomain
+      )}/${streamUid}/downloads/default.mp4`
+    : null;
+
+  return {
+    ready: status === "ready",
+    status,
+    url: download?.url || (status === "ready" ? fallbackUrl : null),
+  };
 }
 
 export async function isStreamReady(streamUid: string): Promise<boolean> {

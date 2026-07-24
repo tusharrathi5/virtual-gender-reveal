@@ -520,6 +520,7 @@ function DashboardContent() {
   const [activeDownloadReveal, setActiveDownloadReveal] = useState<RevealSummary | null>(null);
   const [modalDownloadUrl, setModalDownloadUrl] = useState<string>("");
   const [resolvingUrl, setResolvingUrl] = useState(false);
+  const [startingDownload, setStartingDownload] = useState(false);
   const [guestDraftRows, setGuestDraftRows] = useState<EditableGuestRow[]>([
     blankGuestRow("draft-1"),
     blankGuestRow("draft-2"),
@@ -541,6 +542,7 @@ function DashboardContent() {
 
   const handleOpenDownloadModal = async (reveal: RevealSummary) => {
     setActiveDownloadReveal(reveal);
+    setStartingDownload(false);
     if (isBundleOfJoyAnnouncement(reveal)) {
       setModalDownloadUrl(reveal.downloadUrl || "");
       setResolvingUrl(false);
@@ -573,9 +575,71 @@ function DashboardContent() {
           Authorization: `Bearer ${idToken}`,
         },
         body: JSON.stringify({ enquiryId }),
+        keepalive: true,
       });
     } catch (err) {
       console.error("Failed to log download complete:", err);
+    }
+  };
+
+  const handleStartVideoDownload = async () => {
+    if (!user || !activeDownloadReveal || !modalDownloadUrl) return;
+
+    setStartingDownload(true);
+    try {
+      let downloadUrl = modalDownloadUrl;
+
+      if (isBundleOfJoyAnnouncement(activeDownloadReveal)) {
+        const idToken = await user.getIdToken();
+        const response = await fetch("/api/reveal/download-link", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${idToken}`,
+          },
+          body: JSON.stringify({ enquiryId: activeDownloadReveal.id }),
+        });
+        const payload = (await response.json().catch(() => ({}))) as {
+          ready?: boolean;
+          downloadUrl?: string;
+          message?: string;
+          error?: string;
+        };
+
+        if (response.status === 202 || payload.ready === false) {
+          setToast({
+            type: "info",
+            message:
+              payload.message ||
+              "Your mobile download is still being prepared. Please try again shortly.",
+          });
+          return;
+        }
+        if (!response.ok || !payload.downloadUrl) {
+          throw new Error(
+            payload.error || "Unable to prepare the video download."
+          );
+        }
+
+        downloadUrl = payload.downloadUrl;
+        setModalDownloadUrl(downloadUrl);
+      } else {
+        await handleDownloadComplete(activeDownloadReveal.id);
+      }
+
+      // A same-tab attachment navigation is reliable on mobile browsers.
+      // `download` on a cross-origin link and target="_blank" are not.
+      window.location.assign(downloadUrl);
+    } catch (error) {
+      setToast({
+        type: "error",
+        message:
+          error instanceof Error
+            ? error.message
+            : "Unable to start the video download.",
+      });
+    } finally {
+      setStartingDownload(false);
     }
   };
 
@@ -1661,24 +1725,20 @@ function DashboardContent() {
             {resolvingUrl ? (
               <div className="py-3 text-sm text-gray-500 font-bold animate-pulse">Generating secure download link...</div>
             ) : modalDownloadUrl ? (
-              <a
-                href={modalDownloadUrl}
-                download={
-                  isBundleOfJoyAnnouncement(activeDownloadReveal)
-                    ? `personalized_announcement_${activeDownloadReveal.id}.mp4`
-                    : `gender_reveal_${activeDownloadReveal.id}.mov`
-                }
-                target="_blank"
-                rel="noopener noreferrer"
-                onClick={() => handleDownloadComplete(activeDownloadReveal.id)}
-                className="block w-full py-3 px-4 bg-gradient-to-r from-[#E8449A] to-[#3A9FE8] text-white rounded-xl text-sm font-bold tracking-wider uppercase shadow-md hover:opacity-95 active:scale-[0.98] transition-all text-center"
+              <button
+                type="button"
+                disabled={startingDownload}
+                onClick={() => void handleStartVideoDownload()}
+                className="block w-full py-3 px-4 bg-gradient-to-r from-[#E8449A] to-[#3A9FE8] text-white rounded-xl text-sm font-bold tracking-wider uppercase shadow-md hover:opacity-95 active:scale-[0.98] transition-all text-center disabled:cursor-wait disabled:opacity-70"
               >
-                Download Video (
-                {isBundleOfJoyAnnouncement(activeDownloadReveal)
-                  ? ".MP4"
-                  : ".MOV"}
-                )
-              </a>
+                {startingDownload
+                  ? "Preparing Download..."
+                  : `Download Video (${
+                      isBundleOfJoyAnnouncement(activeDownloadReveal)
+                        ? ".MP4"
+                        : ".MOV"
+                    })`}
+              </button>
             ) : (
               <div className="text-xs text-red-500 font-bold">Video file not found in storage.</div>
             )}

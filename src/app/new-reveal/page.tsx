@@ -426,10 +426,20 @@ export default function NewRevealPage() {
           Authorization: `Bearer ${idToken}`,
         },
         body: JSON.stringify({ enquiryId }),
+        keepalive: true,
       });
     } catch (err) {
       console.error("Failed to log download complete:", err);
     }
+  };
+
+  const handleStartCreatedVideoDownload = async () => {
+    if (!createdDownloadUrl || !createdEnquiryId) return;
+    await handleDownloadComplete(createdEnquiryId);
+
+    // Avoid cross-origin `download` and new-tab behavior, which is unreliable
+    // on iOS Safari and some Android browsers.
+    window.location.assign(createdDownloadUrl);
   };
 
   // ─── Render ──────────────────────────────────────────────
@@ -523,16 +533,13 @@ export default function NewRevealPage() {
             {resolvingUrl ? (
               <div className="py-3 text-sm text-gray-500 font-bold animate-pulse">Generating secure download link...</div>
             ) : createdDownloadUrl ? (
-              <a
-                href={createdDownloadUrl}
-                download="gender_reveal.mov"
-                target="_blank"
-                rel="noopener noreferrer"
-                onClick={() => handleDownloadComplete(createdEnquiryId)}
+              <button
+                type="button"
+                onClick={() => void handleStartCreatedVideoDownload()}
                 className="block w-full py-3 px-4 bg-gradient-to-r from-[#E8449A] to-[#3A9FE8] text-white rounded-xl text-sm font-bold tracking-wider uppercase shadow-md hover:opacity-95 active:scale-[0.98] transition-all mb-3 text-center"
               >
                 Download Video (.MOV)
-              </a>
+              </button>
             ) : (
               <div className="text-xs text-red-500 font-bold mb-3">Video file not found in storage.</div>
             )}
@@ -1099,16 +1106,13 @@ export default function NewRevealPage() {
             {resolvingUrl ? (
               <div className="py-3 text-sm text-gray-500 font-bold animate-pulse">Generating secure download link...</div>
             ) : createdDownloadUrl ? (
-              <a
-                href={createdDownloadUrl}
-                download="gender_reveal.mov"
-                target="_blank"
-                rel="noopener noreferrer"
-                onClick={() => handleDownloadComplete(createdEnquiryId)}
+              <button
+                type="button"
+                onClick={() => void handleStartCreatedVideoDownload()}
                 className="block w-full py-3 px-4 bg-gradient-to-r from-[#E8449A] to-[#3A9FE8] text-white rounded-xl text-sm font-bold tracking-wider uppercase shadow-md hover:opacity-95 active:scale-[0.98] transition-all mb-3 text-center"
               >
                 Download Video (.MOV)
-              </a>
+              </button>
             ) : (
               <div className="text-xs text-red-500 font-bold mb-3">Video file not found in storage.</div>
             )}
