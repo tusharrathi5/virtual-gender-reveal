@@ -1220,15 +1220,15 @@ footer{background:#111827;padding:4rem 2rem 2rem;}
   }
   .btn-create-party {
     position: absolute;
-    top: 47.3vw;
+    top: 45.85vw;
     bottom: auto;
     left: 29.55%;
     transform: translateX(-50%) !important;
     z-index: 100;
     margin: 0 !important;
-    width: clamp(230px, 15.5vw, 290px);
-    padding: 0.62rem 1.7rem !important;
-    font-size: 0.92rem !important;
+    width: clamp(230px, 15vw, 280px);
+    padding: 0.5rem 1.6rem !important;
+    font-size: 0.9rem !important;
   }
   .btn-create-party:hover {
     transform: translateX(-50%) translateY(-3px) scale(1.035) !important;
