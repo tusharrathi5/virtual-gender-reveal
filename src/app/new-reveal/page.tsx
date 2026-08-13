@@ -24,6 +24,7 @@ import {
   Camera,
   Heart,
   ChevronDown,
+  Gift,
 } from "lucide-react";
 
 
@@ -181,6 +182,7 @@ export default function NewRevealPage() {
   const [revealerName, setRevealerName] = useState("");
   const [revealerEmail, setRevealerEmail] = useState("");
   const [revealerRelation, setRevealerRelation] = useState<RevealerRelation>("doctor");
+  const [registryUrl, setRegistryUrl] = useState("");
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [timezone, setTimezone] = useState<string>(() => getInitialTimezone());
   const [tzSearch, setTzSearch] = useState("");
@@ -299,6 +301,9 @@ export default function NewRevealPage() {
       if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(revealerEmail.trim())) {
         return "Please enter a valid revealer email.";
       }
+      if (registryUrl.trim() && !/^https?:\/\//.test(registryUrl.trim())) {
+        return "Please enter a valid registry link (starting with http:// or https://).";
+      }
     }
 
     return null;
@@ -373,6 +378,7 @@ export default function NewRevealPage() {
           revealerEmail: mode === "reveal" ? revealerEmail.trim().toLowerCase() : undefined,
           revealerRelation: mode === "reveal" ? revealerRelation : undefined,
           revealerName: mode === "reveal" ? revealerName.trim() : undefined,
+          registryUrl: mode === "reveal" && !isBasicPlan ? registryUrl.trim() || undefined : undefined,
         }),
       });
 
@@ -1063,6 +1069,32 @@ export default function NewRevealPage() {
                 </div>
               );
             })()}
+
+            {/* Section 6: Gift Registry (paid plans only) */}
+            {mode === "reveal" && !isBasicPlan && (
+              <div className="bg-white border border-[#f1f1f5] shadow-sm rounded-2xl p-6 md:p-8 space-y-6">
+                <h2 className="text-xs font-bold text-gray-400 uppercase tracking-widest border-b border-[#f1f1f5] pb-3 mb-1 flex items-center gap-2">
+                  <Gift className="w-4 h-4 text-[#E8449A]" />
+                  6. Gift Registry
+                </h2>
+
+                <div className="flex flex-col gap-1.5">
+                  <label htmlFor="registryUrl" className="text-xs font-bold text-gray-500 uppercase tracking-wider">Gift Registry Link (optional)</label>
+                  <input
+                    id="registryUrl"
+                    className="w-full bg-white border border-gray-200 rounded-xl px-4 py-3 text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#3A9FE8] focus:border-[#3A9FE8] disabled:bg-gray-50 disabled:text-gray-400 transition-all font-medium"
+                    type="url"
+                    placeholder="https://www.yourregistry.com/..."
+                    value={registryUrl}
+                    onChange={(e) => setRegistryUrl(e.target.value)}
+                    disabled={loading}
+                  />
+                  <span className="text-xs text-gray-400 font-medium">
+                    Shown as a &quot;View Gift Registry&quot; button on your party page. You can add or change this later from your dashboard.
+                  </span>
+                </div>
+              </div>
+            )}
 
             {/* Action Area */}
             <div className="pt-4 space-y-4">

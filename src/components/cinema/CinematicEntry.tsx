@@ -484,6 +484,12 @@ function LandingPage() {
               </button>
               {accountMenuOpen && (
                 <div className="nav-account-menu" role="menu">
+                  <a href={accountDestination} role="menuitem" className="nav-account-dashboard" onClick={() => setAccountMenuOpen(false)}>
+                    <svg viewBox="0 0 24 24" aria-hidden="true">
+                      <path d="M3 13h8V3H3v10zm0 8h8v-6H3v6zm10 0h8V11h-8v10zm0-18v6h8V3h-8z" />
+                    </svg>
+                    Dashboard
+                  </a>
                   <button type="button" role="menuitem" className="nav-account-logout" onClick={() => void handleLogout()}>
                     <svg viewBox="0 0 24 24" aria-hidden="true">
                       <path d="M10 17l5-5-5-5M15 12H3M14 4h4a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-4" />
@@ -1709,6 +1715,9 @@ nav#main-nav.solid{box-shadow:0 6px 28px rgba(0,0,0,0.14);}
 .nav-account-toggle[aria-expanded="true"] svg{transform:rotate(180deg);}
 .nav-account-menu{position:absolute;top:calc(100% + 0.65rem);right:0;width:150px;padding:0.45rem;background:rgba(255,255,255,0.98);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border:1px solid rgba(232,68,154,0.18);border-radius:16px;box-shadow:0 18px 46px rgba(45,36,70,0.2);animation:accountMenuIn 0.18s ease-out;transform-origin:top right;}
 .nav-account-menu::before{content:"";position:absolute;top:-5px;right:17px;width:10px;height:10px;background:white;border-left:1px solid rgba(232,68,154,0.18);border-top:1px solid rgba(232,68,154,0.18);transform:rotate(45deg);}
+.nav-account-dashboard{position:relative;z-index:1;width:100%;display:flex;align-items:center;gap:0.65rem;padding:0.72rem 0.8rem;border:0;border-radius:11px;background:transparent;color:#25325B;font-family:'Nunito',sans-serif;font-size:0.82rem;font-weight:800;cursor:pointer;text-align:left;text-decoration:none;transition:background 0.18s ease,color 0.18s ease,transform 0.18s ease;}
+.nav-account-dashboard:hover{background:linear-gradient(135deg,rgba(58,159,232,0.1),rgba(123,110,232,0.08));color:#3A6FE8;transform:translateX(2px);}
+.nav-account-dashboard svg{width:17px;height:17px;fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round;}
 .nav-account-logout{position:relative;z-index:1;width:100%;display:flex;align-items:center;gap:0.65rem;padding:0.72rem 0.8rem;border:0;border-radius:11px;background:transparent;color:#A73569;font-family:'Nunito',sans-serif;font-size:0.82rem;font-weight:800;cursor:pointer;text-align:left;transition:background 0.18s ease,color 0.18s ease,transform 0.18s ease;}
 .nav-account-logout:hover{background:linear-gradient(135deg,rgba(232,68,154,0.1),rgba(123,110,232,0.08));color:#E0297D;transform:translateX(2px);}
 .nav-account-logout svg{width:17px;height:17px;fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round;}

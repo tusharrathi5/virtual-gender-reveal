@@ -84,6 +84,7 @@ export default function GuestInvitePage() {
   const [isLive, setIsLive] = useState(false);
   const [isCompleted, setIsCompleted] = useState(false);
   const [videoUrl, setVideoUrl] = useState<string | null>(null);
+  const [registryUrl, setRegistryUrl] = useState<string | null>(null);
   const [feed, setFeed] = useState<Array<{ name: string; message: string }>>([]);
   const [invitedGuests, setInvitedGuests] = useState<Array<{ name: string }>>([]);
 
@@ -126,6 +127,7 @@ export default function GuestInvitePage() {
     setIsLive(Boolean(data?.reveal?.isLive));
     setIsCompleted(Boolean(data?.reveal?.isCompleted));
     setVideoUrl(data?.reveal?.videoUrl || null);
+    setRegistryUrl(data?.reveal?.registryUrl || null);
     setFeed(Array.isArray(data?.feed) ? data.feed : []);
     setInvitedGuests(Array.isArray(data?.invitedGuests) ? data.invitedGuests : []);
 
@@ -857,6 +859,18 @@ export default function GuestInvitePage() {
               </section>
             )}
           </div>
+
+          {/* GIFT REGISTRY (only present on paid plans) */}
+          {registryUrl && (
+            <a
+              href={registryUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center justify-center gap-2 w-full bg-white/45 backdrop-blur-[30px] border border-white/50 border-[1.5px] rounded-2xl py-3 px-5 shadow-lg text-sm md:text-base font-bold text-[#1B4F8C] hover:text-[#E8449A] transition-colors"
+            >
+              🎁 View Gift Registry
+            </a>
+          )}
 
           {/* Row 4: Live Chat & Who's Invited (Two equal-sized boxes side-by-side) */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 w-full items-stretch">

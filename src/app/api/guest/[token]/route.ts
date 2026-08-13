@@ -39,6 +39,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ toke
     mode?: string;
     plan?: string;
     partyEnabled?: boolean;
+    registryUrl?: string | null;
   };
   if (isBundleOfJoyAnnouncement(data)) {
     return NextResponse.json(
@@ -114,6 +115,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ toke
       isLive,
       isCompleted,
       videoUrl: isLive ? data.videoUrl || null : null,
+      registryUrl: data.plan !== "basic" ? data.registryUrl || null : null,
     },
     votes: {
       boy: boyVotes,

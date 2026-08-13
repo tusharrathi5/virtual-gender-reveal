@@ -67,6 +67,7 @@ interface RevealSummary {
   downloadUrl?: string | null;
   videoReady?: boolean;
   plan: string;
+  registryUrl: string | null;
 }
 
 interface RevealEditForm {
@@ -537,6 +538,8 @@ function DashboardContent() {
   const [editForm, setEditForm] = useState<RevealEditForm | null>(null);
   const [editPhotoFiles, setEditPhotoFiles] = useState<File[]>([]);
   const [savingReveal, setSavingReveal] = useState(false);
+  const [registryDrafts, setRegistryDrafts] = useState<Record<string, string>>({});
+  const [savingRegistryId, setSavingRegistryId] = useState<string | null>(null);
   const handledDashboardQueryRef = useRef<string | null>(null);
   const guestFileInputRef = useRef<HTMLInputElement>(null);
 
@@ -693,6 +696,7 @@ function DashboardContent() {
             typeof data.downloadUrl === "string" ? data.downloadUrl : null,
           videoReady: getRevealVideoStatus({ videoUrl: data.videoUrl }) === "ready",
           plan: data.plan ?? "basic",
+          registryUrl: typeof data.registryUrl === "string" ? data.registryUrl : null,
         };
       });
       setReveals(items);
@@ -1027,6 +1031,28 @@ function DashboardContent() {
     setEditForm((form) => (form ? { ...form, [field]: value } : form));
   }
 
+  async function saveRegistryLink(revealId: string) {
+    if (!user) return;
+    const draft = (registryDrafts[revealId] ?? "").trim();
+    setSavingRegistryId(revealId);
+    try {
+      const idToken = await user.getIdToken();
+      const res = await fetch("/api/reveal/registry", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${idToken}` },
+        body: JSON.stringify({ enquiryId: revealId, registryUrl: draft }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data?.error || "Failed to save registry link.");
+      setReveals((prev) => prev.map((r) => (r.id === revealId ? { ...r, registryUrl: data.registryUrl } : r)));
+      setToast({ type: "success", message: draft ? "Gift registry link saved." : "Gift registry link removed." });
+    } catch (err) {
+      setToast({ type: "error", message: err instanceof Error ? err.message : "Failed to save registry link." });
+    } finally {
+      setSavingRegistryId(null);
+    }
+  }
+
   async function saveRevealEdits() {
     if (!editForm) return;
     if (!editForm.parentName.trim()) {
@@ -1324,6 +1350,34 @@ function DashboardContent() {
                             </div>
                           </>
                         )}
+                      </div>
+                    )}
+
+                    {/* Gift Registry (paid plans only, reveal-party pages only) */}
+                    {reveal.plan !== "basic" && !isBundleOfJoyAnnouncement(reveal) && (
+                      <div className="bg-gray-50/50 rounded-xl p-3 border border-gray-100 space-y-2">
+                        <span className="text-[9px] text-gray-400 block uppercase font-bold tracking-wider">
+                          Gift Registry Link (shown on your party page)
+                        </span>
+                        <div className="flex flex-col sm:flex-row gap-2">
+                          <input
+                            type="url"
+                            placeholder="https://www.yourregistry.com/..."
+                            value={registryDrafts[reveal.id] ?? reveal.registryUrl ?? ""}
+                            onChange={(e) =>
+                              setRegistryDrafts((prev) => ({ ...prev, [reveal.id]: e.target.value }))
+                            }
+                            className="flex-1 text-xs font-semibold text-gray-800 border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#3A9FE8]"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => saveRegistryLink(reveal.id)}
+                            disabled={savingRegistryId === reveal.id}
+                            className="bg-[#3A9FE8] text-white hover:bg-[#2E7DD1] active:scale-[0.98] transition-all font-bold text-xs uppercase tracking-wider rounded-lg px-4 py-2 disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-[#3A9FE8]"
+                          >
+                            {savingRegistryId === reveal.id ? "Saving..." : "Save"}
+                          </button>
+                        </div>
                       </div>
                     )}
 

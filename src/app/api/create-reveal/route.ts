@@ -43,9 +43,17 @@ interface CreateRevealBody {
   revealerEmail?: string;
   revealerRelation?: RevealerRelation;
   revealerName?: string;
+  registryUrl?: string;
 }
 
-
+function isValidHttpUrl(value: string): boolean {
+  try {
+    const url = new URL(value);
+    return url.protocol === "http:" || url.protocol === "https:";
+  } catch {
+    return false;
+  }
+}
 
 function relationToLabel(relation: RevealerRelation): string {
   switch (relation) {
@@ -106,9 +114,17 @@ export async function POST(req: NextRequest) {
     revealerEmail,
     revealerRelation,
     revealerName,
+    registryUrl,
   } = body;
 
   const parsedRevealAtMs = revealAtMs ?? null;
+  const trimmedRegistryUrl = registryUrl?.trim() || "";
+  if (trimmedRegistryUrl && !isValidHttpUrl(trimmedRegistryUrl)) {
+    return NextResponse.json(
+      { error: "Please provide a valid registry link (starting with http:// or https://)." },
+      { status: 400 }
+    );
+  }
 
   const userSnap = await getAdminDb().collection("users").doc(session.uid).get();
 
@@ -189,6 +205,7 @@ export async function POST(req: NextRequest) {
 
       await getAdminDb().collection("enquiries").doc(validatedEnquiryId).update({
         doctorTokenHash: tokenHash,
+        registryUrl: result.consumedPlan !== "basic" && trimmedRegistryUrl ? trimmedRegistryUrl : null,
       });
 
       const revealUrl = `${appUrl}/doctor/${encodeURIComponent(token)}`;
