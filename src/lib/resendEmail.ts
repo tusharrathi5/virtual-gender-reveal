@@ -421,7 +421,7 @@ function buildVgrEmailTemplateHtml(props: VgrEmailTemplateProps): string {
 </html>`;
 }
 
-export async function sendGuestInviteEmail(params: SendGuestInviteEmailParams): Promise<void> {
+export function buildGuestInviteEmailHtml(params: SendGuestInviteEmailParams): string {
   const guestName = escapeHtml(params.guestName || "there");
   const parentName = escapeHtml(params.parentName);
   const inviteUrl = escapeHtml(params.inviteUrl);
@@ -442,7 +442,7 @@ export async function sendGuestInviteEmail(params: SendGuestInviteEmailParams): 
   const logoUrl = `${baseUrl}/Favicon-VGR.png`;
   const bannerUrl = `${baseUrl}/assets/email-banner.png`;
 
-  const html = buildVgrEmailTemplateHtml({
+  return buildVgrEmailTemplateHtml({
     logoUrl,
     bannerUrl,
     badgeText: "You're invited to a",
@@ -457,7 +457,10 @@ export async function sendGuestInviteEmail(params: SendGuestInviteEmailParams): 
     googleCalendarUrl,
     icsUrl,
   });
+}
 
+export async function sendGuestInviteEmail(params: SendGuestInviteEmailParams): Promise<void> {
+  const html = buildGuestInviteEmailHtml(params);
   await sendEmail({ to: params.to, subject: "You're invited to a Gender Reveal", html });
 }
 
