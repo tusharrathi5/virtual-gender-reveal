@@ -2,6 +2,7 @@ export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
 
 import { NextRequest, NextResponse } from "next/server";
+import CryptoJS from "crypto-js";
 import { getAdminDb } from "@/lib/firebase-admin";
 import { FieldValue } from "firebase-admin/firestore";
 import { sendGuestReminderEmail } from "@/lib/resendEmail";
@@ -38,6 +39,7 @@ export async function GET(req: NextRequest) {
       const g = gdoc.data() as { email?: string; name?: string; reminderSentAt?: unknown; inviteStatus?: string; tokenHash?: string };
       if (!g.email || g.reminderSentAt || g.inviteStatus === "revoked" || !g.tokenHash) continue;
       const token = generateGuestToken(doc.id, gdoc.id);
+      const tokenHash = CryptoJS.SHA256(token).toString();
       const inviteUrl = `${(process.env.NEXT_PUBLIC_APP_URL || "").replace(/\/$/, "")}/guest/${encodeURIComponent(token)}`;
       await sendGuestReminderEmail({
         to: g.email,
@@ -47,7 +49,7 @@ export async function GET(req: NextRequest) {
         revealTimezone: e.revealTimezone || "UTC",
         inviteUrl,
       });
-      await gdoc.ref.update({ reminderSentAt: FieldValue.serverTimestamp(), updatedAt: FieldValue.serverTimestamp() });
+      await gdoc.ref.update({ tokenHash, reminderSentAt: FieldValue.serverTimestamp(), updatedAt: FieldValue.serverTimestamp() });
       sent += 1;
     }
   }

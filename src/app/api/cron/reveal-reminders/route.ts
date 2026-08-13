@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { FieldValue, Timestamp } from "firebase-admin/firestore";
+import CryptoJS from "crypto-js";
 import { getAdminDb, getAdminAuth } from "@/lib/firebase-admin";
 import {
   sendRevealReminderEmail,
@@ -162,6 +163,7 @@ export async function GET(req: NextRequest) {
 
       try {
         const token = generateGuestToken(enquiryDoc.id, inviteDoc.id);
+        const tokenHash = CryptoJS.SHA256(token).toString();
         const appUrl = process.env.NEXT_PUBLIC_APP_URL || "https://virtualgenderreveal.com";
         const inviteUrl = `${appUrl.replace(/\/$/, "")}/guest/${encodeURIComponent(token)}`;
 
@@ -177,6 +179,7 @@ export async function GET(req: NextRequest) {
 
         await inviteDoc.ref.set(
           {
+            tokenHash,
             updatedAt: FieldValue.serverTimestamp(),
             ...(reminderWindow === "7d"
               ? { reminder7dSentAt: FieldValue.serverTimestamp() }
