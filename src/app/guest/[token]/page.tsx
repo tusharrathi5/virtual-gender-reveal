@@ -3,7 +3,7 @@
 import type { FormEvent } from "react";
 import { useCallback, useEffect, useMemo, useRef, useState, Fragment } from "react";
 import { useParams } from "next/navigation";
-import { Sparkles, Calendar, Send, Heart, Users, MessageSquare, Clock, Globe, Maximize } from "lucide-react";
+import { Sparkles, Calendar, Send, Heart, Users, MessageSquare, Clock, Maximize } from "lucide-react";
 
 type Prediction = "boy" | "girl" | null;
 
@@ -474,6 +474,7 @@ export default function GuestInvitePage() {
         }
         @media (max-width: 768px) {
           .party-header-new {
+            background-image: url('/assets/party-page-banner-mobile.png');
             padding: 2.5rem 1.2rem;
             background-size: cover;
             min-height: auto;
@@ -517,58 +518,52 @@ export default function GuestInvitePage() {
             </div>
 
             {/* Welcome Banner Text Layout */}
-            <div className="flex items-center justify-center gap-1 text-[10px] md:text-xs font-black text-[#1b4f8c] tracking-widest uppercase mb-0.5 md:mb-1">
+            <div className="flex items-center justify-center gap-1 text-[10px] md:text-xs font-black text-[#1b4f8c] tracking-widest uppercase leading-none">
               <span className="text-[#E8449A] text-xs">💗</span> WELCOME {guestName.toUpperCase()} TO <span className="text-[#3A9FE8] text-xs">💙</span>
             </div>
 
-            <h1 className="font-extrabold text-xl md:text-4xl leading-tight select-none">
+            <h1 className="font-playfair font-semibold text-2xl md:text-5xl leading-tight select-none mt-1">
               {(() => {
                 const parts = parentName.split(/(\s*&\s*|\s+and\s+)/i);
                 return parts.map((part, idx) => {
                   if (part.trim() === "&" || part.trim().toLowerCase() === "and") {
-                    return <span key={idx} className="text-[#E8449A]"> & </span>;
+                    return <span key={idx} className="text-[#e2b857]"> & </span>;
                   }
                   return <span key={part + idx} className="text-[#1B4F8C]">{part}</span>;
                 });
               })()}&apos;s
             </h1>
 
-            <div className="flex items-center justify-center gap-1.5 font-black text-xs md:text-lg text-[#3A9FE8] tracking-[0.18em] uppercase my-0.5 md:my-1">
+            <div className="flex items-center justify-center gap-1.5 font-black text-xs md:text-lg text-[#3A9FE8] tracking-[0.18em] uppercase leading-none mt-0.5">
               <span className="text-[#e2b857] text-[10px] md:text-xs">✦</span>
               <span className="bg-gradient-to-r from-[#3A9FE8] via-[#E8449A] to-[#3A9FE8] bg-clip-text text-transparent">VIRTUAL GENDER REVEAL</span>
               <span className="text-[#e2b857] text-[10px] md:text-xs">✦</span>
             </div>
 
-            <div className="flex items-center justify-center gap-2.5 my-1.5 opacity-90 select-none">
+            <div className="flex items-center justify-center gap-2.5 mt-1 opacity-90 select-none">
               <span className="w-8 md:w-12 h-[1px] bg-slate-300" />
               <span className="text-[#E8449A] text-xs md:text-sm">💗</span>
               <span className="w-8 md:w-12 h-[1px] bg-slate-300" />
             </div>
 
-            <p className="text-[10px] md:text-xs text-slate-700 font-semibold italic mb-1 md:mb-2">
-              Thank you for being part of our baby&apos;s big day.
+            <p className="text-[10px] md:text-xs text-slate-700 font-semibold italic mt-1 leading-tight">
+              Thank you for being part of
+              <br />
+              our baby&apos;s big day.
             </p>
 
-            <div className="flex flex-wrap justify-center items-center gap-3 text-[10px] md:text-xs font-bold text-slate-800 mt-0.5 border-t border-slate-200/50 pt-2 w-full max-w-sm justify-center">
-              <span className="flex items-center gap-1">
-                <Globe className="w-3.5 h-3.5 text-[#3A9FE8]" />
-                Timezone: {revealTimezone}
-              </span>
-              
-              {googleCalendarUrl && (
-                <>
-                  <span className="text-slate-300 select-none">|</span>
-                  <button
-                    type="button"
-                    onClick={() => setShowCalendarOptions(true)}
-                    className="flex items-center gap-1 hover:text-[#E8449A] transition-colors"
-                  >
-                    <Calendar className="w-3.5 h-3.5 text-[#3A9FE8]" />
-                    Add to Calendar
-                  </button>
-                </>
-              )}
-            </div>
+            {googleCalendarUrl && (
+              <div className="flex justify-center mt-1.5">
+                <button
+                  type="button"
+                  onClick={() => setShowCalendarOptions(true)}
+                  className="flex items-center gap-1 text-[10px] md:text-xs font-bold text-slate-800 hover:text-[#E8449A] transition-colors"
+                >
+                  <Calendar className="w-3.5 h-3.5 text-[#3A9FE8]" />
+                  Add to Calendar
+                </button>
+              </div>
+            )}
           </header>
 
           {/* 2. REVEAL VIDEO / COUNTDOWN AREA (Centered Glassmorphic Video Box - Full Width) */}
