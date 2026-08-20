@@ -1877,91 +1877,28 @@ function PlanSection({
           const p = {
             cardCls: isBasic ? "pricing-card-little-bundle" : "pricing-card-bundle-of-joy",
             name: isBasic ? "Little Bundle" : "Bundle of Joy",
-            desc: isBasic ? "Everything you need for a simple & fun reveal!" : "The most loved plan for unforgettable memories!",
-            price: isBasic ? "0" : "59.99",
-            originalPrice: isBasic ? "29.99" : undefined,
-            priceSub: isBasic ? "Free for a limited time" : "One-time payment",
-            feats: isBasic
-              ? ["Basic reveal page", "Doctor secure link", "Up to 20 guests", "Email invitations", "7-day replay"]
-              : [
-                  "Everything in Little Bundle",
-                  "Secure revealer link",
-                  "Live broadcast to guests",
-                  "Custom cinematic video",
-                  "Download keepsake",
-                  "Unlimited guests",
-                  "Priority support",
-                ],
+            imgSrc: isBasic ? "/images/little-bundle-plan.png" : "/images/bundle-of-joy.png",
             btnLabel: activatingPlan === plan.id
               ? "Activating..."
               : `Choose ${isBasic ? "Little Bundle" : "Bundle of Joy"}`,
             btnEmoji: activatingPlan === plan.id ? "" : (isBasic ? "🤍" : "⭐"),
-            popular: plan.id === "premium",
-            heart: isBasic ? "💙" : "🩷",
           };
 
           return (
             <div className={`pricing-card-redesign ${p.cardCls}`} key={plan.id}>
-              {p.popular && <div className="pricing-card-popular-badge">⭐ MOST POPULAR</div>}
-              
-              {/* Left Column: Reserved for background illustration */}
-              <div className="pricing-card-left-column" />
-              
-              {/* Right Area: Content & Button */}
-              <div className="pricing-card-content-area">
-                <div className="pricing-card-top-row">
-                  {/* Details Column */}
-                  <div className="pricing-card-details-col">
-                    <h3 className="pricing-card-title">{p.name}</h3>
-                    
-                    {/* Heart Divider */}
-                    <div className="pricing-card-heart-divider">
-                      <span className="heart-line" />
-                      <span className="heart-icon">{p.heart}</span>
-                      <span className="heart-line" />
-                    </div>
+              <div className="pricing-card-img-container">
+                <img src={p.imgSrc} alt={p.name} />
+              </div>
 
-                    <p className="pricing-card-description">{p.desc}</p>
-                    
-                    <div className="pricing-card-price-container">
-                      {p.originalPrice && (
-                        <span className="pricing-card-original-price">${p.originalPrice}</span>
-                      )}
-                      <div className="pricing-card-current-price">
-                        <span className="pricing-card-price-curr">$</span>
-                        {p.price.split(".")[0]}
-                        {p.price.includes(".") && (
-                          <span style={{ fontSize: "2rem" }}>.{p.price.split(".")[1]}</span>
-                        )}
-                      </div>
-                      <span className="pricing-card-price-sub">{p.priceSub}</span>
-                    </div>
-                  </div>
-                  
-                  {/* Features Column */}
-                  <div className="pricing-card-features-col">
-                    <ul className="pricing-card-features">
-                      {p.feats.map((f, j) => (
-                        <li className="pricing-card-feature-item" key={j}>
-                          <span className="pricing-card-feature-icon-circle">✓</span>
-                          <span>{f}</span>
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                </div>
-
-                {/* Bottom Row: CTA Button */}
-                <div className="pricing-card-btn-row">
-                  <button
-                    type="button"
-                    disabled={!!activatingPlan}
-                    onClick={() => onSelect(plan)}
-                    className="pricing-card-btn"
-                  >
-                    {p.btnLabel} {p.btnEmoji}
-                  </button>
-                </div>
+              <div className="pricing-card-btn-row">
+                <button
+                  type="button"
+                  disabled={!!activatingPlan}
+                  onClick={() => onSelect(plan)}
+                  className="pricing-card-btn"
+                >
+                  {p.btnLabel} {p.btnEmoji}
+                </button>
               </div>
             </div>
           );
