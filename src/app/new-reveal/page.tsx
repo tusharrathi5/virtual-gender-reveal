@@ -126,6 +126,7 @@ export default function NewRevealPage() {
   const [createdEnquiryId, setCreatedEnquiryId] = useState("");
   const [creationPlan, setCreationPlan] = useState<"basic" | "premium" | "custom" | null>(null);
   const isBasicPlan = creationPlan === "basic";
+  const isPremiumPlan = creationPlan === "premium";
 
   // Entitlement guard: redirect if user can't create a reveal
   useEffect(() => {
@@ -288,7 +289,7 @@ export default function NewRevealPage() {
       }
     }
 
-    if (!isBasicPlan) {
+    if (isPremiumPlan) {
       const photoValidation = validatePhotoFiles(photoFiles);
       if (!photoValidation.ok) return photoValidation.error;
     }
@@ -335,7 +336,7 @@ export default function NewRevealPage() {
     const enquiryId = uuidv4();
 
     try {
-      const effectivePhotoFiles = isBasicPlan ? [] : photoFiles;
+      const effectivePhotoFiles = isPremiumPlan ? photoFiles : [];
       setUploadProgress(
         effectivePhotoFiles.length > 0
           ? `Uploading ${effectivePhotoFiles.length} photo${effectivePhotoFiles.length > 1 ? "s" : ""}...`
@@ -357,7 +358,7 @@ export default function NewRevealPage() {
           expectedPlan: creationPlan,
           mode,
           parentName: parentName.trim(),
-          photos: [],
+          photos: photoUrls,
           revealAtMs: isPaidAnnouncement
             ? null
             : mode === "announcement"
@@ -513,14 +514,22 @@ export default function NewRevealPage() {
               </span>
             </div>}
 
-
-
+            {isPremiumPlan && photoFiles.length > 0 && (
+              <div>
+                <span className="text-[10px] text-gray-400 block uppercase font-bold tracking-wider mb-1.5">Photos ({photoFiles.length})</span>
+                <div className="flex gap-2 overflow-x-auto pb-1">
+                  {previewUrls.map((url, idx) => (
+                    <img key={idx} src={url} className="w-10 h-10 rounded-lg object-cover border border-gray-100 flex-shrink-0" alt="Thumbnail" />
+                  ))}
+                </div>
+              </div>
+            )}
 
           </div>
         </div>
       </div>
     );
-  }, [mode, parentName, announcementGender, revealerEmail, revealerRelation, revealAt, timezone, isPaidAnnouncement]);
+  }, [mode, parentName, announcementGender, revealerEmail, revealerRelation, revealAt, timezone, isPaidAnnouncement, isPremiumPlan, photoFiles, previewUrls]);
 
   if (authLoading || !user || !entitlementChecked) {
     return (
@@ -691,6 +700,7 @@ export default function NewRevealPage() {
                   tabIndex={0}
                   role="radio"
                   aria-checked={mode === "reveal"}
+                  aria-label="Surprise Reveal"
                   className={`reveal-mode-card ${
                     mode === "reveal" ? "selected-surprise" : ""
                   }`}
@@ -702,20 +712,14 @@ export default function NewRevealPage() {
                     }
                   }}
                 >
-                  <img
-                    src="/images/gift_box.png"
-                    alt="Surprise Reveal Illustration"
-                    className="reveal-mode-card-img"
-                  />
-                  <div className="flex flex-col gap-2">
-                    <div>
-                      <span className="reveal-mode-card-badge badge-surprise">THE SECRET STAYS SAFE WITH US! 🔒</span>
-                    </div>
-                    <h3 className="reveal-mode-card-title text-surprise">Surprise Reveal</h3>
-                    <p className="text-xs md:text-sm text-gray-600 leading-relaxed font-semibold">
-                      You don&apos;t know the gender yet! A private link is sent to a doctor or friend to enter it, and we handle the rest.
-                    </p>
-                  </div>
+                  <picture>
+                    <source media="(max-width: 640px)" srcSet="/images/gift_box_mobile.png" />
+                    <img
+                      src="/images/gift_box.png"
+                      alt="Surprise Reveal: you don't know the gender yet. A private link is sent to a doctor or friend to enter it, and we handle the rest."
+                      className="reveal-mode-card-img"
+                    />
+                  </picture>
                   <div className={`reveal-mode-indicator ${
                     mode === "reveal" ? "indicator-surprise-selected" : "indicator-unselected"
                   }`}>
@@ -728,6 +732,7 @@ export default function NewRevealPage() {
                   tabIndex={0}
                   role="radio"
                   aria-checked={mode === "announcement"}
+                  aria-label="We Already Know"
                   className={`reveal-mode-card ${
                     mode === "announcement" ? "selected-announcement" : ""
                   }`}
@@ -739,22 +744,14 @@ export default function NewRevealPage() {
                     }
                   }}
                 >
-                  <img
-                    src="/images/stork_bg.png"
-                    alt="We Already Know Illustration"
-                    className="reveal-mode-card-img"
-                  />
-                  <div className="flex flex-col gap-2">
-                    <div>
-                      <span className="reveal-mode-card-badge badge-announcement">LET&apos;S SHARE THE GOOD NEWS! 💙</span>
-                    </div>
-                    <h3 className="reveal-mode-card-title text-announcement">We Already Know!</h3>
-                    <p className="text-xs md:text-sm text-gray-600 leading-relaxed font-semibold">
-                      {creationPlan === "premium"
-                        ? "You already know the gender. We’ll create a personalized cinematic video for you to download and keep."
-                        : "You already know the gender. We’ll create a beautiful cinematic announcement to share with family & friends."}
-                    </p>
-                  </div>
+                  <picture>
+                    <source media="(max-width: 640px)" srcSet="/images/stork_bg_mobile.png" />
+                    <img
+                      src="/images/stork_bg.png"
+                      alt="We Already Know: you already know the gender, we'll create a cinematic announcement to share with family & friends."
+                      className="reveal-mode-card-img"
+                    />
+                  </picture>
                   <div className={`reveal-mode-indicator ${
                     mode === "announcement" ? "indicator-announcement-selected" : "indicator-unselected"
                   }`}>
@@ -853,14 +850,90 @@ export default function NewRevealPage() {
               </div>
             </div>
 
+            {/* Section 3: Photo Upload (Bundle of Joy only) */}
+            {isPremiumPlan && (
+              <div className="bg-white/40 backdrop-blur-md border border-white/30 rounded-2xl p-6 md:p-8 shadow-sm space-y-4">
+                <h2 className="text-xs font-bold text-gray-400 uppercase tracking-widest border-b border-[#f1f1f5] pb-3 mb-1 flex items-center gap-2">
+                  <Camera className="w-4 h-4 text-[#E8449A]" />
+                  3. Photo upload
+                </h2>
 
+                <div className="grid grid-cols-3 gap-4" role="region" aria-label="Photo slots grid">
+                  {Array.from({ length: PHOTO_MAX }).map((_, i) => {
+                    const file = photoFiles[i];
+                    const url = previewUrls[i];
+                    if (file && url) {
+                      return (
+                        <div key={i} className="aspect-square relative rounded-xl border border-gray-200 overflow-hidden shadow-inner bg-gray-50">
+                          <img className="w-full h-full object-cover" src={url} alt={`Preview ${i + 1}`} />
+                          {!loading && (
+                            <button
+                              type="button"
+                              className="absolute top-2 right-2 p-1.5 rounded-full bg-black/60 hover:bg-black/85 text-white transition-all shadow-md focus:outline-none focus:ring-2 focus:ring-[#3A9FE8]"
+                              onClick={() => removePhoto(i)}
+                              aria-label={`Remove photo ${i + 1}`}
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+                          )}
+                        </div>
+                      );
+                    }
+                    const isNextSlot = i === photoFiles.length;
+                    return (
+                      <div
+                        key={i}
+                        tabIndex={isNextSlot && !loading ? 0 : -1}
+                        role="button"
+                        aria-label={isNextSlot ? "Upload photo slot" : "Inactive upload slot"}
+                        className={`aspect-square relative rounded-xl border-2 border-dashed flex flex-col items-center justify-center transition-all focus-visible:ring-2 focus-visible:ring-[#3A9FE8] focus-visible:outline-none ${
+                          isNextSlot && !loading
+                            ? "border-gray-200 hover:border-[#3A9FE8] bg-gray-50/50 cursor-pointer"
+                            : "border-gray-100 bg-gray-50/20 opacity-40 cursor-default"
+                        }`}
+                        onClick={isNextSlot && !loading ? handlePhotoSlotClick : undefined}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter" || e.key === " ") {
+                            e.preventDefault();
+                            if (isNextSlot && !loading) handlePhotoSlotClick();
+                          }
+                        }}
+                      >
+                        {isNextSlot ? (
+                          <>
+                            <Plus className="w-5 h-5 text-gray-400 mb-1" aria-hidden="true" />
+                            <span className="text-[10px] font-bold text-gray-500 uppercase tracking-wider select-none">Add Photo</span>
+                          </>
+                        ) : (
+                          <span className="text-gray-300 font-bold select-none">—</span>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/jpeg,image/jpg,image/png,image/webp,image/gif,image/heic,image/heif"
+                  multiple
+                  style={{ display: "none" }}
+                  onChange={handleFileSelect}
+                />
+
+                <span className="text-xs text-gray-400 mt-1 block font-medium">
+                  {photoFiles.length} of {PHOTO_MAX} photos selected. Max 5 MB each.
+                  We recommend including a sonogram if you have one.
+                </span>
+              </div>
+            )}
 
             {/* Section 4: Reveal Schedule */}
             {mode === "reveal" && (
               <div className="bg-white/40 backdrop-blur-md border border-white/30 rounded-2xl p-6 md:p-8 shadow-sm space-y-6">
                 <h2 className="text-xs font-bold text-gray-400 uppercase tracking-widest border-b border-[#f1f1f5] pb-3 mb-1 flex items-center gap-2">
                   <Calendar className="w-4 h-4 text-[#3A9FE8]" />
-                  {isBasicPlan ? "3." : "4."} Schedule
+                  {isPremiumPlan ? "4." : "3."} Schedule
                 </h2>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -999,12 +1072,12 @@ export default function NewRevealPage() {
             {mode === "reveal" && (() => {
               const isEmailValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(revealerEmail.trim());
               return (
-                <div className={`bg-white border rounded-2xl p-6 md:p-8 space-y-6 transition-all duration-500 ${
-                  isEmailValid ? "shadow-2xl border-[#E8449A]/30 ring-4 ring-[#E8449A]/5" : "border-[#f1f1f5] shadow-sm"
+                <div className={`bg-white/40 backdrop-blur-md border rounded-2xl p-6 md:p-8 space-y-6 transition-all duration-500 ${
+                  isEmailValid ? "shadow-2xl border-[#E8449A]/30 ring-4 ring-[#E8449A]/5" : "border-white/30 shadow-sm"
                 }`}>
                   <h2 className="text-xs font-bold text-gray-400 uppercase tracking-widest border-b border-[#f1f1f5] pb-3 mb-1 flex items-center gap-2">
                     <Mail className="w-4 h-4 text-[#E8449A]" />
-                    {isBasicPlan ? "4." : "5."} Revealer details
+                    {isPremiumPlan ? "5." : "4."} Revealer details
                   </h2>
 
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
@@ -1072,7 +1145,7 @@ export default function NewRevealPage() {
 
             {/* Section 6: Gift Registry (paid plans only) */}
             {mode === "reveal" && !isBasicPlan && (
-              <div className="bg-white border border-[#f1f1f5] shadow-sm rounded-2xl p-6 md:p-8 space-y-6">
+              <div className="bg-white/40 backdrop-blur-md border border-white/30 shadow-sm rounded-2xl p-6 md:p-8 space-y-6">
                 <h2 className="text-xs font-bold text-gray-400 uppercase tracking-widest border-b border-[#f1f1f5] pb-3 mb-1 flex items-center gap-2">
                   <Gift className="w-4 h-4 text-[#E8449A]" />
                   6. Gift Registry

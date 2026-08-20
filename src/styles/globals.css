@@ -394,96 +394,50 @@ body {
 /* ── Reveal Form Cards Redesign ── */
 .reveal-mode-card {
   position: relative;
-  display: grid;
-  grid-template-columns: 140px 1fr;
-  gap: 2rem;
+  overflow: hidden;
+  aspect-ratio: 16 / 7;
   border-radius: 24px;
   border: 2px solid rgba(241, 241, 245, 0.6);
-  background: rgba(255, 255, 255, 0.45);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  padding: 1.5rem 2rem;
   cursor: pointer;
   transition: all 0.3s ease;
-  align-items: center;
 }
 
 .reveal-mode-card:hover {
   transform: translateY(-2px);
-  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.03);
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.08);
 }
 
 .reveal-mode-card.selected-surprise {
-  border-color: rgba(232, 68, 154, 0.35);
-  background: rgba(253, 232, 242, 0.45);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  box-shadow: 0 12px 30px rgba(232, 68, 154, 0.07);
+  border-color: #E8449A;
+  box-shadow: 0 12px 30px rgba(232, 68, 154, 0.2);
 }
 
 .reveal-mode-card.selected-announcement {
-  border-color: rgba(58, 159, 232, 0.35);
-  background: rgba(214, 234, 254, 0.45);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  box-shadow: 0 12px 30px rgba(58, 159, 232, 0.07);
+  border-color: #3A9FE8;
+  box-shadow: 0 12px 30px rgba(58, 159, 232, 0.2);
 }
 
 .reveal-mode-card-img {
+  position: absolute;
+  inset: 0;
   width: 100%;
-  height: 110px;
-  object-fit: contain;
+  height: 100%;
+  object-fit: cover;
   pointer-events: none;
-  padding: 6px;
-}
-
-.reveal-mode-card-title {
-  font-family: 'Satisfy', 'Dancing Script', cursive;
-  font-size: 2rem;
-  font-weight: 700;
-  line-height: 1.2;
-}
-
-.reveal-mode-card-title.text-surprise {
-  color: #E8449A;
-}
-
-.reveal-mode-card-title.text-announcement {
-  color: #3A9FE8;
-}
-
-.reveal-mode-card-badge {
-  display: inline-flex;
-  align-items: center;
-  padding: 0.25rem 0.75rem;
-  border-radius: 50px;
-  font-size: 0.65rem;
-  font-weight: 800;
-  letter-spacing: 0.05em;
-  text-transform: uppercase;
-}
-
-.reveal-mode-card-badge.badge-surprise {
-  background-color: #FCE7F3;
-  color: #E8449A;
-}
-
-.reveal-mode-card-badge.badge-announcement {
-  background-color: #DBEAFE;
-  color: #2563EB;
 }
 
 .reveal-mode-indicator {
   position: absolute;
   top: 1.25rem;
   right: 1.25rem;
-  width: 24px;
-  height: 24px;
+  width: 26px;
+  height: 26px;
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
   transition: all 0.2s ease;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
 }
 
 .reveal-mode-indicator.indicator-surprise-selected {
@@ -499,22 +453,16 @@ body {
 }
 
 .reveal-mode-indicator.indicator-unselected {
-  border: 2px solid #CBD5E1;
-  background-color: transparent;
+  border: 2px solid rgba(255, 255, 255, 0.9);
+  background-color: rgba(255, 255, 255, 0.25);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
 }
 
 /* Mobile responsive */
 @media (max-width: 640px) {
   .reveal-mode-card {
-    grid-template-columns: 80px 1fr;
-    padding: 1.25rem 1.25rem;
-    gap: 1rem;
-  }
-  .reveal-mode-card-img {
-    height: 75px;
-  }
-  .reveal-mode-card-title {
-    font-size: 1.55rem;
+    aspect-ratio: 4 / 3;
   }
 }
 

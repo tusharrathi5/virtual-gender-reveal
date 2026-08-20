@@ -7,7 +7,7 @@ import CryptoJS from "crypto-js";
 import { verifyAuthHeader } from "@/lib/authServer";
 import { getAdminDb } from "@/lib/firebase-admin";
 import { generateGuestToken } from "@/lib/guestToken";
-import { sendGuestInviteEmail, sendHostInvitationConfirmationEmail } from "@/lib/resendEmail";
+import { sendGuestInviteEmail } from "@/lib/resendEmail";
 import { sendInviteSms } from "@/lib/twilioSms";
 import {
   isBundleOfJoyAnnouncement,
@@ -160,19 +160,17 @@ export async function POST(req: NextRequest) {
         }
       }
 
-      const emailParams = {
-        to: input.email,
-        guestName: input.name,
-        parentName: enquiry.parentName || "the parents",
-        revealAtIso: enquiry.revealAt?.toDate?.().toISOString?.() || new Date().toISOString(),
-        revealTimezone: enquiry.revealTimezone || "UTC",
-        inviteUrl,
-        googleCalendarUrl,
-        icsUrl,
-      };
-      if (input.isHost) {
-        await sendHostInvitationConfirmationEmail(emailParams);
-      } else {
+      if (!input.isHost) {
+        const emailParams = {
+          to: input.email,
+          guestName: input.name,
+          parentName: enquiry.parentName || "the parents",
+          revealAtIso: enquiry.revealAt?.toDate?.().toISOString?.() || new Date().toISOString(),
+          revealTimezone: enquiry.revealTimezone || "UTC",
+          inviteUrl,
+          googleCalendarUrl,
+          icsUrl,
+        };
         await sendGuestInviteEmail(emailParams);
       }
       return true;

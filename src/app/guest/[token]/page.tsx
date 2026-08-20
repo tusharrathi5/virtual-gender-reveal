@@ -7,42 +7,6 @@ import { Sparkles, Calendar, Send, Heart, Users, MessageSquare, Clock, Maximize 
 
 type Prediction = "boy" | "girl" | null;
 
-const BabyBoySvg = ({ className }: { className?: string }) => (
-  <svg viewBox="0 0 100 100" className={className} fill="none" xmlns="http://www.w3.org/2000/svg">
-    <circle cx="50" cy="50" r="32" fill="#FFE5D9" stroke="#E5C3B3" strokeWidth="2"/>
-    <circle cx="38" cy="45" r="3" fill="#333"/>
-    <circle cx="62" cy="45" r="3" fill="#333"/>
-    <path d="M35 39 C 38 37, 41 39, 41 39" stroke="#333" strokeWidth="1.5" strokeLinecap="round"/>
-    <path d="M65 39 C 62 37, 59 39, 59 39" stroke="#333" strokeWidth="1.5" strokeLinecap="round"/>
-    <circle cx="32" cy="53" r="5" fill="#FFB3B3" opacity="0.6"/>
-    <circle cx="68" cy="53" r="5" fill="#FFB3B3" opacity="0.6"/>
-    <circle cx="50" cy="58" r="9" fill="#3A9FE8"/>
-    <circle cx="50" cy="58" r="5" fill="#90CDF4"/>
-    <circle cx="50" cy="68" r="6" stroke="#3A9FE8" strokeWidth="2.5" fill="none"/>
-    <path d="M20 40 C 20 20, 80 20, 80 40 Z" fill="#3A9FE8"/>
-    <circle cx="50" cy="18" r="6" fill="#90CDF4"/>
-    <rect x="18" y="36" width="64" height="6" rx="3" fill="#90CDF4"/>
-  </svg>
-);
-
-const BabyGirlSvg = ({ className }: { className?: string }) => (
-  <svg viewBox="0 0 100 100" className={className} fill="none" xmlns="http://www.w3.org/2000/svg">
-    <circle cx="50" cy="50" r="32" fill="#FFE5D9" stroke="#E5C3B3" strokeWidth="2"/>
-    <circle cx="38" cy="45" r="3" fill="#333"/>
-    <circle cx="62" cy="45" r="3" fill="#333"/>
-    <path d="M35 39 C 38 37, 41 39, 41 39" stroke="#333" strokeWidth="1.5" strokeLinecap="round"/>
-    <path d="M65 39 C 62 37, 59 39, 59 39" stroke="#333" strokeWidth="1.5" strokeLinecap="round"/>
-    <circle cx="32" cy="53" r="5" fill="#FFB3B3" opacity="0.6"/>
-    <circle cx="68" cy="53" r="5" fill="#FFB3B3" opacity="0.6"/>
-    <circle cx="50" cy="58" r="9" fill="#E8449A"/>
-    <circle cx="50" cy="58" r="5" fill="#FBB6CE"/>
-    <circle cx="50" cy="68" r="6" stroke="#E8449A" strokeWidth="2.5" fill="none"/>
-    <path d="M26 24 C 20 20, 20 36, 32 30 Z" fill="#E8449A"/>
-    <path d="M38 24 C 44 20, 44 36, 32 30 Z" fill="#E8449A"/>
-    <circle cx="32" cy="29" r="4.5" fill="#FFF"/>
-  </svg>
-);
-
 type ChatMessage = {
   id: string;
   name: string;
@@ -797,8 +761,8 @@ export default function GuestInvitePage() {
                         disabled={submitting}
                         className="group flex flex-col items-center gap-3 transition-all duration-300 hover:scale-105 active:scale-95 cursor-pointer focus:outline-none"
                       >
-                        <div className="w-24 h-24 rounded-full bg-gradient-to-br from-[#D6EAFE] to-[#BFDBFE] border border-[#3A9FE8]/40 shadow-md group-hover:shadow-lg group-hover:border-[#3A9FE8]/85 transition-all flex items-center justify-center p-3">
-                          <BabyBoySvg className="w-full h-full transform group-hover:rotate-6 transition-transform" />
+                        <div className="w-24 h-24 rounded-full overflow-hidden bg-gradient-to-br from-[#D6EAFE] to-[#BFDBFE] border border-[#3A9FE8]/40 shadow-md group-hover:shadow-lg group-hover:border-[#3A9FE8]/85 transition-all">
+                          <img src="/images/boyVote.png" alt="Vote Team Boy" className="w-full h-full object-cover transform group-hover:rotate-6 transition-transform" />
                         </div>
                         <span className="text-xs font-black text-[#1E40AF] tracking-wider uppercase bg-[#D6EAFE] px-3 py-1 rounded-full border border-[#3A9FE8]/25 shadow-sm">
                           Team Boy 💙
@@ -812,8 +776,8 @@ export default function GuestInvitePage() {
                         disabled={submitting}
                         className="group flex flex-col items-center gap-3 transition-all duration-300 hover:scale-105 active:scale-95 cursor-pointer focus:outline-none"
                       >
-                        <div className="w-24 h-24 rounded-full bg-gradient-to-br from-[#FCE7F3] to-[#FBCFE8] border border-[#E8449A]/40 shadow-md group-hover:shadow-lg group-hover:border-[#E8449A]/85 transition-all flex items-center justify-center p-3">
-                          <BabyGirlSvg className="w-full h-full transform group-hover:-rotate-6 transition-transform" />
+                        <div className="w-24 h-24 rounded-full overflow-hidden bg-gradient-to-br from-[#FCE7F3] to-[#FBCFE8] border border-[#E8449A]/40 shadow-md group-hover:shadow-lg group-hover:border-[#E8449A]/85 transition-all">
+                          <img src="/images/girlVote.png" alt="Vote Team Girl" className="w-full h-full object-cover transform group-hover:-rotate-6 transition-transform" />
                         </div>
                         <span className="text-xs font-black text-[#9D174D] tracking-wider uppercase bg-[#FCE7F3] px-3 py-1 rounded-full border border-[#E8449A]/25 shadow-sm">
                           Team Girl 🩷
