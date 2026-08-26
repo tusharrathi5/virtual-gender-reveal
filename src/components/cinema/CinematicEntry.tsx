@@ -339,6 +339,8 @@ function LandingPage() {
   const [activeFaq, setActiveFaq] = useState<number | null>(null);
   const [showFaqModal, setShowFaqModal] = useState(false);
   const [showStoryModal, setShowStoryModal] = useState(false);
+  const [showContactModal, setShowContactModal] = useState(false);
+  const [showTermsModal, setShowTermsModal] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [accountMenuOpen, setAccountMenuOpen] = useState(false);
   const accountMenuRef = useRef<HTMLDivElement>(null);
@@ -354,7 +356,7 @@ function LandingPage() {
     firestoreUser?.role?.toLowerCase?.() === "admin" ? "/admin" : "/dashboard";
 
   useEffect(() => {
-    if (showFaqModal || showStoryModal) {
+    if (showFaqModal || showStoryModal || showContactModal || showTermsModal) {
       document.body.style.overflow = 'hidden';
     } else {
       document.body.style.overflow = '';
@@ -362,7 +364,7 @@ function LandingPage() {
     return () => {
       document.body.style.overflow = '';
     };
-  }, [showFaqModal, showStoryModal]);
+  }, [showFaqModal, showStoryModal, showContactModal, showTermsModal]);
 
   useEffect(() => {
     if (!accountMenuOpen) return;
@@ -972,6 +974,146 @@ function LandingPage() {
         </div>
       )}
 
+      {showContactModal && (
+        <div className="faq-modal-overlay" onClick={() => setShowContactModal(false)}>
+          <div className="legal-modal-box legal-modal-box-center" onClick={(e) => e.stopPropagation()}>
+            <button type="button" className="faq-modal-close" onClick={() => setShowContactModal(false)}>✕</button>
+            <div className="faq-badge" style={{ borderColor: '#E8449A', color: '#E8449A', margin: '0 auto 1rem' }}>💌 Contact Us</div>
+            <h2 className="faq-title" style={{ fontFamily: "'Nunito', sans-serif", fontSize: 'clamp(1.3rem, 4vw, 1.7rem)', fontWeight: 900, color: '#2D285C', margin: '0 0 1rem' }}>Need Help or Want to Learn More?</h2>
+            <p style={{ color: '#4B5563', fontSize: '1rem', lineHeight: '1.7', fontWeight: 600, margin: '0 0 0.5rem' }}>
+              Contact us at{" "}
+              <a href="mailto:support@virtualgenderreveal.com" style={{ color: '#3A9FE8', fontWeight: 800, textDecoration: 'none' }}>
+                support@virtualgenderreveal.com
+              </a>
+            </p>
+          </div>
+        </div>
+      )}
+
+      {showTermsModal && (
+        <div className="faq-modal-overlay" onClick={() => setShowTermsModal(false)}>
+          <div className="legal-modal-box" onClick={(e) => e.stopPropagation()}>
+            <button type="button" className="faq-modal-close" onClick={() => setShowTermsModal(false)}>✕</button>
+            <div className="faq-header" style={{ marginBottom: '1.6rem', textAlign: 'left' }}>
+              <div className="faq-badge" style={{ borderColor: '#E8449A', color: '#E8449A', display: 'inline-block' }}>📜 Terms of Service</div>
+              <h2 className="faq-title" style={{ fontFamily: "'Nunito', sans-serif", fontSize: 'clamp(1.3rem, 4vw, 1.7rem)', fontWeight: 900, color: '#2D285C', justifyContent: 'flex-start', margin: '0.4rem 0 0', whiteSpace: 'normal', display: 'block' }}>Terms of Service</h2>
+            </div>
+
+            <div className="legal-modal-text">
+              <p>Welcome to Virtual Gender Reveal (&ldquo;Virtual Gender Reveal,&rdquo; &ldquo;VGR,&rdquo; &ldquo;we,&rdquo; &ldquo;us,&rdquo; or &ldquo;our&rdquo;). These Terms of Service govern your use of our website, services, digital reveal experiences, videos, invitations, and related features.</p>
+
+              <p>By purchasing, accessing, or using Virtual Gender Reveal, you agree to these Terms.</p>
+
+              <p className="font-black text-slate-800" style={{ color: '#E8449A' }}>1. Our Service</p>
+              <p>Virtual Gender Reveal provides personalized digital gender reveal experiences that may include reveal pages, videos, invitations, guest experiences, uploaded photographs, and related digital content.</p>
+              <p>Some services allow a customer to designate another person, such as a physician, healthcare professional, family member, or friend (the &ldquo;Revealer&rdquo;), to confidentially provide the gender information used to create the reveal.</p>
+              <p>Virtual Gender Reveal does not independently determine, verify, or medically confirm fetal sex or gender information.</p>
+
+              <p className="font-black text-slate-800" style={{ color: '#E8449A' }}>2. Accuracy of Gender Information</p>
+              <p>The customer is responsible for selecting a trusted Revealer and ensuring that the Revealer has access to accurate information.</p>
+              <p>Virtual Gender Reveal relies entirely on the information submitted through the designated reveal process. We are not responsible for an incorrect reveal when incorrect information is entered by the customer, Revealer, healthcare provider, friend, family member, or any other third party.</p>
+              <p>Customers and Revealers are responsible for reviewing information carefully before submitting it.</p>
+              <p>If Virtual Gender Reveal produces a reveal that does not match information that was correctly submitted to our platform due to an error caused by our service, please contact us promptly at <a href="mailto:support@virtualgenderreveal.com" style={{ color: '#3A9FE8', fontWeight: 700 }}>support@virtualgenderreveal.com</a> so we can review and correct the issue.</p>
+
+              <p className="font-black text-slate-800" style={{ color: '#E8449A' }}>3. Purchases and Payment</p>
+              <p>Prices are displayed before purchase and are charged as shown at checkout.</p>
+              <p>By submitting payment, you authorize us and our payment processor to charge the selected payment method for your order.</p>
+              <p>Prices, features, promotional offers, and packages may change at any time. Changes will not affect orders that have already been purchased unless otherwise stated.</p>
+
+              <p className="font-black text-slate-800" style={{ color: '#E8449A' }}>4. Cancellation and Refund Policy</p>
+              <p>Because Virtual Gender Reveal creates customized digital content, orders become non-refundable <strong>24 hours after the reveal request is submitted</strong>.</p>
+              <p>A cancellation or refund request submitted within the first 24 hours may be eligible for a refund provided that substantial production or customization work has not already been completed.</p>
+              <p>After the 24-hour cancellation period, payments are non-refundable, including when a customer changes their mind, provides incorrect information, chooses the wrong Revealer, or no longer wishes to use the completed reveal.</p>
+              <p>If we are unable to provide the purchased service because of an error or failure on our part, we may, at our discretion, correct the service, recreate the reveal, issue account credit, or provide an appropriate refund.</p>
+
+              <p className="font-black text-slate-800" style={{ color: '#E8449A' }}>5. User-Provided Content</p>
+              <p>Customers may provide names, photographs, videos, invitations, ultrasound images, messages, or other materials for use in a personalized reveal.</p>
+              <p>You retain ownership of your content.</p>
+              <p>By submitting content to Virtual Gender Reveal, you give us a limited, temporary license to store, process, modify, and display that content <strong>only as reasonably necessary to create, deliver, maintain, or support your requested reveal experience</strong>.</p>
+              <p>You represent that you have permission to provide any photographs, names, images, or other content you upload and that our use of that content for your reveal does not violate another person&apos;s rights.</p>
+              <p>We do not obtain ownership of your personal photographs or uploaded content.</p>
+
+              <p className="font-black text-slate-800" style={{ color: '#E8449A' }}>6. Privacy</p>
+              <p>We take the privacy of reveal information seriously.</p>
+              <p>Information provided to Virtual Gender Reveal will be used only as reasonably necessary to provide the service, process payments, deliver and maintain your reveal, provide customer support, protect the security of the service, and comply with applicable legal requirements.</p>
+              <p>We do not sell customers&apos; personal information or use customer-uploaded photographs, private reveal information, or personal details for unrelated advertising or marketing purposes without permission.</p>
+              <p>Additional information regarding how personal information is collected, stored, processed, and deleted is described in our <strong>Privacy Policy</strong>.</p>
+
+              <p className="font-black text-slate-800" style={{ color: '#E8449A' }}>7. Confidential Reveal Information</p>
+              <p>When the Surprise Reveal feature is used, gender information submitted by the Revealer is intended to remain confidential from the customer until the reveal experience occurs.</p>
+              <p>We take reasonable measures to maintain that confidentiality. However, no internet-based system can guarantee absolute security or confidentiality.</p>
+              <p>Customers are responsible for keeping private reveal links, account credentials, invitations, and access links secure.</p>
+
+              <p className="font-black text-slate-800" style={{ color: '#E8449A' }}>8. Medical Disclaimer</p>
+              <p>Virtual Gender Reveal is an entertainment and celebration service. We do not provide medical advice, diagnostic services, ultrasound interpretation, or healthcare services.</p>
+              <p>Any fetal sex or gender information used by the service originates from the customer, Revealer, or another third party.</p>
+              <p>Do not rely on Virtual Gender Reveal for medical decisions.</p>
+
+              <p className="font-black text-slate-800" style={{ color: '#E8449A' }}>9. Uploaded Medical Information</p>
+              <p>Users should avoid submitting medical information that is not necessary to create their reveal.</p>
+              <p>If an ultrasound image or similar material is uploaded, it is used solely as customer-provided content for the requested reveal and is not reviewed or interpreted for medical purposes.</p>
+              <p>Unless expressly agreed otherwise, Virtual Gender Reveal is not acting as a healthcare provider or medical records system.</p>
+
+              <p className="font-black text-slate-800" style={{ color: '#E8449A' }}>10. Delivery and Availability</p>
+              <p>We make reasonable efforts to provide purchased reveal experiences within the timelines communicated on our website.</p>
+              <p>Delivery times may vary depending on customization requirements, customer responsiveness, technical issues, or circumstances beyond our reasonable control.</p>
+              <p>A specific delivery time is not guaranteed unless we expressly agree to it in writing.</p>
+
+              <p className="font-black text-slate-800" style={{ color: '#E8449A' }}>11. Technical Requirements and Service Interruptions</p>
+              <p>Virtual Gender Reveal is an online service and requires compatible devices, browsers, and internet connectivity.</p>
+              <p>We cannot guarantee that the service will always be uninterrupted, error-free, or compatible with every device or internet connection.</p>
+              <p>We may temporarily suspend access for maintenance, security, upgrades, technical failures, or circumstances beyond our control.</p>
+
+              <p className="font-black text-slate-800" style={{ color: '#E8449A' }}>12. Guest Links and Sharing</p>
+              <p>Customers may be able to share their reveal with invited guests through links, invitations, or other sharing tools.</p>
+              <p>Customers are responsible for determining who receives these links.</p>
+              <p>Anyone with access to a shareable link may potentially view the associated content. Customers should not publicly distribute private reveal links unless they intend the content to be publicly accessible.</p>
+
+              <p className="font-black text-slate-800" style={{ color: '#E8449A' }}>13. Acceptable Use</p>
+              <p>You may not use Virtual Gender Reveal to upload or distribute unlawful content, infringe intellectual property or privacy rights, harass others, attempt to compromise the security of the website, misuse another person&apos;s private information, interfere with the service, or engage in fraudulent activity.</p>
+              <p>We may suspend or terminate access to the service when we reasonably believe these Terms have been violated.</p>
+
+              <p className="font-black text-slate-800" style={{ color: '#E8449A' }}>14. Intellectual Property</p>
+              <p>The Virtual Gender Reveal website, branding, graphics, designs, animations, templates, software, video elements, and other original materials are owned by Virtual Gender Reveal or its licensors.</p>
+              <p>Purchasing a reveal gives you permission to use and share your completed personalized reveal for personal, non-commercial purposes. It does not transfer ownership of our underlying templates, software, designs, or intellectual property.</p>
+
+              <p className="font-black text-slate-800" style={{ color: '#E8449A' }}>15. Disclaimer of Warranties</p>
+              <p>Virtual Gender Reveal is provided on an &ldquo;as is&rdquo; and &ldquo;as available&rdquo; basis to the extent permitted by law.</p>
+              <p>While we work to create a reliable and enjoyable experience, we do not guarantee that every device, browser, internet connection, third-party service, or user-submitted file will function perfectly with the service.</p>
+
+              <p className="font-black text-slate-800" style={{ color: '#E8449A' }}>16. Limitation of Liability</p>
+              <p>To the maximum extent permitted by applicable law, Virtual Gender Reveal will not be liable for indirect, incidental, consequential, special, or emotional damages arising from the use of the service, including disappointment or distress resulting from incorrect information provided by a customer, Revealer, healthcare provider, friend, family member, or other third party.</p>
+              <p>To the maximum extent permitted by law, our total liability relating to a particular purchase will not exceed the amount paid to Virtual Gender Reveal for that purchase.</p>
+              <p>Nothing in these Terms excludes liability that cannot legally be excluded or limited.</p>
+
+              <p className="font-black text-slate-800" style={{ color: '#E8449A' }}>17. Indemnification</p>
+              <p>You agree to be responsible for claims resulting from content you submit, your misuse of the service, your violation of these Terms, or your infringement of another person&apos;s rights.</p>
+
+              <p className="font-black text-slate-800" style={{ color: '#E8449A' }}>18. Age Requirement</p>
+              <p>You must be at least 18 years old, or the age of legal majority where you live, to purchase services from Virtual Gender Reveal.</p>
+              <p>Guests under the age of 18 may view a reveal when invited by a parent, guardian, or other authorized adult.</p>
+
+              <p className="font-black text-slate-800" style={{ color: '#E8449A' }}>19. Changes to the Service or Terms</p>
+              <p>We may update the service or these Terms from time to time.</p>
+              <p>When material changes are made, we will update the &ldquo;Last Updated&rdquo; date above and may provide additional notice when appropriate.</p>
+              <p>Continued use of the service after updated Terms become effective constitutes acceptance of the revised Terms.</p>
+
+              <p className="font-black text-slate-800" style={{ color: '#E8449A' }}>20. Governing Law</p>
+              <p>These Terms are governed by the laws of the State of <strong>California</strong>, without regard to conflict-of-law principles.</p>
+              <p>Any dispute arising from these Terms or the service will be handled in the courts located in <strong>California</strong>, unless applicable law requires otherwise.</p>
+
+              <p className="font-black text-slate-800" style={{ color: '#E8449A' }}>21. Contact Us</p>
+              <p>Questions regarding these Terms may be sent to:</p>
+              <p>
+                <strong>Virtual Gender Reveal</strong><br />
+                Email: <a href="mailto:support@virtualgenderreveal.com" style={{ color: '#3A9FE8', fontWeight: 700 }}>support@virtualgenderreveal.com</a><br />
+                Website: <strong>virtualgenderreveal.com</strong>
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+
       <footer className="footer-new">
         <div className="footer-new-inner">
           <div className="footer-new-top">
@@ -985,14 +1127,40 @@ function LandingPage() {
               <div className="footer-copy-text">The world&apos;s most heartfelt virtual gender reveal platform.</div>
             </div>
             {[
-              { title: "Platform", links: ["How It Works", "Features", "Pricing", "Sample Videos"] },
-              { title: "Support",  links: ["Help Centre", "Contact Us", "Doctor Guide", "Privacy Policy"] },
-              { title: "Company",  links: ["About", "Blog", "Terms of Service", "CCPA / Privacy"] },
+              {
+                title: "Platform",
+                links: [
+                  { label: "How It Works", href: "#how" },
+                  { label: "Pricing", href: "#pricing" },
+                ],
+              },
+              {
+                title: "Support",
+                links: [
+                  { label: "Contact Us", onClick: () => setShowContactModal(true) },
+                  { label: "FAQ", onClick: () => setShowFaqModal(true) },
+                ],
+              },
+              {
+                title: "Company",
+                links: [
+                  { label: "About", onClick: () => setShowStoryModal(true) },
+                  { label: "Terms of Service", onClick: () => setShowTermsModal(true) },
+                ],
+              },
             ].map((col, i) => (
               <div key={i}>
                 <div className="footer-col-title">{col.title}</div>
                 <ul className="footer-col-links">
-                  {col.links.map((l, j) => <li key={j}><a href="#">{l}</a></li>)}
+                  {col.links.map((l, j) => (
+                    <li key={j}>
+                      {"href" in l ? (
+                        <a href={l.href}>{l.label}</a>
+                      ) : (
+                        <button type="button" onClick={l.onClick}>{l.label}</button>
+                      )}
+                    </li>
+                  ))}
                 </ul>
               </div>
             ))}
@@ -2045,8 +2213,8 @@ nav#main-nav.solid{box-shadow:0 6px 28px rgba(0,0,0,0.14);}
 .footer-col-title{font-family:'Nunito',sans-serif;font-size:0.78rem;font-weight:800;letter-spacing:0.12em;text-transform:uppercase;color:#1a1a2e;margin-bottom:1rem;}
 .footer-col-links{list-style:none;}
 .footer-col-links li{margin-bottom:0.5rem;}
-.footer-col-links a{font-size:0.84rem;color:#888;text-decoration:none;transition:color 0.2s;}
-.footer-col-links a:hover{color:#E8449A;}
+.footer-col-links a,.footer-col-links button{font-size:0.84rem;color:#888;text-decoration:none;transition:color 0.2s;background:none;border:none;padding:0;font-family:inherit;cursor:pointer;}
+.footer-col-links a:hover,.footer-col-links button:hover{color:#E8449A;}
 .footer-new-bottom{padding-top:1.6rem;border-top:1px solid rgba(0,0,0,0.07);display:flex;justify-content:space-between;flex-wrap:wrap;gap:1rem;font-size:0.74rem;color:#bbb;}
 @media(max-width:640px){
   .footer-new-top{flex-direction:column;gap:2rem;}
@@ -2141,6 +2309,14 @@ nav#main-nav.solid{box-shadow:0 6px 28px rgba(0,0,0,0.14);}
   .story-modal-box::before{content:'';position:absolute;inset:0;background:rgba(255,255,255,0.65);z-index:1;border-radius:30px;}
   .story-image-panel{display:none !important;}
   .story-content-panel{padding:2rem 1.5rem;z-index:2;}
+}
+
+/* ── Legal / Contact Modals ── */
+.legal-modal-box{width:100%;max-width:640px;height:85vh;max-height:760px;background:white;border-radius:32px;border:none;box-shadow:0 30px 60px rgba(0,0,0,0.2);display:flex;flex-direction:column;padding:3rem 2.5rem;position:relative;overflow:hidden;}
+.legal-modal-box.legal-modal-box-center{height:auto;max-height:none;align-items:center;text-align:center;}
+.legal-modal-text{position:relative;z-index:1;color:#4B5563;font-size:0.92rem;line-height:1.75;flex:1;overflow-y:auto;padding-right:0.8rem;scrollbar-width:thin;text-align:left;font-weight:600;display:flex;flex-direction:column;gap:0.9rem;}
+@media (max-width:640px){
+  .legal-modal-box{max-width:92vw;height:88vh;padding:2.25rem 1.5rem;}
 }
 
 /* ── FAQ Modal & Support ── */

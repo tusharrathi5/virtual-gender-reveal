@@ -781,8 +781,17 @@ export default function NewRevealPage() {
                     placeholder="e.g. Sarah &amp; Michael"
                     value={parentName}
                     onChange={(e) => {
-                      const val = e.target.value;
-                      setParentName(val ? val.charAt(0).toUpperCase() + val.slice(1) : "");
+                      let val = e.target.value;
+                      val = val ? val.charAt(0).toUpperCase() + val.slice(1) : "";
+
+                      if (val.endsWith(" ") && !val.includes("&")) {
+                        const firstWord = val.slice(0, -1);
+                        if (firstWord.length > 0 && !firstWord.includes(" ")) {
+                          val = `${firstWord} & `;
+                        }
+                      }
+
+                      setParentName(val);
                     }}
                     autoCapitalize="words"
                     disabled={loading}

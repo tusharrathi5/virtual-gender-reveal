@@ -24,6 +24,22 @@ export default function GuestInvitePage() {
   const encodedToken = useMemo(() => encodeURIComponent(token || ""), [token]);
   const chatEndRef = useRef<HTMLDivElement | null>(null);
   const iframeContainerRef = useRef<HTMLDivElement | null>(null);
+  const videoIframeRef = useRef<HTMLIFrameElement | null>(null);
+  const [videoEnded, setVideoEnded] = useState(false);
+  const [videoEndedAtSeconds, setVideoEndedAtSeconds] = useState<number | null>(null);
+
+  useEffect(() => {
+    function handleStreamMessage(event: MessageEvent) {
+      if (!videoIframeRef.current || event.source !== videoIframeRef.current.contentWindow) return;
+      const data = event.data as { event?: string; duration?: number; currentTime?: number } | null;
+      if (data?.event !== "ended") return;
+      const finalTime = typeof data.duration === "number" ? data.duration : data.currentTime;
+      setVideoEndedAtSeconds(typeof finalTime === "number" ? Math.max(0, Math.floor(finalTime) - 1) : null);
+      setVideoEnded(true);
+    }
+    window.addEventListener("message", handleStreamMessage);
+    return () => window.removeEventListener("message", handleStreamMessage);
+  }, []);
 
   const toggleFullscreen = () => {
     if (!iframeContainerRef.current) return;
@@ -222,16 +238,21 @@ export default function GuestInvitePage() {
     }
     
     if (!uid) return videoUrl;
-    
+
+    if (videoEnded) {
+      const resumeTime = videoEndedAtSeconds ?? 0;
+      return `https://iframe.videodelivery.net/${uid}?autoplay=false&controls=true&muted=false&startTime=${resumeTime}`;
+    }
+
     let startTime = 0;
     if (revealAtIso) {
       const revealTime = new Date(revealAtIso).getTime();
       const diffSeconds = Math.floor((Date.now() - revealTime) / 1000);
       startTime = Math.max(0, diffSeconds);
     }
-    
+
     return `https://iframe.videodelivery.net/${uid}?autoplay=true&controls=false&muted=true&startTime=${startTime}`;
-  }, [videoUrl, revealAtIso]);
+  }, [videoUrl, revealAtIso, videoEnded, videoEndedAtSeconds]);
 
   function getFormattedDateOnly(isoString: string | null, timezone: string): string {
     if (!isoString) return "";
@@ -552,6 +573,7 @@ export default function GuestInvitePage() {
               {isLive && videoUrl ? (
                 <>
                   <iframe
+                    ref={videoIframeRef}
                     src={streamEmbedUrl}
                     title="Reveal Video"
                     className="w-full h-full border-0"
