@@ -98,10 +98,9 @@ export default function DoctorTokenPage() {
                 onClick={() => setPendingGender("boy")}
                 className={`gender-card-btn boy-card ${selected === "boy" ? "selected" : ""}`}
               >
-                <div className="gender-avatar boy-bg">👦</div>
+                <img src="/images/boyVote.png" alt="Team Boy" className="gender-avatar-img" />
                 <div className="gender-card-title boy-text">Team Boy</div>
                 <div className="gender-card-desc">Click here if the baby is a boy</div>
-                <div className="gender-heart-icon boy-text">💙</div>
               </button>
 
               {/* Girl Option */}
@@ -110,10 +109,9 @@ export default function DoctorTokenPage() {
                 onClick={() => setPendingGender("girl")}
                 className={`gender-card-btn girl-card ${selected === "girl" ? "selected" : ""}`}
               >
-                <div className="gender-avatar girl-bg">👧</div>
+                <img src="/images/girlVote.png" alt="Team Girl" className="gender-avatar-img" />
                 <div className="gender-card-title girl-text">Team Girl</div>
                 <div className="gender-card-desc">Click here if the baby is a girl</div>
-                <div className="gender-heart-icon girl-text">🩷</div>
               </button>
             </div>
           </div>
@@ -293,26 +291,18 @@ export default function DoctorTokenPage() {
           box-shadow: 0 12px 30px rgba(232, 68, 154, 0.12);
         }
 
-        .gender-avatar {
-          width: 70px;
-          height: 70px;
+        .gender-avatar-img {
+          width: 96px;
+          height: 96px;
           border-radius: 50%;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          font-size: 2.5rem;
+          object-fit: cover;
           margin: 0 auto 1.2rem;
+          display: block;
+          box-shadow: 0 6px 18px rgba(0, 0, 0, 0.08);
           transition: transform 0.3s;
         }
-        .gender-card-btn:hover .gender-avatar {
+        .gender-card-btn:hover .gender-avatar-img {
           transform: scale(1.1);
-        }
-
-        .boy-bg {
-          background: linear-gradient(135deg, #e0f2fe, #bae6fd);
-        }
-        .girl-bg {
-          background: linear-gradient(135deg, #fce7f3, #fbcfe8);
         }
 
         .gender-card-title {
@@ -333,15 +323,6 @@ export default function DoctorTokenPage() {
           font-size: 0.8rem;
           color: #94a3b8;
           line-height: 1.4;
-        }
-
-        .gender-heart-icon {
-          font-size: 1.5rem;
-          margin-top: 0.8rem;
-          transition: transform 0.2s;
-        }
-        .gender-card-btn:hover .gender-heart-icon {
-          transform: scale(1.2);
         }
 
         /* Statuses & loading spinner */

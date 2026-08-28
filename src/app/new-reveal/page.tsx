@@ -17,14 +17,10 @@ import {
   Sparkles,
   Plus,
   Trash2,
-  Calendar,
-  Mail,
-  User,
   AlertCircle,
-  Camera,
   Heart,
   ChevronDown,
-  Gift,
+  Star,
 } from "lucide-react";
 
 
@@ -108,6 +104,46 @@ function formatRevealDate(d: Date | null): string {
     hour: "numeric",
     minute: "2-digit",
   });
+}
+
+// ─── Section header with icon badge + decorative sparkles ────
+
+function SectionHeader({
+  iconSrc,
+  title,
+  accent,
+}: {
+  iconSrc: string;
+  title: string;
+  accent: "pink" | "blue";
+}) {
+  const main = accent === "pink" ? "#E8449A" : "#3A9FE8";
+  const contrast = accent === "pink" ? "#3A9FE8" : "#E8449A";
+  return (
+    <div className="flex items-center justify-between gap-3 mb-5 pb-4 border-b border-white/50">
+      <div className="flex items-center gap-4 min-w-0">
+        <img
+          src={iconSrc}
+          alt=""
+          className="w-20 h-20 sm:w-24 sm:h-24 object-contain shrink-0"
+          onError={(e) => {
+            (e.currentTarget as HTMLImageElement).style.display = "none";
+          }}
+        />
+        <h2
+          className="font-nunito font-extrabold text-lg sm:text-xl tracking-tight truncate"
+          style={{ color: "#1a1a2e" }}
+        >
+          {title}
+        </h2>
+      </div>
+      <div className="hidden sm:flex items-center gap-1 shrink-0 opacity-80">
+        <Star className="w-3.5 h-3.5" style={{ color: contrast, fill: contrast }} />
+        <Heart className="w-5 h-5" style={{ color: main, fill: main }} />
+        <Star className="w-3 h-3 opacity-60" style={{ color: main, fill: main }} />
+      </div>
+    </div>
+  );
 }
 
 // ─── Component ──────────────────────────────────────────────
@@ -762,11 +798,8 @@ export default function NewRevealPage() {
             </div>
 
             {/* Section 2: Family Details */}
-            <div className="bg-white/40 backdrop-blur-md border border-white/30 rounded-2xl p-6 md:p-8 shadow-sm space-y-6">
-              <h2 className="text-xs font-bold text-gray-400 uppercase tracking-widest border-b border-[#f1f1f5] pb-3 mb-1 flex items-center gap-2">
-                <User className="w-4 h-4 text-[#3A9FE8]" />
-                2. Family details
-              </h2>
+            <div className="relative overflow-hidden bg-gradient-to-br from-white/65 via-white/55 to-[#3A9FE8]/10 backdrop-blur-md border border-white/50 rounded-3xl p-6 md:p-8 shadow-sm space-y-6">
+              <SectionHeader iconSrc="/images/icon-family.png" title="2. Family Details" accent="blue" />
 
               <div className="space-y-4">
                 <div className="flex flex-col gap-1.5">
@@ -861,11 +894,8 @@ export default function NewRevealPage() {
 
             {/* Section 3: Photo Upload (Bundle of Joy only) */}
             {isPremiumPlan && (
-              <div className="bg-white/40 backdrop-blur-md border border-white/30 rounded-2xl p-6 md:p-8 shadow-sm space-y-4">
-                <h2 className="text-xs font-bold text-gray-400 uppercase tracking-widest border-b border-[#f1f1f5] pb-3 mb-1 flex items-center gap-2">
-                  <Camera className="w-4 h-4 text-[#E8449A]" />
-                  3. Photo upload
-                </h2>
+              <div className="relative overflow-hidden bg-gradient-to-br from-white/65 via-white/55 to-[#E8449A]/10 backdrop-blur-md border border-white/50 rounded-3xl p-6 md:p-8 shadow-sm space-y-4">
+                <SectionHeader iconSrc="/images/icon-photo.png" title="3. Photo Upload" accent="pink" />
 
                 <div className="grid grid-cols-3 gap-4" role="region" aria-label="Photo slots grid">
                   {Array.from({ length: PHOTO_MAX }).map((_, i) => {
@@ -939,11 +969,12 @@ export default function NewRevealPage() {
 
             {/* Section 4: Reveal Schedule */}
             {mode === "reveal" && (
-              <div className="bg-white/40 backdrop-blur-md border border-white/30 rounded-2xl p-6 md:p-8 shadow-sm space-y-6">
-                <h2 className="text-xs font-bold text-gray-400 uppercase tracking-widest border-b border-[#f1f1f5] pb-3 mb-1 flex items-center gap-2">
-                  <Calendar className="w-4 h-4 text-[#3A9FE8]" />
-                  {isPremiumPlan ? "4." : "3."} Schedule
-                </h2>
+              <div className="relative overflow-hidden bg-gradient-to-br from-white/65 via-white/55 to-[#3A9FE8]/10 backdrop-blur-md border border-white/50 rounded-3xl p-6 md:p-8 shadow-sm space-y-6">
+                <SectionHeader
+                  iconSrc="/images/icon-schedule.png"
+                  title={`${isPremiumPlan ? "4." : "3."} Schedule`}
+                  accent="blue"
+                />
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="flex flex-col gap-1.5 relative">
@@ -1081,13 +1112,14 @@ export default function NewRevealPage() {
             {mode === "reveal" && (() => {
               const isEmailValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(revealerEmail.trim());
               return (
-                <div className={`bg-white/40 backdrop-blur-md border rounded-2xl p-6 md:p-8 space-y-6 transition-all duration-500 ${
-                  isEmailValid ? "shadow-2xl border-[#E8449A]/30 ring-4 ring-[#E8449A]/5" : "border-white/30 shadow-sm"
+                <div className={`relative overflow-hidden bg-gradient-to-br from-white/65 via-white/55 to-[#E8449A]/10 backdrop-blur-md border rounded-3xl p-6 md:p-8 space-y-6 transition-all duration-500 ${
+                  isEmailValid ? "shadow-2xl border-[#E8449A]/30 ring-4 ring-[#E8449A]/5" : "border-white/50 shadow-sm"
                 }`}>
-                  <h2 className="text-xs font-bold text-gray-400 uppercase tracking-widest border-b border-[#f1f1f5] pb-3 mb-1 flex items-center gap-2">
-                    <Mail className="w-4 h-4 text-[#E8449A]" />
-                    {isPremiumPlan ? "5." : "4."} Revealer details
-                  </h2>
+                  <SectionHeader
+                    iconSrc="/images/icon-revealer.png"
+                    title={`${isPremiumPlan ? "5." : "4."} Revealer Details`}
+                    accent="pink"
+                  />
 
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                     <div className="flex flex-col gap-1.5">
@@ -1154,11 +1186,8 @@ export default function NewRevealPage() {
 
             {/* Section 6: Gift Registry (paid plans only) */}
             {mode === "reveal" && !isBasicPlan && (
-              <div className="bg-white/40 backdrop-blur-md border border-white/30 shadow-sm rounded-2xl p-6 md:p-8 space-y-6">
-                <h2 className="text-xs font-bold text-gray-400 uppercase tracking-widest border-b border-[#f1f1f5] pb-3 mb-1 flex items-center gap-2">
-                  <Gift className="w-4 h-4 text-[#E8449A]" />
-                  6. Gift Registry
-                </h2>
+              <div className="relative overflow-hidden bg-gradient-to-br from-white/65 via-white/55 to-[#E8449A]/10 backdrop-blur-md border border-white/50 shadow-sm rounded-3xl p-6 md:p-8 space-y-6">
+                <SectionHeader iconSrc="/images/icon-registry.png" title="6. Gift Registry" accent="pink" />
 
                 <div className="flex flex-col gap-1.5">
                   <label htmlFor="registryUrl" className="text-xs font-bold text-gray-500 uppercase tracking-wider">Gift Registry Link (optional)</label>

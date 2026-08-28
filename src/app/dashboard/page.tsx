@@ -1816,7 +1816,7 @@ function PaymentGatewayPrompt({
 }) {
   return (
     <div className="fixed inset-0 z-[9998] bg-black/50 backdrop-blur-sm flex items-center justify-center p-4">
-      <div className="bg-white/40 backdrop-blur-md border border-white/30 shadow-lg rounded-2xl p-6 md:p-8 max-w-md w-full animate-fade-up">
+      <div className="bg-white backdrop-blur-md border border-white/30 shadow-lg rounded-2xl p-6 md:p-8 max-w-md w-full animate-fade-up">
         <span className="text-[10px] font-bold text-[#E8449A] uppercase tracking-widest block mb-1">Payment Gateway</span>
         <h2 id="payment-prompt-title" className="font-nunito font-extrabold text-xl text-gray-900 mb-3">
           Taking you to payment gateway
