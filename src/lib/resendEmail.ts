@@ -85,6 +85,29 @@ function isTrue(value: string | undefined): boolean {
   return ["1", "true", "yes", "on"].includes(value.trim().toLowerCase());
 }
 
+// Reminder cron jobs run once a day at a fixed UTC time, so "reveal is within
+// the next 24 hours" does NOT reliably mean "reveal is tomorrow" — depending on
+// the event's timezone offset, that rolling window can land on the same
+// calendar day as the event. Compute the real day difference in the event's
+// own timezone so reminder copy never claims the wrong day.
+function getRevealDayPhrase(revealAtIso: string, revealTimezone: string): string {
+  const dateOnly = (d: Date) =>
+    new Intl.DateTimeFormat("en-CA", {
+      timeZone: revealTimezone,
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+    }).format(d);
+
+  const nowDate = new Date(`${dateOnly(new Date())}T00:00:00Z`);
+  const revealDate = new Date(`${dateOnly(new Date(revealAtIso))}T00:00:00Z`);
+  const diffDays = Math.round((revealDate.getTime() - nowDate.getTime()) / (24 * 60 * 60 * 1000));
+
+  if (diffDays <= 0) return "today";
+  if (diffDays === 1) return "tomorrow";
+  return `in ${diffDays} days`;
+}
+
 function escapeHtml(input: string): string {
   return input
     .replace(/&/g, "&amp;")
@@ -155,7 +178,7 @@ export async function sendDoctorInviteEmail(params: SendDoctorInviteParams): Pro
 
   const baseUrl = new URL(params.revealUrl).origin;
   const logoUrl = `${baseUrl}/Favicon-VGR.png?v=${EMAIL_ASSET_VERSION}`;
-  const bannerUrl = `${baseUrl}/images/image-for-email.png?v=${EMAIL_ASSET_VERSION}`;
+  const bannerUrl = `${baseUrl}/images/image-for-email.jpg?v=${EMAIL_ASSET_VERSION}`;
 
   const html = buildVgrEmailTemplateHtml({
     logoUrl,
@@ -187,7 +210,7 @@ export async function sendParentGenderAlertEmail(params: SendParentGenderAlertEm
 
   const baseUrl = new URL(params.dashboardUrl).origin;
   const logoUrl = `${baseUrl}/Favicon-VGR.png?v=${EMAIL_ASSET_VERSION}`;
-  const bannerUrl = `${baseUrl}/images/image-for-email.png?v=${EMAIL_ASSET_VERSION}`;
+  const bannerUrl = `${baseUrl}/images/image-for-email.jpg?v=${EMAIL_ASSET_VERSION}`;
 
   const html = buildVgrEmailTemplateHtml({
     logoUrl,
@@ -446,7 +469,7 @@ export function buildGuestInviteEmailHtml(params: SendGuestInviteEmailParams): s
 
   const baseUrl = new URL(params.inviteUrl).origin;
   const logoUrl = `${baseUrl}/Favicon-VGR.png?v=${EMAIL_ASSET_VERSION}`;
-  const bannerUrl = `${baseUrl}/assets/email-banner.png?v=${EMAIL_ASSET_VERSION}`;
+  const bannerUrl = `${baseUrl}/assets/email-banner.jpg?v=${EMAIL_ASSET_VERSION}`;
 
   return buildVgrEmailTemplateHtml({
     logoUrl,
@@ -487,7 +510,7 @@ export async function sendHostInvitationConfirmationEmail(params: SendHostInvita
 
   const baseUrl = new URL(params.inviteUrl).origin;
   const logoUrl = `${baseUrl}/Favicon-VGR.png?v=${EMAIL_ASSET_VERSION}`;
-  const bannerUrl = `${baseUrl}/assets/email-banner.png?v=${EMAIL_ASSET_VERSION}`;
+  const bannerUrl = `${baseUrl}/assets/email-banner.jpg?v=${EMAIL_ASSET_VERSION}`;
 
   const html = buildVgrEmailTemplateHtml({
     logoUrl,
@@ -548,7 +571,7 @@ export async function sendGuestReminderEmail(params: SendGuestReminderEmailParam
 
   const baseUrl = new URL(params.inviteUrl).origin;
   const logoUrl = `${baseUrl}/Favicon-VGR.png?v=${EMAIL_ASSET_VERSION}`;
-  const bannerUrl = `${baseUrl}/assets/email-banner.png?v=${EMAIL_ASSET_VERSION}`;
+  const bannerUrl = `${baseUrl}/assets/email-banner.jpg?v=${EMAIL_ASSET_VERSION}`;
 
   // Dynamically build calendar links for reminders
   const token = inviteUrl.substring(inviteUrl.lastIndexOf("/") + 1);
@@ -559,13 +582,16 @@ export async function sendGuestReminderEmail(params: SendGuestReminderEmailParam
   const fmt = (d: Date) => d.toISOString().replace(/[-:]/g, "").replace(/\.\d{3}Z$/, "Z");
   const googleCalendarUrl = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(`${params.parentName || "Parents"}'s Virtual Gender Reveal`)}&dates=${fmt(start)}/${fmt(end)}&ctz=${encodeURIComponent(params.revealTimezone || "UTC")}&details=${encodeURIComponent(`Join the reveal: ${inviteUrl}`)}`;
 
+  const dayPhrase = getRevealDayPhrase(params.revealAtIso, params.revealTimezone);
+  const dayPhraseCapitalized = dayPhrase.charAt(0).toUpperCase() + dayPhrase.slice(1);
+
   const html = buildVgrEmailTemplateHtml({
     logoUrl,
     bannerUrl,
     badgeText: "Reminder",
-    headingHtml: `<span style="color: #E8449A;">Reveal is</span> <span style="color: #3A9FE8;">Tomorrow!</span> 🎈`,
+    headingHtml: `<span style="color: #E8449A;">Reveal is</span> <span style="color: #3A9FE8;">${dayPhraseCapitalized}!</span> 🎈`,
     greetingText: `Hi ${guestName},`,
-    messageHtml: `<p style="margin: 0;">This is a friendly reminder from <strong>${parentName}</strong>. The virtual gender reveal party is tomorrow! Click the button below to join the celebration.</p>`,
+    messageHtml: `<p style="margin: 0;">This is a friendly reminder from <strong>${parentName}</strong>. The virtual gender reveal party is ${dayPhrase}! Click the button below to join the celebration.</p>`,
     revealDateLabel,
     revealTimeLabel,
     revealTimezone: params.revealTimezone,
@@ -575,7 +601,7 @@ export async function sendGuestReminderEmail(params: SendGuestReminderEmailParam
     icsUrl,
   });
 
-  await sendEmail({ to: params.to, subject: "Reminder: Virtual Gender Reveal tomorrow", html });
+  await sendEmail({ to: params.to, subject: `Reminder: Virtual Gender Reveal is ${dayPhrase}`, html });
 }
 
 export async function sendRevealReminderEmail(params: SendRevealReminderEmailParams): Promise<void> {
@@ -643,7 +669,7 @@ export async function sendHostCreationConfirmationEmail(params: SendHostCreation
 
   const baseUrl = new URL(dashboardUrl).origin;
   const logoUrl = `${baseUrl}/Favicon-VGR.png?v=${EMAIL_ASSET_VERSION}`;
-  const bannerUrl = `${baseUrl}/assets/email-banner.png?v=${EMAIL_ASSET_VERSION}`;
+  const bannerUrl = `${baseUrl}/assets/email-banner.jpg?v=${EMAIL_ASSET_VERSION}`;
 
   const html = buildVgrEmailTemplateHtml({
     logoUrl,
@@ -679,7 +705,7 @@ export async function sendHostAnnouncementCreationEmail(
   const dashboardUrl = escapeHtml(params.dashboardUrl);
   const baseUrl = new URL(params.dashboardUrl).origin;
   const logoUrl = `${baseUrl}/Favicon-VGR.png?v=${EMAIL_ASSET_VERSION}`;
-  const bannerUrl = `${baseUrl}/assets/email-banner.png?v=${EMAIL_ASSET_VERSION}`;
+  const bannerUrl = `${baseUrl}/assets/email-banner.jpg?v=${EMAIL_ASSET_VERSION}`;
 
   const html = buildVgrEmailTemplateHtml({
     logoUrl,
@@ -712,7 +738,7 @@ export async function sendHostAnnouncementReadyCreationEmail(
   const dashboardUrl = escapeHtml(params.dashboardUrl);
   const baseUrl = new URL(params.dashboardUrl).origin;
   const logoUrl = `${baseUrl}/Favicon-VGR.png?v=${EMAIL_ASSET_VERSION}`;
-  const bannerUrl = `${baseUrl}/assets/email-banner.png?v=${EMAIL_ASSET_VERSION}`;
+  const bannerUrl = `${baseUrl}/assets/email-banner.jpg?v=${EMAIL_ASSET_VERSION}`;
 
   const html = buildVgrEmailTemplateHtml({
     logoUrl,
@@ -745,7 +771,7 @@ export async function sendHostAnnouncementVideoReadyEmail(
   const downloadUrl = escapeHtml(params.downloadUrl);
   const baseUrl = new URL(params.dashboardUrl).origin;
   const logoUrl = `${baseUrl}/Favicon-VGR.png?v=${EMAIL_ASSET_VERSION}`;
-  const bannerUrl = `${baseUrl}/assets/email-banner.png?v=${EMAIL_ASSET_VERSION}`;
+  const bannerUrl = `${baseUrl}/assets/email-banner.jpg?v=${EMAIL_ASSET_VERSION}`;
 
   const html = buildVgrEmailTemplateHtml({
     logoUrl,
@@ -789,7 +815,7 @@ export async function sendHostVideoReadyEmail(params: SendHostVideoReadyEmailPar
 
   const baseUrl = new URL(dashboardUrl).origin;
   const logoUrl = `${baseUrl}/Favicon-VGR.png?v=${EMAIL_ASSET_VERSION}`;
-  const bannerUrl = `${baseUrl}/assets/email-banner.png?v=${EMAIL_ASSET_VERSION}`;
+  const bannerUrl = `${baseUrl}/assets/email-banner.jpg?v=${EMAIL_ASSET_VERSION}`;
 
   const html = buildVgrEmailTemplateHtml({
     logoUrl,
@@ -829,15 +855,19 @@ export async function sendHostRevealReminderEmail(params: SendHostRevealReminder
 
   const baseUrl = new URL(dashboardUrl).origin;
   const logoUrl = `${baseUrl}/Favicon-VGR.png?v=${EMAIL_ASSET_VERSION}`;
-  const bannerUrl = `${baseUrl}/assets/email-banner.png?v=${EMAIL_ASSET_VERSION}`;
+  const bannerUrl = `${baseUrl}/assets/email-banner.jpg?v=${EMAIL_ASSET_VERSION}`;
+
+  const dayPhrase = getRevealDayPhrase(params.revealAtIso, params.revealTimezone);
+  const dayPhraseCapitalized = dayPhrase.charAt(0).toUpperCase() + dayPhrase.slice(1);
+  const eventBadge = dayPhrase === "today" ? "Event Today" : dayPhrase === "tomorrow" ? "Event Tomorrow" : "Event Coming Up";
 
   const html = buildVgrEmailTemplateHtml({
     logoUrl,
     bannerUrl,
-    badgeText: "Event Tomorrow",
-    headingHtml: `<span style="color: #E8449A;">Your Reveal</span> <span style="color: #3A9FE8;">Is Tomorrow!</span> 🎈`,
+    badgeText: eventBadge,
+    headingHtml: `<span style="color: #E8449A;">Your Reveal</span> <span style="color: #3A9FE8;">Is ${dayPhraseCapitalized}!</span> 🎈`,
     greetingText: `Hi ${parentName},`,
-    messageHtml: `<p style="margin: 0 0 12px 0;">The wait is almost over! Your Virtual Gender Reveal celebration starts tomorrow.</p>
+    messageHtml: `<p style="margin: 0 0 12px 0;">The wait is almost over! Your Virtual Gender Reveal celebration starts ${dayPhrase}.</p>
                   <p style="margin: 0 0 16px 0;">Here is a quick look at your guest voting stats so far:</p>
                   <div style="background-color: #f8fafc; border-radius: 12px; padding: 12px 16px; margin-bottom: 16px; border: 1px solid #e2e8f0; display: inline-block; min-width: 200px; text-align: center;">
                     <span style="color: #3A9FE8; font-weight: 800; font-size: 16px; margin-right: 16px;">💙 Team Boy: ${params.boyVotes}</span>
@@ -853,7 +883,7 @@ export async function sendHostRevealReminderEmail(params: SendHostRevealReminder
 
   await sendEmail({
     to: params.to,
-    subject: "Reminder: Your Virtual Gender Reveal is tomorrow!",
+    subject: `Reminder: Your Virtual Gender Reveal is ${dayPhrase}!`,
     html,
   });
 }
@@ -870,7 +900,7 @@ export async function sendHostDownloadReminder1dEmail(params: SendHostDownloadRe
 
   const baseUrl = new URL(dashboardUrl).origin;
   const logoUrl = `${baseUrl}/Favicon-VGR.png?v=${EMAIL_ASSET_VERSION}`;
-  const bannerUrl = `${baseUrl}/assets/email-banner.png?v=${EMAIL_ASSET_VERSION}`;
+  const bannerUrl = `${baseUrl}/assets/email-banner.jpg?v=${EMAIL_ASSET_VERSION}`;
 
   const html = buildVgrEmailTemplateHtml({
     logoUrl,
@@ -898,7 +928,7 @@ export async function sendHostDownloadReminder7dEmail(params: SendHostDownloadRe
 
   const baseUrl = new URL(dashboardUrl).origin;
   const logoUrl = `${baseUrl}/Favicon-VGR.png?v=${EMAIL_ASSET_VERSION}`;
-  const bannerUrl = `${baseUrl}/assets/email-banner.png?v=${EMAIL_ASSET_VERSION}`;
+  const bannerUrl = `${baseUrl}/assets/email-banner.jpg?v=${EMAIL_ASSET_VERSION}`;
 
   const html = buildVgrEmailTemplateHtml({
     logoUrl,
@@ -925,7 +955,7 @@ export async function sendHostDownloadReminder24hEmail(params: SendHostDownloadR
 
   const baseUrl = new URL(dashboardUrl).origin;
   const logoUrl = `${baseUrl}/Favicon-VGR.png?v=${EMAIL_ASSET_VERSION}`;
-  const bannerUrl = `${baseUrl}/assets/email-banner.png?v=${EMAIL_ASSET_VERSION}`;
+  const bannerUrl = `${baseUrl}/assets/email-banner.jpg?v=${EMAIL_ASSET_VERSION}`;
 
   const html = buildVgrEmailTemplateHtml({
     logoUrl,
