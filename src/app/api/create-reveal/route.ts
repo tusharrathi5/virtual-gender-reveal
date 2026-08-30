@@ -55,6 +55,14 @@ function isValidHttpUrl(value: string): boolean {
   }
 }
 
+// Users often paste a bare domain (e.g. "yourregistry.com/list") without a
+// protocol — assume https:// rather than rejecting it.
+function normalizeRegistryUrl(value: string): string {
+  const trimmed = value.trim();
+  if (!trimmed) return "";
+  return /^https?:\/\//i.test(trimmed) ? trimmed : `https://${trimmed}`;
+}
+
 function relationToLabel(relation: RevealerRelation): string {
   switch (relation) {
     case "doctor": return "doctor or midwife";
@@ -118,10 +126,10 @@ export async function POST(req: NextRequest) {
   } = body;
 
   const parsedRevealAtMs = revealAtMs ?? null;
-  const trimmedRegistryUrl = registryUrl?.trim() || "";
+  const trimmedRegistryUrl = normalizeRegistryUrl(registryUrl?.trim() || "");
   if (trimmedRegistryUrl && !isValidHttpUrl(trimmedRegistryUrl)) {
     return NextResponse.json(
-      { error: "Please provide a valid registry link (starting with http:// or https://)." },
+      { error: "Please provide a valid registry link." },
       { status: 400 }
     );
   }

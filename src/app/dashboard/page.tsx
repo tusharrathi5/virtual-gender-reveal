@@ -530,6 +530,7 @@ function DashboardContent() {
   ]);
   const [guestImportSummary, setGuestImportSummary] = useState<ImportSummary | null>(null);
   const [sendingInvites, setSendingInvites] = useState(false);
+  const [smsConsent, setSmsConsent] = useState(false);
   const [openingPartyId, setOpeningPartyId] = useState<string | null>(null);
   const [startingReveal, setStartingReveal] = useState(false);
   const [guestRows, setGuestRows] = useState<GuestRow[]>([]);
@@ -883,6 +884,10 @@ function DashboardContent() {
     }
     if (invalid.length > 0) {
       setToast({ type: "error", message: "Each guest needs a name and valid email before sending." });
+      return;
+    }
+    if (!smsConsent) {
+      setToast({ type: "error", message: "Please authorize SMS invitations before sending." });
       return;
     }
 
@@ -1361,8 +1366,8 @@ function DashboardContent() {
                         </span>
                         <div className="flex flex-col sm:flex-row gap-2">
                           <input
-                            type="url"
-                            placeholder="https://www.yourregistry.com/..."
+                            type="text"
+                            placeholder="www.yourregistry.com/..."
                             value={registryDrafts[reveal.id] ?? reveal.registryUrl ?? ""}
                             onChange={(e) =>
                               setRegistryDrafts((prev) => ({ ...prev, [reveal.id]: e.target.value }))
@@ -1628,8 +1633,23 @@ function DashboardContent() {
                 </table>
               </div>
 
+              {/* SMS Consent */}
+              <div className="pt-6 border-t border-gray-100">
+                <label className="flex items-start gap-2.5 cursor-pointer select-none">
+                  <input
+                    type="checkbox"
+                    checked={smsConsent}
+                    onChange={(e) => setSmsConsent(e.target.checked)}
+                    className="mt-0.5 w-4 h-4 shrink-0 rounded border-gray-300 text-[#E8449A] focus:outline-none focus:ring-2 focus:ring-[#3A9FE8] cursor-pointer"
+                  />
+                  <span className="text-[11px] text-gray-500 font-medium leading-normal">
+                    By clicking &quot;Submit &amp; Send Links&quot;, you authorize Virtual Gender Reveal to send SMS invitations and event reminders to the phone numbers you provide. Standard message and data rates may apply. Recipients may reply STOP to opt out.
+                  </span>
+                </label>
+              </div>
+
               {/* Bottom Action Bar */}
-              <div className="flex flex-col md:flex-row md:items-start justify-between gap-6 pt-6 border-t border-gray-100">
+              <div className="flex flex-col md:flex-row md:items-start justify-between gap-6">
                 {/* Left group: Add Guest Row */}
                 <div className="flex flex-col gap-2 w-full md:w-auto">
                   <button
@@ -1650,7 +1670,7 @@ function DashboardContent() {
                   <button
                     type="button"
                     onClick={() => sendGuestInvites(latestPartyReveal.id)}
-                    disabled={sendingInvites}
+                    disabled={sendingInvites || !smsConsent}
                     className="w-full md:w-auto bg-gradient-to-r from-[#E8449A] to-[#3A9FE8] text-white hover:opacity-95 font-bold text-xs uppercase tracking-wider rounded-xl py-3.5 px-6 disabled:opacity-50 transition-all shadow-md shadow-[#e8449a0c] flex items-center justify-center gap-2 focus:outline-none focus:ring-2 focus:ring-[#3A9FE8]"
                   >
                     {sendingInvites ? (

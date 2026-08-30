@@ -99,7 +99,7 @@ export default function DoctorTokenPage() {
                 className={`gender-card-btn boy-card ${selected === "boy" ? "selected" : ""}`}
               >
                 <img src="/images/boyVote.png" alt="Team Boy" className="gender-avatar-img" />
-                <div className="gender-card-title boy-text">Team Boy</div>
+                <div className="gender-card-title boy-text">It&apos;s a Boy</div>
                 <div className="gender-card-desc">Click here if the baby is a boy</div>
               </button>
 
@@ -110,7 +110,7 @@ export default function DoctorTokenPage() {
                 className={`gender-card-btn girl-card ${selected === "girl" ? "selected" : ""}`}
               >
                 <img src="/images/girlVote.png" alt="Team Girl" className="gender-avatar-img" />
-                <div className="gender-card-title girl-text">Team Girl</div>
+                <div className="gender-card-title girl-text">It&apos;s a Girl</div>
                 <div className="gender-card-desc">Click here if the baby is a girl</div>
               </button>
             </div>

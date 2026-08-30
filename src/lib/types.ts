@@ -182,7 +182,7 @@ export const INITIAL_STAGES: EnquiryStages = {
 // Photo constraints (single source of truth)
 
 export const PHOTO_MIN = 0;
-export const PHOTO_MAX = 3;
+export const PHOTO_MAX = 5;
 
 // Plan definitions (source of truth for the dashboard + pricing)
 

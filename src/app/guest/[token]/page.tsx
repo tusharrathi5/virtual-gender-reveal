@@ -554,7 +554,19 @@ export default function GuestInvitePage() {
           </header>
 
           {/* 2. REVEAL VIDEO / COUNTDOWN AREA (Centered Glassmorphic Video Box - Full Width) */}
-          <section className={`relative overflow-hidden transition-all duration-300 w-full ${isLive && videoUrl ? "bg-slate-950/20 backdrop-blur-xl border border-white/10 shadow-2xl rounded-[24px]" : "bg-white/45 backdrop-blur-[30px] border border-white/50 border-[1.5px] rounded-[32px] py-4 px-5 md:py-5 md:px-8 shadow-2xl flex flex-col items-center justify-center"}`}>
+          <section className={`relative overflow-hidden transition-all duration-300 w-full ${isLive && videoUrl ? "bg-slate-950/20 backdrop-blur-xl border border-white/10 shadow-2xl rounded-[24px]" : "border border-white/50 border-[1.5px] rounded-[32px] py-4 px-5 md:py-5 md:px-8 shadow-2xl flex flex-col items-center justify-center"}`}>
+            {!isLive && (
+              <>
+                {/* Full-bleed background image for this section */}
+                <div
+                  className="absolute inset-0 bg-[url('/images/countdown-section-bg.png')] bg-cover bg-center pointer-events-none"
+                  aria-hidden="true"
+                />
+                {/* Transparent tint over the image — no blur, image stays sharp */}
+                <div className="absolute inset-0 bg-white/45 pointer-events-none" aria-hidden="true" />
+              </>
+            )}
+
             {/* Ambient subtle celebratory pink/blue glows in the corners */}
             <div className="absolute top-0 left-0 w-48 h-48 bg-[#E8449A]/15 blur-3xl pointer-events-none" />
             <div className="absolute bottom-0 right-0 w-48 h-48 bg-[#3A9FE8]/15 blur-3xl pointer-events-none" />
@@ -601,10 +613,7 @@ export default function GuestInvitePage() {
                       ✨ 👶🏼 THE BIG REVEAL IN 👶🏾 ✨
                     </h2>
                     
-                    <p className="text-[11px] md:text-xs text-slate-500 font-bold italic text-center mt-0.5">
-                      🧸 Every second brings you closer to meeting your little miracle. 🍼
-                    </p>
-
+                   
                     <div className="w-full flex items-center justify-center mt-4 w-full max-w-[620px]">
                       <div className="relative w-full aspect-[3/2] bg-[url('/images/countdown-cards.png')] bg-contain bg-no-repeat bg-center select-none overflow-hidden @container">
                         
