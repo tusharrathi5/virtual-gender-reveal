@@ -649,7 +649,7 @@ function DashboardContent() {
 
   const latestReveal = reveals[0];
   const latestPartyReveal =
-    latestReveal && !isBundleOfJoyAnnouncement(latestReveal)
+    latestReveal && latestReveal.mode === "reveal" && !isBundleOfJoyAnnouncement(latestReveal)
       ? latestReveal
       : null;
 

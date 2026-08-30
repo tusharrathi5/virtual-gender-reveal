@@ -11,6 +11,7 @@ import { getAdminDb, getAdminAuth } from "@/lib/firebase-admin";
 import {
   sendDoctorInviteEmail,
   sendHostAnnouncementCreationEmail,
+  sendHostAnnouncementReadyCreationEmail,
   sendHostCreationConfirmationEmail,
 } from "@/lib/resendEmail";
 import { deleteEnquiryPhotosAdmin } from "@/lib/storageServiceAdmin";
@@ -314,6 +315,15 @@ export async function POST(req: NextRequest) {
           `[create-reveal] Failed to send paid announcement confirmation email:`,
           emailErr
         );
+      });
+    } else if (hostEmail && validatedMode === "announcement") {
+      const appUrl = getAppUrl(req);
+      await sendHostAnnouncementReadyCreationEmail({
+        to: hostEmail,
+        parentName: validatedParentName,
+        dashboardUrl: `${appUrl}/dashboard`,
+      }).catch((emailErr) => {
+        console.error(`[create-reveal] Failed to send announcement confirmation email:`, emailErr);
       });
     } else if (hostEmail) {
       const appUrl = getAppUrl(req);

@@ -213,7 +213,8 @@ export async function POST(req: NextRequest) {
     updatedAt: FieldValue.serverTimestamp(),
   };
 
-  let revealerEmailSent = false;
+  // null = no send was attempted (e.g. nothing changed); true/false = attempted, and whether it succeeded.
+  let revealerEmailSent: boolean | null = null;
 
   if (nextMode === "announcement") {
     update.babyName = null;
@@ -280,7 +281,6 @@ export async function POST(req: NextRequest) {
       const token = generateDoctorToken(body.enquiryId.trim());
       const tokenHash = CryptoJS.SHA256(token).toString();
       update.doctorTokenHash = tokenHash;
-      update["stages.revealerLinkSent"] = FieldValue.serverTimestamp();
 
       try {
         const revealUrl = `${getAppUrl(req)}/doctor/${encodeURIComponent(token)}`;
@@ -293,7 +293,11 @@ export async function POST(req: NextRequest) {
           revealerName: (body.revealerName || "").trim() || undefined,
         });
         revealerEmailSent = true;
+        // Only mark the "link sent" stage once the email has actually gone out —
+        // otherwise a failed send still shows as complete in the progress tracker.
+        update["stages.revealerLinkSent"] = FieldValue.serverTimestamp();
       } catch (err) {
+        revealerEmailSent = false;
         const details = err instanceof Error ? err.message : String(err);
         console.error(`[reveal/update] Failed to send revealer invite for ${body.enquiryId}: ${details}`);
       }

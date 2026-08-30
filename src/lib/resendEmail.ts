@@ -604,6 +604,12 @@ export interface SendHostAnnouncementCreationEmailParams {
   dashboardUrl: string;
 }
 
+export interface SendHostAnnouncementReadyCreationEmailParams {
+  to: string;
+  parentName: string;
+  dashboardUrl: string;
+}
+
 export interface SendHostAnnouncementVideoReadyEmailParams {
   to: string;
   parentName: string;
@@ -695,6 +701,39 @@ export async function sendHostAnnouncementCreationEmail(
   await sendEmail({
     to: params.to,
     subject: "Your personalized announcement video is in production",
+    html,
+  });
+}
+
+export async function sendHostAnnouncementReadyCreationEmail(
+  params: SendHostAnnouncementReadyCreationEmailParams
+): Promise<void> {
+  const parentName = escapeHtml(params.parentName);
+  const dashboardUrl = escapeHtml(params.dashboardUrl);
+  const baseUrl = new URL(params.dashboardUrl).origin;
+  const logoUrl = `${baseUrl}/Favicon-VGR.png?v=${EMAIL_ASSET_VERSION}`;
+  const bannerUrl = `${baseUrl}/assets/email-banner.png?v=${EMAIL_ASSET_VERSION}`;
+
+  const html = buildVgrEmailTemplateHtml({
+    logoUrl,
+    bannerUrl,
+    badgeText: "Announcement Created",
+    headingHtml: `<span style="color: #E8449A;">Your Announcement</span> <span style="color: #3A9FE8;">Is Ready!</span> 🎉`,
+    greetingText: `Hi ${parentName},`,
+    messageHtml: `<p style="margin: 0 0 12px 0;">Congratulations on creating your gender announcement! Your keepsake video is ready to share.</p>
+                  <p style="margin: 0;">Share it on social media, in your family group chat, or however you'd like to let friends and family know the exciting news!</p>`,
+    revealDateLabel: "Keepsake Video",
+    revealTimeLabel: "Ready to share",
+    revealTimezone: "Available in your dashboard",
+    detailEyebrow: "Announcement Status",
+    detailIcon: "🎬",
+    primaryCtaUrl: dashboardUrl,
+    primaryCtaText: "GO TO DASHBOARD",
+  });
+
+  await sendEmail({
+    to: params.to,
+    subject: "Your gender announcement is ready to share!",
     html,
   });
 }
