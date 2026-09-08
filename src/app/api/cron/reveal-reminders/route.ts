@@ -11,6 +11,7 @@ import {
 } from "@/lib/resendEmail";
 import { generateGuestToken } from "@/lib/guestToken";
 import { isBundleOfJoyAnnouncement } from "@/lib/revealAccess";
+import { sendReminderSms } from "@/lib/twilioSms";
 
 type ReminderWindow = "7d" | "24h";
 
@@ -142,6 +143,7 @@ export async function GET(req: NextRequest) {
       const invite = inviteDoc.data() as {
         email?: string;
         name?: string;
+        phone?: string;
         reminder7dSentAt?: Timestamp | null;
         reminder24hSentAt?: Timestamp | null;
       };
@@ -176,6 +178,23 @@ export async function GET(req: NextRequest) {
           reminderWindow,
           inviteUrl,
         });
+
+        if (invite.phone) {
+          try {
+            await sendReminderSms({
+              toPhone: invite.phone,
+              guestName: invite.name || "there",
+              parentName: enquiry.parentName || "the parents",
+              revealAtIso: revealAt.toISOString(),
+              revealTimezone: enquiry.revealTimezone || "UTC",
+              reminderWindow,
+              inviteUrl,
+            });
+          } catch (smsErr) {
+            const errMessage = smsErr instanceof Error ? smsErr.message : String(smsErr);
+            console.error(`[cron/reveal-reminders] Reminder SMS failed for enquiry ${enquiryDoc.id} guest ${inviteDoc.id}: ${errMessage}`);
+          }
+        }
 
         await inviteDoc.ref.set(
           {

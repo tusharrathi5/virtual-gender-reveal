@@ -35,9 +35,10 @@ export async function POST(req: NextRequest) {
   const session = await verifyAuthHeader(req.headers.get("Authorization"));
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  const body = await req.json().catch(() => null) as { enquiryId?: string; guests?: GuestInput[] } | null;
+  const body = await req.json().catch(() => null) as { enquiryId?: string; guests?: GuestInput[]; smsConsent?: boolean } | null;
   const enquiryId = body?.enquiryId?.trim();
   const guests = body?.guests ?? [];
+  const smsConsentConfirmed = body?.smsConsent === true;
   if (!enquiryId || !Array.isArray(guests) || guests.length === 0) {
     return NextResponse.json({ error: "enquiryId and guests are required." }, { status: 400 });
   }
@@ -216,10 +217,14 @@ export async function POST(req: NextRequest) {
     });
   }
 
+  const hasPhoneGuests = normalizedGuests.some((g) => g.phone);
   await enquiryRef.update({
     guestCount: FieldValue.increment(created),
     "stages.guestInvitesSent": Timestamp.now(),
     updatedAt: FieldValue.serverTimestamp(),
+    ...(hasPhoneGuests && smsConsentConfirmed
+      ? { smsConsentConfirmedAt: FieldValue.serverTimestamp() }
+      : {}),
   });
 
   return NextResponse.json({ success: true, sent, resent, created, failed, hostSent });

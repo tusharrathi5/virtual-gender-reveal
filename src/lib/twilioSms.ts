@@ -82,10 +82,10 @@ export async function sendInviteSms({
 
   let body = "";
   if (isHost) {
-    body = `Hi ${guestName}! Your Surprise Reveal party has been scheduled. Keep your private host dashboard link safe: ${inviteUrl}`;
+    body = `VG Reveal Corp: Hi ${guestName}! Your Surprise Reveal party has been scheduled. Keep your private host dashboard link safe: ${inviteUrl} Reply STOP to opt out, HELP for help.`;
   } else {
     const timeInfo = revealAtIso ? `on ${formatSmsDate(revealAtIso, revealTimezone)} ` : "";
-    body = `Hi ${guestName}! ${parentName} has invited you to their Surprise Reveal! ${timeInfo}Join the live race & predict here: ${inviteUrl}`;
+    body = `VG Reveal Corp: Hi ${guestName}! ${parentName} invited you to their Gender Reveal ${timeInfo}. View & predict here: ${inviteUrl} Reply STOP to opt out, HELP for help.`;
   }
 
   try {
@@ -99,6 +99,58 @@ export async function sendInviteSms({
     // Log the error safely without exposing raw tokens or API keys
     const errMessage = error instanceof Error ? error.message : String(error);
     console.error(`[Twilio SMS] Failed to dispatch SMS to ${formattedTo}. Error Details: ${errMessage}`);
+    return false;
+  }
+}
+
+interface SendReminderSmsParams {
+  toPhone: string;
+  guestName: string;
+  parentName: string;
+  inviteUrl: string;
+  revealAtIso: string | null;
+  revealTimezone?: string;
+  reminderWindow: "7d" | "24h";
+}
+
+/**
+ * Sends an event reminder text (7 days or 24 hours before the reveal) using Twilio.
+ * Returns true if sent successfully, false otherwise.
+ */
+export async function sendReminderSms({
+  toPhone,
+  guestName,
+  parentName,
+  inviteUrl,
+  revealAtIso,
+  revealTimezone = "UTC",
+  reminderWindow,
+}: SendReminderSmsParams): Promise<boolean> {
+  if (!client || !fromPhone) {
+    console.warn("[Twilio SMS] Credentials or sender phone number not configured. Skipping SMS dispatch.");
+    return false;
+  }
+
+  const formattedTo = formatToE164(toPhone);
+  if (!/^\+\d{10,15}$/.test(formattedTo)) {
+    console.warn(`[Twilio SMS] Target phone number "${toPhone}" formatted to "${formattedTo}" is invalid. Skipping SMS dispatch.`);
+    return false;
+  }
+
+  const timeInfo = revealAtIso ? ` on ${formatSmsDate(revealAtIso, revealTimezone)}` : "";
+  const windowLabel = reminderWindow === "24h" ? "starts in 24 hours" : "is coming up in 7 days";
+  const body = `VG Reveal Corp: Hi ${guestName}! Reminder: ${parentName}'s Gender Reveal${timeInfo} ${windowLabel}. View details: ${inviteUrl} Reply STOP to opt out, HELP for help.`;
+
+  try {
+    await client.messages.create({
+      body,
+      from: fromPhone,
+      to: formattedTo,
+    });
+    return true;
+  } catch (error) {
+    const errMessage = error instanceof Error ? error.message : String(error);
+    console.error(`[Twilio SMS] Failed to dispatch reminder SMS to ${formattedTo}. Error Details: ${errMessage}`);
     return false;
   }
 }

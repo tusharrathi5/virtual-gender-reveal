@@ -903,7 +903,7 @@ function DashboardContent() {
       const res = await fetch("/api/guest/send-invites", {
         method: "POST",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${idToken}` },
-        body: JSON.stringify({ enquiryId, guests }),
+        body: JSON.stringify({ enquiryId, guests, smsConsent }),
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(data?.error || "Failed to send invites.");
@@ -1711,19 +1711,37 @@ function DashboardContent() {
               </div>
 
               {/* SMS Consent */}
-              <div className="pt-6 border-t border-gray-100">
+              <div className="pt-6 border-t border-gray-100 space-y-3">
                 <label className="flex items-start gap-3 cursor-pointer select-none bg-gray-50/60 border border-gray-100 rounded-xl p-4">
                   <IconImg src="/images/icon-shieldWithHeart.png" className="w-14 h-14 object-contain shrink-0" />
-                  <input
-                    type="checkbox"
-                    checked={smsConsent}
-                    onChange={(e) => setSmsConsent(e.target.checked)}
-                    className="mt-0.5 w-4 h-4 shrink-0 rounded border-gray-300 text-[#E8449A] focus:outline-none focus:ring-2 focus:ring-[#3A9FE8] cursor-pointer"
-                  />
-                  <span className="text-[11px] text-gray-500 font-medium leading-normal">
-                    By clicking &quot;Submit &amp; Send Links&quot;, you authorize Virtual Gender Reveal to send SMS invitations and event reminders to the phone numbers you provide. Standard message and data rates may apply. Recipients may reply STOP to opt out.
+                  <span className="flex items-start gap-2.5">
+                    <input
+                      type="checkbox"
+                      checked={smsConsent}
+                      onChange={(e) => setSmsConsent(e.target.checked)}
+                      className="mt-0.5 w-4 h-4 shrink-0 rounded border-gray-300 text-[#E8449A] focus:outline-none focus:ring-2 focus:ring-[#3A9FE8] cursor-pointer"
+                    />
+                    <span className="text-[11px] text-gray-500 font-medium leading-normal">
+                      <strong className="text-gray-700 block mb-1">
+                        I confirm I have this recipient&apos;s consent to receive SMS from VG Reveal Corp.
+                      </strong>
+                      By checking this box, you confirm the recipient agreed to receive text messages about this Virtual
+                      Gender Reveal event — including their invitation, event reminders, and event updates. Message
+                      frequency varies by event. Msg &amp; data rates may apply. Reply STOP to opt out, HELP for help.
+                    </span>
                   </span>
                 </label>
+                <p className="text-[11px] text-gray-400 font-medium pl-4">
+                  See our{" "}
+                  <a href="/privacy-policy" target="_blank" rel="noopener noreferrer" className="text-[#3A9FE8] font-bold hover:underline">
+                    Privacy Policy
+                  </a>{" "}
+                  and{" "}
+                  <a href="/terms" target="_blank" rel="noopener noreferrer" className="text-[#3A9FE8] font-bold hover:underline">
+                    Terms of Service
+                  </a>
+                  .
+                </p>
               </div>
 
               {/* Bottom Action Bar */}
@@ -1765,6 +1783,10 @@ function DashboardContent() {
                   </button>
                   <span className="text-[11px] text-gray-400 font-medium text-center md:text-right w-full md:max-w-xs leading-normal">
                     The account email also receives a copy of the host party link automatically.
+                  </span>
+                  <span className="text-[11px] text-gray-400 font-medium text-center md:text-right w-full md:max-w-xs leading-normal">
+                    Guests will receive SMS about this event (invitation, reminders, updates). Msg &amp; data rates may
+                    apply. Reply STOP to opt out, HELP for help.
                   </span>
                 </div>
               </div>

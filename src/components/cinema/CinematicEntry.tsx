@@ -1037,7 +1037,7 @@ function LandingPage() {
               <p>We take the privacy of reveal information seriously.</p>
               <p>Information provided to Virtual Gender Reveal will be used only as reasonably necessary to provide the service, process payments, deliver and maintain your reveal, provide customer support, protect the security of the service, and comply with applicable legal requirements.</p>
               <p>We do not sell customers&apos; personal information or use customer-uploaded photographs, private reveal information, or personal details for unrelated advertising or marketing purposes without permission.</p>
-              <p>Additional information regarding how personal information is collected, stored, processed, and deleted is described in our <strong>Privacy Policy</strong>.</p>
+              <p>Additional information regarding how personal information is collected, stored, processed, and deleted is described in our <a href="/privacy-policy" style={{ color: '#3A9FE8', fontWeight: 700 }}>Privacy Policy</a>.</p>
 
               <p className="font-black text-slate-800" style={{ color: '#E8449A' }}>7. Confidential Reveal Information</p>
               <p>When the Surprise Reveal feature is used, gender information submitted by the Revealer is intended to remain confidential from the customer until the reveal experience occurs.</p>
@@ -1146,6 +1146,7 @@ function LandingPage() {
                 links: [
                   { label: "About", onClick: () => setShowStoryModal(true) },
                   { label: "Terms of Service", onClick: () => setShowTermsModal(true) },
+                  { label: "Privacy Policy", href: "/privacy-policy" },
                 ],
               },
             ].map((col, i) => (
