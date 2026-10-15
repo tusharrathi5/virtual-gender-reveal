@@ -3,7 +3,8 @@
 import type { FormEvent } from "react";
 import { useCallback, useEffect, useMemo, useRef, useState, Fragment } from "react";
 import { useParams } from "next/navigation";
-import { Sparkles, Calendar, Send, Heart, Users, MessageSquare, Clock, Maximize } from "lucide-react";
+import { Sparkles, Calendar, Send, Heart, Users, MessageSquare, Clock, Maximize, Volume2 } from "lucide-react";
+import RevealPlayer, { isIOSDevice, loadStreamSdk, useHasInteracted } from "@/components/party/RevealPlayer";
 
 type Prediction = "boy" | "girl" | null;
 
@@ -24,38 +25,13 @@ export default function GuestInvitePage() {
   const encodedToken = useMemo(() => encodeURIComponent(token || ""), [token]);
   const chatEndRef = useRef<HTMLDivElement | null>(null);
   const iframeContainerRef = useRef<HTMLDivElement | null>(null);
-  const videoIframeRef = useRef<HTMLIFrameElement | null>(null);
-  const [videoEnded, setVideoEnded] = useState(false);
-  const [videoEndedAtSeconds, setVideoEndedAtSeconds] = useState<number | null>(null);
-
-  const playerTimeRef = useRef<{ currentTime?: number; duration?: number }>({});
+  const hasInteracted = useHasInteracted();
+  const [isIOS, setIsIOS] = useState(false);
 
   useEffect(() => {
-    // Cloudflare's iframe posts { __privateUnstableMessageType, ... } messages (the format
-    // its Stream Player SDK consumes): "propertyChange" carries currentTime/duration and
-    // "event" carries playback events such as "ended".
-    function handleStreamMessage(event: MessageEvent) {
-      if (!videoIframeRef.current || event.source !== videoIframeRef.current.contentWindow) return;
-      const data = event.data as {
-        __privateUnstableMessageType?: string;
-        property?: string;
-        value?: unknown;
-        eventName?: string;
-      } | null;
-      if (data?.__privateUnstableMessageType === "propertyChange") {
-        if ((data.property === "currentTime" || data.property === "duration") && typeof data.value === "number") {
-          playerTimeRef.current[data.property] = data.value;
-        }
-        return;
-      }
-      if (data?.__privateUnstableMessageType !== "event" || data.eventName !== "ended") return;
-      const { duration, currentTime } = playerTimeRef.current;
-      const finalTime = typeof duration === "number" && duration > 0 ? duration : currentTime;
-      setVideoEndedAtSeconds(typeof finalTime === "number" ? Math.max(0, Math.floor(finalTime) - 1) : null);
-      setVideoEnded(true);
-    }
-    window.addEventListener("message", handleStreamMessage);
-    return () => window.removeEventListener("message", handleStreamMessage);
+    setIsIOS(isIOSDevice());
+    // Warm up Cloudflare's player SDK so the reveal player isn't held up by it.
+    loadStreamSdk().catch(() => {});
   }, []);
 
   const toggleFullscreen = () => {
@@ -229,6 +205,13 @@ export default function GuestInvitePage() {
     };
   }, [revealAtIso, nowMs]);
 
+  // Ask for the video the moment the local countdown hits zero instead of waiting for
+  // the next 3s poll; the server stays the authority on whether the reveal is live.
+  const countdownReachedZero = countdownParts.live;
+  useEffect(() => {
+    if (countdownReachedZero && !isLive) loadInvite().catch(() => {});
+  }, [countdownReachedZero, isLive, loadInvite]);
+
   const countdownLabel = countdownParts.live
     ? "Reveal is live now 🎉"
     : `Reveal in ${countdownParts.d}d ${countdownParts.h}h ${countdownParts.m}m ${countdownParts.s}s`;
@@ -244,71 +227,6 @@ export default function GuestInvitePage() {
     return `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${text}&dates=${fmt(start)}/${fmt(end)}&ctz=${encodeURIComponent(revealTimezone)}&details=${details}`;
   }, [revealAtIso, parentName, revealTimezone]);
   const icsUrl = useMemo(() => `/api/guest/${encodedToken}/calendar.ics`, [encodedToken]);
-
-  const streamUid = useMemo(() => {
-    if (!videoUrl) return "";
-    // Only a real Stream uid (32 hex chars) counts; a length check alone matched the
-    // Firebase path segment "static%2Fvideos%2Fboy_reveal.mov", which is also 32 chars.
-    for (const part of videoUrl.split("/")) {
-      const cleaned = part.replace(/\?.*/, "");
-      if (/^[a-f0-9]{32}$/i.test(cleaned)) return cleaned;
-    }
-    return "";
-  }, [videoUrl]);
-
-  // Not a Cloudflare Stream video (e.g. a plain file URL): play it in a <video> element.
-  const directVideoUrl = videoUrl && !streamUid ? videoUrl : null;
-
-  // Seek a plain <video> to the shared reveal timeline, like startTime does for the
-  // Cloudflare player; past the end, rest on the last frame with controls.
-  const syncDirectVideo = useCallback(
-    (video: HTMLVideoElement) => {
-      const elapsed = revealAtIso ? (Date.now() - new Date(revealAtIso).getTime()) / 1000 : 0;
-      const duration = Number.isFinite(video.duration) ? video.duration : null;
-      if (duration != null && elapsed >= duration - 1) {
-        video.currentTime = Math.max(0, duration - 0.5);
-        video.pause();
-        return;
-      }
-      video.currentTime = Math.max(0, elapsed);
-      video.play().catch(() => {});
-    },
-    [revealAtIso]
-  );
-
-  const streamEmbedUrl = useMemo(() => {
-    const uid = streamUid;
-    if (!uid) return "";
-
-    if (videoEnded) {
-      const resumeTime = videoEndedAtSeconds ?? 0;
-      return `https://iframe.videodelivery.net/${uid}?autoplay=false&controls=true&muted=false&startTime=${resumeTime}`;
-    }
-
-    let startTime = 0;
-    if (revealAtIso) {
-      const revealTime = new Date(revealAtIso).getTime();
-      const diffSeconds = Math.floor((Date.now() - revealTime) / 1000);
-      startTime = Math.max(0, diffSeconds);
-    }
-
-    // Cap how far we ever seek: the known clip duration when we have it, otherwise a
-    // conservative fallback so a guest joining long after the reveal (or clock drift)
-    // never gets pointed past the end of the video, which Cloudflare's player renders
-    // as a black frame with no way to recover (the "ended" postMessage never fires
-    // because playback never actually started).
-    const FALLBACK_MAX_SECONDS = 180;
-    const maxSeconds = videoDurationSeconds != null ? videoDurationSeconds : FALLBACK_MAX_SECONDS;
-
-    if (startTime >= maxSeconds) {
-      const resumeTime = Math.max(0, Math.floor(maxSeconds) - 1);
-      return `https://iframe.videodelivery.net/${uid}?autoplay=false&controls=true&muted=false&startTime=${resumeTime}`;
-    }
-
-    // Controls stay on so guests can start playback if the browser blocks autoplay, and
-    // can unmute (autoplay only works muted).
-    return `https://iframe.videodelivery.net/${uid}?autoplay=true&controls=true&muted=true&startTime=${startTime}`;
-  }, [streamUid, revealAtIso, videoEnded, videoEndedAtSeconds, videoDurationSeconds]);
 
   function getFormattedDateOnly(isoString: string | null, timezone: string): string {
     if (!isoString) return "";
@@ -640,27 +558,11 @@ export default function GuestInvitePage() {
             <div ref={iframeContainerRef} className={`relative w-full ${isLive && videoUrl ? "aspect-video bg-slate-950/40" : "w-full flex flex-col items-center justify-center bg-transparent mt-1 mb-1"}`}>
               {isLive && videoUrl ? (
                 <>
-                  {directVideoUrl ? (
-                    <video
-                      src={directVideoUrl}
-                      title="Reveal Video"
-                      className="w-full h-full bg-black"
-                      muted
-                      playsInline
-                      controls
-                      preload="auto"
-                      onLoadedMetadata={(e) => syncDirectVideo(e.currentTarget)}
-                    />
-                  ) : (
-                    <iframe
-                      ref={videoIframeRef}
-                      src={streamEmbedUrl}
-                      title="Reveal Video"
-                      className="w-full h-full border-0"
-                      allow="accelerometer; gyroscope; autoplay; encrypted-media; picture-in-picture;"
-                      allowFullScreen
-                    />
-                  )}
+                  <RevealPlayer
+                    videoUrl={videoUrl}
+                    revealAtIso={revealAtIso}
+                    videoDurationSeconds={videoDurationSeconds}
+                  />
                   {/* Floating Custom Fullscreen Button */}
                   <div className="absolute right-4 bottom-4 z-30">
                     <button
@@ -786,6 +688,25 @@ export default function GuestInvitePage() {
                         ? "We are live! The reveal stream is starting now." 
                         : "The screen will unlock automatically at the scheduled reveal time. Stay tuned!"}
                     </p>
+
+                    {/* Any tap on the page lets browsers autoplay the reveal with sound. Skipped on
+                        iOS, which only allows sound from a tap at playback time ("Tap for sound"). */}
+                    {!isIOS && (
+                      hasInteracted ? (
+                        <p className="mt-2 flex items-center gap-1.5 text-[11px] md:text-xs text-emerald-600 font-bold">
+                          <Volume2 className="w-3.5 h-3.5" />
+                          Sound is on for the reveal
+                        </p>
+                      ) : (
+                        <button
+                          type="button"
+                          className="mt-3 px-4 py-2 rounded-full bg-gradient-to-r from-[#E8449A] to-[#3A9FE8] text-white text-xs md:text-sm font-black shadow-lg flex items-center gap-1.5 transition-all hover:scale-105 active:scale-95 cursor-pointer"
+                        >
+                          <Volume2 className="w-4 h-4" />
+                          Tap to turn on sound
+                        </button>
+                      )
+                    )}
                   </div>
                 </div>
               )}
