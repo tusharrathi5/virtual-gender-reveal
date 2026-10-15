@@ -247,9 +247,11 @@ export default function GuestInvitePage() {
 
   const streamUid = useMemo(() => {
     if (!videoUrl) return "";
+    // Only a real Stream uid (32 hex chars) counts; a length check alone matched the
+    // Firebase path segment "static%2Fvideos%2Fboy_reveal.mov", which is also 32 chars.
     for (const part of videoUrl.split("/")) {
       const cleaned = part.replace(/\?.*/, "");
-      if (cleaned.length === 32 || cleaned.length === 36) return cleaned;
+      if (/^[a-f0-9]{32}$/i.test(cleaned)) return cleaned;
     }
     return "";
   }, [videoUrl]);
