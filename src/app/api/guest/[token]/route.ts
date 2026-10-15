@@ -10,6 +10,11 @@ import {
   isBundleOfJoyAnnouncement,
   PARTY_UNAVAILABLE_MESSAGE,
 } from "@/lib/revealAccess";
+import {
+  buildStreamWatchUrl,
+  getStaticRevealStreamUid,
+  getStreamDuration,
+} from "@/lib/cloudflareStream";
 
 function normalize(raw: string) { try { return decodeURIComponent(raw).trim(); } catch { return raw.trim(); } }
 
@@ -35,6 +40,8 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ toke
     revealAt?: { toDate: () => Date };
     revealTimezone?: string;
     videoUrl?: string | null;
+    videoDurationSeconds?: number | null;
+    streamUid?: string | null;
     stages?: { eventCompleted?: unknown };
     mode?: string;
     plan?: string;
@@ -50,6 +57,26 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ toke
   const revealAt = data.revealAt?.toDate?.() ?? null;
   const isLive = !!revealAt && Date.now() >= revealAt.getTime();
   const isCompleted = Boolean(data?.stages?.eventCompleted);
+
+  // Shared static clips (basic plan / announcements) play from their Cloudflare mirror;
+  // the stored videoUrl is left as-is because the dashboard download relies on it.
+  const staticStreamUid = data.videoUrl ? getStaticRevealStreamUid(data.videoUrl) : null;
+  const playbackUrl = staticStreamUid ? buildStreamWatchUrl(staticStreamUid) : data.videoUrl || null;
+
+  // Reveals finalized before durations were recorded have no videoDurationSeconds; look it
+  // up once so the party page can cap its sync seek at the clip length.
+  let videoDurationSeconds =
+    typeof data.videoDurationSeconds === "number" ? data.videoDurationSeconds : null;
+  if (isLive && playbackUrl && videoDurationSeconds == null) {
+    const streamUid =
+      staticStreamUid || data.streamUid || playbackUrl.match(/[a-f0-9]{32}/i)?.[0] || null;
+    if (streamUid) {
+      videoDurationSeconds = await getStreamDuration(streamUid).catch(() => null);
+      if (videoDurationSeconds != null) {
+        await enquiry.ref.update({ videoDurationSeconds }).catch(() => {});
+      }
+    }
+  }
 
   const browserId = req.nextUrl.searchParams.get("browserId");
   let clientPrediction = null;
@@ -114,7 +141,8 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ toke
       revealTimezone: data.revealTimezone || "UTC",
       isLive,
       isCompleted,
-      videoUrl: isLive ? data.videoUrl || null : null,
+      videoUrl: isLive ? playbackUrl : null,
+      videoDurationSeconds: isLive ? videoDurationSeconds : null,
       registryUrl: data.plan !== "basic" ? data.registryUrl || null : null,
     },
     votes: {

@@ -3,6 +3,7 @@ import { getAdminAuth, getAdminDb } from "@/lib/firebase-admin";
 import {
   buildStreamWatchUrl,
   enableStreamMp4Download,
+  getStreamDuration,
 } from "@/lib/cloudflareStream";
 import { isBundleOfJoyAnnouncement } from "@/lib/revealAccess";
 import {
@@ -57,10 +58,13 @@ export async function finalizeUploadedVideo(params: {
   const alreadyFinalized =
     enquiry.streamUid === streamUid && Boolean(enquiry.videoReadyEmailSentAt);
 
+  const videoDurationSeconds = await getStreamDuration(streamUid).catch(() => null);
+
   await enquiryRef.update({
     videoUrl,
     downloadUrl,
     streamUid,
+    videoDurationSeconds,
     pendingStreamUid: FieldValue.delete(),
     videoUploadStatus: "uploaded",
     status: paidAnnouncement ? "completed" : "video_ready",

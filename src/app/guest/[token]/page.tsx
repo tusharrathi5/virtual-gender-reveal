@@ -28,12 +28,29 @@ export default function GuestInvitePage() {
   const [videoEnded, setVideoEnded] = useState(false);
   const [videoEndedAtSeconds, setVideoEndedAtSeconds] = useState<number | null>(null);
 
+  const playerTimeRef = useRef<{ currentTime?: number; duration?: number }>({});
+
   useEffect(() => {
+    // Cloudflare's iframe posts { __privateUnstableMessageType, ... } messages (the format
+    // its Stream Player SDK consumes): "propertyChange" carries currentTime/duration and
+    // "event" carries playback events such as "ended".
     function handleStreamMessage(event: MessageEvent) {
       if (!videoIframeRef.current || event.source !== videoIframeRef.current.contentWindow) return;
-      const data = event.data as { event?: string; duration?: number; currentTime?: number } | null;
-      if (data?.event !== "ended") return;
-      const finalTime = typeof data.duration === "number" ? data.duration : data.currentTime;
+      const data = event.data as {
+        __privateUnstableMessageType?: string;
+        property?: string;
+        value?: unknown;
+        eventName?: string;
+      } | null;
+      if (data?.__privateUnstableMessageType === "propertyChange") {
+        if ((data.property === "currentTime" || data.property === "duration") && typeof data.value === "number") {
+          playerTimeRef.current[data.property] = data.value;
+        }
+        return;
+      }
+      if (data?.__privateUnstableMessageType !== "event" || data.eventName !== "ended") return;
+      const { duration, currentTime } = playerTimeRef.current;
+      const finalTime = typeof duration === "number" && duration > 0 ? duration : currentTime;
       setVideoEndedAtSeconds(typeof finalTime === "number" ? Math.max(0, Math.floor(finalTime) - 1) : null);
       setVideoEnded(true);
     }
@@ -64,6 +81,7 @@ export default function GuestInvitePage() {
   const [isLive, setIsLive] = useState(false);
   const [isCompleted, setIsCompleted] = useState(false);
   const [videoUrl, setVideoUrl] = useState<string | null>(null);
+  const [videoDurationSeconds, setVideoDurationSeconds] = useState<number | null>(null);
   const [registryUrl, setRegistryUrl] = useState<string | null>(null);
   const [feed, setFeed] = useState<Array<{ name: string; message: string }>>([]);
   const [invitedGuests, setInvitedGuests] = useState<Array<{ name: string }>>([]);
@@ -107,6 +125,9 @@ export default function GuestInvitePage() {
     setIsLive(Boolean(data?.reveal?.isLive));
     setIsCompleted(Boolean(data?.reveal?.isCompleted));
     setVideoUrl(data?.reveal?.videoUrl || null);
+    setVideoDurationSeconds(
+      typeof data?.reveal?.videoDurationSeconds === "number" ? data.reveal.videoDurationSeconds : null
+    );
     setRegistryUrl(data?.reveal?.registryUrl || null);
     setFeed(Array.isArray(data?.feed) ? data.feed : []);
     setInvitedGuests(Array.isArray(data?.invitedGuests) ? data.invitedGuests : []);
@@ -224,20 +245,38 @@ export default function GuestInvitePage() {
   }, [revealAtIso, parentName, revealTimezone]);
   const icsUrl = useMemo(() => `/api/guest/${encodedToken}/calendar.ics`, [encodedToken]);
 
-  const streamEmbedUrl = useMemo(() => {
+  const streamUid = useMemo(() => {
     if (!videoUrl) return "";
-    
-    let uid = "";
-    const parts = videoUrl.split("/");
-    for (const part of parts) {
+    for (const part of videoUrl.split("/")) {
       const cleaned = part.replace(/\?.*/, "");
-      if (cleaned.length === 32 || cleaned.length === 36) {
-        uid = cleaned;
-        break;
-      }
+      if (cleaned.length === 32 || cleaned.length === 36) return cleaned;
     }
-    
-    if (!uid) return videoUrl;
+    return "";
+  }, [videoUrl]);
+
+  // Not a Cloudflare Stream video (e.g. a plain file URL): play it in a <video> element.
+  const directVideoUrl = videoUrl && !streamUid ? videoUrl : null;
+
+  // Seek a plain <video> to the shared reveal timeline, like startTime does for the
+  // Cloudflare player; past the end, rest on the last frame with controls.
+  const syncDirectVideo = useCallback(
+    (video: HTMLVideoElement) => {
+      const elapsed = revealAtIso ? (Date.now() - new Date(revealAtIso).getTime()) / 1000 : 0;
+      const duration = Number.isFinite(video.duration) ? video.duration : null;
+      if (duration != null && elapsed >= duration - 1) {
+        video.currentTime = Math.max(0, duration - 0.5);
+        video.pause();
+        return;
+      }
+      video.currentTime = Math.max(0, elapsed);
+      video.play().catch(() => {});
+    },
+    [revealAtIso]
+  );
+
+  const streamEmbedUrl = useMemo(() => {
+    const uid = streamUid;
+    if (!uid) return "";
 
     if (videoEnded) {
       const resumeTime = videoEndedAtSeconds ?? 0;
@@ -251,8 +290,23 @@ export default function GuestInvitePage() {
       startTime = Math.max(0, diffSeconds);
     }
 
-    return `https://iframe.videodelivery.net/${uid}?autoplay=true&controls=false&muted=true&startTime=${startTime}`;
-  }, [videoUrl, revealAtIso, videoEnded, videoEndedAtSeconds]);
+    // Cap how far we ever seek: the known clip duration when we have it, otherwise a
+    // conservative fallback so a guest joining long after the reveal (or clock drift)
+    // never gets pointed past the end of the video, which Cloudflare's player renders
+    // as a black frame with no way to recover (the "ended" postMessage never fires
+    // because playback never actually started).
+    const FALLBACK_MAX_SECONDS = 180;
+    const maxSeconds = videoDurationSeconds != null ? videoDurationSeconds : FALLBACK_MAX_SECONDS;
+
+    if (startTime >= maxSeconds) {
+      const resumeTime = Math.max(0, Math.floor(maxSeconds) - 1);
+      return `https://iframe.videodelivery.net/${uid}?autoplay=false&controls=true&muted=false&startTime=${resumeTime}`;
+    }
+
+    // Controls stay on so guests can start playback if the browser blocks autoplay, and
+    // can unmute (autoplay only works muted).
+    return `https://iframe.videodelivery.net/${uid}?autoplay=true&controls=true&muted=true&startTime=${startTime}`;
+  }, [streamUid, revealAtIso, videoEnded, videoEndedAtSeconds, videoDurationSeconds]);
 
   function getFormattedDateOnly(isoString: string | null, timezone: string): string {
     if (!isoString) return "";
@@ -584,14 +638,27 @@ export default function GuestInvitePage() {
             <div ref={iframeContainerRef} className={`relative w-full ${isLive && videoUrl ? "aspect-video bg-slate-950/40" : "w-full flex flex-col items-center justify-center bg-transparent mt-1 mb-1"}`}>
               {isLive && videoUrl ? (
                 <>
-                  <iframe
-                    ref={videoIframeRef}
-                    src={streamEmbedUrl}
-                    title="Reveal Video"
-                    className="w-full h-full border-0"
-                    allow="accelerometer; gyroscope; autoplay; encrypted-media; picture-in-picture;"
-                    allowFullScreen
-                  />
+                  {directVideoUrl ? (
+                    <video
+                      src={directVideoUrl}
+                      title="Reveal Video"
+                      className="w-full h-full bg-black"
+                      muted
+                      playsInline
+                      controls
+                      preload="auto"
+                      onLoadedMetadata={(e) => syncDirectVideo(e.currentTarget)}
+                    />
+                  ) : (
+                    <iframe
+                      ref={videoIframeRef}
+                      src={streamEmbedUrl}
+                      title="Reveal Video"
+                      className="w-full h-full border-0"
+                      allow="accelerometer; gyroscope; autoplay; encrypted-media; picture-in-picture;"
+                      allowFullScreen
+                    />
+                  )}
                   {/* Floating Custom Fullscreen Button */}
                   <div className="absolute right-4 bottom-4 z-30">
                     <button

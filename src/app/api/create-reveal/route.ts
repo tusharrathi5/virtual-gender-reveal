@@ -2,6 +2,7 @@ export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
 
 import { NextRequest, NextResponse } from "next/server";
+import { MIN_REVEAL_LEAD_MINUTES, MIN_REVEAL_LEAD_MS } from "@/lib/revealTiming";
 import { verifyAuthHeader } from "@/lib/authServer";
 import { createRevealAndConsumeEntitlement } from "@/lib/revealCreation";
 import { saveGender } from "@/lib/secureGenderService";
@@ -445,8 +446,8 @@ function validateCreateRevealInput(input: {
     if (typeof revealAtMs !== "number" || isNaN(revealAtMs)) {
       return "Invalid reveal time.";
     }
-    if (revealAtMs < Date.now() + 30 * 60 * 1000) {
-      return "Reveal time must be at least 30 minutes in the future.";
+    if (revealAtMs < Date.now() + MIN_REVEAL_LEAD_MS) {
+      return `Reveal time must be at least ${MIN_REVEAL_LEAD_MINUTES} minutes in the future.`;
     }
     if (!revealTimezone || typeof revealTimezone !== "string") {
       return "Timezone is required.";

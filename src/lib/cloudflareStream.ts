@@ -41,6 +41,21 @@ export function buildStreamWatchUrl(streamUid: string): string {
 }
 
 /**
+ * Basic-plan reveals and announcements store a shared Firebase Storage .mov as their
+ * videoUrl. Browsers can't reliably play that inline, so the same clips are mirrored on
+ * Cloudflare Stream; this maps such a URL to its Stream uid (null if not mirrored).
+ */
+export function getStaticRevealStreamUid(videoUrl: string): string | null {
+  const match = videoUrl.match(/static(?:%2F|\/)videos(?:%2F|\/)(boy|girl)_reveal\.mov/i);
+  if (!match) return null;
+  const uid =
+    match[1].toLowerCase() === "boy"
+      ? process.env.CLOUDFLARE_STATIC_BOY_REVEAL_UID
+      : process.env.CLOUDFLARE_STATIC_GIRL_REVEAL_UID;
+  return uid?.trim() || null;
+}
+
+/**
  * Starts Cloudflare's MP4 generation and returns the stable download URL.
  * Cloudflare makes this URL downloadable as soon as the MP4 finishes encoding.
  */
@@ -133,4 +148,23 @@ export async function isStreamReady(streamUid: string): Promise<boolean> {
     data.result?.readyToStream === true ||
     data.result?.status?.state === "ready"
   );
+}
+
+/**
+ * Fetches a ready video's duration in seconds from Cloudflare Stream.
+ * Returns null if the duration isn't available yet (e.g. still processing) or the lookup fails.
+ */
+export async function getStreamDuration(streamUid: string): Promise<number | null> {
+  const { accountId, apiToken } = getCloudflareConfig();
+  const response = await fetch(
+    `https://api.cloudflare.com/client/v4/accounts/${accountId}/stream/${streamUid}`,
+    { headers: { Authorization: `Bearer ${apiToken}` } }
+  );
+  const data = (await response.json().catch(() => ({}))) as {
+    success?: boolean;
+    result?: { duration?: number };
+  };
+  if (!response.ok || data.success === false) return null;
+  const duration = data.result?.duration;
+  return typeof duration === "number" && duration > 0 ? duration : null;
 }

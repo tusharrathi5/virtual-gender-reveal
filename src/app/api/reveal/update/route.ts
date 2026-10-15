@@ -2,6 +2,7 @@ export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
 
 import { NextRequest, NextResponse } from "next/server";
+import { MIN_REVEAL_LEAD_MINUTES, MIN_REVEAL_LEAD_MS } from "@/lib/revealTiming";
 import { FieldValue, Timestamp } from "firebase-admin/firestore";
 import CryptoJS from "crypto-js";
 import { verifyAuthHeader } from "@/lib/authServer";
@@ -114,8 +115,8 @@ function validateInput(
     }
     const previousMs = existingRevealAt?.getTime() ?? 0;
     const revealTimeChanged = Math.abs(previousMs - revealAtMs) > 60 * 1000;
-    if (mode === "reveal" && revealTimeChanged && revealAtMs < Date.now() + 30 * 60 * 1000) {
-      return "Reveal time must be at least 30 minutes in the future.";
+    if (mode === "reveal" && revealTimeChanged && revealAtMs < Date.now() + MIN_REVEAL_LEAD_MS) {
+      return `Reveal time must be at least ${MIN_REVEAL_LEAD_MINUTES} minutes in the future.`;
     }
     if (!revealTimezone || typeof revealTimezone !== "string") {
       return "Timezone is required.";

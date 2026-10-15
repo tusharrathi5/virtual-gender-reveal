@@ -1,5 +1,6 @@
 "use client";
 import { useState, useMemo, useRef, useEffect } from "react";
+import { MIN_REVEAL_LEAD_MINUTES, MIN_REVEAL_LEAD_MS } from "@/lib/revealTiming";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/lib/AuthContext";
 import { v4 as uuidv4 } from "uuid";
@@ -81,7 +82,7 @@ function formatTimezone(tz: string): string {
 }
 
 function getMinDateTime(): string {
-  const d = new Date(Date.now() + 60 * 60 * 1000);
+  const d = new Date(Date.now() + MIN_REVEAL_LEAD_MS);
   const pad = (n: number) => String(n).padStart(2, "0");
   return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
 }
@@ -319,8 +320,8 @@ export default function NewRevealPage() {
       if (!revealAt) return "Please pick a reveal date and time.";
       const revealDate = new Date(revealAt);
       if (isNaN(revealDate.getTime())) return "Invalid reveal date.";
-      if (revealDate.getTime() < Date.now() + 30 * 60 * 1000) {
-        return "Reveal time must be at least 30 minutes in the future.";
+      if (revealDate.getTime() < Date.now() + MIN_REVEAL_LEAD_MS) {
+        return `Reveal time must be at least ${MIN_REVEAL_LEAD_MINUTES} minutes in the future.`;
       }
     }
 
