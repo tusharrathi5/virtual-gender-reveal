@@ -3,7 +3,8 @@
 import type { FormEvent } from "react";
 import { useCallback, useEffect, useMemo, useRef, useState, Fragment } from "react";
 import { useParams } from "next/navigation";
-import { Sparkles, Calendar, Send, Heart, Users, MessageSquare, Clock, Maximize, Volume2 } from "lucide-react";
+import { Sparkles, Calendar, Send, Heart, Users, MessageSquare, Clock, Maximize, Volume2, Tv } from "lucide-react";
+import CastInstructionsModal from "@/components/party/CastInstructionsModal";
 import RevealPlayer, { isIOSDevice, loadStreamSdk, useHasInteracted } from "@/components/party/RevealPlayer";
 
 type Prediction = "boy" | "girl" | null;
@@ -58,6 +59,8 @@ export default function GuestInvitePage() {
   const [isCompleted, setIsCompleted] = useState(false);
   const [videoUrl, setVideoUrl] = useState<string | null>(null);
   const [videoDurationSeconds, setVideoDurationSeconds] = useState<number | null>(null);
+  const [revealerPending, setRevealerPending] = useState(false);
+  const [isHost, setIsHost] = useState(false);
   const [registryUrl, setRegistryUrl] = useState<string | null>(null);
   const [feed, setFeed] = useState<Array<{ name: string; message: string }>>([]);
   const [invitedGuests, setInvitedGuests] = useState<Array<{ name: string }>>([]);
@@ -68,6 +71,7 @@ export default function GuestInvitePage() {
   const [chatSending, setChatSending] = useState(false);
   const [chatStatus, setChatStatus] = useState<"connecting" | "live" | "reconnecting">("connecting");
   const [showCalendarOptions, setShowCalendarOptions] = useState(false);
+  const [showCastGuide, setShowCastGuide] = useState(false);
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
 
   const [prediction, setPrediction] = useState<Prediction>(null);
@@ -95,6 +99,7 @@ export default function GuestInvitePage() {
     }
 
     setGuestName(data?.guest?.name || "Guest");
+    setIsHost(Boolean(data?.guest?.isHost));
     setParentName(data?.reveal?.parentName || "Parents");
     setRevealAtIso(data?.reveal?.revealAtIso || null);
     setRevealTimezone(data?.reveal?.revealTimezone || "UTC");
@@ -104,6 +109,7 @@ export default function GuestInvitePage() {
     setVideoDurationSeconds(
       typeof data?.reveal?.videoDurationSeconds === "number" ? data.reveal.videoDurationSeconds : null
     );
+    setRevealerPending(Boolean(data?.reveal?.revealerPending));
     setRegistryUrl(data?.reveal?.registryUrl || null);
     setFeed(Array.isArray(data?.feed) ? data.feed : []);
     setInvitedGuests(Array.isArray(data?.invitedGuests) ? data.invitedGuests : []);
@@ -529,7 +535,7 @@ export default function GuestInvitePage() {
 
           {/* 2. REVEAL VIDEO / COUNTDOWN AREA (Centered Glassmorphic Video Box - Full Width) */}
           <section className={`relative overflow-hidden transition-all duration-300 w-full ${isLive && videoUrl ? "bg-slate-950/20 backdrop-blur-xl border border-white/10 shadow-2xl rounded-[24px]" : "border border-white/50 border-[1.5px] rounded-[32px] py-4 px-5 md:py-5 md:px-8 shadow-2xl flex flex-col items-center justify-center"}`}>
-            {!isLive && (
+            {(!isLive || revealerPending) && (
               <>
                 {/* Full-bleed background image for this section */}
                 <div
@@ -576,6 +582,37 @@ export default function GuestInvitePage() {
                     </button>
                   </div>
                 </>
+              ) : isLive && revealerPending ? (
+                // Reveal time passed and the revealer never picked the gender, so there is no video.
+                // The host gets the support/reschedule message; guests get a gentle heads-up.
+                <div className="w-full flex flex-col items-center justify-center text-center gap-3 py-8 px-4 md:px-10 z-10 relative">
+                  {isHost ? (
+                    <>
+                      <h2 className="text-xl md:text-2xl font-nunito font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-[#E8449A] to-[#3A9FE8] drop-shadow-sm">
+                        Your Reveal Isn&apos;t Ready Yet
+                      </h2>
+                      <p className="text-sm md:text-base text-slate-700 font-semibold max-w-xl leading-relaxed">
+                        Your scheduled reveal time has arrived, but your revealer hasn&apos;t selected the gender yet, so we weren&apos;t able to create your reveal video.
+                      </p>
+                      <p className="text-sm md:text-base text-slate-700 font-semibold max-w-xl leading-relaxed">
+                        Don&apos;t worry! You can still have your special moment. Please contact{" "}
+                        <a href="mailto:support@virtualgenderreveal.com" className="text-[#E8449A] font-bold underline underline-offset-2 hover:text-[#B0246F]">
+                          support@virtualgenderreveal.com
+                        </a>{" "}
+                        and we&apos;ll help you reschedule your reveal.
+                      </p>
+                    </>
+                  ) : (
+                    <>
+                      <h2 className="text-xl md:text-2xl font-nunito font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-[#E8449A] to-[#3A9FE8] drop-shadow-sm">
+                        The Reveal Is Running a Little Late
+                      </h2>
+                      <p className="text-sm md:text-base text-slate-700 font-semibold max-w-xl leading-relaxed">
+                        The big moment isn&apos;t quite ready yet. {parentName} will share a new reveal time soon, so keep this link handy!
+                      </p>
+                    </>
+                  )}
+                </div>
               ) : (
                 <div className="w-full h-full flex flex-col items-center justify-center text-center p-0 bg-transparent z-10 relative">
                   <div className="flex flex-col items-center gap-1.5 w-full">
@@ -707,6 +744,15 @@ export default function GuestInvitePage() {
                         </button>
                       )
                     )}
+
+                    <button
+                      type="button"
+                      onClick={() => setShowCastGuide(true)}
+                      className="mt-3 px-4 py-2 rounded-full bg-white/80 hover:bg-white border border-[#E8449A]/30 text-[#B0246F] text-xs md:text-sm font-black shadow-md flex items-center gap-1.5 transition-all hover:scale-105 active:scale-95 cursor-pointer"
+                    >
+                      <Tv className="w-4 h-4 text-[#E8449A]" />
+                      Watch on a Bigger Screen
+                    </button>
                   </div>
                 </div>
               )}
@@ -998,6 +1044,8 @@ export default function GuestInvitePage() {
             </section>
           </div>
         </div>
+
+        {showCastGuide && <CastInstructionsModal onClose={() => setShowCastGuide(false)} />}
 
         {/* Calendar Selection Dialog Modal */}
         {showCalendarOptions && (

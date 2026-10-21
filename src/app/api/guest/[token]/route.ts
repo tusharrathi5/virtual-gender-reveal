@@ -47,6 +47,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ toke
     plan?: string;
     partyEnabled?: boolean;
     registryUrl?: string | null;
+    genderStatus?: string;
   };
   if (isBundleOfJoyAnnouncement(data)) {
     return NextResponse.json(
@@ -62,6 +63,11 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ toke
   // the stored videoUrl is left as-is because the dashboard download relies on it.
   const staticStreamUid = data.videoUrl ? getStaticRevealStreamUid(data.videoUrl) : null;
   const playbackUrl = staticStreamUid ? buildStreamWatchUrl(staticStreamUid) : data.videoUrl || null;
+
+  // Reveal time has passed but the revealer never picked the gender, so no video can
+  // exist. Only this flag is exposed, never the gender itself.
+  const revealerPending =
+    isLive && !playbackUrl && data.mode === "reveal" && data.genderStatus !== "submitted";
 
   // Reveals finalized before durations were recorded have no videoDurationSeconds; look it
   // up once so the party page can cap its sync seek at the clip length.
@@ -128,7 +134,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ toke
     .map((m) => ({ name: m.name || "Guest" }));
   return NextResponse.json({
     success: true,
-    guest: { name: guest.data()?.name },
+    guest: { name: guest.data()?.name, isHost },
     response: {
       prediction: (clientPrediction || (guest.data()?.prediction as "boy" | "girl" | null)) ?? null,
       message: (guest.data()?.message as string | null) ?? null,
@@ -142,6 +148,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ toke
       isLive,
       isCompleted,
       videoUrl: isLive ? playbackUrl : null,
+      revealerPending,
       videoDurationSeconds: isLive ? videoDurationSeconds : null,
       registryUrl: data.plan !== "basic" ? data.registryUrl || null : null,
     },

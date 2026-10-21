@@ -1104,6 +1104,10 @@ export default function NewRevealPage() {
                     <span className="text-xs text-gray-400 font-medium">All guest invites adjust automatically to their local time.</span>
                   </div>
                 </div>
+                <p className="flex items-start gap-1.5 rounded-xl border border-[#E8449A]/15 bg-[#E8449A]/5 px-3 py-2 text-xs font-normal text-[#B0246F]">
+                  <span aria-hidden="true">💗</span>
+                  <span>Your revealer needs to select the gender before we can create your reveal video. Make sure to leave them plenty of time!</span>
+                </p>
               </div>
             )}
 

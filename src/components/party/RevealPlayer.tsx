@@ -69,11 +69,14 @@ export function useHasInteracted(): boolean {
       setHasInteracted(true);
       return;
     }
+    // "click" rather than "pointerdown": the state change swaps the sound prompt for a
+    // shorter line, and doing that mid-tap shifts the layout so the tap misses the button
+    // it started on (e.g. "Watch on a Bigger Screen").
     const mark = () => setHasInteracted(true);
-    window.addEventListener("pointerdown", mark, { once: true });
+    window.addEventListener("click", mark, { once: true });
     window.addEventListener("keydown", mark, { once: true });
     return () => {
-      window.removeEventListener("pointerdown", mark);
+      window.removeEventListener("click", mark);
       window.removeEventListener("keydown", mark);
     };
   }, []);
