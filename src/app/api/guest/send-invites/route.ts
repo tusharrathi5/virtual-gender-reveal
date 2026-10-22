@@ -144,7 +144,9 @@ export async function POST(req: NextRequest) {
     const googleCalendarUrl = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(`${enquiry.parentName || "Parents"}'s Virtual Gender Reveal`)}&dates=${fmt(start)}/${fmt(end)}&ctz=${encodeURIComponent(enquiry.revealTimezone || "UTC")}&details=${encodeURIComponent(`Join the reveal: ${inviteUrl}`)}`;
     const icsUrl = `${appUrl.replace(/\/$/, "")}/api/guest/${encodeURIComponent(token)}/calendar.ics`;
     try {
-      if (input.phone) {
+      // Guests are only texted when the host confirmed their SMS consent; the host's own
+      // number comes from their account.
+      if (input.phone && (input.isHost || smsConsentConfirmed)) {
         try {
           await sendInviteSms({
             toPhone: input.phone,

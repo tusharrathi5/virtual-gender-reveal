@@ -25,6 +25,7 @@ import {
   type RevealerRelation,
 } from "@/lib/types";
 import DashboardShell from "@/components/dashboard/DashboardShell";
+import { SMS_INVITES_ENABLED } from "@/lib/features";
 import {
   Sparkles,
   User,
@@ -892,7 +893,7 @@ function DashboardContent() {
       setToast({ type: "error", message: "Each guest needs a name and valid email before sending." });
       return;
     }
-    if (!smsConsent) {
+    if (SMS_INVITES_ENABLED && !smsConsent) {
       setToast({ type: "error", message: "Please authorize SMS invitations before sending." });
       return;
     }
@@ -903,7 +904,12 @@ function DashboardContent() {
       const res = await fetch("/api/guest/send-invites", {
         method: "POST",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${idToken}` },
-        body: JSON.stringify({ enquiryId, guests, smsConsent }),
+        // With SMS off, never send phone numbers, so no guest is texted without recorded consent.
+        body: JSON.stringify(
+          SMS_INVITES_ENABLED
+            ? { enquiryId, guests, smsConsent }
+            : { enquiryId, guests: guests.map((g) => ({ ...g, phone: "" })), smsConsent: false }
+        ),
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(data?.error || "Failed to send invites.");
@@ -1597,7 +1603,9 @@ function DashboardContent() {
                     Invite Guests
                   </h2>
                   <p className="text-xs text-gray-600 font-semibold mt-1">
-                    Invite your guests by adding their phone number, email or both! We’ll send them a secure invite link.
+                    {SMS_INVITES_ENABLED
+                      ? "Invite your guests by adding their phone number, email or both! We’ll send them a secure invite link."
+                      : "Invite your guests by adding their email! We’ll send them a secure invite link."}
                   </p>
                 </div>
               </div>
@@ -1628,12 +1636,14 @@ function DashboardContent() {
                           Name
                         </span>
                       </th>
-                      <th className="p-4">
-                        <span className="inline-flex items-center gap-1.5">
-                          <IconImg src="/images/icon-phone.png" className="w-5 h-5 object-contain" />
-                          Phone Number
-                        </span>
-                      </th>
+                      {SMS_INVITES_ENABLED && (
+                        <th className="p-4">
+                          <span className="inline-flex items-center gap-1.5">
+                            <IconImg src="/images/icon-phone.png" className="w-5 h-5 object-contain" />
+                            Phone Number
+                          </span>
+                        </th>
+                      )}
                       <th className="p-4">
                         <span className="inline-flex items-center gap-1.5">
                           <IconImg src="/images/icon-mail.png" className="w-5 h-5 object-contain" />
@@ -1665,20 +1675,22 @@ function DashboardContent() {
                             />
                           </div>
                         </td>
-                        <td className="p-3">
-                          <div className="relative">
-                            <IconImg
-                              src="/images/icon-phone.png"
-                              className="w-5 h-5 object-contain absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none"
-                            />
-                            <input
-                              className="bg-white/20 border border-white/20 text-gray-800 placeholder-gray-500/80 rounded-xl pl-10 pr-4 py-2.5 text-xs focus:outline-none focus:ring-2 focus:ring-[#3A9FE8] w-full font-medium transition-all"
-                              value={row.phone}
-                              onChange={(e) => updateGuestDraft(row.rowId, "phone", e.target.value)}
-                              placeholder="Phone number"
-                            />
-                          </div>
-                        </td>
+                        {SMS_INVITES_ENABLED && (
+                          <td className="p-3">
+                            <div className="relative">
+                              <IconImg
+                                src="/images/icon-phone.png"
+                                className="w-5 h-5 object-contain absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none"
+                              />
+                              <input
+                                className="bg-white/20 border border-white/20 text-gray-800 placeholder-gray-500/80 rounded-xl pl-10 pr-4 py-2.5 text-xs focus:outline-none focus:ring-2 focus:ring-[#3A9FE8] w-full font-medium transition-all"
+                                value={row.phone}
+                                onChange={(e) => updateGuestDraft(row.rowId, "phone", e.target.value)}
+                                placeholder="Phone number"
+                              />
+                            </div>
+                          </td>
+                        )}
                         <td className="p-3">
                           <div className="relative">
                             <IconImg
@@ -1712,6 +1724,7 @@ function DashboardContent() {
 
               {/* SMS Consent */}
               <div className="pt-6 border-t border-gray-100 space-y-3">
+                {SMS_INVITES_ENABLED && (
                 <label className="flex items-start gap-3 cursor-pointer select-none bg-gray-50/60 border border-gray-100 rounded-xl p-4">
                   <IconImg src="/images/icon-shieldWithHeart.png" className="w-14 h-14 object-contain shrink-0" />
                   <span className="flex items-start gap-2.5">
@@ -1731,6 +1744,7 @@ function DashboardContent() {
                     </span>
                   </span>
                 </label>
+                )}
                 <p className="text-[11px] text-gray-400 font-medium pl-4">
                   See our{" "}
                   <a href="/privacy-policy" target="_blank" rel="noopener noreferrer" className="text-[#3A9FE8] font-bold hover:underline">
@@ -1766,7 +1780,7 @@ function DashboardContent() {
                   <button
                     type="button"
                     onClick={() => sendGuestInvites(latestPartyReveal.id)}
-                    disabled={sendingInvites || !smsConsent}
+                    disabled={sendingInvites || (SMS_INVITES_ENABLED && !smsConsent)}
                     className="w-full md:w-auto bg-gradient-to-r from-[#E8449A] to-[#3A9FE8] text-white hover:opacity-95 font-bold text-xs uppercase tracking-wider rounded-xl py-3.5 px-6 disabled:opacity-50 transition-all shadow-md shadow-[#e8449a0c] flex items-center justify-center gap-2 focus:outline-none focus:ring-2 focus:ring-[#3A9FE8]"
                   >
                     {sendingInvites ? (
@@ -1784,10 +1798,12 @@ function DashboardContent() {
                   <span className="text-[11px] text-gray-400 font-medium text-center md:text-right w-full md:max-w-xs leading-normal">
                     The account email also receives a copy of the host party link automatically.
                   </span>
-                  <span className="text-[11px] text-gray-400 font-medium text-center md:text-right w-full md:max-w-xs leading-normal">
-                    Guests will receive SMS about this event (invitation, reminders, updates). Msg &amp; data rates may
-                    apply. Reply STOP to opt out, HELP for help.
-                  </span>
+                  {SMS_INVITES_ENABLED && (
+                    <span className="text-[11px] text-gray-400 font-medium text-center md:text-right w-full md:max-w-xs leading-normal">
+                      Guests will receive SMS about this event (invitation, reminders, updates). Msg &amp; data rates may
+                      apply. Reply STOP to opt out, HELP for help.
+                    </span>
+                  )}
                 </div>
               </div>
 
@@ -1801,7 +1817,7 @@ function DashboardContent() {
                       <thead>
                         <tr className="bg-white/10 border-b border-white/20 font-bold text-gray-500 uppercase text-[10px] tracking-wider">
                           <th className="p-4">Name</th>
-                          <th className="p-4">Phone</th>
+                          {SMS_INVITES_ENABLED && <th className="p-4">Phone</th>}
                           <th className="p-4">Email</th>
                           <th className="p-4">Prediction</th>
                           <th className="p-4">Message</th>
@@ -1819,7 +1835,7 @@ function DashboardContent() {
                                 </span>
                               )}
                             </td>
-                            <td className="p-4 text-gray-500">{guest.phone || "-"}</td>
+                            {SMS_INVITES_ENABLED && <td className="p-4 text-gray-500">{guest.phone || "-"}</td>}
                             <td className="p-4 text-gray-500">{guest.email}</td>
                             <td className="p-4 font-semibold">
                               {guest.prediction === "boy" ? "💙 Boy" : guest.prediction === "girl" ? "🩷 Girl" : "-"}
