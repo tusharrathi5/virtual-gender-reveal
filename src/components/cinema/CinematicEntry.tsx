@@ -285,6 +285,45 @@ function LandingToast({ message, type, onClose }: { message: string; type: "succ
 // ── Confirm Dialog ───────────────────────────────────────────
 type PlanMeta = { id: string; name: string; price: number; priceLabel: string; color: string };
 
+/** Phone-only popup showing the same live-reveal preview card as the desktop hero. */
+function DemoPreviewDialog({ onClose }: { onClose: () => void }) {
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onClose();
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [onClose]);
+
+  return (
+    <div
+      onClick={onClose}
+      className="fixed inset-0 z-[9999] bg-[#0a0b1e]/70 backdrop-blur-md flex items-center justify-center p-4 animate-fade-in"
+    >
+      <div role="dialog" aria-modal="true" aria-label="Live reveal demo" onClick={(e) => e.stopPropagation()} className="relative w-full max-w-[600px]">
+        <button
+          type="button"
+          onClick={onClose}
+          aria-label="Close demo"
+          className="absolute -top-3 -left-3 z-20 w-9 h-9 rounded-full bg-white text-gray-600 shadow-lg flex items-center justify-center text-lg font-bold cursor-pointer"
+        >
+          ×
+        </button>
+        <div className="hero-card-mock hero-card-video demo-preview-card">
+          <img src="/assets/liveVideoBox.png" alt="Live reveal preview" className="hero-mock-video" />
+        </div>
+        {/* Decorative projector sticker hanging over the top-right corner. */}
+        <img
+          src="/assets/projector_icon.png"
+          alt=""
+          aria-hidden="true"
+          className="absolute -top-12 -right-3 z-10 w-[88px] h-auto rotate-[8deg] drop-shadow-xl pointer-events-none select-none"
+        />
+      </div>
+    </div>
+  );
+}
+
 function ConfirmDialog({ plan, onConfirm, onCancel }: { plan: PlanMeta; onConfirm: () => void; onCancel: () => void }) {
   return (
     <div className="fixed inset-0 z-[9999] bg-[#0a0b1e]/70 backdrop-blur-md flex items-center justify-center p-4 animate-fade-in font-jakarta">
@@ -335,6 +374,7 @@ function LandingPage() {
   const router = useRouter();
   const [toast, setToast] = useState<{ message: string; type: "success" | "error" | "info" } | null>(null);
   const [confirmPlan, setConfirmPlan] = useState<PlanMeta | null>(null);
+  const [showDemo, setShowDemo] = useState(false);
   const [checkingEntitlement, setCheckingEntitlement] = useState(false);
   const [activeFaq, setActiveFaq] = useState<number | null>(null);
   const [showFaqModal, setShowFaqModal] = useState(false);
@@ -452,6 +492,7 @@ function LandingPage() {
       <style>{LANDING_CSS}</style>
       {toast && <LandingToast message={toast.message} type={toast.type} onClose={() => setToast(null)} />}
       {confirmPlan && <ConfirmDialog plan={confirmPlan} onConfirm={handleConfirm} onCancel={() => setConfirmPlan(null)} />}
+      {showDemo && <DemoPreviewDialog onClose={() => setShowDemo(false)} />}
 
       <nav id="main-nav">
         <a href="/" className="nav-logo" aria-label="Virtual Gender Reveal home">
@@ -605,6 +646,8 @@ function LandingPage() {
               </div>
             </div>
             <button type="button" className="btn-create-party" onClick={() => routeToReveal()} disabled={checkingEntitlement}>{checkingEntitlement ? "Checking..." : "🎉 Create Your Party"}</button>
+            {/* Phones only: the hero preview card is hidden there, so offer it as a popup. */}
+            <button type="button" className="btn-watch-demo" onClick={() => setShowDemo(true)}>▶ Watch a Demo</button>
             <div className="hero-tagline">👥 Invite. Reveal. Celebrate!</div>
           </div>
           <div className="hero-right">
@@ -1455,6 +1498,38 @@ footer{background:#111827;padding:4rem 2rem 2rem;}
   }
 }
 
+/* ── "Watch a Demo" (phones only; opens the hero preview card as a popup) ── */
+.btn-watch-demo{display:none;}
+@media (max-width: 768px) {
+  .btn-watch-demo {
+    display: inline-flex !important;
+    align-items: center;
+    justify-content: center;
+    gap: 0.4rem;
+    position: absolute !important;
+    top: calc(188vw - 39px) !important;
+    left: 50% !important;
+    transform: translateX(-50%) !important;
+    z-index: 100 !important;
+    white-space: nowrap !important;
+    width: auto !important;
+    min-height: 34px !important;
+    padding: 0.35rem 1.2rem !important;
+    border-radius: 50px;
+    border: 1.5px solid rgba(232, 68, 154, 0.45);
+    background: rgba(255, 255, 255, 0.92);
+    color: #E8449A;
+    font-family: "Nunito", sans-serif;
+    font-size: 0.85rem;
+    font-weight: 800;
+    box-shadow: 0 6px 18px rgba(232, 68, 154, 0.22);
+    cursor: pointer;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+  }
+  .btn-watch-demo:active { transform: translateX(-50%) scale(0.97) !important; }
+}
+.demo-preview-card, .demo-preview-card:hover { transform: none !important; max-width: none; }
+
 /* ── Social Proof Card & Banner ── */
 .hero-features-card {
   background: rgba(255, 255, 255, 0.45);
@@ -2020,18 +2095,20 @@ nav#main-nav.solid{box-shadow:0 6px 28px rgba(0,0,0,0.14);}
 .pricing-btn-pink-glossy:active {
   transform: scale(0.97);
 }
+/* Positions match the white button slots in choose_your_plan_web.png (1672x941):
+   basic slot x 252-637, y 749-797; premium slot x 1043-1421, y 758-800. */
 .pricing-btn-web-basic {
-  left: 15.01%;
-  top: 68.23%;
-  width: 17.23%;
-  height: 4.36%;
+  left: 15.07%;
+  top: 79.6%;
+  width: 23.03%;
+  height: 5.1%;
   font-size: clamp(0.68rem, 0.95vw, 1rem);
 }
 .pricing-btn-web-premium {
-  left: 59.69%;
-  top: 69.71%;
-  width: 20.87%;
-  height: 4.25%;
+  left: 62.38%;
+  top: 80.55%;
+  width: 22.61%;
+  height: 4.46%;
   gap: 0.3rem;
   padding-inline: 0.6rem;
   font-size: clamp(0.62rem, 0.85vw, 0.92rem);
